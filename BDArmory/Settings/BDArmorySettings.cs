@@ -375,8 +375,14 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
         [BDAPersistentSettingsField] public static int MUTATOR_APPLY_NUM = 1;
         [BDAPersistentSettingsField] public static bool MUTATOR_ICONS = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GUNGAME = false;
         #endregion
+        #region GunGame
+        [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;
+        [BDAPersistentSettingsField] public static bool GG_CYCLE_LIST = false;
+        //[BDAPersistentSettingsField] public static bool GG_ANNOUNCER = false;
 
+        #endregion
         #region Tournament settings
         [BDAPersistentSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
         [BDAPersistentSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, Gauntlet, etc.)

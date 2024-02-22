@@ -225,11 +225,6 @@ namespace BDArmory.Bullets
             kDist = 1;
             dragVelocityFactor = 1;
 
-            if (!wasInitiated)
-            {
-                //projectileColor.a = projectileColor.a/2;
-                //startColor.a = startColor.a/2;
-            }
             startsUnderwater = FlightGlobals.getAltitudeAtPos(currentPosition) < 0;
             underwater = startsUnderwater;
 
@@ -261,12 +256,6 @@ namespace BDArmory.Bullets
                 bulletFX.transform.SetParent(gameObject.transform);
                 bulletTrail[1] = bulletFX.AddOrGetComponent<LineRenderer>();
             }
-            if (!wasInitiated)
-            {
-                bulletTrail[0].positionCount = linePositions.Length;
-                bulletTrail[1].positionCount = smokePositions.Length;
-            }
-            // Note: call SetTracerPosition() after enabling the bullet and making adjustments to it's position.
 
             if (!shaderInitialized)
             {
@@ -274,8 +263,11 @@ namespace BDArmory.Bullets
                 bulletShader = BDAShaderLoader.BulletShader;
             }
 
+            // Note: call SetTracerPosition() after enabling the bullet and making adjustments to it's position.
             if (!wasInitiated)
             {
+                bulletTrail[0].positionCount = linePositions.Length;
+                bulletTrail[1].positionCount = smokePositions.Length;
                 bulletTrail[0].material = new Material(bulletShader);
                 bulletTrail[1].material = new Material(bulletShader);
                 randomWidthScale = UnityEngine.Random.Range(0.5f, 1f);
@@ -287,7 +279,7 @@ namespace BDArmory.Bullets
             smokeColor.a = 0.75f;
             bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
             bulletTrail[0].material.SetColor("_TintColor", currentColor);
-            bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0 ? tracerLuminance : 0.5f));
+            bulletTrail[0].material.SetFloat("_Lum", tracerLuminance > 0 ? tracerLuminance : 0.5f);
             if (!string.IsNullOrEmpty(smokeTexturePath))
             {
                 bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture(smokeTexturePath, false);
@@ -1557,13 +1549,13 @@ namespace BDArmory.Bullets
                     pBullet.tgtRocket = tgtRocket;
                     pBullet.gameObject.SetActive(true);
 
-                // Tracers shouldn't really be drawn before the next frame, but not doing so results in them appearing as randomly oriented streaks and the parent bullet disappears on the same frame, so we draw them here and they appear to stutter for a frame (drawn ahead by 1 frame, then drawn in the same position as the FX catches up with the physics).
-                pBullet.SetTracerPosition();
+                    // Tracers shouldn't really be drawn before the next frame, but not doing so results in them appearing as randomly oriented streaks and the parent bullet disappears on the same frame, so we draw them here and they appear to stutter for a frame (drawn ahead by 1 frame, then drawn in the same position as the FX catches up with the physics).
+                    pBullet.SetTracerPosition();
 
-                if (pBullet.CheckBulletCollisions(iTime)) continue; // Bullet immediately hit something and died.
-                if (!hasRicocheted) pBullet.MoveBullet(iTime); // Move the bullet the remaining part of the frame.
-                pBullet.currentPosition += (TimeWarp.fixedDeltaTime - iTime) * BDKrakensbane.FrameVelocityV3f; // Re-adjust for Krakensbane.
-                pBullet.timeAlive = iTime;
+                    if (pBullet.CheckBulletCollisions(iTime)) continue; // Bullet immediately hit something and died.
+                    if (!hasRicocheted) pBullet.MoveBullet(iTime); // Move the bullet the remaining part of the frame.
+                    pBullet.currentPosition += (TimeWarp.fixedDeltaTime - iTime) * BDKrakensbane.FrameVelocityV3f; // Re-adjust for Krakensbane.
+                    pBullet.timeAlive = iTime;
                 }
             }
         }

@@ -87,7 +87,23 @@ namespace BDArmory.Competition
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
+
         #endregion
+        /*
+        #region Competition Announcer //Competition on-kill soundclips, searchtag Announcer
+        AudioClip headshotClip;
+        AudioClip 2KillClip 
+        AudioClip 3KillClip;
+        AudioClip 4KillClip;
+        AudioClip 5KillClip;
+        AudioClip 6KillClip;
+        AudioClip 7KillClip;
+        AudioClip 8KillClip;
+
+        AudioSource audioSource;
+        List<AudioClip> announcerBarks;
+        #endregion
+        */
 
         #region GUI elements
         GUIStyle statusStyle;
@@ -118,6 +134,19 @@ namespace BDArmory.Competition
         void Start()
         {
             UpdateGUIElements();
+            /*
+            //Announcer
+            headshotClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Headshot", true);
+            2KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/2Kills", true);
+            3KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/3Kills", true);
+            4KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/4Kills", true);
+            5KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/5Kills", true);
+            6KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/6Kills", true);
+            7KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/7Kills", true);
+            8KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/8Kills", true);
+            audioSource = gameObject.AddComponent<AudioSource>();
+            announcerBarks = [2KillClip, 3KillClip, 4KillClip, 5KillClip, 6KillClip, 7KillClip, 8KillClip];
+            */
         }
 
         void OnGUI()
@@ -407,7 +436,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
-            competitiveTeamsAliveLimit = (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))) ? 1 : 2;
+            competitiveTeamsAliveLimit = BDArmorySettings.WAYPOINTS_MODE ? 1 : 2;
             altitudeLimitGracePeriod = BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -1004,7 +1033,24 @@ namespace BDArmory.Competition
                 ScreenMessages.PostScreenMessage(StringUtils.Localize("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
             }
         }
-
+        /*
+        //Announcer function for playing sequential soundclips on kill
+        public void PlayAnnouncer(int killcount, bool headshot, string killerVessel)
+        {
+            if (FlightGlobals.ActiveVessel.vesselName != killerVessel) return;
+            if (!BDArmorySettings.GG_ANNOUNCER) return;
+            killcount -= 1; //first bark is doublekill, adjust to account for that
+            if (headshot) audioSource.PlayOneShot(headshotClip);
+            else
+            {
+                if (killcount > announcerBarks.Count - 1) killcount = announcerBarks.Count - 1;
+                if (killcount >= 0)
+                {
+                    if (announcerBarks[killcount] != null) audioSource.PlayOneShot(announcerBarks[killcount]); //only play barks if killsThisLife > 1
+                }
+            }
+        }
+        */
         #region Vessel validity
         public enum InvalidVesselReason { None, NullVessel, NoAI, NoWeaponManager, NoCommand };
         public InvalidVesselReason IsValidVessel(Vessel vessel, bool attemptFix = true)
@@ -2885,7 +2931,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
 
-                        if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+                        if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator) ApplyOnKillMutator(player);
                             else Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
@@ -2968,7 +3014,7 @@ namespace BDArmory.Competition
                     }
                     Scores.RegisterDeath(vesselName, GMKillReason.LandedTooLong);
                     competitionStatus.Add(vesselName + " was landed too long.");
-                    if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+                    if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL && BDArmorySettings.MUTATOR_LIST.Count > 0)
                         ApplyOnKillMutator(vesselName); // Apply mutators for LandedTooLong kills, which count as assists.
                 }
                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
@@ -3038,9 +3084,10 @@ namespace BDArmory.Competition
                 if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                     continue;
                 var craftName = loadedVessels.Current.GetName();
-                if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
+                if (!Scores.Players.Contains(craftName)) continue;
+                if (BDArmorySettings.MUTATOR_APPLY_GUNGAME && Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone involved on assists.
-                else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
+                else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (BDArmorySettings.MUTATOR_APPLY_GUNGAME && Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
                 else continue;
                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Assigning On Kill mutator for {player} to {craftName}");
@@ -3063,7 +3110,7 @@ namespace BDArmory.Competition
                 return;
             }
 
-            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
+            if (BDArmorySettings.DEBUG_COMPETITION) competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             Scores.LogResults(CompetitionID.ToString(), message, tag);
         }
 
@@ -3439,6 +3486,11 @@ namespace BDArmory.Competition
             var timeOfDeath = Planetarium.GetUniversalTime(); // In case they die.
             asteroidCollisions.Add(vesselName);
             yield return new WaitForSecondsFixed(potentialCollisionDetectionTime);
+            if (rammingInformation == null) // The competition is finished / KSP is changing scenes or exiting.
+            {
+                asteroidCollisions.Remove(vesselName);
+                yield break;
+            }
             if (vessel == null || VesselModuleRegistry.GetMissileFire(vessel) == null)
             {
                 rammingInformation[vesselName].partCount = 0;

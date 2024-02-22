@@ -71,14 +71,17 @@ namespace BDArmory.UI
         private bool HPvisualizer = false;
         private bool HullVisualizer = false;
         private bool LiftVisualizer = false;
+        private bool TreeVisualizer = false;
         private bool oldVisualizer = false;
         private bool oldHPvisualizer = false;
         private bool oldHullVisualizer = false;
         private bool oldLiftVisualizer = false;
+        private bool oldTreeVisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
         private bool refreshHullvisualizer = true;
         private bool refreshLiftvisualizer = false;
+        private bool refreshTreevisualizer = false;
         private string hullmat = "Aluminium";
 
         private float steelValue = 1;
@@ -190,12 +193,13 @@ namespace BDArmory.UI
                 {
                     CalcArmor = true;
                 }
-                if (Visualizer || HPvisualizer || HullVisualizer || LiftVisualizer)
+                if (Visualizer || HPvisualizer || HullVisualizer || LiftVisualizer || TreeVisualizer)
                 {
                     refreshVisualizer = true;
                     refreshHPvisualizer = true;
                     refreshHullvisualizer = true;
                     refreshLiftvisualizer = true;
+                    refreshTreevisualizer = true;
                 }
                 shipModifiedfromCalcArmor = false;
                 CalculateArmorMass();
@@ -249,6 +253,7 @@ namespace BDArmory.UI
             HPvisualizer = false;
             HullVisualizer = false;
             LiftVisualizer = false;
+            TreeVisualizer = false;
             if (thicknessField != null && thicknessField.ContainsKey("Thickness")) thicknessField["Thickness"].tryParseValueNow();
             Visualize();
         }
@@ -262,6 +267,24 @@ namespace BDArmory.UI
             {
                 if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, windowRect.position);
                 windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
+            }
+            if (TreeVisualizer)
+            {
+                Part rootPart = EditorLogic.RootPart;
+                if (rootPart == null) return;
+                using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                    while (parts.MoveNext())
+                    {
+                        if (parts.Current == rootPart)
+                            GUIUtils.DrawTextureOnWorldPos(parts.Current.transform.position, BDArmorySetup.Instance.redDotTexture, new Vector2(48, 48), 0);
+                        else
+                        {
+                            GUIUtils.DrawTextureOnWorldPos(parts.Current.transform.position, BDArmorySetup.Instance.redDotTexture, new Vector2(16, 16), 0);
+                            Color VisualizerColor = Color.HSVToRGB(((1 - Mathf.Clamp(Mathf.Abs(Vector3.Distance(parts.Current.attPos, Vector3.zero)), 0.1f, 1)) / 1) / 3, 1, 1);
+                            //will result in any part that has been offset more than a meter showing up with a red line
+                            GUIUtils.DrawLineBetweenWorldPositions(parts.Current.transform.position, parts.Current.parent.transform.position, 3, VisualizerColor);
+                        }
+                    }
             }
             PreventClickThrough();
         }
@@ -298,6 +321,7 @@ namespace BDArmory.UI
                     Visualizer = false;
                     HullVisualizer = false;
                     LiftVisualizer = false;
+                    TreeVisualizer = false;
                 }
             }
             line += 1.25f;
@@ -313,6 +337,7 @@ namespace BDArmory.UI
                         HPvisualizer = false;
                         HullVisualizer = false;
                         LiftVisualizer = false;
+                        TreeVisualizer = false;
                     }
                 }
                 line += 1.25f;
@@ -328,6 +353,7 @@ namespace BDArmory.UI
                         HPvisualizer = false;
                         Visualizer = false;
                         LiftVisualizer = false;
+                        TreeVisualizer = false;
                     }
                 }
                 line += 1.25f;
@@ -343,6 +369,23 @@ namespace BDArmory.UI
                         Visualizer = false;
                         HullVisualizer = false;
                         HPvisualizer = false;
+                        TreeVisualizer = false;
+                    }
+                }
+                line += 1.25f;
+            }
+
+            //if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_partTreeVisualizer"), TreeVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    TreeVisualizer = !TreeVisualizer;
+                    if (TreeVisualizer)
+                    {
+                        Visualizer = false;
+                        HullVisualizer = false;
+                        HPvisualizer = false;
+                        LiftVisualizer = false;
                     }
                 }
                 line += 1.25f;
@@ -350,7 +393,7 @@ namespace BDArmory.UI
 
             line += 0.25f;
 
-            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer) || (refreshLiftvisualizer || LiftVisualizer != oldLiftVisualizer))
+            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer) || (refreshLiftvisualizer || LiftVisualizer != oldLiftVisualizer) || (refreshTreevisualizer || TreeVisualizer != oldTreeVisualizer))
             {
                 Visualize();
             }
@@ -990,6 +1033,7 @@ namespace BDArmory.UI
             oldHPvisualizer = HPvisualizer;
             oldHullVisualizer = HullVisualizer;
             oldLiftVisualizer = LiftVisualizer;
+            oldTreeVisualizer = TreeVisualizer;
             refreshVisualizer = false;
             refreshHPvisualizer = false;
             refreshHullvisualizer = false;

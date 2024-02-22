@@ -450,7 +450,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to go to {gpsCoords}.");
+            if (BDArmorySettings.DEBUG_AI && (command != PilotCommands.FlyTo || (gpsCoords - assignedPositionGeo).sqrMagnitude > 0.1)) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to go to {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
             previousCommand = command;
             command = PilotCommands.FlyTo;
@@ -460,7 +460,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to attack {gpsCoords}.");
+            if (BDArmorySettings.DEBUG_AI && (command != PilotCommands.Attack || (gpsCoords - assignedPositionGeo).sqrMagnitude > 0.1)) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to attack {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
             previousCommand = command;
             command = PilotCommands.Attack;
