@@ -152,7 +152,14 @@ namespace BDArmory.Settings
           Debug.LogWarning($"[BDArmory.RWPSettings]: Invalid field name {setting} for RWP round {round}.");
           continue;
         }
-        field.SetValue(null, overrides[setting]);
+        try
+        {
+          field.SetValue(null, Convert.ChangeType(overrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
+        }
+        catch (Exception e)
+        {
+          Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
+        }
       }
 
       // Add any additional round-specific setup here.
