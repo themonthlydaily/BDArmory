@@ -1911,9 +1911,8 @@ namespace BDArmory.Weapons
                     }
                     //audioSource.Stop();
                 }
-                vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
-                ammoCount = ammoCurrent;
-                ammoMaxCount = ammoMax;
+                if (externalAmmo) part.GetConnectedResourceTotals(AmmoID, out ammoCount, out ammoMaxCount);
+                else part.GetConnectedResourceTotals(AmmoID, ResourceFlowMode.NO_FLOW, out ammoCount, out ammoMaxCount);
                 if (!BeltFed)
                 {
                     ReloadWeapon();
