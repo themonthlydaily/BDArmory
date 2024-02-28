@@ -77,7 +77,6 @@ namespace BDArmory.UI
         //dependency checks
         bool ModuleManagerLoaded = false;
         bool PhysicsRangeExtenderLoaded = false;
-        PropertyInfo PREModEnabledField = null;
 
         //EVENTS
         public delegate void VolumeChange();
@@ -429,7 +428,7 @@ namespace BDArmory.UI
 
             // Get the BDA version. We can do this here since it's this assembly we're interested in, other assemblies have to wait until Start.
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().ToList())
-                if (assembly.FullName.Split(new char[1] { ',' })[0] == "BDArmory")
+                if (assembly.FullName.Split([','])[0] == "BDArmory")
                     Version = assembly.GetName().Version.ToString();
 
             // Load settings
@@ -462,41 +461,13 @@ namespace BDArmory.UI
             CloseButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter }; // Configure this one separately since it's static.
             CloseButtonStyle.hover.textColor = Color.red;
 
-            ButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
-            SelectedButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
-            var tmp = SelectedButtonStyle.normal;
-            SelectedButtonStyle.normal = SelectedButtonStyle.active;
-            SelectedButtonStyle.active = tmp;
+            ButtonStyle = new GUIStyle(BDGuiSkin.button);
+            SelectedButtonStyle = new GUIStyle(BDGuiSkin.button);
+            (SelectedButtonStyle.active, SelectedButtonStyle.normal) = (SelectedButtonStyle.normal, SelectedButtonStyle.active);
             SelectedButtonStyle.hover = SelectedButtonStyle.normal;
-            //
 
-            using (var a = AppDomain.CurrentDomain.GetAssemblies().ToList().GetEnumerator())
-                while (a.MoveNext())
-                {
-                    string name = a.Current.FullName.Split(new char[1] { ',' })[0];
-                    switch (name)
-                    {
-                        case "ModuleManager":
-                            ModuleManagerLoaded = true;
-                            break;
-
-                        case "PhysicsRangeExtender":
-                            foreach (var t in a.Current.GetTypes())
-                            {
-                                if (t != null && t.Name == "PreSettings")
-                                {
-                                    var PREInstance = FindObjectOfType(t);
-                                    foreach (var propInfo in t.GetProperties(BindingFlags.Public | BindingFlags.Static))
-                                        if (propInfo != null && propInfo.Name == "ModEnabled")
-                                        {
-                                            PREModEnabledField = propInfo;
-                                            PhysicsRangeExtenderLoaded = true;
-                                        }
-                                }
-                            }
-                            break;
-                    }
-                }
+            ModuleManagerLoaded = ModuleManager.CheckForModuleManager();
+            PhysicsRangeExtenderLoaded = PhysicsRangeExtender.CheckForPhysicsRangeExtender();
 
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -975,7 +946,7 @@ namespace BDArmory.UI
                     (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting))
                     || VesselSpawnerStatus.vesselsSpawning
                 )
-                && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
+                && !PhysicsRangeExtender.IsPREEnabled) dependencyWarnings.Add("Physics Range Extender is disabled!");
             if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
             return dependencyWarnings.Count() == 0;
         }
