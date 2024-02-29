@@ -3153,6 +3153,8 @@ namespace BDArmory.Weapons
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
+            vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); 
+            ammoCount = ammoCurrent;
             if (ammoCount >= AmmoPerShot)
             {
                 if (externalAmmo)
