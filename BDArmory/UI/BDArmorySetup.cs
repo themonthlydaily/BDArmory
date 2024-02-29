@@ -3135,14 +3135,14 @@ namespace BDArmory.UI
                                         CheatCodeGUI = "";
                                         break;
                                     }
-                                    /* //Announcer
+                                /* //Announcer
                                 case "UTDeathMatch":
                                     {
                                         BDArmorySettings.GG_ANNOUNCER = !BDArmorySettings.GG_ANNOUNCER;
                                         CheatCodeGUI = "";
                                         break;
                                     }
-                                    */
+                                */
                                 case "DiscoInferno":
                                     {
                                         BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;

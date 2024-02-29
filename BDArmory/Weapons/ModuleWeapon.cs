@@ -2364,7 +2364,11 @@ namespace BDArmory.Weapons
             beamDuration = Math.Min(timeGap * 0.8f, 0.1f);
 
             if (timeSinceFired > timeGap
-                && !pointingAtSelf && !GUIUtils.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
+                && !isOverheated
+                // && !isReloading
+                && !pointingAtSelf
+                && (aiControlled || !GUIUtils.CheckMouseIsOnGui())
+                && WMgrAuthorized())
             {
                 if (CanFire(chargeAmount))
                 {
@@ -2799,7 +2803,11 @@ namespace BDArmory.Weapons
             int rocketsLeft;
 
             float timeGap = GetTimeGap();
-            if (timeSinceFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !GUIUtils.CheckMouseIsOnGui()) && WMgrAuthorized())
+            if (timeSinceFired > timeGap
+                && !isReloading 
+                && !pointingAtSelf
+                && (aiControlled || !GUIUtils.CheckMouseIsOnGui())
+                && WMgrAuthorized())
             {// fixes rocket ripple code for proper rippling
                 bool effectsShot = false;
                 for (float iTime = Mathf.Min(timeSinceFired - timeGap, TimeWarp.fixedDeltaTime); iTime > 1e-4f; iTime -= timeGap)
@@ -4354,7 +4362,7 @@ namespace BDArmory.Weapons
                 Vector3 targetRelPos = finalAimTarget - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
                 targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
-                var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
+                // var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
                 safeToFire = CheckForFriendlies(fireTransform); //TODO - test why APS returning safeToFire = false
                 if (BDArmorySettings.BULLET_WATER_DRAG && eWeaponType == WeaponTypes.Ballistic && FlightGlobals.getAltitudeAtPos(fireTransforms[0].position) < 0)
                     safeToFire = false; //don't fire guns underwater 

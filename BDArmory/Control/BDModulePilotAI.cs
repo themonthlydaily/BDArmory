@@ -5015,7 +5015,7 @@ namespace BDArmory.Control
             {
                 if (firstCFDSample)
                 {
-                    lossSamples[currentField].Add(new List<float> { lossSample }); // Sample at x - dx
+                    lossSamples[currentField].Add([lossSample]); // Sample at x - dx
                     firstCFDSample = false;
                     UpdatePIDValues(false);
                 }
