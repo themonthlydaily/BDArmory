@@ -99,6 +99,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();
+            if (BDArmorySettings.WAYPOINT_GUARD_INDEX != -1)
+            {
+                yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionIsActive); //DoUpdate handles the deathmatch half of the combat waypoint race and ends things when only 1 team left
+            }
+            else
             yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionIsActive && pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsRunningWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
 
