@@ -367,6 +367,8 @@ namespace BDArmory.Competition
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
             LogResults(tag: competitionTag);
+            if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
+                BDArmorySetup.Instance.SetTimeSyncLogging(false, !string.IsNullOrEmpty(competitionTag) ? competitionTag : CompetitionID.ToString());
             if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
@@ -403,8 +405,6 @@ namespace BDArmory.Competition
             deadOrAlive = "";
             if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                 LoadedVesselSwitcher.Instance.StopVesselTracing();
-            if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
-                BDArmorySetup.Instance.SetTimeSyncLogging(false, $"time-sync-{CompetitionID}");
             if (BDArmorySettings.TIME_OVERRIDE)
             { Time.timeScale = 1f; }
         }
