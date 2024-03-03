@@ -355,6 +355,8 @@ namespace BDArmory.Competition
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
+                if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
+                    BDArmorySetup.Instance.SetTimeSyncLogging(true);
                 if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
                 { Time.timeScale = BDArmorySettings.TIME_SCALE; }
                 if (BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START && BDArmorySetup.showVesselMoverGUI) VesselMover.Instance.SetVisible(false);
@@ -401,6 +403,8 @@ namespace BDArmory.Competition
             deadOrAlive = "";
             if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                 LoadedVesselSwitcher.Instance.StopVesselTracing();
+            if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
+                BDArmorySetup.Instance.SetTimeSyncLogging(false, $"time-sync-{CompetitionID}");
             if (BDArmorySettings.TIME_OVERRIDE)
             { Time.timeScale = 1f; }
         }

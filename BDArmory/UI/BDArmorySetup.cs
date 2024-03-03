@@ -1,11 +1,13 @@
-using System.Runtime.CompilerServices;
-using System;
-using System.IO;
-using System.Collections;
 using System.Collections.Generic;
+using System.Collections;
 using System.Globalization;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System;
 using UnityEngine;
 using KSP.Localization;
 using KSP.UI.Screens;
@@ -3684,7 +3686,7 @@ namespace BDArmory.UI
 
                 if (BDArmorySettings.ADVANCED_USER_SETTINGS)
                 {
-                    BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(new Rect(settingsMargin, ++line * settingsLineHeight, 2f * (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, StringUtils.Localize("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels (custom 2/3 width)
+                    BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(SLineThirdRect(++line, 0, 2), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, StringUtils.Localize("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels (custom 2/3 width)
                     if (LoadedVesselSwitcher.Instance != null)
                     {
                         if (GUI.Button(SLineThirdRect(line, 2), LoadedVesselSwitcher.Instance.vesselTraceEnabled ? StringUtils.Localize("#LOC_BDArmory_Settings_TraceVesselsManualStop") : StringUtils.Localize("#LOC_BDArmory_Settings_TraceVesselsManualStart")))
@@ -3695,6 +3697,10 @@ namespace BDArmory.UI
                             { LoadedVesselSwitcher.Instance.StartVesselTracing(); }
                         }
                     }
+                    BDArmorySettings.AUTO_LOG_TIME_SYNC = GUI.Toggle(SLineThirdRect(++line, 0, 2), BDArmorySettings.AUTO_LOG_TIME_SYNC, StringUtils.Localize("#LOC_BDArmory_Settings_AutoLogTimeSync"));
+                    if (GUI.Button(SLineThirdRect(line, 2), StringUtils.Localize(logTimeSyncEnabled ? "#LOC_BDArmory_Settings_LogTimeSyncStop" : "#LOC_BDArmory_Settings_LogTimeSyncStart"))) SetTimeSyncLogging(!logTimeSyncEnabled);
+                    GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_LogTimeSyncInterval")}: {BDArmorySettings.LOG_TIME_SYNC_INTERVAL:G2}s", leftLabel);
+                    BDArmorySettings.LOG_TIME_SYNC_INTERVAL = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.LOG_TIME_SYNC_INTERVAL, Time.fixedDeltaTime, 1f), Time.fixedDeltaTime);
                 }
 
                 line += 0.5f;
@@ -4199,6 +4205,7 @@ namespace BDArmory.UI
             if (windowSettingsEnabled || showVesselSpawnerGUI)
                 SaveConfig();
 
+            SetTimeSyncLogging(false);
             GameEvents.onHideUI.Remove(HideGameUI);
             GameEvents.onShowUI.Remove(ShowGameUI);
             GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
@@ -4223,6 +4230,53 @@ namespace BDArmory.UI
             SeismicChargeFX.originalAmbienceVolume = GameSettings.AMBIENCE_VOLUME;
         }
 
+        #region TimeSyncLogging
+        public bool logTimeSyncEnabled = false;
+        readonly List<(float, float)> timeSyncLog = []; // List of time-sync timestamps.
+        /// <summary>
+        /// Enable time-sync logging.
+        /// Game timestamps are made during the normal LateUpdate timing stage.
+        /// </summary>
+        /// <param name="enable">Enable or disable time-sync logging.</param>
+        /// <param name="tag">A tag to use when writing the file when disabling time-sync logging.</param>
+        public void SetTimeSyncLogging(bool enable, string tag = null)
+        {
+            if (enable)
+            {
+                if (!logTimeSyncEnabled) TimingManager.LateUpdateAdd(TimingManager.TimingStage.Normal, LogTimeSync);
+            }
+            else
+            {
+                TimingManager.LateUpdateRemove(TimingManager.TimingStage.Normal, LogTimeSync);
+                DumpTimeSyncLog(tag);
+                timeSyncLog.Clear();
+            }
+            logTimeSyncEnabled = enable;
+        }
+        /// <summary>
+        /// Register a time-sync timestamp if the time-sync interval has passed (approx).
+        /// </summary>
+        void LogTimeSync()
+        {
+            if (Time.time - timeSyncLog.LastOrDefault().Item1 < BDArmorySettings.LOG_TIME_SYNC_INTERVAL - Time.fixedDeltaTime / 2f) return; // Round to the nearest physics frame.
+            timeSyncLog.Add((Time.time, Time.realtimeSinceStartup));
+        }
+        /// <summary>
+        /// Dump the time-sync timestamps to a compressed log.
+        /// </summary>
+        /// <param name="tag">The name of the file to dump to (without extension).</param>
+        void DumpTimeSyncLog(string tag)
+        {
+            if (timeSyncLog.Count == 0) return;
+            var folder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs", "TimeSync"));
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            using FileStream fileStream = File.Create(Path.Combine(folder, string.IsNullOrEmpty(tag) ? "time-sync.csv.gz" : $"{tag}.csv.gz"));
+            using GZipStream gzStream = new(fileStream, CompressionMode.Compress);
+            var startTime = timeSyncLog.FirstOrDefault();
+            var tsLogBytes = Encoding.ASCII.GetBytes("Game-Time,Real-Time\n" + string.Join("\n", timeSyncLog.Select(ts => $"{ts.Item1 - startTime.Item1:F2},{ts.Item2 - startTime.Item2:F2}")));
+            gzStream.Write(tsLogBytes, 0, tsLogBytes.Length);
+        }
+        #endregion
 #if DEBUG
         // static int PROF_N_pow = 4, PROF_n_pow = 4;
         static int PROF_N = 10000, PROF_n = 10000;
