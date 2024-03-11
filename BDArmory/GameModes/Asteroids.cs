@@ -781,7 +781,8 @@ namespace BDArmory.GameModes
                             if (asteroids[j] == null || asteroids[j].packed || !asteroids[j].loaded || asteroids[j].rootPart.Rigidbody == null) continue;
                             var separation = asteroids[i].transform.position - asteroids[j].transform.position;
                             var sepSqr = separation.sqrMagnitude;
-                            var proximityFactor = asteroids[i].GetRadius() + asteroids[j].GetRadius(); proximityFactor *= 100 * proximityFactor;
+                            var proximityFactor = asteroids[i].GetRadius() + asteroids[j].GetRadius();
+                            proximityFactor *= (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION ? 100 : 4) * proximityFactor; // Without anomalous attraction, they don't get stirred up much, so they don't need as much repulsion.
                             if (sepSqr < proximityFactor)
                             {
                                 var repulseAmount = TimeWarp.CurrentRate * BDAMath.Sqrt(proximityFactor - sepSqr) * separation.normalized;
