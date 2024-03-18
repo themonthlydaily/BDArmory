@@ -2572,7 +2572,8 @@ namespace BDArmory.Weapons
                                                             if (hitEVA != null) hitPart = hitEVA.part;
                                                             if (hitPart != null && hitPart == hitP)
                                                             {
-                                                                p.AddThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                                p.skinTemperature += (damage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)); //add modifier to adjust damage by armor diffusivity value
+                                                                
                                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to {p.name}");
                                                             }
                                                         }
