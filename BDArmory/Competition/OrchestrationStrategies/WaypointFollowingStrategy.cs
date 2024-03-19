@@ -248,7 +248,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
         //public static ObjectPool WaypointPool;
         public static Dictionary<string, ObjectPool> WaypointPools = new Dictionary<string, ObjectPool>();
         public Vector3 Position { get; set; }
-
         public bool disabled = false;
         static void CreateObjectPool(string ModelPath)
         {
@@ -283,8 +282,31 @@ namespace BDArmory.Competition.OrchestrationStrategies
             newWayPoint.transform.localScale = new Vector3(WPScale, WPScale, WPScale);
             WayPointMarker NWP = newWayPoint.GetComponent<WayPointMarker>();
             NWP.Position = position;
+            if (BDArmorySetup.Instance.hasWPCourseSpawner) CourseBuilderGUI.Instance.loadedGates.Add(NWP);
             newWayPoint.SetActive(true);
         }
+
+        public void UpdateWaypoint(Waypoint waypoint, int wpIndex, List<Waypoint> wpList)
+        {
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.location.x, waypoint.location.y);
+            Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoint.location.x, waypoint.location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? waypoint.location.z : BDArmorySettings.WAYPOINTS_ALTITUDE) + (float)terrainAltitude), FlightGlobals.currentMainBody);
+            Vector3d previousLocation = WorldCoords;
+            if (wpIndex > 0)
+                previousLocation = VectorUtils.GetWorldSurfacePostion(new Vector3(wpList[wpIndex - 1].location.x, wpList[wpIndex - 1].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? wpList[wpIndex - 1].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE) + (float)terrainAltitude), FlightGlobals.currentMainBody);
+
+            var direction = (WorldCoords - previousLocation).normalized;
+            Quaternion rotation = Quaternion.LookRotation(direction, -FlightGlobals.getGeeForceAtPosition(Vector3.zero).normalized); //this needed, so the model is aligned to the ground normal, not the body transform orientation
+
+            transform.SetPositionAndRotation(waypoint.location, rotation);
+
+            transform.RotateAround(waypoint.location, transform.up, Vector3.Angle(transform.forward, direction)); //rotate model on horizontal plane towards last gate
+            transform.RotateAround(waypoint.location, transform.right, Vector3.Angle(transform.forward, direction)); //and on vertical plane if elevation change between the two
+
+            float WPScale = waypoint.scale / 500; //default ring/torii models scaled for 500m
+            transform.localScale = new Vector3(WPScale, WPScale, WPScale);
+            Position = waypoint.location;
+        }
+
         void Awake()
         {
             transform.parent = FlightGlobals.ActiveVessel.mainBody.transform; 
@@ -296,7 +318,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         void Update()
         {
             if (!gameObject.activeInHierarchy) return;
-            if (disabled || !BDACompetitionMode.Instance.competitionIsActive || !HighLogic.LoadedSceneIsFlight)
+            if (disabled || (!BDACompetitionMode.Instance.competitionIsActive && !BDArmorySetup.Instance.hasWPCourseSpawner) || !HighLogic.LoadedSceneIsFlight)
             {
                 gameObject.SetActive(false);
                 return;

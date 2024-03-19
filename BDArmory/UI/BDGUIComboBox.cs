@@ -10,18 +10,39 @@ namespace BDArmory.UI
         public bool isOpen { get { return isClickedComboButton; } }
         private int selectedItemIndex = -1;
 
-        private Rect rect;
-        private Rect buttonRect;
-        private GUIContent buttonContent;
-        private GUIContent[] listContent;
-        private GUIStyle listStyle;
-        private Vector2 scrollViewVector;
-        private float comboxbox_height;
-        private bool thisTriggeredForceClose = false;
-        private bool forceCloseNow = false;
+        Rect buttonRect;
+        Rect listRect;
+        GUIContent buttonContent;
+        GUIContent[] listContent;
+        float maxHeight;
+        GUIStyle listStyle;
+        int columns;
+        bool persistant;
 
-        public BDGUIComboBox(Rect rect, Rect buttonRect, GUIContent buttonContent, GUIContent[] listContent, float combo_height, GUIStyle listStyle)
-        {
+        bool isClickedComboButton = false;
+        bool isOpen = false;
+        int selectedItemIndex = -1;
+        Vector2 scrollViewVector;
+        Rect scrollViewRect;
+        Rect scrollViewInnerRect;
+        Rect selectionGridRect;
+        RectOffset selectionGridRectOffset = new RectOffset(3, 3, 3, 3);
+        float listHeight;
+        float vScrollWidth = BDArmorySetup.BDGuiSkin.verticalScrollbar.fixedWidth + BDArmorySetup.BDGuiSkin.verticalScrollbar.margin.left;
+
+        /// <summary>
+        /// A drop-down combo-box.
+        /// </summary>
+        /// <param name="buttonRect">The rect for the button.</param>
+        /// <param name="listRect">The rect defining the position and width of the selection grid. The height will be adjusted according to the contents.</param>
+        /// <param name="buttonContent">The button content.</param>
+        /// <param name="listContent">The selection grid contents.</param>
+        /// <param name="maxHeight">The maximum height of the grid before scrolling is enabled.</param>
+        /// <param name="listStyle">The GUIStyle to use for the selection grid.</param>
+        /// <param name="columns">The number of columns in the selection grid.</param>
+        /// <param name="persistant">Does the box remain open after clicking a selection</param>
+        public BDGUIComboBox(Rect buttonRect, Rect listRect, GUIContent buttonContent, GUIContent[] listContent, float maxHeight, GUIStyle listStyle, int columns = 2, bool persistant = false)
+		{
             this.rect = rect;
             this.buttonRect = buttonRect;
             this.buttonContent = buttonContent;
@@ -29,7 +50,10 @@ namespace BDArmory.UI
             this.listStyle = listStyle;
             this.listStyle.active.textColor = Color.black;
             this.listStyle.hover.textColor = Color.black;
-            this.comboxbox_height = combo_height;
+            this.maxHeight = maxHeight;
+            this.columns = columns;
+            this.persistant = persistant;
+            UpdateContent(listContent);
         }
 
         public int Show()
@@ -86,7 +110,8 @@ namespace BDArmory.UI
                 if (selectedItemIndex != (selectedItemIndex = GUI.SelectionGrid(listRect, selectedItemIndex, listContent, 2, listStyle)))
                 {
                     if (selectedItemIndex > -1) buttonContent.text = listContent[selectedItemIndex].text;
-                    done = true;
+                    if (!persistant) isClickedComboButton = false;
+
                 }
 
                 GUI.EndScrollView();
