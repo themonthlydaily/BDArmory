@@ -4,6 +4,7 @@ using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
 
@@ -261,7 +262,7 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator DelayedMoveStackNode(float offset)
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             MoveEndStackNode(offset);
         }
 
@@ -382,7 +383,7 @@ namespace BDArmory.WeaponMounts
             {
                 if (p.Current == null) continue;
                 Vector3 direction = p.Current.transform.position - part.transform.position;
-                direction = Vector3.ProjectOnPlane(direction, part.transform.up).normalized;
+                direction = direction.ProjectOnPlanePreNormalized(part.transform.up).normalized;
 
                 p.Current.transform.position += direction * offset;
             }
@@ -462,6 +463,7 @@ namespace BDArmory.WeaponMounts
             for (int i = 0; i < missileChildren.Length; i++)
             {
                 if (missileChildren[i].GetShortName() != ml.GetShortName()) continue;
+                if (missileChildren[i].HasFired) continue;
                 RotateToIndex(missileToRailIndex[i], false);
                 nextMissile = missileChildren[i];
                 return;
@@ -491,13 +493,13 @@ namespace BDArmory.WeaponMounts
                 }
                 missileToRailIndex.Add(i, rIndex);
                 railToMissileIndex.Add(rIndex, i);
-                //Debug.Log("Adding to index dictionary: " + i + " : " + rIndex);
+                //Debug.Log("[BDArmory.BDRotaryRail]: Adding to index dictionary: " + i + " : " + rIndex);
             }
         }
 
         void RotateToIndex(int index, bool instant)
         {
-            //Debug.Log("Rotary rail is rotating to index: " + index);
+            //Debug.Log("[BDArmory.BDRotaryRail]: Rotary rail is rotating to index: " + index);
 
             if (rotationRoutine != null)
             {
@@ -516,7 +518,8 @@ namespace BDArmory.WeaponMounts
                         return;
                     }
                 }
-                Debug.LogError("[BDArmory.BDRotaryRail]: No missiles found, but missile count is non-zero.");
+                UpdateMissileChildren(); //missile destroyed before it could be fired, remove from count
+                Debug.LogWarning("[BDArmory.BDRotaryRail]: No missiles found, but missile count is non-zero.");
             }
         }
 
@@ -528,7 +531,7 @@ namespace BDArmory.WeaponMounts
             rdyMissile = null;
             railIndex = index;
 
-            yield return new WaitForSeconds(rotationDelay);
+            yield return new WaitForSecondsFixed(rotationDelay);
 
             Quaternion targetRot = Quaternion.Euler(0, 0, (float)index * -railAngle);
 
@@ -578,7 +581,7 @@ namespace BDArmory.WeaponMounts
         {
             if (ml != readyMissile)
             {
-                //Debug.Log("Rotary rail tried prepping a missile for fire, but it is not in firing position");
+                //Debug.Log("[BDArmory.BDRotaryRail]: Rotary rail tried prepping a missile for fire, but it is not in firing position");
                 return;
             }
 
@@ -590,13 +593,13 @@ namespace BDArmory.WeaponMounts
             }
             else
             {
-                //Debug.Log("Tried to prep a missile for firing that doesn't exist or is not attached to the turret.");
+                //Debug.Log("[BDArmory.BDRotaryRail]: Tried to prep a missile for firing that doesn't exist or is not attached to the turret.");
             }
         }
 
         void PrepMissileForFire(int index)
         {
-            //Debug.Log("Prepping missile for rotary rail fire.");
+            //Debug.Log("[BDArmory.BDRotaryRail]: Prepping missile for rotary rail fire.");
             missileChildren[index].part.CoMOffset = comOffsets[missileChildren[index].part];
 
             missileTransforms[index].localPosition = Vector3.zero;
@@ -635,6 +638,7 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[missileIndex]);
+                    wm.PreviousMissile = missileChildren[missileIndex];
                 }
 
                 string firedMissileName = missileChildren[missileIndex].part.name;
@@ -647,7 +651,7 @@ namespace BDArmory.WeaponMounts
 
                 nextRailIndex = Mathf.RoundToInt(Mathf.Repeat(missileToRailIndex[missileIndex] + 1, numberOfRails));
 
-                UpdateMissileChildren();
+                if (!missileChildren[missileIndex].reloadableRail) UpdateMissileChildren();
 
                 if (wm)
                 {
@@ -680,12 +684,12 @@ namespace BDArmory.WeaponMounts
             int index = IndexOfMissile(ml);
             if (index >= 0)
             {
-                //Debug.Log("Firing missile index: " + index);
+                //Debug.Log("[BDArmory.BDRotaryRail]: Firing missile index: " + index);
                 FireMissile(index);
             }
             else
             {
-                //Debug.Log("Tried to fire a missile that doesn't exist or is not attached to the rail.");
+                //Debug.Log("[BDArmory.BDRotaryRail]: Tried to fire a missile that doesn't exist or is not attached to the rail.");
             }
         }
 
@@ -759,7 +763,7 @@ namespace BDArmory.WeaponMounts
                     while (t.MoveNext())
                     {
                         if (t.Current == null) continue;
-                        //Debug.Log("MissileTurret moving transform: " + tfchildren[i].gameObject.name);
+                        //Debug.Log("[BDArmory.BDRotaryRail]: MissileTurret moving transform: " + tfchildren[i].gameObject.name);
                         t.Current.parent = mTf;
                     }
                     t.Dispose();
@@ -796,7 +800,7 @@ namespace BDArmory.WeaponMounts
             UpdateIndexDictionary();
         }
 
-        void UpdateMissilePositions()
+        public void UpdateMissilePositions()
         {
             if (missileCount == 0)
             {
@@ -805,7 +809,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                if (!missileTransforms[i] || !missileChildren[i]) continue;
                 missileTransforms[i].position = missileReferenceTransforms[i].position;
                 missileTransforms[i].rotation = missileReferenceTransforms[i].rotation;
 

@@ -58,5 +58,44 @@ namespace BDArmory.Utils
             var rounded = Mathf.Round(value / unit) * unit;
             return (unit % 1 != 0) ? rounded : Mathf.Round(rounded); // Fix near-integer loss of precision.
         }
+
+        // This is a fun workaround for M1-chip Macs (Apple Silicon). Specific issue the workaround is for is here: 
+        // https://issuetracker.unity3d.com/issues/m1-incorrect-calculation-of-values-using-multiplication-with-mathf-dot-sqrt-when-an-unused-variable-is-declared
+        public static float Sqrt(float value) => (UI.BDArmorySetup.AppleSilicon) ? SqrtARM(value) : (float)System.Math.Sqrt((double)value);
+
+        private static float SqrtARM(float value)
+        {
+            float sqrt = (float)System.Math.Sqrt((double)value);
+            float sqrt1 = 1f * sqrt;
+            return sqrt1;
+        }
+
+        /// <summary>
+        /// Solve quadratic of a•t²+v•t=d for t, where acceleration (a) and distance (d) are assumed to be non-negative and v is the speed in the direction of the target.
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <param name="acceleration"></param>
+        /// <param name="vel"></param>
+        /// <returns></returns>
+        public static float SolveTime(float distance, float acceleration, float vel = 0)
+        {
+            if (acceleration == 0f)
+            {
+                if (vel == 0)
+                    return float.MaxValue;
+                else
+                    return Mathf.Abs(distance) / vel;
+            }
+            else
+            {
+                float a = 0.5f * acceleration;
+                float b = vel;
+                float c = -Mathf.Abs(distance);
+
+                float x = (-b + BDAMath.Sqrt(b * b - 4 * a * c)) / (2 * a);
+
+                return x;
+            }
+        }
     }
 }

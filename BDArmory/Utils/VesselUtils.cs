@@ -5,6 +5,7 @@ using KSP.UI.Screens;
 using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.FX;
+using BDArmory.Targeting;
 
 namespace BDArmory.Utils
 {
@@ -18,11 +19,20 @@ namespace BDArmory.Utils
 
         public static void ForceDeadVessel(Vessel v)
         {
-            Debug.Log("[BDArmory.Misc]: GM Killed Vessel " + v.GetDisplayName());
+            Debug.Log("[BDArmory.Misc]: GM Killed Vessel " + v.GetName());
             foreach (var missileFire in VesselModuleRegistry.GetModules<MissileFire>(v))
             {
                 PartExploderSystem.AddPartToExplode(missileFire.part);
-                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 1f, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, missileFire.part);
+                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 1f, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, missileFire.part, sourceVelocity:v.Velocity());
+                TargetInfo tInfo;
+                v.vesselType = VesselType.Debris;
+                if (tInfo = v.gameObject.GetComponent<TargetInfo>())
+                {
+                    UI.BDATargetManager.RemoveTarget(tInfo); //prevent other craft from chasing GM killed craft (in case of maxAltitude or similar
+                    UI.BDATargetManager.LoadedVessels.Remove(v);
+                }
+                UI.BDATargetManager.LoadedVessels.RemoveAll(ves => ves == null);
+                UI.BDATargetManager.LoadedVessels.RemoveAll(ves => ves.loaded == false);
             }
         }
 

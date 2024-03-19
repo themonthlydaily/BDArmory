@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
+using BDArmory.Utils;
+
 namespace BDArmory.Armor
 {
     public class ArmorInfo
@@ -11,11 +13,27 @@ namespace BDArmory.Armor
         public float Density { get; private set; } //mass kg/m3 lighter is better. Or is it?
         public float Strength { get; private set; } //in MPa, yieldstrength for material, controls fail point for material when projectile can penetrate. Higher is better
         public float Hardness { get; private set; } //hardness, in MPa, of material. Controls how much deformation impacting projectiles experience
+        public float Yield { get; private set; } // Yield strength of material. Only needed while loading, but needs to be here for reflection if an armor definition is missing it.
+        public float YoungModulus { get; private set; } // Young's Modulus of material. Only needed while loading, but needs to be here for reflection if an armor definition is missing it.
         public float Ductility { get; private set; } //measure of ductility, 0 is hardened ceramic, 100 is rubber. Mild steel is about 15. ideally should be around 15-25. 
                                                      //Too low, and armor is brittle. Too High, and armor cannot effectively stop projectiles in reasonable distance
         public float Diffusivity { get; private set; } //ability to disperse electrical/thermal energy when material is subject to laser/EMP attack. Higher is better
         public float SafeUseTemp { get; private set; } //In Kelvin, determines max temp armor retains full mechanical properties
+        public float radarReflectivity { get; private set; } //radar stealthiness
         public float Cost { get; private set; }
+
+        public float vFactor { get; private set; }
+
+        
+        public float muParam1 { get; private set; }
+        public float muParam2 { get; private set; }
+        public float muParam3 { get; private set; }
+        public float muParam1S { get; private set; }
+        public float muParam2S { get; private set; }
+        public float muParam3S { get; private set; }
+        public float HEEquiv { get; private set; }
+        public float HEATEquiv { get; private set; }
+
 
         //public bool Reactive {get; private set; } have a reactive armor bool?
 
@@ -23,16 +41,64 @@ namespace BDArmory.Armor
         public static List<string> armorNames;
         public static ArmorInfo defaultArmor;
 
-        public ArmorInfo(string name, float Density, float Strength, float Hardness, float Ductility, float Diffusivity, float SafeUseTemp, float Cost)
+        public ArmorInfo(string name, float Density, float Strength, float Hardness, float yield, float youngModulus, float Ductility, float Diffusivity, float SafeUseTemp, float Stealth, float Cost, float defaultPenShrapnel, float defaultPenHEAT)
         {
             this.name = name;
             this.Density = Density;
             this.Strength = Strength;
             this.Hardness = Hardness;
+            this.Yield = yield;
+            this.YoungModulus = youngModulus;
             this.Ductility = Ductility;
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
+            this.radarReflectivity = Stealth;
             this.Cost = Cost;
+
+            // Since we don't actually need yield and youngModulus we'll just calculate
+            // vFactor and discard those two. vFactor is simply the density of the armor
+            // divided by two times the resistance of the armor H, calculated using Tate's
+            // formula, found either in his 1986 paper or in the publically available US
+            // Army technical memorandum "TERMINAL  BALLISTICS TEST AND ANALYSIS
+            // GUIDELINES FOR THE PENETRATION MECHANICS BRANCH" (ADA246922) on page 104
+            // of the PDF, listed as Advancing Cavity (Tate 1986a)", this is used
+            // throughout the equations proposed by Frank and Zook as special case
+            // solutions to the model proposed by Tate and Alekseevskii
+            this.vFactor = Density / (2.0f * (yield * (2.0f / 3.0f + Mathf.Log((2.0f *
+                youngModulus * 1000f) / (3.0f * yield))) * 1000000.0f));
+
+            // mu is the sqrt of the ratio of armor density to projectile density
+            // We don't actually need mu itself or the following variants of it, just
+            // the muParams so we'll calculate those instead.
+            float muSquared = Density / (11340.0f);
+            float mu = BDAMath.Sqrt(muSquared);
+            float muInverse = 1.0f / mu;
+            float muInverseSquared = 1.0f / muSquared;
+
+            // These parameters are all used in the equations proposed by Frank and Zook
+            // in their 1987 paper "ENERGY-EFFICIENT PENETRATION AND PERFORATION OF
+            // TARGETS IN THE HYPERVELOCITY REGIME". These are all based on the constant
+            // mu, explained above. We are pre-calculating these terms in the function in
+            // order to optimize the performance of the equation
+            this.muParam1 = muInverse / (1.0f + mu);
+            this.muParam2 = muInverse;
+            this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
+
+            // Doing the same thing as above but with the sabot density instead. Note that
+            // if we ever think about having custom round density's then we're going to
+            // have to build a dictionary instead using all available armor types and
+            // projectiles so as to maintain performance as proposed by DocNappers
+            muSquared = Density / (19000.0f);
+            mu = BDAMath.Sqrt(muSquared);
+            muInverse = 1.0f / mu;
+            muInverseSquared = 1.0f / muSquared;
+
+            this.muParam1S = muInverse / (1.0f + mu);
+            this.muParam2S = muInverse;
+            this.muParam3S = (muInverseSquared + 1.0f / 3.0f);
+
+            this.HEEquiv = defaultPenShrapnel / ProjectileUtils.CalculatePenetration(15, 430, 0.02f, 1, Strength, this.vFactor, this.muParam1, this.muParam2, this.muParam3);
+            this.HEATEquiv = defaultPenHEAT / ProjectileUtils.CalculatePenetration(6, 5000, 0.13098f, 1, Strength, this.vFactor, this.muParam1, this.muParam2, this.muParam3);
         }
 
         public static void Load()
@@ -42,6 +108,11 @@ namespace BDArmory.Armor
             if (armorNames == null) armorNames = new List<string>();
             UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("ARMOR");
             ConfigNode node;
+
+            // Based on average piece of shrapnel
+            float defaultPenShrapnel = ProjectileUtils.CalculatePenetration(15, 430, 0.02f, 1);
+            // Based on 120x570 mm NATO HEAT shell
+            float defaultPenHEAT = ProjectileUtils.CalculatePenetration(6, 5000, 0.13098f, 1);
 
             // First locate BDA's default armor definition so we can fill in missing fields.
             if (defaultArmor == null)
@@ -56,10 +127,15 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "Cost", typeof(float))
+                        (float)ParseField(node, "radarReflectivity", typeof(float)),
+                        (float)ParseField(node, "Cost", typeof(float)),
+                        defaultPenShrapnel,
+                        defaultPenHEAT
                     );
                     armors.Add(defaultArmor);
                     armorNames.Add("def");
@@ -88,10 +164,15 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "Cost", typeof(float))
+                        (float)ParseField(node, "radarReflectivity", typeof(float)),
+                        (float)ParseField(node, "Cost", typeof(float)),
+                        defaultPenShrapnel,
+                        defaultPenHEAT
                         )
                     );
                     armorNames.Add(name_);

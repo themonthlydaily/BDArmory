@@ -91,7 +91,7 @@ namespace BDArmory.GameModes
             var Armor = part.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
-                if (Armor.HullTypeNum == 1) //wooden parts can potentially catch fire
+                if (Armor.ignitionTemp > 0) //wooden parts can potentially catch fire
                 {
                     if (incendiary)
                     {
@@ -406,7 +406,7 @@ namespace BDArmory.GameModes
                         cam = part.GetComponent<ModuleTargetingCamera>(); // gimbal range??
                         part.RemoveModule(cam);
                     }
-                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BattleDamageHandler]: {part.name} on {part.vessel.vesselName} took subsystem damage");
                     if (Diceroll <= (damageChance / 2))
                     {
                         if (incendiary)

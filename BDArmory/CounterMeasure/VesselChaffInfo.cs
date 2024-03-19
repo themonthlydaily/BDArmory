@@ -1,8 +1,8 @@
-﻿using UnityEngine;
+﻿using BDArmory.Extensions;
+using UnityEngine;
 
 namespace BDArmory.CounterMeasure
 {
-    [RequireComponent(typeof(Vessel))]
     public class VesselChaffInfo : MonoBehaviour
     {
         Vessel vessel;
@@ -15,7 +15,7 @@ namespace BDArmory.CounterMeasure
         const float minMult = 0.1f;
         float chaffScalar = 500;
 
-        void Awake()
+        void Start()
         {
             vessel = GetComponent<Vessel>();
             if (!vessel)
@@ -24,16 +24,12 @@ namespace BDArmory.CounterMeasure
                 Destroy(this);
                 return;
             }
-
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
         }
 
         void OnDestroy()
         {
-            if (vessel)
-            {
-                vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
-            }
+            if (vessel) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
         }
 
         void AboutToBeDestroyed()
@@ -53,8 +49,9 @@ namespace BDArmory.CounterMeasure
 
         void FixedUpdate()
         {
+            float speedOrAccel = (!vessel.InVacuum()) ? (float)vessel.srfSpeed : Mathf.Abs((float)vessel.acceleration_immediate.magnitude);
             chaffScalar = Mathf.MoveTowards(chaffScalar, chaffMax,
-                Mathf.Clamp(speedRegenMult * (float)vessel.srfSpeed, minRegen, maxRegen) * Time.fixedDeltaTime);
+                Mathf.Clamp(speedRegenMult * speedOrAccel, minRegen, maxRegen) * Time.fixedDeltaTime);
         }
     }
 }

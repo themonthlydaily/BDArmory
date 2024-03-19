@@ -17,7 +17,7 @@ namespace BDArmory.Radar
 
         public static event RadarPing OnRadarPing;
 
-        public delegate void MissileLaunchWarning(Vector3 source, Vector3 direction);
+        public delegate void MissileLaunchWarning(Vector3 source, Vector3 direction, bool radar);
 
         public static event MissileLaunchWarning OnMissileLaunch;
 
@@ -32,15 +32,18 @@ namespace BDArmory.Radar
             Detection = 5,
             Sonar = 6,
             Torpedo = 7,
-            TorpedoLock = 8
+            TorpedoLock = 8,
+            Jamming = 9
         }
 
-        string[] iconLabels = new string[] { "S", "F", "A", "M", "M", "D", "So", "T", "T" };
+        string[] iconLabels = new string[] { "S", "F", "A", "M", "M", "D", "So", "T", "T", "J" };
 
         public MissileFire weaponManager;
 
         // This field may not need to be persistent.  It was combining display with active RWR status.
         [KSPField(isPersistant = true)] public bool rwrEnabled;
+        //for if the RWR should detect everything, or only be able to detect radar sources
+        [KSPField(isPersistant = true)] public bool omniDetection = true;
 
         // This field was added to separate RWR active status from the display of the RWR.  the RWR should be running all the time...
         public bool displayRWR = false;
@@ -71,7 +74,7 @@ namespace BDArmory.Radar
         const float minPingInterval = 0.12f;
         const float pingPersistTime = 1;
 
-        const int dataCount = 10;
+        const int dataCount = 12;
 
         internal float rwrDisplayRange = BDArmorySettings.MAX_ACTIVE_RADAR_RANGE;
         internal static float RwrSize = 256;
@@ -107,11 +110,11 @@ namespace BDArmory.Radar
 
         public override void OnAwake()
         {
-            radarPingSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/rwrPing");
-            missileLockSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/rwrMissileLock");
-            missileLaunchSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/mLaunchWarning");
-            sonarPing = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/rwr_sonarping");
-            torpedoPing = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/rwr_torpedoping");
+            radarPingSound = SoundUtils.GetAudioClip("BDArmory/Sounds/rwrPing");
+            missileLockSound = SoundUtils.GetAudioClip("BDArmory/Sounds/rwrMissileLock");
+            missileLaunchSound = SoundUtils.GetAudioClip("BDArmory/Sounds/mLaunchWarning");
+            sonarPing = SoundUtils.GetAudioClip("BDArmory/Sounds/rwr_sonarping");
+            torpedoPing = SoundUtils.GetAudioClip("BDArmory/Sounds/rwr_torpedoping");
         }
 
         public override void OnStart(StartState state)
@@ -195,25 +198,26 @@ namespace BDArmory.Radar
 
         IEnumerator PingLifeRoutine(int index, float lifeTime)
         {
-            yield return new WaitForSeconds(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
+            yield return new WaitForSecondsFixed(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
             pingsData[index] = TargetSignatureData.noTarget;
         }
 
         IEnumerator LaunchWarningRoutine(TargetSignatureData data)
         {
             launchWarnings.Add(data);
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSecondsFixed(2);
             launchWarnings.Remove(data);
         }
 
-        void ReceiveLaunchWarning(Vector3 source, Vector3 direction)
+        void ReceiveLaunchWarning(Vector3 source, Vector3 direction, bool radar)
         {
             if (referenceTransform == null) return;
             if (part == null || !part.isActiveAndEnabled) return;
             if (weaponManager == null) return;
+            if (!omniDetection && !radar) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
-            if ((weaponManager && weaponManager.guardMode) && (sqrDist > (weaponManager.guardRange * weaponManager.guardRange))) return;
+            //if ((weaponManager && weaponManager.guardMode) && (sqrDist > (weaponManager.guardRange * weaponManager.guardRange))) return; //doesn't this clamp the RWR to visual view range, not radar/RWR range?
             if (sqrDist < BDArmorySettings.MAX_ENGAGEMENT_RANGE * BDArmorySettings.MAX_ENGAGEMENT_RANGE && sqrDist > 10000f && Vector3.Angle(direction, part.transform.position - source) < 15f)
             {
                 StartCoroutine(
@@ -224,15 +228,16 @@ namespace BDArmory.Radar
 
                 if (weaponManager && weaponManager.guardMode)
                 {
-                    weaponManager.FireAllCountermeasures(Random.Range(1, 2)); // Was 2-4, but we don't want to take too long doing this initial dump before other routines kick in
+                    //weaponManager.FireAllCountermeasures(Random.Range(1, 2)); // Was 2-4, but we don't want to take too long doing this initial dump before other routines kick in
                     weaponManager.incomingThreatPosition = source;
+                    weaponManager.missileIsIncoming = true;
                 }
             }
         }
 
         void ReceivePing(Vessel v, Vector3 source, RWRThreatTypes type, float persistTime)
         {
-            if (v == null) return;
+            if (v == null || v.packed || !v.loaded || !v.isActiveAndEnabled) return;
             if (referenceTransform == null) return;
             if (weaponManager == null) return;
 
@@ -259,6 +264,7 @@ namespace BDArmory.Radar
                     if (weaponManager && weaponManager.guardMode)
                     {
                         weaponManager.FireChaff();
+                        weaponManager.missileIsIncoming = true;
                         // TODO: if torpedo inbound, also fire accoustic decoys (not yet implemented...)
                     }
                 }
@@ -268,7 +274,7 @@ namespace BDArmory.Radar
                 {
                     if (pingsData[i].exists &&
                         ((Vector2)pingsData[i].position -
-                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange)).sqrMagnitude < 900f)    //prevent ping spam
+                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange)).sqrMagnitude < (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY ? 100f : 900f))    //prevent ping spam
                     {
                         break;
                     }
@@ -288,6 +294,10 @@ namespace BDArmory.Radar
                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange), Vector3.zero,
                         true, (float)type);    // HACK! Evil misuse of signalstrength for the threat type!
                     pingWorldPositions[openIndex] = source; //FIXME source is improperly defined
+                    if (weaponManager.hasAntiRadiationOrdinance)
+                    {
+                        BDATargetManager.ReportVessel(AIUtils.VesselClosestTo(source), weaponManager); // Report RWR ping as target for anti-rads
+                    } //MissileFire RWR-vessel checks are all (RWR ping position - guardtarget.CoM).Magnitude < 20*20?, could we simplify the more complex vessel aquistion function used here?
                     StartCoroutine(PingLifeRoutine(openIndex, persistTime));
 
                     PlayWarningSound(type, (source - vessel.transform.position).sqrMagnitude);
@@ -334,7 +344,8 @@ namespace BDArmory.Radar
                         audioSource.Play();
                         audioSourceRepeatDelay = audioSourceRepeatDelayTime;    //set a min repeat delay to prevent too much audi pinging
                         break;
-
+                    case RWRThreatTypes.None:
+                        break;
                     default:
                         if (!audioSource.isPlaying)
                         {
@@ -354,11 +365,9 @@ namespace BDArmory.Radar
             if (audioSourceRepeatDelay > 0)
                 audioSourceRepeatDelay -= Time.fixedDeltaTime;
 
-            if (Event.current.type == EventType.MouseUp && resizingWindow)
-            {
-                resizingWindow = false;
-            }
+            if (resizingWindow && Event.current.type == EventType.MouseUp) { resizingWindow = false; }
 
+            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectRwr.position);
             BDArmorySetup.WindowRectRwr = GUI.Window(94353, BDArmorySetup.WindowRectRwr, WindowRwr, "Radar Warning Receiver", GUI.skin.window);
             GUIUtils.UseMouseEventInRect(RwrDisplayRect);
         }
@@ -422,28 +431,14 @@ namespace BDArmory.Radar
             {
                 if (Mouse.delta.x != 0 || Mouse.delta.y != 0)
                 {
-                    float diff = Mouse.delta.x + Mouse.delta.y;
-                    UpdateRWRScale(diff);
+                    float diff = (Mathf.Abs(Mouse.delta.x) > Mathf.Abs(Mouse.delta.y) ? Mouse.delta.x : Mouse.delta.y) / BDArmorySettings.UI_SCALE;
+                    BDArmorySettings.RWR_WINDOW_SCALE = Mathf.Clamp(BDArmorySettings.RWR_WINDOW_SCALE + diff / RwrSize, BDArmorySettings.RWR_WINDOW_SCALE_MIN, BDArmorySettings.RWR_WINDOW_SCALE_MAX);
                     BDArmorySetup.ResizeRwrWindow(BDArmorySettings.RWR_WINDOW_SCALE);
                 }
             }
             // End Resizing code.
 
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRwr);
-        }
-
-        internal static void UpdateRWRScale(float diff)
-        {
-            float scaleDiff = ((diff / (BDArmorySetup.WindowRectRwr.width + BDArmorySetup.WindowRectRwr.height)) * 100 * .01f);
-            BDArmorySettings.RWR_WINDOW_SCALE += Mathf.Abs(scaleDiff) > .01f ? scaleDiff : scaleDiff > 0 ? .01f : -.01f;
-            BDArmorySettings.RWR_WINDOW_SCALE =
-              BDArmorySettings.RWR_WINDOW_SCALE > BDArmorySettings.RWR_WINDOW_SCALE_MAX
-                ? BDArmorySettings.RWR_WINDOW_SCALE_MAX
-                : BDArmorySettings.RWR_WINDOW_SCALE;
-            BDArmorySettings.RWR_WINDOW_SCALE =
-              BDArmorySettings.RWR_WINDOW_SCALE_MIN > BDArmorySettings.RWR_WINDOW_SCALE
-                ? BDArmorySettings.RWR_WINDOW_SCALE_MIN
-                : BDArmorySettings.RWR_WINDOW_SCALE;
         }
 
         public static void PingRWR(Vessel v, Vector3 source, RWRThreatTypes type, float persistTime)
@@ -469,9 +464,9 @@ namespace BDArmory.Radar
                 }
         }
 
-        public static void WarnMissileLaunch(Vector3 source, Vector3 direction)
+        public static void WarnMissileLaunch(Vector3 source, Vector3 direction, bool radarMissile)
         {
-            OnMissileLaunch?.Invoke(source, direction);
+            OnMissileLaunch?.Invoke(source, direction, radarMissile);
         }
     }
 }

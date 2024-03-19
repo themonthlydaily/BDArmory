@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using BDArmory.Modules;
 using BDArmory.Utils;
+using BDArmory.Targeting;
+using BDArmory.Radar;
 
 namespace BDArmory.CounterMeasure
 {
-    [RequireComponent(typeof(Vessel))]
     public class VesselECMJInfo : MonoBehaviour
     {
         List<ModuleECMJammer> jammers;
         public Vessel vessel;
-
+        private TargetInfo ti;
         bool jEnabled;
+        bool cleaningRequired = false;
 
         public bool jammerEnabled
         {
@@ -40,21 +41,34 @@ namespace BDArmory.CounterMeasure
         {
             get { return rcsr; }
         }
-
-        void Awake()
+        void Start()
         {
-            jammers = new List<ModuleECMJammer>();
-            vessel = GetComponent<Vessel>();
-
+            if (!Setup())
+            {
+                Destroy(this);
+                return;
+            }
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             GameEvents.onPartJointBreak.Add(OnPartJointBreak);
             GameEvents.onPartDie.Add(OnPartDie);
         }
 
+        bool Setup()
+        {
+            if (!vessel) vessel = GetComponent<Vessel>();
+            if (!vessel)
+            {
+                Debug.Log("[BDArmory.VesselECMJInfo]: VesselECMJInfo was added to an object with no vessel component");
+                return false;
+            }
+            if (jammers is null) jammers = new List<ModuleECMJammer>();
+            return true;
+        }
+
         void OnDestroy()
         {
-            vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
+            if (vessel) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
@@ -65,32 +79,19 @@ namespace BDArmory.CounterMeasure
             Destroy(this);
         }
 
-        void OnPartDie(Part p = null)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
-
-        void OnVesselCreate(Vessel v)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
-
-        void OnPartJointBreak(PartJoint j, float breakForce)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
+        void OnPartDie() => OnPartDie(null);
+        void OnPartDie(Part p) => cleaningRequired = true;
+        void OnVesselCreate(Vessel v) => cleaningRequired = true;
+        void OnPartJointBreak(PartJoint j, float breakForce) => cleaningRequired = true;
 
         public void AddJammer(ModuleECMJammer jammer)
         {
+            if (jammers is null && !Setup())
+            {
+                Destroy(this);
+                return;
+            }
+
             if (!jammers.Contains(jammer))
             {
                 jammers.Add(jammer);
@@ -106,8 +107,13 @@ namespace BDArmory.CounterMeasure
             UpdateJammerStrength();
         }
 
-        void UpdateJammerStrength()
+        public void UpdateJammerStrength()
         {
+            if (jammers is null && !Setup())
+            {
+                Destroy(this);
+                return;
+            }
             jEnabled = jammers.Count > 0;
 
             if (!jammerEnabled)
@@ -122,6 +128,8 @@ namespace BDArmory.CounterMeasure
 
             float rcsrTotal = 1;
             float rcsrCount = 0;
+
+            float rcsOverride = -1;
 
             List<ModuleECMJammer>.Enumerator jammer = jammers.GetEnumerator();
             while (jammer.MoveNext())
@@ -141,6 +149,7 @@ namespace BDArmory.CounterMeasure
                 {
                     rcsrTotal *= jammer.Current.rcsReductionFactor;
                     rcsrCount++;
+                    if (rcsOverride < jammer.Current.rcsOverride) rcsOverride = jammer.Current.rcsOverride;
                 }
             }
             jammer.Dispose();
@@ -150,23 +159,68 @@ namespace BDArmory.CounterMeasure
 
             if (rcsrCount > 0)
             {
-                rcsr = Mathf.Clamp((rcsrTotal * rcsrCount), 0.0f, 1); //allow for 100% stealth (cloaking device)
+                rcsr = Mathf.Max((rcsrTotal * rcsrCount), 0.0f); //allow for 100% stealth (cloaking device) or stealth malus (radar reflectors)
             }
             else
             {
                 rcsr = 1;
             }
-        }
 
+            ti = RadarUtils.GetVesselRadarSignature(vessel);
+            if (rcsOverride > 0) ti.radarBaseSignature = rcsOverride;
+            ti.radarRCSReducedSignature = ti.radarBaseSignature;
+            ti.radarModifiedSignature = ti.radarBaseSignature;
+            ti.radarLockbreakFactor = 1;
+            //1) read vessel ecminfo for jammers with RCS reduction effect and multiply factor
+            ti.radarRCSReducedSignature *= rcsr;
+            ti.radarModifiedSignature *= rcsr;
+            //2) increase in detectability relative to jammerstrength and vessel rcs signature:
+            // rcs_factor = jammerStrength / modifiedSig / 100 + 1.0f
+            ti.radarModifiedSignature *= (((totaljStrength / ti.radarRCSReducedSignature) / 100) + 1.0f);
+            //3) garbling due to overly strong jamming signals relative to jammer's strength in relation to vessel rcs signature:
+            // jammingDistance =  (jammerstrength / baseSig / 100 + 1.0) x js
+            ti.radarJammingDistance = ((totaljStrength / ti.radarBaseSignature / 100) + 1.0f) * totaljStrength;
+            //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
+            // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
+            // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
+            ti.radarLockbreakFactor = (ti.radarRCSReducedSignature == 0) ? 0f :
+                Mathf.Max(Mathf.Clamp01(ti.radarRCSReducedSignature / ti.radarModifiedSignature) * (1 - (totalLBstrength / ti.radarRCSReducedSignature / 100)), 0); // 0 is minimum lockbreak factor
+        }
+        void OnFixedUpdate()
+        {
+            if (UI.BDArmorySetup.GameIsPaused) return;
+            //Debug.Log($"[ECMDebug]: jammer on {vessel.GetName()} active! Jammer strength: {jStrength}");
+            if (jEnabled && jStrength > 0)
+            {
+                using (var loadedvessels = UI.BDATargetManager.LoadedVessels.GetEnumerator())
+                    while (loadedvessels.MoveNext())
+                    {
+                        // ignore null, unloaded
+                        if (loadedvessels.Current == null || !loadedvessels.Current.loaded || loadedvessels.Current == vessel) continue;
+                        float distance = (loadedvessels.Current.CoM - vessel.CoM).magnitude;
+                        if (distance < jStrength * 10)
+                        {
+                            RadarWarningReceiver.PingRWR(loadedvessels.Current, vessel.CoM, RadarWarningReceiver.RWRThreatTypes.Jamming, 0.2f);
+                            //Debug.Log($"[ECMDebug]: jammer on {vessel.GetName()} active! Pinging RWR on {loadedvessels.Current.GetName()}");
+                        }
+                    }
+            }
+            if (cleaningRequired)
+            {
+                StartCoroutine(DelayedCleanJammerListRoutine());
+                cleaningRequired = false; // Set it false here instead of in CleanJammerList to allow it to be triggered on consecutive frames.
+            }
+        }
         public void DelayedCleanJammerList()
         {
-            StartCoroutine(DelayedCleanJammerListRoutine());
+            cleaningRequired = true;
         }
 
         IEnumerator DelayedCleanJammerListRoutine()
         {
-            yield return null;
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
+            yield return wait;
             CleanJammerList();
         }
 

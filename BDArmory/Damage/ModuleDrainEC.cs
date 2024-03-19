@@ -23,60 +23,56 @@ namespace BDArmory.Damage
         private bool disabled = false; //prevent further EMP buildup while rebooting
         public bool bricked = false; //He's dead, jeb
         private float rebootTimer = 15;
+        private bool initialAIState = false; //if for whatever reason players are manually firing EMPs at targets with AI/WM disabled, don't enable them when vessel reboots
+        private bool initialWMState = false;
 
         private void EnableVessel()
         {
             foreach (Part p in vessel.parts)
             {
                 var engine = p.FindModuleImplementing<ModuleEngines>();
-                var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
 
                 if (engine != null)
                 {
                     engine.allowRestart = true;
                 }
-                if (engineFX != null)
-                {
-                    engineFX.allowRestart = true;
-                }
                 var command = p.FindModuleImplementing<ModuleCommand>();
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();
                 if (weapon != null)
                 {
-                    //weapon.weaponState = ModuleWeapon.WeaponStates.Disabled; //allow weapons to be used again
-                    weapon.DisableWeapon();
                     if (weapon.isAPS)
-                    {
-                        //weapon.weaponState = ModuleWeapon.WeaponStates.Enabled; //allow weapons to be used again
-                        weapon.EnableWeapon();
-                    }
+                        weapon.EnableWeapon(); //reactivate APS 
+                    else
+                        weapon.DisableWeapon(); //reset WeaponState
                 }
                 if (command != null)
                 {
                     command.minimumCrew /= 10; //more elegant than a dict storing every crew part's cap to restore to original amount
                 }
                 var AI = p.FindModuleImplementing<IBDAIControl>();
-                if (AI != null)
+                if (AI != null && initialAIState)
                 {
                     AI.ActivatePilot(); //It's Alive!
+                    initialAIState = false;
                 }
                 var WM = p.FindModuleImplementing<MissileFire>();
-                if (WM != null)
+                if (WM != null && initialWMState)
                 {
                     WM.guardMode = true;
                     WM.debilitated = false;
+                    initialWMState = false;
                 }
             }
             vessel.ActionGroups.ToggleGroup(KSPActionGroup.Custom10); // restart engines
-            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+            if (!VesselModuleRegistry.GetModuleEngines(vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
             {
-                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
                     engine.Activate();
             }
             disabled = false;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
             if (BDArmorySetup.GameIsPaused) return;
@@ -133,13 +129,13 @@ namespace BDArmory.Damage
             {
                 bricked = true; //if so brick the craft
                 var message = vessel.vesselName + " is bricked!";
-                if (BDArmorySettings.DEBUG_DAMAGE)  Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             if (EMPDamage <= 0 && disabled && !bricked) //reset craft
             {
                 var message = "Rebooting " + vessel.vesselName;
-                if (BDArmorySettings.DEBUG_DAMAGE)  Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 EnableVessel();
             }
@@ -174,22 +170,10 @@ namespace BDArmory.Damage
                     }
                 }
                 var engine = p.FindModuleImplementing<ModuleEngines>();
-                var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
-                if (engine != null)
+                if (engine != null && engine.enabled && engine.allowShutdown) //kill engines unless they're lit SRBs
                 {
-                    if (engine.enabled && engine.allowShutdown) //kill engines
-                    {
-                        engine.Shutdown();
-                        engine.allowRestart = false;
-                    }
-                }
-                if (engineFX != null && engine.allowShutdown) //unless they're lit SRBs
-                {
-                    if (engineFX.enabled)
-                    {
-                        engineFX.Shutdown();
-                        engineFX.allowRestart = false;
-                    }
+                    engine.Shutdown();
+                    engine.allowRestart = false;
                 }
                 var command = p.FindModuleImplementing<ModuleCommand>();
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();
@@ -205,11 +189,13 @@ namespace BDArmory.Damage
                 var AI = p.FindModuleImplementing<IBDAIControl>();
                 if (AI != null)
                 {
+                    if (AI.pilotEnabled) initialAIState = true;
                     AI.DeactivatePilot(); //disable AI
                 }
                 var WM = p.FindModuleImplementing<MissileFire>();
                 if (WM != null)
                 {
+                    if (WM.guardMode) initialWMState = true;
                     WM.guardMode = false; //disable guardmode
                     WM.debilitated = true; //for weapon selection and targeting;
                 }
@@ -246,7 +232,7 @@ namespace BDArmory.Damage
         }
         IEnumerator TimerRoutine()
         {
-            yield return new WaitForSeconds(5);
+            yield return new WaitForSecondsFixed(5);
             Destroy(gameObject);
         }
 

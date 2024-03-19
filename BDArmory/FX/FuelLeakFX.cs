@@ -4,12 +4,15 @@ using UnityEngine;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.Extensions;
 
 namespace BDArmory.FX
 {
     class FuelLeakFX : MonoBehaviour
     {
         Part parentPart;
+        // string parentPartName = "";
+        // string parentVesselName = "";
         public static ObjectPool CreateLeakFXPool(string modelPath)
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
@@ -31,6 +34,7 @@ namespace BDArmory.FX
         ModuleEngines engine;
         private bool isSRB = false;
         KSPParticleEmitter[] pEmitters;
+
         void OnEnable()
         {
             if (parentPart == null)
@@ -52,7 +56,7 @@ namespace BDArmory.FX
             BDArmorySetup.numberOfParticleEmitters++;
             startTime = Time.time;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-
+            Vector3 Gravity = FlightGlobals.getGeeForceAtPosition(transform.position);
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
                 {
@@ -60,9 +64,16 @@ namespace BDArmory.FX
 
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
+                    pe.Current.force = Gravity;
+                    if (parentPart.vessel.InVacuum())
+                    {
+                        pe.Current.localVelocity = new Vector3(0, (float)parentPart.vessel.obt_speed, 0);
+                        pe.Current.force = Vector3.zero;
+                    }
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
         }
+
         void OnDisable()
         {
             if (pEmitters != null) // Getting enabled when the parent part is null immediately disables it again before setting any of this up.
@@ -81,15 +92,17 @@ namespace BDArmory.FX
             mp = null;
             drainRate = 1;
         }
-        void Update()
+
+        void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
             {
                 return;
-            }
-            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            }           
+            if (parentPart.vessel.InVacuum()) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
+            else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
-            if (disableTime < 0) //only have fire do it's stuff while burning and not during FX timeout
+            if (disableTime < 0) //only have fire do its stuff while burning and not during FX timeout
             {
                 if (engine != null)
                 {
@@ -99,7 +112,7 @@ namespace BDArmory.FX
                         {
                             if (fuel.amount > 0)
                             {
-                                parentPart.RequestResource("LiquidFuel", (double)(drainRate * Time.deltaTime));
+                                parentPart.RequestResource("LiquidFuel", (double)(drainRate * Time.fixedDeltaTime));
                                 fuelLeft++;
                             }
                         }
@@ -113,7 +126,7 @@ namespace BDArmory.FX
                         {
                             //part.RequestResource("LiquidFuel", ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime);
                             //This draining from across vessel?  Trying alt method
-                            fuel.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime;
+                            fuel.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.fixedDeltaTime;
                             fuel.amount = Mathf.Clamp((float)fuel.amount, 0, (float)fuel.maxAmount);
                             fuelLeft++;
                         }
@@ -125,7 +138,7 @@ namespace BDArmory.FX
                         {
                             //part.RequestResource("Oxidizer", ((double)drainRate * Mathf.Clamp((float)ox.amount, 40, 400) / Mathf.Clamp((float)ox.maxAmount, 400, (float)ox.maxAmount) ) *  Time.deltaTime);
                             //more fuel = higher pressure, clamped at 400 since flow rate is constrained by outlet aperture, not fluid pressure
-                            ox.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime;
+                            ox.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.fixedDeltaTime;
                             ox.amount = Mathf.Clamp((float)ox.amount, 0, (float)ox.maxAmount);
                             fuelLeft++;
                         }
@@ -136,13 +149,14 @@ namespace BDArmory.FX
                         if (mp.amount >= 0)
                         {
                             //part.RequestResource("MonoPropellant", ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.deltaTime);
-                            mp.amount -= ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.deltaTime;
+                            mp.amount -= ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.fixedDeltaTime;
                             mp.amount = Mathf.Clamp((float)mp.amount, 0, (float)mp.maxAmount);
                             fuelLeft++;
                         }
                     }
                 }
-
+                //if we want a vacuum BattleDamage option to produce (small amounts of) thrust from leaking tanks
+                //if (disableTime < 0 && (fuelLeft > 0 && (lifeTime >= 0 && Time.time - startTime < lifeTime))) parentPart.Rigidbody.AddForce(transform.up * (drainRate / 5), ForceMode.Acceleration); //needs a quaternion to reverse per-frame rotation to face prograde/gravity
             }
 
             if (disableTime < 0 && (fuelLeft <= 0 || (lifeTime >= 0 && Time.time - startTime > lifeTime)))
@@ -160,33 +174,79 @@ namespace BDArmory.FX
         }
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset)
         {
-            if (hitPart == null) return;
+            if (hitPart is null) return;
             parentPart = hitPart;
+            // parentPartName = parentPart.name;
+            // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
-            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            transform.rotation = (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL) ? Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized) : Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(true); // Catch unloading events too.
             gameObject.SetActive(true);
         }
-        public void OnParentDestroy()
+
+        void OnParentDestroy()
         {
-            if (parentPart)
+            if (parentPart is not null)
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
                 Deactivate();
             }
         }
+
+        void OnVesselUnloaded(Vessel vessel)
+        {
+            if (parentPart is not null && (parentPart.vessel is null || parentPart.vessel == vessel))
+            {
+                OnParentDestroy();
+            }
+            else if (parentPart is null)
+            {
+                Deactivate(); // Sometimes (mostly when unloading a vessel) the parent becomes null without triggering OnParentDestroy.
+            }
+        }
+
+        void OnVesselUnloaded_1_11(bool addRemove) // onVesselUnloaded event introduced in 1.11
+        {
+            if (addRemove)
+                GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
+            else
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+        }
+
         void Deactivate()
         {
-            if (gameObject.activeInHierarchy)
+            if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
                 disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed if it does.
                 gameObject.SetActive(false);
             }
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
+        }
+
+        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
+        {
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FuelLeakFX]: FuelLeakFX on {parentPartName} ({parentVesselName}) was destroyed!");
+            // Clean up emitters.
+            if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
+            {
+                BDArmorySetup.numberOfParticleEmitters--;
+                foreach (var pe in pEmitters)
+                    if (pe != null)
+                    {
+                        pe.emit = false;
+                        EffectBehaviour.RemoveParticleEmitter(pe);
+                    }
+            }
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
     }
 }

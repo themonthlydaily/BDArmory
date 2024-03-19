@@ -4,15 +4,21 @@ using UnityEngine;
 using BDArmory.Damage;
 using BDArmory.Initialization;
 using BDArmory.Settings;
+using Expansions.Serenity;
 
 namespace BDArmory.Extensions
 {
     public enum ExplosionSourceType { Other, Missile, Bullet, Rocket, BattleDamage };
     public static class PartExtensions
     {
-        public static void AddDamage(this Part p, float damage)
+        public static void AddDamage(this Part p, float damage) //Fires, lasers, ammo detonations
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+            if (BDArmorySettings.PAINTBALL_MODE)
+            {
+                var ti = p.vessel.gameObject.GetComponent<Targeting.TargetInfo>();
+                if (!(ti != null && ti.isMissile)) return; // Don't add damage when paintball mode is enabled, except against fired missiles
+            }
+            damage *= (BDArmorySettings.DMG_MULTIPLIER / 100);
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
@@ -34,7 +40,7 @@ namespace BDArmory.Extensions
             else
             {
                 Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
-                if (BDArmorySettings.DEBUG_ARMOR)
+                if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
                     Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Applied to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {damage}");
             }
         }
@@ -51,7 +57,7 @@ namespace BDArmory.Extensions
                 {
                     p.vessel.rootPart.Destroy();
                 }
-                if (BDArmorySettings.DEBUG_ARMOR)
+                if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
                     Debug.Log("[BDArmory.PartExtensions]: Instagib!");
             }
         }
@@ -60,9 +66,13 @@ namespace BDArmory.Extensions
                                                float explosiveDamage,
                                                float caliber,
                                                ExplosionSourceType sourceType,
-                                               float multiplier = 1)
+                                               float multiplier = 1) //bullet/rocket/missile explosive damage
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
+            if (BDArmorySettings.PAINTBALL_MODE)
+            {
+                var ti = p.vessel.gameObject.GetComponent<Targeting.TargetInfo>();
+                if (!(ti != null && ti.isMissile)) return 0f; // Don't add damage when paintball mode is enabled, except against fired missiles
+            }
             /*
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
@@ -110,7 +120,6 @@ namespace BDArmory.Extensions
 
                 damage_ = damageReduction;
             }
-
             //////////////////////////////////////////////////////////
             //   Apply Hitpoints
             //////////////////////////////////////////////////////////
@@ -143,9 +152,13 @@ namespace BDArmory.Extensions
                                                float penetrationfactor,
                                                float bulletDmgMult,
                                                float impactVelocity,
-                                               ExplosionSourceType sourceType)
+                                               ExplosionSourceType sourceType) //bullet/rocket kinetic damage
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
+            if (BDArmorySettings.PAINTBALL_MODE)
+            {
+                var ti = p.vessel.gameObject.GetComponent<Targeting.TargetInfo>();
+                if (!(ti != null && ti.isMissile)) return 0f; // Don't add damage when paintball mode is enabled, except against fired missiles
+            }
             /*
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
@@ -185,7 +198,6 @@ namespace BDArmory.Extensions
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
             }
-
 
             var damage_before = damage_;
             //////////////////////////////////////////////////////////
@@ -235,7 +247,7 @@ namespace BDArmory.Extensions
             // Apply HitPoints Ballistic
             //////////////////////////////////////////////////////////
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage_);
-            if (BDArmorySettings.DEBUG_ARMOR)
+            if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
             {
                 Debug.Log("[BDArmory.PartExtensions]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
             }
@@ -249,7 +261,7 @@ namespace BDArmory.Extensions
             else
             {
                 Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
-                if (BDArmorySettings.DEBUG_ARMOR)
+                if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
                     Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Restored to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {healing}");
             }
         }
@@ -263,7 +275,7 @@ namespace BDArmory.Extensions
             //////////////////////////////////////////////////////////
 
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
-            if (BDArmorySettings.DEBUG_ARMOR)
+            if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
                 Debug.Log("[BDArmory.PartExtensions]: Explosive Hitpoints Applied to " + p.name + ": " + damage);
         }
 
@@ -277,7 +289,7 @@ namespace BDArmory.Extensions
             //////////////////////////////////////////////////////////
 
             Dependencies.Get<DamageService>().AddDamageToKerbal_svc(kerbal, damage);
-            if (BDArmorySettings.DEBUG_ARMOR)
+            if (BDArmorySettings.DEBUG_ARMOR || BDArmorySettings.DEBUG_DAMAGE)
                 Debug.Log("[BDArmory.PartExtensions]: Hitpoints Applied to " + kerbal.name + ": " + damage);
         }
 
@@ -406,12 +418,33 @@ namespace BDArmory.Extensions
 
         public static bool IsMissile(this Part part)
         {
-            return part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
-                   part.Modules.Contains("BDModularGuidance");
+            if (part == null || part.Modules == null) return false;
+            if (part.Modules.Contains("BDModularGuidance")) return true;
+            if (part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher"))
+            {
+                if (!part.Modules.Contains("MultiMissileLauncher")) return true;
+                IEnumerator<PartModule> partModules = part.Modules.GetEnumerator();
+                while (partModules.MoveNext())
+                {
+                    if (partModules.Current.moduleName == "MultiMissileLauncher")
+                    {
+                        return ((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile;
+                    }
+                }
+                //return ((part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
+                //      part.Modules.Contains("BDModularGuidance"))
+            }
+            return false;
         }
         public static bool IsWeapon(this Part part)
         {
             return part.Modules.Contains("ModuleWeapon");
+        }
+        public static bool IsFunctional(this Part part)
+        {
+            return (part.isEngine() || part.isAntenna(out ModuleDeployableAntenna antenna) || part.isBaseServo(out BaseServo serv) || part.isDecoupler(out ModuleDecouple decoupler) || part.isGenerator(out ModuleGenerator gen)
+                || part.isRadiator(out ModuleDeployableRadiator rad) || part.isRobotic() || part.isRoboticHinge() || part.isRoboticPiston() || part.isRoboticRotationServo() || part.isRoboticRotor()
+                || part.Modules.Contains("ModuleGrappleNode") || part.Modules.Contains("ModuleResourceConverter") || part.Modules.Contains("ModuleCoreHeat"));
         }
         public static float GetArea(this Part part, bool isprefab = false, Part prefab = null)
         {
@@ -483,6 +516,7 @@ namespace BDArmory.Extensions
                 {
                     return false;
                 }
+                if (part.partInfo.bulkheadProfiles.Contains("mk2")) return false;
                 else return true;
             }
             else if (part.Modules.Contains("ModuleControlSurface") ||
@@ -492,7 +526,12 @@ namespace BDArmory.Extensions
             }
             else return false;
         }
-
+        public static bool IsMotor(this Part part)
+        {
+            if (part.GetComponent<ModuleEngines>() != null)
+                return true;
+            else return false;
+        }
         public static string GetExplodeMode(this Part part)
         {
             return Dependencies.Get<DamageService>().GetExplodeMode_svc(part);
@@ -555,7 +594,7 @@ namespace BDArmory.Extensions
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
                             + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
-                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction, if explosion makes it past armor
 
                     break;
 
@@ -652,6 +691,34 @@ namespace BDArmory.Extensions
         private static bool IsKerbalEVA_1_10(this Part part)
         {
             return part.FindModuleImplementing<KerbalEVA>() != null;
+        }
+
+        /// <summary>
+        /// KSP version dependent query of whether the part is a kerbal seat.
+        /// </summary>
+        /// <param name="part">Part to check.</param>
+        /// <returns>true if the part is a kerbal seat.</returns>
+        public static bool IsKerbalSeat(this Part part)
+        {
+            if (part == null) return false;
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
+            {
+                return part.IsKerbalSeat_1_11();
+            }
+            else
+            {
+                return part.IsKerbalSeat_1_10();
+            }
+        }
+
+        private static bool IsKerbalSeat_1_11(this Part part) // KSP has issues on older versions if this call is in the parent function.
+        {
+            return part.isKerbalSeat();
+        }
+
+        private static bool IsKerbalSeat_1_10(this Part part)
+        {
+            return part.FindModuleImplementing<KerbalSeat>() != null;
         }
     }
 }

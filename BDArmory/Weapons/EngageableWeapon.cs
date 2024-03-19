@@ -1,7 +1,6 @@
-using KSP.Localization;
-
 using BDArmory.Services;
 using BDArmory.Utils;
+using UnityEngine;
 
 namespace BDArmory.Weapons
 {
@@ -12,11 +11,11 @@ namespace BDArmory.Weapons
 
         // Weapon usage settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageRangeMin"),//Engage Range Min
-         UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 100f, scene = UI_Scene.Editor)]
+         UI_FloatPowerRange(minValue = 0f, maxValue = 5000f, power = 2, sigFig = 2, scene = UI_Scene.Editor)]
         public float engageRangeMin;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageRangeMax"),//Engage Range Max
-         UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 100f, scene = UI_Scene.Editor)]
+         UI_FloatPowerRange(minValue = 0f, maxValue = 5000f, power = 2, sigFig = 2, scene = UI_Scene.Editor)]
         public float engageRangeMax;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageAir"),//Engage Air
@@ -42,11 +41,11 @@ namespace BDArmory.Weapons
 
             if (engageEnabled == false)
             {
-                Events["ToggleEngageOptions"].guiName = Localizer.Format("#LOC_BDArmory_EnableEngageOptions");//"Enable Engage Options"
+                Events["ToggleEngageOptions"].guiName = StringUtils.Localize("#LOC_BDArmory_EnableEngageOptions");//"Enable Engage Options"
             }
             else
             {
-                Events["ToggleEngageOptions"].guiName = Localizer.Format("#LOC_BDArmory_DisableEngageOptions");//"Disable Engage Options"
+                Events["ToggleEngageOptions"].guiName = StringUtils.Localize("#LOC_BDArmory_DisableEngageOptions");//"Disable Engage Options"
             }
 
             Fields["engageRangeMin"].guiActive = engageEnabled;
@@ -90,18 +89,46 @@ namespace BDArmory.Weapons
                 engageRangeMax = engageRangeMin;
         }
 
+        void OnEngageOptionsChanged(BaseField field, object obj)
+        {
+            var wm = VesselModuleRegistry.GetMissileFire(vessel, true);
+            var value = (bool)field.GetValue(this);
+            foreach (var part in part.symmetryCounterparts)
+            {
+                var engageableWeapon = part.GetComponent<EngageableWeapon>();
+                if (engageableWeapon is not null)
+                {
+                    field.SetValue(value, engageableWeapon);
+                }
+            }
+
+            if (wm is not null) wm.weaponsListNeedsUpdating = true;
+        }
+
+        public override void OnStart(StartState state)
+        {
+            base.OnStart(state);
+            var engageAirField = (UI_Toggle)Fields["engageAir"].uiControlFlight;
+            engageAirField.onFieldChanged = OnEngageOptionsChanged;
+            var engageMissileField = (UI_Toggle)Fields["engageMissile"].uiControlFlight;
+            engageMissileField.onFieldChanged = OnEngageOptionsChanged;
+            var engageGroundField = (UI_Toggle)Fields["engageGround"].uiControlFlight;
+            engageGroundField.onFieldChanged = OnEngageOptionsChanged;
+            var engageSLWField = (UI_Toggle)Fields["engageSLW"].uiControlFlight;
+            engageSLWField.onFieldChanged = OnEngageOptionsChanged;
+        }
+
         protected void InitializeEngagementRange(float min, float max)
         {
-            UI_FloatRange rangeMin = (UI_FloatRange)Fields["engageRangeMin"].uiControlEditor;
-            rangeMin.minValue = min;
-            rangeMin.maxValue = max;
-            rangeMin.stepIncrement = (max - min) / 100f;
+            min = Mathf.Max(min, 1f); // Avoid 0 min range for now. FIXME Remove these if the special value of 0 gets added to UI_FloatSemiLogRange.
+            max = Mathf.Max(max, 1f); // Avoid 0 max range for now.
+
+            var rangeMin = (UI_FloatPowerRange)Fields["engageRangeMin"].uiControlEditor;
+            rangeMin.UpdateLimits(min, max);
             rangeMin.onFieldChanged = OnRangeUpdated;
 
-            UI_FloatRange rangeMax = (UI_FloatRange)Fields["engageRangeMax"].uiControlEditor;
-            rangeMax.minValue = min;
-            rangeMax.maxValue = max;
-            rangeMax.stepIncrement = (max - min) / 100f;
+            var rangeMax = (UI_FloatPowerRange)Fields["engageRangeMax"].uiControlEditor;
+            rangeMax.UpdateLimits(min, max);
             rangeMax.onFieldChanged = OnRangeUpdated;
 
             if ((engageRangeMin == 0) && (engageRangeMax == 0))

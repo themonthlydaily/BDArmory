@@ -41,6 +41,11 @@ namespace BDArmory.Utils
                 GameEvents.onGUIEditorToolbarReady.Add(CheckDump);
         }
 
+        void OnDestroy()
+        {
+            GameEvents.onGUIEditorToolbarReady.Remove(CheckDump);
+        }
+
         void CheckDump()
         {
             // dump parts to .CSV list
@@ -62,12 +67,12 @@ namespace BDArmory.Utils
             return results;
         }
 
-        void dumpParts()
+        public static void dumpParts()
         {
-            String gunName = "bda_weapons_list.csv";
-            String missileName = "bda_missile_list.csv";
-            String radarName = "bda_radar_list.csv";
-            String jammerName = "bda_jammer_list.csv";
+            string gunName = "bda_weapons_list.csv";
+            string missileName = "bda_missile_list.csv";
+            string radarName = "bda_radar_list.csv";
+            string jammerName = "bda_jammer_list.csv";
             ModuleWeapon weapon = null;
             MissileLauncher missile = null;
             ModuleRadar radar = null;
@@ -90,7 +95,7 @@ namespace BDArmory.Utils
                                     "LASER_BEAMCORRECTIONFACTOR; LASER_BEAMCORRECTIONDAMPING"
                                     );
             fileradars.WriteLine("NAME;TITLE;AUTHOR;MANUFACTURER;PART_MASS;PART_COST;PART_CRASHTOLERANCE;PART_MAXTEMP;radar_name;rwrThreatType;omnidirectional;directionalFieldOfView;boresightFOV;" +
-                                 "scanRotationSpeed;lockRotationSpeed;lockRotationAngle;showDirectionWhileScan;multiLockFOV;lockAttemptFOV;canScan;canLock;canTrackWhileScan;canRecieveRadarData;" +
+                                 "scanRotationSpeed;lockRotationSpeed;lockRotationAngle;showDirectionWhileScan;multiLockFOV;lockAttemptFOV;canScan;canLock;canTrackWhileScan;canReceiveRadarData;" +
                                  "maxLocks;radarGroundClutterFactor;radarDetectionCurve;radarLockTrackCurve"
                                   );
             filejammers.WriteLine("NAME;TITLE;AUTHOR;MANUFACTURER;PART_MASS;PART_COST;PART_CRASHTOLERANCE;PART_MAXTEMP;alwaysOn;rcsReduction;rcsReducationFactor;lockbreaker;lockbreak_strength;jammerStrength");
@@ -123,7 +128,7 @@ namespace BDArmory.Utils
                     filemissiles.WriteLine(
                         item.name + ";" + item.title + ";" + item.author + ";" + item.manufacturer + ";" + item.partPrefab.mass + ";" + item.cost + ";" + item.partPrefab.crashTolerance + ";" + item.partPrefab.maxTemp + ";" +
                                     missile.thrust + ";" + missile.boostTime + ";" + missile.cruiseThrust + ";" + missile.cruiseTime + ";" + missile.maxTurnRateDPS + ";" + missile.blastPower + ";" + missile.blastHeat + ";" + missile.blastRadius + ";" + missile.guidanceActive + ";" + missile.homingType + ";" + missile.targetingType + ";" + missile.minLaunchSpeed + ";" + missile.minStaticLaunchRange + ";" + missile.maxStaticLaunchRange + ";" + missile.optimumAirspeed + ";" +
-                                    missile.terminalManeuvering + ";" + missile.terminalGuidanceType + ";" + missile.terminalGuidanceDistance + ";" +
+                                    missile.terminalGuidanceShouldActivate + ";" + missile.terminalGuidanceType + ";" + missile.terminalGuidanceDistance + ";" +
                                     missile.activeRadarRange + ";" + missile.radarLOAL + ";" +
                                     missile.maxOffBoresight + ";" + missile.lockedSensorFOV + ";" +
                                     missile.heatThreshold + ";" +
@@ -137,7 +142,7 @@ namespace BDArmory.Utils
                         item.name + ";" + item.title + ";" + item.author + ";" + item.manufacturer + ";" + item.partPrefab.mass + ";" + item.cost + ";" + item.partPrefab.crashTolerance + ";" + item.partPrefab.maxTemp + ";" +
                         radar.radarName + ";" + radar.getRWRType(radar.rwrThreatType) + ";" + radar.omnidirectional + ";" + radar.directionalFieldOfView + ";" + radar.boresightFOV + ";" + radar.scanRotationSpeed + ";" + radar.lockRotationSpeed + ";" +
                         radar.lockRotationAngle + ";" + radar.showDirectionWhileScan + ";" + radar.multiLockFOV + ";" + radar.lockAttemptFOV + ";" +
-                        radar.canScan + ";" + radar.canLock + ";" + radar.canTrackWhileScan + ";" + radar.canRecieveRadarData + ";" +
+                        radar.canScan + ";" + radar.canLock + ";" + radar.canTrackWhileScan + ";" + radar.canReceiveRadarData + ";" +
                         radar.maxLocks + ";" + radar.radarGroundClutterFactor + ";" +
                         radar.radarDetectionCurve.Evaluate(radar.radarMaxDistanceDetect) + "@" + radar.radarMaxDistanceDetect + ";" +
                         radar.radarLockTrackCurve.Evaluate(radar.radarMaxDistanceLockTrack) + "@" + radar.radarMaxDistanceLockTrack

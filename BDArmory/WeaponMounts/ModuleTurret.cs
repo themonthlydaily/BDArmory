@@ -1,10 +1,10 @@
 using System;
 using UnityEngine;
 
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Weapons;
 
 namespace BDArmory.WeaponMounts
 {
@@ -83,7 +83,7 @@ namespace BDArmory.WeaponMounts
 
             if (!string.IsNullOrEmpty(audioPath) && (yawSpeedDPS != 0 || pitchSpeedDPS != 0))
             {
-                soundClip = GameDatabase.Instance.GetAudioClip(audioPath);
+                soundClip = SoundUtils.GetAudioClip(audioPath);
 
                 audioSource = gameObject.AddComponent<AudioSource>();
                 audioSource.clip = soundClip;
@@ -172,13 +172,12 @@ namespace BDArmory.WeaponMounts
             float deltaTime = Time.fixedDeltaTime;
 
             Vector3 yawNormal = yawTransform.up;
-            Vector3 yawComponent = Vector3.ProjectOnPlane(targetDirection, yawNormal);
-            Vector3 pitchNormal = Vector3.Cross(yawComponent, yawNormal);
-            Vector3 pitchComponent = Vector3.ProjectOnPlane(targetDirection, pitchNormal);
+            Vector3 yawComponent = targetDirection.ProjectOnPlanePreNormalized(yawNormal);
+            Vector3 pitchComponent = targetDirection.ProjectOnPlane(Vector3.Cross(yawComponent, yawNormal));
 
             float currentYaw = yawTransform.localEulerAngles.y.ToAngle();
             float yawError = VectorUtils.SignedAngleDP(
-                Vector3.ProjectOnPlane(referenceTransform.forward, yawNormal),
+                referenceTransform.forward.ProjectOnPlanePreNormalized(yawNormal),
                 yawComponent,
                 Vector3.Cross(yawNormal, referenceTransform.forward));
             float yawOffset = Mathf.Abs(yawError);
@@ -235,6 +234,9 @@ namespace BDArmory.WeaponMounts
                 pitchTransform.localRotation = Quaternion.RotateTowards(pitchTransform.localRotation,
                     Quaternion.Euler(-targetPitchAngle, 0, 0), pitchSpeed);
         }
+
+        public float Pitch => -pitchTransform.localEulerAngles.x.ToAngle();
+        public float Yaw => yawTransform.localEulerAngles.y.ToAngle();
 
         public bool ReturnTurret()
         {
@@ -309,6 +311,8 @@ namespace BDArmory.WeaponMounts
             }
             minPitchRange.minValue = minPitchLimit;
             minPitchRange.maxValue = 0;
+            if (minPitchLimit != 0)
+                minPitchRange.stepIncrement = Mathf.Pow(10, Mathf.Min(1f, Mathf.Floor(Mathf.Log10(Mathf.Abs(minPitchLimit)) + (1 - Mathf.Log10(20f) - 1e-4f)))) / 10f; // Use between 20 and 200 divisions
 
             UI_FloatRange maxPitchRange = (UI_FloatRange)Fields["maxPitch"].uiControlEditor;
             if (maxPitchLimit > 90)
@@ -321,6 +325,8 @@ namespace BDArmory.WeaponMounts
             }
             maxPitchRange.maxValue = maxPitchLimit;
             maxPitchRange.minValue = 0;
+            if (maxPitchLimit != 0)
+                maxPitchRange.stepIncrement = Mathf.Pow(10, Mathf.Min(1f, Mathf.Floor(Mathf.Log10(Mathf.Abs(maxPitchLimit)) + (1 - Mathf.Log10(20f) - 1e-4f)))) / 10f; // Use between 20 and 200 divisions
 
             UI_FloatRange yawRangeEd = (UI_FloatRange)Fields["yawRange"].uiControlEditor;
             if (yawRangeLimit > 360)
@@ -344,6 +350,62 @@ namespace BDArmory.WeaponMounts
                 yawRangeEd.minValue = 0;
                 yawRangeEd.maxValue = yawRangeLimit;
             }
+            if (yawRange != 0)
+                yawRangeEd.stepIncrement = Mathf.Pow(10, Math.Min(1f, Mathf.Floor(Mathf.Log10(Mathf.Abs(yawRange)) + (1 - Mathf.Log10(20f) - 1e-4f)))) / 10f; // Use between 20 and 200 divisions
         }
+    }
+    public class BDAScaleByDistance : PartModule
+    {
+        /// <summary>
+        /// Sibling Module to FXModuleLookAtConstraint, causes indicated mesh object to scale based on distance to target transform
+        /// Module ported over to fix the spring on the M230Chaingun (no Stock equivalent), though I guess it could be used for other things as well
+        /// </summary>
+        [KSPField(isPersistant = false)]
+        public string transformToScaleName;
+
+        public Transform transformToScale;
+
+        [KSPField(isPersistant = false)]
+        public string scaleFactor = "0,0,1";
+        Vector3 scaleFactorV;
+
+        [KSPField(isPersistant = false)]
+        public string distanceTransformName;
+
+        public Transform distanceTransform;
+
+
+        public override void OnStart(PartModule.StartState state)
+        {
+            ParseScale();
+            transformToScale = part.FindModelTransform(transformToScaleName);
+            distanceTransform = part.FindModelTransform(distanceTransformName);
+        }
+
+        public void Update()
+        {
+            Vector3 finalScaleFactor;
+            float distance = Vector3.Distance(transformToScale.position, distanceTransform.position);
+            float sfX = (scaleFactorV.x != 0) ? scaleFactorV.x * distance : 1;
+            float sfY = (scaleFactorV.y != 0) ? scaleFactorV.y * distance : 1;
+            float sfZ = (scaleFactorV.z != 0) ? scaleFactorV.z * distance : 1;
+            finalScaleFactor = new Vector3(sfX, sfY, sfZ);
+
+            transformToScale.localScale = finalScaleFactor;
+        }
+
+
+
+        void ParseScale()
+        {
+            string[] split = scaleFactor.Split(',');
+            float[] splitF = new float[split.Length];
+            for (int i = 0; i < split.Length; i++)
+            {
+                splitF[i] = float.Parse(split[i]);
+            }
+            scaleFactorV = new Vector3(splitF[0], splitF[1], splitF[2]);
+        }
+
     }
 }

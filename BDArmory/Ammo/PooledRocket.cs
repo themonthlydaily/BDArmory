@@ -8,10 +8,11 @@ using BDArmory.Competition;
 using BDArmory.Damage;
 using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Modules;
+using BDArmory.Weapons;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using static BDArmory.Bullets.PooledBullet;
 
 namespace BDArmory.Bullets
 {
@@ -22,17 +23,20 @@ namespace BDArmory.Bullets
 
         public Transform spawnTransform;
         public Vessel sourceVessel;
+        public Part sourceWeapon;
         public string sourceVesselName;
         public string team;
         public string rocketName;
         public float rocketMass;
         public float caliber;
+        public float apMod;
         public float thrust;
         private Vector3 thrustVector;
         private Vector3 dragVector;
         public float thrustTime;
         public bool shaped;
-        public float maxAirDetonationRange;
+        public float timeToDetonation;
+        float armingTime;
         public bool flak;
         public bool concussion;
         public bool gravitic;
@@ -44,6 +48,8 @@ namespace BDArmory.Bullets
         public bool incendiary;
         public float detonationRange;
         public float tntMass;
+        public bool beehive;
+        public string subMunitionType;
         bool explosive = true;
         public float bulletDmgMult = 1;
         public float dmgMult = 1;
@@ -54,30 +60,40 @@ namespace BDArmory.Bullets
         public string explModelPath;
         public string explSoundPath;
 
+        public bool nuclear;
+        public string flashModelPath;
+        public string shockModelPath;
+        public string blastModelPath;
+        public string plumeModelPath;
+        public string debrisModelPath;
+        public string blastSoundPath;
+
         public string rocketSoundPath;
 
         float startTime;
-        float lifeTime = 10;
+        public float lifeTime;
 
         Vector3 prevPosition;
-        public Vector3 currPosition;
+        public Vector3 currentPosition { get { return _currentPosition; } set { _currentPosition = value; transform.position = value; } } // Local alias for transform.position speeding up access by around 100x. Only use during FixedUpdates, as it may not be up-to-date otherwise.
+        Vector3 _currentPosition = default;
         Vector3 startPosition;
         bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
-        public Vector3 currentVelocity = Vector3.zero;
+        public Vector3 currentVelocity = Vector3.zero; // Current real velocity w/o offloading
 
         public bool hasPenetrated = false;
         public bool hasDetonated = false;
         public int penTicker = 0;
         private Part CurrentPart = null;
-        private int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
-        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and not EVA?
+        private const int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
+        private const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19 and not EVA?
 
         private float distanceFromStart = 0;
 
         //bool isThrusting = true;
         public bool isAPSprojectile = false;
+        public bool isSubProjectile = false;
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
@@ -91,10 +107,13 @@ namespace BDArmory.Bullets
 
         public AudioSource audioSource;
 
-        HashSet<Vessel> craftHit = new HashSet<Vessel>();
+        static RaycastHit[] hits = new RaycastHit[10];
+        static Collider[] proximityOverlapSphereColliders = new Collider[10];
+        static Collider[] detonateOverlapSphereColliders = new Collider[10];
         void OnEnable()
         {
             BDArmorySetup.numberOfParticleEmitters++;
+            currentPosition = transform.position; // In case something sets transform.position instead of currentPosition.
 
             rb = gameObject.AddOrGetComponent<Rigidbody>();
 
@@ -104,7 +123,7 @@ namespace BDArmory.Bullets
                 while (pe.MoveNext())
                 {
                     if (pe.Current == null) continue;
-                    if (FlightGlobals.getStaticPressure(transform.position) == 0 && pe.Current.useWorldSpace)
+                    if (FlightGlobals.getStaticPressure(currentPosition) == 0 && pe.Current.useWorldSpace)
                     {
                         pe.Current.emit = false;
                     }
@@ -124,12 +143,12 @@ namespace BDArmory.Bullets
                 }
             gpEmitters = gameObject.GetComponentsInChildren<BDAGaplessParticleEmitter>();
 
-            prevPosition = transform.position;
-            currPosition = transform.position;
-            startPosition = transform.position;
+            prevPosition = currentPosition;
+            startPosition = currentPosition;
             transform.rotation = transform.parent.rotation;
             startTime = Time.time;
-            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+            armingTime = isSubProjectile ? 0 : BDAMath.Sqrt(4 * blastRadius * rocketMass / thrust); // d = a/2 * t^2 for initial 0 relative velocity
+            if (FlightGlobals.getAltitudeAtPos(currentPosition) < 0)
             {
                 startUnderwater = true;
             }
@@ -151,7 +170,7 @@ namespace BDArmory.Bullets
             SetupAudio();
 
             // Log rockets fired.
-            if (this.sourceVessel)
+            if (sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the rocket hits.
                 BDACompetitionMode.Instance.Scores.RegisterRocketFired(sourceVesselName);
@@ -172,9 +191,31 @@ namespace BDArmory.Bullets
             {
                 HERatio = 0;
             }
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD) //if (caliber > 60)
             {
                 BDATargetManager.FiredRockets.Add(this);
+            }
+            if (nuclear)
+            {
+                var nuke = sourceWeapon.FindModuleImplementing<BDModuleNuke>();
+                if (nuke == null)
+                {
+                    flashModelPath = BDModuleNuke.defaultflashModelPath;
+                    shockModelPath = BDModuleNuke.defaultShockModelPath;
+                    blastModelPath = BDModuleNuke.defaultBlastModelPath;
+                    plumeModelPath = BDModuleNuke.defaultPlumeModelPath;
+                    debrisModelPath = BDModuleNuke.defaultDebrisModelPath;
+                    blastSoundPath = BDModuleNuke.defaultBlastSoundPath;
+                }
+                else
+                {
+                    flashModelPath = nuke.flashModelPath;
+                    shockModelPath = nuke.shockModelPath;
+                    blastModelPath = nuke.blastModelPath;
+                    plumeModelPath = nuke.plumeModelPath;
+                    debrisModelPath = nuke.debrisModelPath;
+                    blastSoundPath = nuke.blastSoundPath;
+                }
             }
         }
 
@@ -197,7 +238,7 @@ namespace BDArmory.Bullets
             sourceVesselName = null;
             spawnTransform = null;
             CurrentPart = null;
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD) //if (caliber > 60)
             {
                 BDATargetManager.FiredRockets.Remove(this);
             }
@@ -213,20 +254,21 @@ namespace BDArmory.Bullets
             {
                 return;
             }
+            currentPosition = transform.position; // Adjust our local copy for any adjustments that the physics engine has made.
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                prevPosition -= FloatingOrigin.OffsetNonKrakensbane;
-                startPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                prevPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
-            distanceFromStart = Vector3.Distance(transform.position, startPosition);
+            distanceFromStart = Vector3.Distance(currentPosition, startPosition);
 
             if (transform.parent != null && parentRB)
             {
                 transform.parent = null;
                 rb.isKinematic = false;
-                rb.velocity = parentRB.velocity + Krakensbane.GetFrameVelocityV3f();
+                rb.velocity = parentRB.velocity + BDKrakensbane.FrameVelocityV3f;
             }
 
             if (rb && !rb.isKinematic)
@@ -234,17 +276,17 @@ namespace BDArmory.Bullets
                 //physics
                 if (FlightGlobals.RefFrameIsRotating)
                 {
-                    rb.velocity += FlightGlobals.getGeeForceAtPosition(transform.position) * Time.fixedDeltaTime;
+                    rb.velocity += FlightGlobals.getGeeForceAtPosition(currentPosition) * Time.fixedDeltaTime;
                 }
 
                 //guidance and attitude stabilisation scales to atmospheric density.
                 float atmosMultiplier =
-                    Mathf.Clamp01((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
+                    Mathf.Clamp01((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition),
                                       FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
 
                 //model transform. always points prograde
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                    Quaternion.LookRotation(rb.velocity + Krakensbane.GetFrameVelocity(), transform.up),
+                    Quaternion.LookRotation(rb.velocity, transform.up),
                     Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
 
 
@@ -256,7 +298,7 @@ namespace BDArmory.Bullets
                 }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
                 if (BDArmorySettings.BULLET_WATER_DRAG)
                 {
-                    if (FlightGlobals.getAltitudeAtPos(currPosition) < 0)
+                    if (FlightGlobals.getAltitudeAtPos(currentPosition) < 0)
                     {
                         //atmosMultiplier *= 83.33f;
                         dragVector.z = -(0.5f * 1 * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime;
@@ -266,7 +308,7 @@ namespace BDArmory.Bullets
                     //rb.AddRelativeForce(dragVector);
                     //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
                 }
-                currentVelocity = rb.velocity;
+                currentVelocity = rb.velocity; // The rb.velocity is w/o offloading here, since rockets aren't vessels.
             }
 
             if (Time.time - startTime > thrustTime)
@@ -291,17 +333,22 @@ namespace BDArmory.Bullets
             }
 
             #region Collision detection
+            // Note: This is performing hit detection for the previous frame, not the current one.
             hasPenetrated = true;
             hasDetonated = false;
             penTicker = 0;
 
-            currPosition = transform.position;
-            float dist = (currPosition - prevPosition).magnitude;
-            RocketRay = new Ray(prevPosition, currPosition - prevPosition);
-            var hits = Physics.RaycastAll(RocketRay, dist, collisionLayerMask);
-            if (hits.Length > 0)
+            float dist = (currentPosition - prevPosition).magnitude;
+            RocketRay = new Ray(prevPosition, currentPosition - prevPosition);
+            var hitCount = Physics.RaycastNonAlloc(RocketRay, hits, dist, collisionLayerMask);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                var orderedHits = hits.OrderBy(x => x.distance);
+                hits = Physics.RaycastAll(RocketRay, dist, collisionLayerMask);
+                hitCount = hits.Length;
+            }
+            if (hitCount > 0)
+            {
+                var orderedHits = hits.Take(hitCount).OrderBy(x => x.distance);
 
                 using (var hitsEnu = orderedHits.GetEnumerator())
                 {
@@ -320,19 +367,20 @@ namespace BDArmory.Bullets
                         }
                         catch (NullReferenceException e)
                         {
-                            Debug.LogWarning("[BDArmory.BDArmory]:NullReferenceException for Kinetic Hit: " + e.Message);
+                            Debug.LogWarning("[BDArmory.PooledRocket]:NullReferenceException for Kinetic Hit: " + e.Message);
                             return;
                         }
 
                         if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
-                        if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.Contains("Armor"))) continue; //only have bullet hit armor panels once - no back armor to hit if penetration
+                        if (hitPart != null && (hitPart == CurrentPart && ProjectileUtils.IsArmorPart(CurrentPart))) continue; //only have bullet hit armor panels once - no back armor to hit if penetration
+
                         CurrentPart = hitPart;
                         if (hitEVA != null)
                         {
                             hitPart = hitEVA.part;
                             // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                             if (hitPart.rb != null)
-                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
+                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
                             else
                                 impactVelocity = rb.velocity.magnitude;
                             if (dmgMult < 0)
@@ -344,7 +392,7 @@ namespace BDArmory.Bullets
                                 ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true, true, true);
                             }
                             ResourceUtils.StealResources(hitPart, sourceVessel, thief);
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
 
@@ -354,13 +402,13 @@ namespace BDArmory.Bullets
                         if (hitPart != null && hitPart.rb != null)
                             // using relative velocity vector instead of just rocket velocity
                             // since KSP vessels can easily be moving faster than rockets
-                            impactVector = rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
+                            impactVector = rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
 
                         float hitAngle = Vector3.Angle(impactVector, -hit.normal);
 
                         if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
                         {
-                            ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
+                            if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
                             Detonate(hit.point, false);
                             return;
                         }
@@ -383,7 +431,7 @@ namespace BDArmory.Bullets
                                 hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
                             }
                             BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName());
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             hasDetonated = true;
                             return; //impulse rounds shouldn't penetrate/do damage
                         }
@@ -400,17 +448,43 @@ namespace BDArmory.Bullets
                             float Strength = Armor.Strength;
                             float safeTemp = Armor.SafeUseTemp;
                             float Density = Armor.Density;
+                            float vFactor = Armor.vFactor;
+                            float muParam1 = Armor.muParam1;
+                            float muParam2 = Armor.muParam2;
+                            float muParam3 = Armor.muParam3;
+
+                            if (hitPart.skinTemperature > safeTemp) //has the armor started melting/denaturing/whatever?
+                            {
+                                //vFactor *= 1/(1.25f*0.75f-0.25f*0.75f*0.75f);
+                                vFactor *= 1.25490196078f; // Uses the above equation but just calculated out.
+                                                           // The equation 1/(1.25*x-0.25*x^2) approximates the effect of changing yield strength
+                                                           // by a factor of x
+                                if (hitPart.skinTemperature > safeTemp * 1.5f)
+                                {
+                                    vFactor *= 1.77777777778f; // Same as used above, but here with x = 0.5. Maybe this should be
+                                                               // some kind of a curve?
+                                }
+                            }
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.PooledBUllet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                Debug.Log("[BDArmory.PooledRocket]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
                             }
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                             //calculate bullet deformation
-                            float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio, 1);
+                            float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio, 1, false);
                             //calculate penetration
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            /*if (Ductility > 0.05)
+                            {*/
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, apMod, Strength, vFactor, muParam1, muParam2, muParam3);
+                            /*}
+                            else
+                            {
+                                penetration = ProjectileUtils.CalculateCeramicPenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            }*/
+
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
 
@@ -468,7 +542,7 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-                                float cockpitPen = (float)(16f * impactVelocity * Mathf.Sqrt(rocketMass) / Mathf.Sqrt(caliber));
+                                float cockpitPen = (float)(16f * impactVelocity * BDAMath.Sqrt(rocketMass) / BDAMath.Sqrt(caliber));
                                 if (cockpitPen > Mathf.Max(20 / anglemultiplier, 1))
                                     ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, penTicker > 0 ? false : true, penTicker > 0 ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                                 if (!explosive)
@@ -483,9 +557,9 @@ namespace BDArmory.Bullets
 
                             if (explosive || !viableBullet)
                             {
-                                transform.position += (rb.velocity * Time.fixedDeltaTime) / 3;
+                                currentPosition += (rb.velocity * Time.fixedDeltaTime) / 3;
 
-                                Detonate(transform.position, false, hitPart); //explode inside part
+                                Detonate(currentPosition, false, hitPart); //explode inside part
                                 hasDetonated = true;
                             }
                         }
@@ -510,13 +584,13 @@ namespace BDArmory.Bullets
                             //not going to do ballistic damage if stopped by armor
                             ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Rocket, (rocketMass * 1000), penetrationFactor);
                             //the warhead exploding, on the other hand...
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             hasDetonated = true;
                         }
 
                         if (penTicker >= 2)
                         {
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
 
@@ -526,7 +600,7 @@ namespace BDArmory.Bullets
                             {
                                 Debug.Log("[BDArmory.PooledRocket]: Rocket ballistic velocity too low, stopping");
                             }
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
                         if (!hasPenetrated || hasDetonated) break;
@@ -537,47 +611,61 @@ namespace BDArmory.Bullets
 
             if (BDArmorySettings.BULLET_WATER_DRAG)
             {
-                if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startUnderwater)
+                if (FlightGlobals.getAltitudeAtPos(currentPosition) > 0 && startUnderwater)
                 {
                     startUnderwater = false;
-                    FXMonger.Splash(transform.position, caliber);
+                    FXMonger.Splash(currentPosition, caliber);
                 }
-                if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
+                if (FlightGlobals.getAltitudeAtPos(currentPosition) <= 0 && !startUnderwater)
                 {
                     if (tntMass > 0) //look into fuze options similar to bullets?
                     {
-                        Detonate(transform.position, false);
+                        Detonate(currentPosition, false);
                     }
-                    FXMonger.Splash(transform.position, caliber);
+                    FXMonger.Splash(currentPosition, caliber);
                 }
             }
-            prevPosition = currPosition;
 
-            if (Time.time - startTime > lifeTime) // life's 10s, quite a long time for faster rockets
+            if (Time.time - startTime > lifeTime)
             {
-                Detonate(transform.position, true);
+                Detonate(currentPosition, true, airDetonation: true);
             }
-            if (distanceFromStart >= maxAirDetonationRange)//rockets are performance intensive, lets cull those that have flown too far away
+            if (beehive && Time.time - startTime >= timeToDetonation - 1)
             {
-                Detonate(transform.position, false);
+                Detonate(currentPosition, false, airDetonation: true);
             }
-            if (ProximityAirDetonation(distanceFromStart))
+            if (ProximityAirDetonation())
             {
-                Detonate(transform.position, false);
+                Detonate(currentPosition, false, airDetonation: true);
             }
+            prevPosition = currentPosition;
         }
 
-        private bool ProximityAirDetonation(float distanceFromStart)
+        private bool ProximityAirDetonation()
         {
-            bool detonate = false;
+            if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+            {
+                if (currentPosition.CloserToThan(tgtShell != null ? tgtShell.currentPosition : tgtRocket.currentPosition, detonationRange / 2))
+                {
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    return true;
+                }
+            }
 
-            if (distanceFromStart <= blastRadius * 2) return false;
+            if (Time.time - startTime < armingTime) return false;
 
-            if (!explosive || tntMass <= 0) return false;
+            if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
 
             if (flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, explosionLayerMask).AsEnumerable().GetEnumerator())
+                var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, detonationRange, proximityOverlapSphereColliders, explosionLayerMask);
+                if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
+                {
+                    proximityOverlapSphereColliders = Physics.OverlapSphere(currentPosition, detonationRange, explosionLayerMask);
+                    overlapSphereColliderCount = proximityOverlapSphereColliders.Length;
+                }
+                using (var hitsEnu = proximityOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {
@@ -594,8 +682,8 @@ namespace BDArmory.Bullets
                             BDACompetitionMode.Instance.Scores.RegisterRocketHit(aName, tName, 1);
 
                             if (BDArmorySettings.DEBUG_WEAPONS)
-                                Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-                            return detonate = true;
+                                Debug.Log($"[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = {detonationRange} | Part name = {partHit.name} on {partHit.vessel.vesselName}");
+                            return true;
                         }
                         catch (Exception e)
                         {
@@ -603,17 +691,8 @@ namespace BDArmory.Bullets
                         }
                     }
                 }
-                if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
-                {
-                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
-                    {
-                        if (BDArmorySettings.DEBUG_WEAPONS)
-                            Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
-                        return detonate = true;
-                    }
-                }
             }
-            return detonate;
+            return false;
         }
 
         void Update()
@@ -641,120 +720,348 @@ namespace BDArmory.Bullets
             }
         }
 
-        void Detonate(Vector3 pos, bool missed, Part PenetratingHit = null)
+        void Detonate(Vector3 pos, bool missed, Part hitPart = null, bool airDetonation = false)
         {
             if (!missed)
             {
-                if (tntMass > 0)
+                if (beehive)
                 {
-                    Vector3 direction = default(Vector3);
-                    if (shaped)
+                    BeehiveDetonation();
+                }
+                else
+                {
+                    if (tntMass > 0)
                     {
-                        direction = (pos + rb.velocity * Time.deltaTime).normalized;
-                    }
-                    if (gravitic)
-                    {
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
+                        Vector3 direction = default(Vector3);
+                        if (shaped)
                         {
-                            while (hitsEnu.MoveNext())
+                            direction = rb.velocity.normalized;
+                            //direction = transform.forward //ideal, but no guarantee that mod rockets have correct transform orientation
+                        }
+                        if (gravitic)
+                        {
+                            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, blastRadius, detonateOverlapSphereColliders, explosionLayerMask);
+                            if (overlapSphereColliderCount == detonateOverlapSphereColliders.Length)
                             {
-                                if (hitsEnu.Current == null) continue;
-
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                float distance = Vector3.Distance(transform.position, partHit.transform.position);
-                                if (gravitic)
+                                detonateOverlapSphereColliders = Physics.OverlapSphere(currentPosition, blastRadius, explosionLayerMask);
+                                overlapSphereColliderCount = detonateOverlapSphereColliders.Length;
+                            }
+                            using (var hitsEnu = detonateOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
+                            {
+                                while (hitsEnu.MoveNext())
                                 {
-                                    if (partHit.mass > 0)
+                                    if (hitsEnu.Current == null) continue;
+
+                                    Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                    if (partHit == null) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                    float distance = Vector3.Distance(currentPosition, partHit.transform.position);
+                                    if (gravitic)
                                     {
-                                        var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
-                                        if (ME == null)
+                                        if (partHit.mass > 0)
                                         {
-                                            ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
+                                            var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
+                                            if (ME == null)
+                                            {
+                                                ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
+                                            }
+                                            ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
+                                            ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
                                         }
-                                        ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
-                                        ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
                                     }
                                 }
                             }
                         }
-                    }
-                    if (incendiary)
-                    {
-                        for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
+                        if (incendiary)
                         {
-                            Ray LoSRay = new Ray(transform.position, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
-                            RaycastHit hit;
-                            if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, collisionLayerMask)) // only add fires to parts in LoS of blast
+                            for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
                             {
-                                KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                float distance = Vector3.Distance(transform.position, hit.point);
-                                if (p != null)
+                                Ray LoSRay = new Ray(currentPosition, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
+                                RaycastHit hit;
+                                if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, collisionLayerMask)) // only add fires to parts in LoS of blast
                                 {
-                                    BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
+                                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                    if (p != null)
+                                    {
+                                        float distance = Vector3.Distance(currentPosition, hit.point);
+                                        BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
+                                        if (BDArmorySettings.DEBUG_WEAPONS)
+                                            Debug.Log("[BDArmory.PooledRocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                    }
                                     if (BDArmorySettings.DEBUG_WEAPONS)
-                                        Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                        Debug.Log("[BDArmory.PooledRocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                                 }
                             }
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                                Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                         }
-                    }
-                    if (concussion || EMP || choker)
-                    {
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, explosionLayerMask).AsEnumerable().GetEnumerator())
+                        if (concussion || EMP || choker)
                         {
-                            var craftHit = new HashSet<Vessel>();
-                            while (hitsEnu.MoveNext())
+                            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, 25, detonateOverlapSphereColliders, explosionLayerMask);
+                            if (overlapSphereColliderCount == detonateOverlapSphereColliders.Length)
                             {
-                                if (hitsEnu.Current == null) continue;
-                                if (hitsEnu.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
-                                craftHit.Add(partHit.vessel);
-
-                                float Distance = Vector3.Distance(partHit.transform.position, this.transform.position);
-                                if (partHit != null)
+                                detonateOverlapSphereColliders = Physics.OverlapSphere(currentPosition, 25, explosionLayerMask);
+                                overlapSphereColliderCount = detonateOverlapSphereColliders.Length;
+                            }
+                            using (var hitsEnu = detonateOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
+                            {
+                                var craftHit = new HashSet<Vessel>();
+                                while (hitsEnu.MoveNext())
                                 {
-                                    if (concussion && partHit.mass > 0)
+                                    if (hitsEnu.Current == null) continue;
+                                    if (hitsEnu.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
+                                    Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                    if (partHit == null) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                    if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
+                                    craftHit.Add(partHit.vessel);
+
+                                    if (partHit != null)
                                     {
-                                        partHit.rb.AddForceAtPosition((partHit.transform.position - this.transform.position).normalized * impulse, partHit.transform.position, ForceMode.Acceleration);
-                                    }
-                                    if (EMP)
-                                    {
-                                        var MDEC = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                                        if (MDEC == null)
+                                        float distance = Vector3.Distance(partHit.transform.position, currentPosition);
+                                        if (concussion && partHit.mass > 0)
                                         {
-                                            MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
+                                            partHit.rb.AddForceAtPosition((partHit.transform.position - currentPosition).normalized * impulse, partHit.transform.position, ForceMode.Acceleration);
                                         }
-                                        MDEC.incomingDamage = ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
-                                        MDEC.softEMP = false; //can bypass EMP damage cap                                            
-                                    }
-                                    if (choker)
-                                    {
-                                        var ash = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainIntakes>();
-                                        if (ash == null)
+                                        if (EMP)
                                         {
-                                            ash = (ModuleDrainIntakes)partHit.vessel.rootPart.AddModule("ModuleDrainIntakes");
+                                            var MDEC = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                            if (MDEC == null)
+                                            {
+                                                MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
+                                            }
+                                            MDEC.incomingDamage = (25 - distance) * 5; //this way craft at edge of blast might only get disabled instead of bricked
+                                            MDEC.softEMP = false; //can bypass EMP damage cap                                            
                                         }
-                                        ash.drainDuration += BDArmorySettings.WEAPON_FX_DURATION * (1 - (Distance / 25)); //reduce intake knockout time based on distance from epicenter                                        
+                                        if (choker)
+                                        {
+                                            var ash = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainIntakes>();
+                                            if (ash == null)
+                                            {
+                                                ash = (ModuleDrainIntakes)partHit.vessel.rootPart.AddModule("ModuleDrainIntakes");
+                                            }
+                                            ash.drainDuration += BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / 25)); //reduce intake knockout time based on distance from epicenter                                        
+                                        }
                                     }
                                 }
                             }
+                            ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, true, Hitpart: hitPart, sourceVelocity: airDetonation ? currentVelocity : default);
                         }
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, true);
-                    }
-                    else
-                    {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit);
+                        else
+                        {
+                            if (nuclear)
+                                NukeFX.CreateExplosion(pos, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "", hitPart: hitPart, sourceVelocity: airDetonation ? currentVelocity : default);
+                            else
+                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", hitPart, apMod, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)distanceFromStart : -1, sourceVelocity: airDetonation ? currentVelocity : default);
+                        }
                     }
                 }
             }
             gameObject.SetActive(false);
+        }
+
+        public void BeehiveDetonation()
+        {
+            if (subMunitionType == null)
+            {
+                Debug.Log("[BDArmory.PooledRocket] Beehive round not configured with subMunitionType!");
+                return;
+            }
+            string[] subMunitionData = subMunitionType.Split(new char[] { ';' });
+            string projType = subMunitionData[0];
+            if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
+            if (BulletInfo.bulletNames.Contains(projType))
+            {
+                BulletInfo sBullet = BulletInfo.bullets[projType];
+                string fuze = sBullet.fuzeType;
+                fuze.ToLower();
+                BulletFuzeTypes sFuze;
+                switch (fuze)
+                {
+                    case "timed":
+                        sFuze = PooledBullet.BulletFuzeTypes.Timed;
+                        break;
+                    case "proximity":
+                        sFuze = PooledBullet.BulletFuzeTypes.Proximity;
+                        break;
+                    case "flak":
+                        sFuze = PooledBullet.BulletFuzeTypes.Flak;
+                        break;
+                    case "delay":
+                        sFuze = PooledBullet.BulletFuzeTypes.Delay;
+                        break;
+                    case "penetrating":
+                        sFuze = PooledBullet.BulletFuzeTypes.Penetrating;
+                        break;
+                    case "impact":
+                        sFuze = PooledBullet.BulletFuzeTypes.Impact;
+                        break;
+                    case "none":
+                        sFuze = PooledBullet.BulletFuzeTypes.None;
+                        break;
+                    default:
+                        sFuze = PooledBullet.BulletFuzeTypes.Impact;
+                        break;
+                }
+                float relVelocity = (thrust / rocketMass) * Mathf.Clamp(Time.time - startTime, 0, thrustTime); //currVel is rocketVel + orbitalvel, if in orbit, which will dramatically increase dispersion cone angle, so using accel * time instad
+                float incrementVelocity = 1000 / (relVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit 
+                float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
+                float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
+
+                for (int s = 0; s < count; s++)
+                {
+                    GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
+                    PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
+                    pBullet.currentPosition = currentPosition;
+
+                    pBullet.caliber = sBullet.caliber;
+                    pBullet.bulletVelocity = sBullet.bulletVelocity + rb.velocity.magnitude;
+                    pBullet.bulletMass = sBullet.bulletMass;
+                    pBullet.incendiary = sBullet.incendiary;
+                    pBullet.apBulletMod = sBullet.apBulletMod;
+                    pBullet.bulletDmgMult = bulletDmgMult;
+                    pBullet.ballisticCoefficient = sBullet.bulletMass / (((Mathf.PI * 0.25f * sBullet.caliber * sBullet.caliber) / 1000000f) * 0.295f);
+                    pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
+                    pBullet.timeToLiveUntil = Mathf.Max(sBullet.projectileTTL, detonationRange / pBullet.bulletVelocity * 1.1f) + Time.time;
+                    //Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 100))) * sBullet.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
+                    Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
+                    pBullet.currentVelocity = firedVelocity;
+                    pBullet.sourceWeapon = sourceWeapon;
+                    pBullet.sourceVessel = sourceVessel;
+                    pBullet.team = team;
+                    pBullet.bulletTexturePath = "BDArmory/Textures/bullet";
+                    pBullet.projectileColor = GUIUtils.ParseColor255(sBullet.projectileColor);
+                    pBullet.startColor = GUIUtils.ParseColor255(sBullet.startColor);
+                    pBullet.fadeColor = sBullet.fadeColor;
+                    pBullet.tracerStartWidth = sBullet.caliber / 300;
+                    pBullet.tracerEndWidth = sBullet.caliber / 750;
+                    pBullet.tracerLength = 0;
+                    pBullet.tracerDeltaFactor = 2.65f;
+                    pBullet.tracerLuminance = 1.75f;
+                    pBullet.bulletDrop = true;
+
+                    if (sBullet.tntMass > 0)// || sBullet.beehive)
+                    {
+                        pBullet.explModelPath = explModelPath;
+                        pBullet.explSoundPath = explSoundPath;
+                        pBullet.tntMass = sBullet.tntMass;
+                        string HEtype = sBullet.explosive;
+                        HEtype.ToLower();
+                        switch (HEtype)
+                        {
+                            case "standard":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                                break;
+                            //legacy support for older configs that are still explosive = true
+                            case "true":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                                break;
+                            case "shaped":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                                break;
+                        }
+                        pBullet.detonationRange = detonationRange;
+                        pBullet.defaultDetonationRange = 1000;
+                        pBullet.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
+                        pBullet.fuzeType = sFuze;
+                    }
+                    else
+                    {
+                        pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
+                        pBullet.sabot = (((((sBullet.bulletMass * 1000) / ((sBullet.caliber * sBullet.caliber * Mathf.PI / 400) * 19) + 1) * 10) > sBullet.caliber * 4)) ? true : false;
+                        pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
+                    }
+                    pBullet.EMP = sBullet.EMP;
+                    pBullet.nuclear = sBullet.nuclear;
+                    //pBullet.beehive = sBullet.beehive;
+                    //pBullet.subMunitionType = BulletInfo.bullets[sBullet.subMunitionType]; //submunitions of submunitions is a bit silly, and they'd be detonating immediately, due to inherited detonationRange
+                    //pBullet.homing = BulletInfo.homing;
+                    pBullet.impulse = sBullet.impulse;
+                    pBullet.massMod = sBullet.massMod;
+                    switch (sBullet.bulletDragTypeName)
+                    {
+                        case "None":
+                            pBullet.dragType = PooledBullet.BulletDragTypes.None;
+                            break;
+                        case "AnalyticEstimate":
+                            pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                            break;
+                        case "NumericalIntegration":
+                            pBullet.dragType = PooledBullet.BulletDragTypes.NumericalIntegration;
+                            break;
+                        default:
+                            pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                            break;
+                    }
+                    pBullet.bullet = BulletInfo.bullets[sBullet.name];
+                    pBullet.stealResources = thief;
+                    pBullet.dmgMult = dmgMult;
+                    pBullet.isAPSprojectile = isAPSprojectile;
+                    pBullet.isSubProjectile = true;
+                    pBullet.tgtShell = tgtShell;
+                    pBullet.tgtRocket = tgtRocket;
+                    pBullet.gameObject.SetActive(true);
+                    pBullet.SetTracerPosition();
+                }
+            }
+            else
+            {
+                RocketInfo sRocket = RocketInfo.rockets[projType];
+                for (int s = 0; s < count; s++)
+                {
+                    GameObject rocketObj = ModuleWeapon.rocketPool[sRocket.name].GetPooledObject();
+                    rocketObj.transform.position = currentPosition;
+                    //rocketObj.transform.rotation = currentRocketTfm.rotation;
+                    rocketObj.transform.rotation = transform.rotation;
+                    rocketObj.transform.localScale = transform.localScale;
+                    PooledRocket rocket = rocketObj.GetComponent<PooledRocket>();
+                    rocket.explModelPath = explModelPath;
+                    rocket.explSoundPath = explSoundPath;
+                    rocket.caliber = sRocket.caliber;
+                    rocket.apMod = sRocket.apMod;
+                    rocket.rocketMass = sRocket.rocketMass;
+                    rocket.blastRadius = blastRadius = BlastPhysicsUtils.CalculateBlastRange(sRocket.tntMass);
+                    rocket.thrust = sRocket.thrust;
+                    rocket.thrustTime = sRocket.thrustTime;
+                    rocket.flak = sRocket.flak;
+                    rocket.detonationRange = detonationRange;
+                    rocket.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
+                    rocket.tntMass = sRocket.tntMass;
+                    rocket.shaped = sRocket.shaped;
+                    rocket.concussion = sRocket.impulse;
+                    rocket.gravitic = sRocket.gravitic;
+                    rocket.EMP = sRocket.EMP;
+                    rocket.nuclear = sRocket.nuclear;
+                    rocket.beehive = sRocket.beehive;
+                    //if (beehive) //no submunitions of submunitions, not while detoantionRange remains the sasme (sub-submunitions would instantly spawn)
+                    //{
+                    //    rocket.subMunitionType = sRocket.subMunitionType;
+                    //}
+                    rocket.choker = choker;
+                    rocket.impulse = sRocket.force;
+                    rocket.massMod = sRocket.massMod;
+                    rocket.incendiary = sRocket.incendiary;
+                    rocket.randomThrustDeviation = sRocket.thrustDeviation;
+                    rocket.bulletDmgMult = bulletDmgMult;
+                    rocket.sourceVessel = sourceVessel;
+                    rocket.sourceWeapon = sourceWeapon;
+                    rocketObj.transform.SetParent(transform);
+                    rocket.rocketName = rocketName + " submunition";
+                    rocket.team = team;
+                    rocket.parentRB = parentRB;
+                    rocket.rocket = RocketInfo.rockets[sRocket.name];
+                    rocket.rocketSoundPath = rocketSoundPath;
+                    rocket.thief = thief; //currently will only steal on direct hit
+                    rocket.dmgMult = dmgMult;
+                    if (isAPSprojectile)
+                    {
+                        rocket.isAPSprojectile = true;
+                        rocket.tgtShell = tgtShell;
+                        rocket.tgtRocket = tgtRocket;
+                    }
+                    rocket.isSubProjectile = true;
+                    rocketObj.SetActive(true);
+                }
+            }
         }
 
         void SetupAudio()
@@ -769,7 +1076,7 @@ namespace BDArmory.Bullets
             audioSource.pitch = 1f;
             audioSource.priority = 255;
             audioSource.spatialBlend = 1;
-            audioSource.clip = GameDatabase.Instance.GetAudioClip(rocketSoundPath);
+            audioSource.clip = SoundUtils.GetAudioClip(rocketSoundPath);
 
             UpdateVolume();
             BDArmorySetup.OnVolumeChange += UpdateVolume;

@@ -1,6 +1,8 @@
 ﻿using System.Text;
+using UnityEngine;
 
 using BDArmory.Damage;
+using BDArmory.Settings;
 using BDArmory.Utils;
 
 namespace BDArmory.Weapons
@@ -10,6 +12,11 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_EMPBlastRadius"),//EMP Blast Radius
          UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
         public float proximity = 5000;
+
+        [KSPField]
+        public bool AllowReboot = false;
+
+        public bool Armed = false;
 
         public override void OnStart(StartState state)
         {
@@ -23,8 +30,11 @@ namespace BDArmory.Weapons
 
         public void DetonateEMPRoutine()
         {
+            if (!Armed) return;
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ModuleEMP]: Detonating EMP from {part.partInfo.name} with blast range {proximity}m.");
             foreach (Vessel v in FlightGlobals.Vessels)
             {
+                if (v == null || !v.loaded || v.packed) continue;
                 if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) continue;
                 if (!v.HoldPhysics)
                 {
@@ -38,7 +48,7 @@ namespace BDArmory.Weapons
                             emp = (ModuleDrainEC)v.rootPart.AddModule("ModuleDrainEC");
                         }
                         emp.incomingDamage += ((proximity - (float)targetDistance) * 10); //this way craft at edge of blast might only get disabled instead of bricked
-                        emp.softEMP = false; //can bypass DMP damage cap
+                        emp.softEMP = AllowReboot; //can bypass DMP damage cap
                     }
                 }
             }

@@ -19,7 +19,11 @@ namespace BDArmory.WeaponMounts
 
         [KSPField] public int turretID = 0;
 
-        ModuleTurret turret;
+        public ModuleTurret turret;
+
+        public MissileLauncher missilepod;
+
+        public MissileBase activeMissile;
 
         [KSPField(guiActive = true, guiName = "#LOC_BDArmory_TurretEnabled")] public bool turretEnabled;//Turret Enabled
 
@@ -84,14 +88,15 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator DeployAnimation(bool forward)
         {
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
 
             if (forward)
             {
                 while (deployAnimState.normalizedTime < 1)
                 {
                     deployAnimState.speed = deployAnimationSpeed;
-                    yield return null;
+                    yield return wait;
                 }
 
                 deployAnimState.normalizedTime = 1;
@@ -100,15 +105,12 @@ namespace BDArmory.WeaponMounts
             {
                 deployAnimState.speed = 0;
 
-                while (pausingAfterShot)
-                {
-                    yield return new WaitForFixedUpdate();
-                }
+                yield return new WaitWhileFixed(() => pausingAfterShot);
 
                 while (deployAnimState.normalizedTime > 0)
                 {
                     deployAnimState.speed = -deployAnimationSpeed;
-                    yield return null;
+                    yield return wait;
                 }
 
                 deployAnimState.normalizedTime = 0;
@@ -117,13 +119,13 @@ namespace BDArmory.WeaponMounts
             deployAnimState.speed = 0;
         }
 
-        public void EnableTurret()
+        public void EnableTurret(MissileBase currMissile)
         {
             if (!HighLogic.LoadedSceneIsFlight)
             {
                 return;
             }
-
+            activeMissile = currMissile;
             if (returnRoutine != null)
             {
                 StopCoroutine(returnRoutine);
@@ -158,6 +160,7 @@ namespace BDArmory.WeaponMounts
         public void DisableTurret()
         {
             turretEnabled = false;
+            activeMissile = null;
 
             if (autoReturn)
             {
@@ -222,7 +225,7 @@ namespace BDArmory.WeaponMounts
                 yield break;
             }
 
-            yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSecondsFixed(0.25f);
 
             while (pausingAfterShot)
             {
@@ -264,7 +267,14 @@ namespace BDArmory.WeaponMounts
                     break;
                 }
                 tur.Dispose();
-
+                List<MissileLauncher>.Enumerator mml = part.FindModulesImplementing<MissileLauncher>().GetEnumerator();
+                while (mml.MoveNext())
+                {
+                    if (mml.Current == null) continue;
+                    missilepod = mml.Current;
+                    break;
+                }
+                mml.Dispose();
                 attachedRadar = part.FindModuleImplementing<ModuleRadar>();
                 if (attachedRadar) hasAttachedRadar = true;
 
@@ -282,12 +292,10 @@ namespace BDArmory.WeaponMounts
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-
             if (turretEnabled)
             {
                 hasReturned = false;
-
-                if (missileCount == 0)
+                if ((missilepod == null && missileCount == 0) || (missilepod != null && missilepod.multiLauncher.missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
                 {
                     DisableTurret();
                     return;
@@ -308,13 +316,11 @@ namespace BDArmory.WeaponMounts
                 {
                     UpdateMissilePositions();
                 }
-
                 if (autoReturn && !hasReturned)
                 {
                     DisableTurret();
                 }
             }
-
             pausingAfterShot = (Time.time - timeFired < firePauseTime);
         }
 
@@ -347,8 +353,8 @@ namespace BDArmory.WeaponMounts
             if (weaponManager && wm.slavingTurrets && wm.CurrentMissile)
             {
                 slaved = true;
-                slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(wm.CurrentMissile, wm.slavedPosition,
-                    wm.slavedVelocity);
+                //slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(wm.CurrentMissile, wm.slavedPosition, wm.slavedVelocity);
+                slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(activeMissile, wm.slavedPosition, wm.slavedVelocity);
             }
         }
 
@@ -359,7 +365,7 @@ namespace BDArmory.WeaponMounts
             turret.AimToTarget(slavedTargetPosition);
         }
 
-        int mouseAimLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
+        const int mouseAimLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels);
         void MouseAim()
         {
             if (pausingAfterShot) return;
@@ -502,7 +508,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (missileTransforms[i] && missileChildren[i] && !missileChildren[i].HasFired)
+                if (missileTransforms[i] && missileChildren[i])// && !missileChildren[i].HasFired)
                 {
                     missileTransforms[i].position = missileReferenceTransforms[i].position;
                     missileTransforms[i].rotation = missileReferenceTransforms[i].rotation;
@@ -528,15 +534,16 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[index]);
+                    wm.PreviousMissile = missileChildren[index];
                 }
                 missileChildren[index].FireMissile();
-                StartCoroutine(MissileRailRoutine(missileChildren[index]));
+                StartCoroutine(MissileRailRoutine(missileChildren[index])); //turret is stil getting thrusted away despite this being behind a !relaodableRail conditional. investigate
                 if (wm)
                 {
                     wm.UpdateList();
                 }
 
-                UpdateMissileChildren();
+                if (!missileChildren[index].reloadableRail) UpdateMissileChildren();
 
                 timeFired = Time.time;
             }
@@ -558,7 +565,8 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator MissileRailRoutine(MissileLauncher ml)
         {
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
             Ray ray = new Ray(ml.transform.position, ml.MissileReferenceTransform.forward);
             Vector3 localOrigin = turret.pitchTransform.InverseTransformPoint(ray.origin);
             Vector3 localDirection = turret.pitchTransform.InverseTransformDirection(ray.direction);
@@ -578,9 +586,10 @@ namespace BDArmory.WeaponMounts
                 //Vector3 projVel = Vector3.Project(ml.vessel.Velocity-railVel, ray.direction);
 
                 ml.vessel.SetPosition(projPos);
-                ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
-
-                yield return new WaitForFixedUpdate();
+                //if (!ml.reloadableRail) ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction)); //this is still imparting veloctity on spawned missiles? Can function without, as long as missile turret is a static SAM site or similar
+                //Why is this a thing? MissileLauncher is already imparting forward vel from jettison. If we really need to impart some vel, setWorldvel is absolutely not the method to use.
+                //else ml.reloadableRail.SpawnedMissile.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
+                yield return wait;
 
                 ray.origin = turret.pitchTransform.TransformPoint(localOrigin);
                 ray.direction = turret.pitchTransform.TransformDirection(localDirection);
@@ -634,7 +643,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileCount; i++)
             {
-                if ((missileChildren[i]) && missileChildren[i].part.name == ml.part.name)
+                if ((missileChildren[i]) && missileChildren[i].part.name == ml.part.name && !missileChildren[i].HasFired)
                 {
                     return true;
                 }

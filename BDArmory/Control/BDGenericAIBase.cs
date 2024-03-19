@@ -3,16 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using KSP.Localization;
+
+using ModuleWheels;
 
 using BDArmory.Competition;
 using BDArmory.Extensions;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.VesselSpawning;
 
 namespace BDArmory.Control
 {
@@ -38,6 +38,9 @@ namespace BDArmory.Control
         /// </summary>
         protected BDAirspeedControl speedController;
 
+        protected bool hasAxisGroupsModule = false;
+        protected AxisGroupsModule axisGroupsModule;
+
         protected Transform vesselTransform => vessel.ReferenceTransform;
 
         protected StringBuilder debugString = new StringBuilder();
@@ -59,9 +62,19 @@ namespace BDArmory.Control
         }
 
         //wing commander
-        public ModuleWingCommander commandLeader { get; protected set; }
+        public ModuleWingCommander commandLeader
+        {
+            get
+            {
+                if (_commandLeader == null || _commandLeader.vessel == null || !_commandLeader.vessel.isActiveAndEnabled) return null; // Vessel's don't immediately become null on dying if they're the active vessel.
+                return _commandLeader;
+            }
+            protected set { _commandLeader = value; }
+        }
+        ModuleWingCommander _commandLeader;
 
         protected PilotCommands command;
+        PilotCommands previousCommand;
         public string currentStatus { get; protected set; } = "Free";
         protected int commandFollowIndex;
 
@@ -112,6 +125,26 @@ namespace BDArmory.Control
             AutoPilot(s);
         }
 
+        /// <summary>
+        /// Set the flight control state and also the corresponding axis groups.
+        /// </summary>
+        /// <param name="s">The flight control state</param>
+        /// <param name="pitch">pitch</param>
+        /// <param name="yaw">yaw</param>
+        /// <param name="roll">roll</param>
+        protected virtual void SetFlightControlState(FlightCtrlState s, float pitch, float yaw, float roll)
+        {
+            s.pitch = pitch;
+            s.yaw = yaw;
+            s.roll = roll;
+            if (hasAxisGroupsModule)
+            {
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Pitch, pitch);
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Yaw, yaw);
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Roll, roll);
+            }
+        }
+
         #region Pilot on/off
 
         public virtual void ActivatePilot()
@@ -134,8 +167,21 @@ namespace BDArmory.Control
             GameEvents.onVesselDestroy.Add(RemoveAutopilot);
 
             assignedPositionWorld = vessel.ReferenceTransform.position;
-            // I need to make sure gear is deployed on startup so it'll get properly retracted.
-            vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+            try // Sometimes the FSM breaks trying to set the gear action group
+            {
+                // Make sure the FSM is started for deployable wheels. (This should hopefully fix the FSM errors.)
+                foreach (var part in VesselModuleRegistry.GetModules<ModuleWheelDeployment>(vessel).Where(part => part != null && part.fsm != null && !part.fsm.Started))
+                {
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDAGenericAIBase]: Starting FSM with state {(string.IsNullOrEmpty(part.fsm.currentStateName) ? "Retracted" : part.fsm.currentStateName)} on {part.name} of {part.vessel.vesselName}");
+                    part.fsm.StartFSM(part.fsm.CurrentState ?? new KFSMState("Retracted"));
+                }
+                // I need to make sure gear is deployed on startup so it'll get properly retracted.
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[BDArmory.BDGenericAIBase]: Failed to set Gear action group on {vessel.vesselName}: {e.Message}");
+            }
             RefreshPartWindow();
         }
 
@@ -162,7 +208,7 @@ namespace BDArmory.Control
 
         protected void RefreshPartWindow()
         {
-            Events["TogglePilot"].guiName = pilotEnabled ? Localizer.Format("#LOC_BDArmory_DeactivatePilot") : Localizer.Format("#LOC_BDArmory_ActivatePilot");//"Deactivate Pilot""Activate Pilot"
+            Events["TogglePilot"].guiName = pilotEnabled ? StringUtils.Localize("#LOC_BDArmory_DeactivatePilot") : StringUtils.Localize("#LOC_BDArmory_ActivatePilot");//"Deactivate Pilot""Activate Pilot"
         }
 
         [KSPEvent(guiActive = true, guiName = "#LOC_BDArmory_TogglePilot", active = true)]//Toggle Pilot
@@ -208,6 +254,8 @@ namespace BDArmory.Control
 
                 activeVessel = vessel;
                 UpdateWeaponManager();
+                axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module so we can set the axis groups when setting the flight control state.
+                if (axisGroupsModule != null) hasAxisGroupsModule = true;
 
                 if (pilotEnabled)
                 {
@@ -232,6 +280,7 @@ namespace BDArmory.Control
             part.OnJustAboutToBeDestroyed -= DeactivatePilot;
             if (vessel != null) vessel.OnJustAboutToBeDestroyed -= DeactivatePilot;
             GameEvents.onVesselWasModified.Remove(onVesselWasModified);
+            GameEvents.onVesselDestroy.Remove(RemoveAutopilot);
             MissileFire.OnChangeTeam -= OnToggleTeam;
             GameEvents.onPartDie.Remove(OnPartDie);
         }
@@ -241,7 +290,7 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                GUI.Label(new Rect(200, Screen.height - 300, 600, 300), $"{vessel.name}\n{debugString.ToString()}");
+                GUI.Label(new Rect(200, Screen.height - 350, 600, 350), $"{vessel.name}\n{debugString.ToString()}");
             }
         }
 
@@ -351,7 +400,7 @@ namespace BDArmory.Control
             debugString.AppendLine(text);
         }
 
-        protected void SetStatus(string text)
+        protected virtual void SetStatus(string text)
         {
             currentStatus = text;
             // DebugLine(text);
@@ -361,25 +410,31 @@ namespace BDArmory.Control
 
         #region WingCommander
 
-        public virtual void ReleaseCommand()
+        public virtual void ReleaseCommand(bool resetAssignedPosition = true, bool storeCommand = true)
         {
             if (!vessel || command == PilotCommands.Free) return;
-            if (command == PilotCommands.Follow && commandLeader)
-            {
-                commandLeader = null;
-            }
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was released from command.");
+            previousCommand = command;
             command = PilotCommands.Free;
 
-            assignedPositionWorld = vesselTransform.position;
+            if (!storeCommand) // Clear the previous command.
+            {
+                if (previousCommand == PilotCommands.Follow) commandLeader = null;
+                previousCommand = PilotCommands.Free;
+            }
+            if (resetAssignedPosition) // Clear the assigned position.
+            {
+                assignedPositionWorld = vesselTransform.position;
+            }
         }
 
         public virtual void CommandFollow(ModuleWingCommander leader, int followerIndex)
         {
             if (!pilotEnabled) return;
-            if (leader == vessel || followerIndex < 0) return;
+            if (leader is null || leader == vessel || followerIndex < 0) return;
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow.");
+            previousCommand = command;
             command = PilotCommands.Follow;
             commandLeader = leader;
             commandFollowIndex = followerIndex;
@@ -395,8 +450,9 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to go to.");
+            if (BDArmorySettings.DEBUG_AI && (command != PilotCommands.FlyTo || (gpsCoords - assignedPositionGeo).sqrMagnitude > 0.1)) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to go to {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
+            previousCommand = command;
             command = PilotCommands.FlyTo;
         }
 
@@ -404,8 +460,9 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to attack.");
+            if (BDArmorySettings.DEBUG_AI && (command != PilotCommands.Attack || (gpsCoords - assignedPositionGeo).sqrMagnitude > 0.1)) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to attack {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
+            previousCommand = command;
             command = PilotCommands.Attack;
         }
 
@@ -419,19 +476,53 @@ namespace BDArmory.Control
             if (!pilotEnabled) return; // Do nothing if we haven't taken off (or activated with airspawn) yet.
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
+            previousCommand = command;
             command = PilotCommands.Waypoints;
         }
 
+        /// <summary>
+        /// Resume a previous command.
+        /// ReleaseCommand should be called with resetAssignedPosition=false if the previous command is to be preserved.
+        /// </summary>
+        /// <returns>true if the previous command is resumed, false otherwise.</returns>
+        public virtual bool ResumeCommand()
+        {
+            switch (previousCommand)
+            {
+                case PilotCommands.Free:
+                    return false;
+                case PilotCommands.Attack:
+                    CommandAttack(assignedPositionGeo);
+                    break;
+                case PilotCommands.FlyTo:
+                    CommandFlyTo(assignedPositionGeo);
+                    break;
+                case PilotCommands.Follow:
+                    CommandFollow(commandLeader, commandFollowIndex);
+                    break;
+                case PilotCommands.Waypoints:
+                    CommandFollowWaypoints();
+                    break;
+            }
+            return true;
+        }
         #endregion WingCommander
 
         #region Waypoints
         protected List<Vector3> waypoints = null;
+        protected int waypointCourseIndex = 0;
         protected int activeWaypointIndex = -1;
+        protected int activeWaypointLap = 1;
+        protected int waypointLapLimit = 1;
         protected Vector3 waypointPosition = default;
         //protected float waypointRadius = 500f;
-        protected float waypointRange = 999f;
+        public float waypointRange = 999f;
 
-        public bool IsRunningWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
+        public bool IsRunningWaypoints => command == PilotCommands.Waypoints &&
+            activeWaypointLap <= waypointLapLimit &&
+            activeWaypointIndex >= 0 &&
+            waypoints != null &&
+            waypoints.Count > 0;
         public int CurrentWaypointIndex => this.activeWaypointIndex;
 
         public void ClearWaypoints()
@@ -451,7 +542,10 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
+            this.waypointCourseIndex = BDArmorySettings.WAYPOINT_COURSE_INDEX;
             this.activeWaypointIndex = 0;
+            this.activeWaypointLap = 1;
+            this.waypointLapLimit = BDArmorySettings.WAYPOINT_LOOP_INDEX;
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
@@ -469,28 +563,34 @@ namespace BDArmory.Control
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
-            var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-            // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
-            if (waypointRange < WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            var timeToCPA = AIUtils.TimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+            if (waypointRange < WaypointCourses.CourseLocations[waypointCourseIndex].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, waypointCourseIndex, activeWaypointIndex, activeWaypointLap, waypointLapLimit, deviation);
+
+                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && activeWaypointIndex >= BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
+                {
+                    // activate guard mode
+                    weaponManager.guardMode = true;
+                }
+
                 ++activeWaypointIndex;
-                if (activeWaypointIndex >= waypoints.Count)
+                if (activeWaypointIndex >= waypoints.Count && activeWaypointLap > waypointLapLimit)
                 {
                     if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
                     return;
                 }
-                else
+                else if (activeWaypointIndex >= waypoints.Count && activeWaypointLap <= waypointLapLimit)
                 {
-                    waypoint = waypoints[activeWaypointIndex];
-                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
-                    return;
+                    activeWaypointIndex = 0;
+                    activeWaypointLap++;
                 }
+                UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
             }
         }
 
@@ -505,6 +605,7 @@ namespace BDArmory.Control
         }
         /// <summary>
         /// Prevent fuel resource drain until the next waypoint (coroutine).
+        /// Note: this should probably use the non-waypoint version below and just start/stop it based on the waypoint index.
         /// </summary>
         IEnumerator MaintainFuelLevelsUntilWaypointCoroutine()
         {

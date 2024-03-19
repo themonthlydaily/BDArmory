@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 
+using BDArmory.Extensions;
+
 namespace BDArmory.Utils
 {
     public static class VectorUtils
@@ -52,7 +54,7 @@ namespace BDArmory.Utils
             // If the determinant is negative, then there is no solution
             if (det > 0f)
             {
-                return 2f * c / (Mathf.Sqrt(det) - b);
+                return 2f * c / (BDAMath.Sqrt(det) - b);
             }
             else
             {
@@ -86,7 +88,7 @@ namespace BDArmory.Utils
             float random = UnityEngine.Random.Range(0f, 1f);
             float maxRotate = maxAngle * (random * random);
             maxRotate = Mathf.Clamp(maxRotate, 0, maxAngle) * Mathf.Deg2Rad;
-            return Vector3.RotateTowards(direction, Vector3.ProjectOnPlane(UnityEngine.Random.onUnitSphere, direction), maxRotate, 0).normalized;
+            return Vector3.RotateTowards(direction, UnityEngine.Random.onUnitSphere.ProjectOnPlane(direction), maxRotate, 0).normalized;
         }
 
         /// <summary>
@@ -117,13 +119,22 @@ namespace BDArmory.Utils
             // Technically this will raise an exception if the first random produces a zero (which should never happen now that it's log(1-rnd))
             try
             {
-                return Mathf.Sqrt(-2 * Mathf.Log(1f - UnityEngine.Random.value)) * Mathf.Cos(Mathf.PI * UnityEngine.Random.value);
+                return BDAMath.Sqrt(-2 * Mathf.Log(1f - UnityEngine.Random.value)) * Mathf.Cos(Mathf.PI * UnityEngine.Random.value);
             }
             catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
                 Debug.LogWarning("[BDArmory.VectorUtils]: Exception thrown in Gaussian: " + e.Message + "\n" + e.StackTrace);
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Generate a Vector3 with elements from an approximately normal distribution (mean: 0, std.dev: 1).
+        /// </summary>
+        /// <returns></returns>
+        public static Vector3 GaussianVector3()
+        {
+            return new Vector3(Gaussian(), Gaussian(), Gaussian());
         }
 
         public static Vector3d GaussianVector3d(Vector3d mean, Vector3d stdDev)
@@ -147,7 +158,7 @@ namespace BDArmory.Utils
             // Technically this will raise an exception if the random produces a zero, which should almost never happen
             try
             {
-                return Mathf.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value));
+                return BDAMath.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value));
             }
             catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
@@ -228,8 +239,8 @@ namespace BDArmory.Utils
             float dlat = lat2 - lat1;
             float dlon = (destination.y - start.y) * Mathf.Deg2Rad;
             float a = Mathf.Sin(dlat / 2) * Mathf.Sin(dlat / 2) + Mathf.Cos(lat1) * Mathf.Cos(lat2) * Mathf.Sin(dlon / 2) * Mathf.Sin(dlon / 2);
-            float distance = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a)) * (float)body.Radius;
-            return Mathf.Sqrt(distance * distance + (destination.z - start.z) * (destination.z - start.z));
+            float distance = 2 * Mathf.Atan2(BDAMath.Sqrt(a), BDAMath.Sqrt(1 - a)) * (float)body.Radius;
+            return BDAMath.Sqrt(distance * distance + (destination.z - start.z) * (destination.z - start.z));
         }
 
         public static Vector3 RotatePointAround(Vector3 pointToRotate, Vector3 pivotPoint, Vector3 axis, float angle)
@@ -241,10 +252,28 @@ namespace BDArmory.Utils
 
         public static Vector3 GetNorthVector(Vector3 position, CelestialBody body)
         {
-            Vector3 geoPosA = WorldPositionToGeoCoords(position, body);
-            Vector3 geoPosB = new Vector3(geoPosA.x + 1, geoPosA.y, geoPosA.z);
-            Vector3 north = GetWorldSurfacePostion(geoPosB, body) - GetWorldSurfacePostion(geoPosA, body);
-            return Vector3.ProjectOnPlane(north, body.GetSurfaceNVector(geoPosA.x, geoPosA.y)).normalized;
+            var latlon = body.GetLatitudeAndLongitude(position);
+            var surfacePoint = body.GetWorldSurfacePosition(latlon.x, latlon.y, 0);
+            var up = (body.GetWorldSurfacePosition(latlon.x, latlon.y, 1000) - surfacePoint).normalized;
+            var north = -Math.Sign(latlon.x) * (body.GetWorldSurfacePosition(latlon.x - Math.Sign(latlon.x), latlon.y, 0) - surfacePoint).ProjectOnPlanePreNormalized(up).normalized;
+            return north;
+        }
+
+        /// <summary>
+        /// Efficiently calculate up, north and right at a given worldspace position on a body.
+        /// </summary>
+        /// <param name="body"></param>
+        /// <param name="position"></param>
+        /// <param name="up"></param>
+        /// <param name="north"></param>
+        /// <param name="right"></param>
+        public static void GetWorldCoordinateFrame(CelestialBody body, Vector3 position, out Vector3 up, out Vector3 north, out Vector3 right)
+        {
+            var latlon = body.GetLatitudeAndLongitude(position);
+            var surfacePoint = body.GetWorldSurfacePosition(latlon.x, latlon.y, 0);
+            up = (body.GetWorldSurfacePosition(latlon.x, latlon.y, 1000) - surfacePoint).normalized;
+            north = -Math.Sign(latlon.x) * (body.GetWorldSurfacePosition(latlon.x - Math.Sign(latlon.x), latlon.y, 0) - surfacePoint).ProjectOnPlanePreNormalized(up).normalized;
+            right = Vector3.Cross(up, north);
         }
 
         public static Vector3 GetWorldSurfacePostion(Vector3d geoPosition, CelestialBody body)
@@ -256,6 +285,12 @@ namespace BDArmory.Utils
             return body.GetWorldSurfacePosition(geoPosition.x, geoPosition.y, geoPosition.z);
         }
 
+        /// <summary>
+        /// Get the up direction at a position.
+        /// Note: If the position is a vessel's position, then this is the same as vessel.up, which is precomputed. Use that instead!
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns>The normalized up direction at the position.</returns>
         public static Vector3 GetUpDirection(Vector3 position)
         {
             if (FlightGlobals.currentMainBody == null) return Vector3.up;
@@ -271,7 +306,8 @@ namespace BDArmory.Utils
 
             double d;
 
-            d = -(Vector3.Dot(l, o - c) + Math.Sqrt(Mathf.Pow(Vector3.Dot(l, o - c), 2) - (o - c).sqrMagnitude + (r * r)));
+            var dotLOC = Vector3.Dot(l, o - c);
+            d = -(Vector3.Dot(l, o - c) + Math.Sqrt(dotLOC * dotLOC - (o - c).sqrMagnitude + (r * r)));
 
             if (double.IsNaN(d))
             {

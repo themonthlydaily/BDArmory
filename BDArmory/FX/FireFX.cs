@@ -15,6 +15,9 @@ namespace BDArmory.FX
     class FireFX : MonoBehaviour
     {
         Part parentPart;
+        // string parentPartName = "";
+        // string parentVesselName = "";
+
         public static ObjectPool CreateFireFXPool(string modelPath)
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
@@ -37,7 +40,7 @@ namespace BDArmory.FX
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
-        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
         bool parentBeingDestroyed = false;
 
         PartResource fuel;
@@ -51,9 +54,12 @@ namespace BDArmory.FX
         // bool lookedForEngine = false;
 
         KSPParticleEmitter[] pEmitters;
+
+        Collider[] blastHitColliders = new Collider[100];
+        bool vacuum = false;
         void OnEnable()
         {
-            if (parentPart == null)
+            if (parentPart == null || !HighLogic.LoadedSceneIsFlight)
             {
                 gameObject.SetActive(false);
                 return;
@@ -78,6 +84,7 @@ namespace BDArmory.FX
             fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
+            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position), FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
 
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
@@ -85,6 +92,10 @@ namespace BDArmory.FX
                     if (pe.Current == null) continue;
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
+                    if (vacuum)
+                    {
+                        pe.Current.localVelocity = new Vector3(0, (float)parentPart.vessel.obt_speed, 0);
+                    }
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
 
@@ -146,13 +157,16 @@ namespace BDArmory.FX
         void OnDisable()
         {
             // Clean up emitters.
-            BDArmorySetup.numberOfParticleEmitters--;
-            foreach (var pe in pEmitters)
-                if (pe != null)
-                {
-                    pe.emit = false;
-                    EffectBehaviour.RemoveParticleEmitter(pe);
-                }
+            if (pEmitters is not null)
+            {
+                --BDArmorySetup.numberOfParticleEmitters;
+                foreach (var pe in pEmitters)
+                    if (pe != null)
+                    {
+                        pe.emit = false;
+                        EffectBehaviour.RemoveParticleEmitter(pe);
+                    }
+            }
             // Clean up part and resource references.
             parentPart = null;
             Seat = null;
@@ -166,13 +180,14 @@ namespace BDArmory.FX
             fireIntensity = 1;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
             {
                 return;
             }
-            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            if (vacuum) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
+            else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             if (disableTime < 0) //only have fire do it's stuff while burning and not during FX timeout
             {
@@ -187,7 +202,7 @@ namespace BDArmory.FX
                     {
                         if (isSRB)
                         {
-                            if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                            if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.fixedDeltaTime)) <= 0)
                             {
                                 hasFuel = false;
                             }
@@ -210,7 +225,7 @@ namespace BDArmory.FX
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                                if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.fixedDeltaTime)) <= 0)
                                 {
                                     hasFuel = false;
                                 }
@@ -225,7 +240,7 @@ namespace BDArmory.FX
                     {
                         if (fuel != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05 && ox == null)
+                            if (parentPart.vessel.InNearVacuum() && ox == null)
                             {
                                 hasFuel = false;
                             }
@@ -235,7 +250,7 @@ namespace BDArmory.FX
                                 {
                                     if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
                                     {
-                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                                         fuel.amount -= fireIntensity;
                                         burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
                                     }
@@ -257,7 +272,7 @@ namespace BDArmory.FX
                             if (ox.amount > 0)
                             {
                                 fireIntensity *= 1.2f;
-                                ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                             }
                             else
                             {
@@ -269,7 +284,7 @@ namespace BDArmory.FX
                         {
                             if (mp.amount > (mp.maxAmount * 0.15f) || (mp.amount > 0 && mp.amount < (mp.maxAmount * 0.10f)))
                             {
-                                mp.amount -= (burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                mp.amount -= (burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                                 if (burnScale < 0)
                                 {
                                     burnScale = Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
@@ -288,7 +303,7 @@ namespace BDArmory.FX
                         ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                         if (ec != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05)
+                            if (parentPart.vessel.InNearVacuum())
                             {
                                 hasFuel = false;
                             }
@@ -324,9 +339,9 @@ namespace BDArmory.FX
                         {
                             parentPart.temperature += burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * Time.deltaTime;
                         }
-                        else if (ec != null || ox != null)
+                        else //if (ec != null || ox != null)
                         {
-                            parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime;
+                            parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime;
                         }
                     }
                 }
@@ -334,22 +349,22 @@ namespace BDArmory.FX
                 {
                     if (BDArmorySettings.BD_INTENSE_FIRES)
                     {
-                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                     }
                     else
                     {
                         if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(parentPart.vessel.GetName()))
                         {
-                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
+                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.fixedDeltaTime);
                         }
                         else
-                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                     }
 
-                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                 }
             }
-            if (disableTime < 0 && ((!hasFuel && burnTime < 0)|| (burnTime >= 0 && Time.time - startTime > burnTime)))
+            if (disableTime < 0 && ((!hasFuel && burnTime < 0) || (burnTime >= 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -364,23 +379,28 @@ namespace BDArmory.FX
                     pe.maxSize = burnScale * 1.2f;
                 }
             }
-            if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
+            if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120 && SourceVessel != "GM") //blow out surface fires if moving fast enough
             {
-                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+                burnTime = 5;
             }
             // Note: the following can set the parentPart to null.
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
             {
                 Deactivate();
             }
-            if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
+            if (vacuum || !FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
                 Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
+            if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0)
+            {
+                Deactivate(); //don't burn underwater
             }
         }
 
         void Detonate()
         {
+            if (!HighLogic.LoadedSceneIsFlight) { Deactivate(); return; }
             if (surfaceFire) return;
             if (!BDArmorySettings.BD_FIRE_FUELEX) return;
             if (!parentPart.partName.Contains("exploding"))
@@ -434,7 +454,13 @@ namespace BDArmory.FX
                 if (excessFuel)
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
-                    using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
+                    var hitCount = Physics.OverlapSphereNonAlloc(parentPart.transform.position, blastRadius, blastHitColliders, explosionLayerMask);
+                    if (hitCount == blastHitColliders.Length)
+                    {
+                        blastHitColliders = Physics.OverlapSphere(parentPart.transform.position, blastRadius, explosionLayerMask);
+                        hitCount = blastHitColliders.Length;
+                    }
+                    using (var blastHits = blastHitColliders.Take(hitCount).GetEnumerator())
                         while (blastHits.MoveNext())
                         {
                             if (blastHits.Current == null) continue;
@@ -473,7 +499,7 @@ namespace BDArmory.FX
                 }
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
-                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, null, "Fuel", sourceVelocity: parentPart.vessel.Velocity());
                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
                     {
                         if (tntFuel > 0 || tntMP > 0)
@@ -485,43 +511,87 @@ namespace BDArmory.FX
                     }
                 }
             }
-            Deactivate();
+            if (parentPart.Modules.GetModule<HitpointTracker>().ignitionTemp < 0) Deactivate(); //wooden batteries keep burning
         }
 
         public void AttachAt(Part hitPart, Vector3 hit, Vector3 offset, string sourcevessel)
         {
-            if (hitPart == null) return;
+            if (hitPart is null) return;
             parentPart = hitPart;
+            // parentPartName = parentPart.name;
+            // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit + offset;
             transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(true); // Catch unloading events too.
             SourceVessel = sourcevessel;
             gameObject.SetActive(true);
         }
 
         public void OnParentDestroy()
         {
-            if (parentPart != null)
+            if (parentPart is not null)
             {
                 parentBeingDestroyed = true;
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
                 if (!surfaceFire) Detonate();
-                else Deactivate();
+                Deactivate();
             }
+        }
+
+        public void OnVesselUnloaded(Vessel vessel)
+        {
+            if (parentPart is not null && (parentPart.vessel is null || parentPart.vessel == vessel))
+            {
+                OnParentDestroy();
+            }
+            else if (parentPart is null)
+            {
+                Deactivate(); // Sometimes (mostly when unloading a vessel) the parent becomes null without triggering OnParentDestroy.
+            }
+        }
+
+        void OnVesselUnloaded_1_11(bool addRemove) // onVesselUnloaded event introduced in 1.11
+        {
+            if (addRemove)
+                GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
+            else
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
 
         void Deactivate()
         {
-            if (gameObject.activeInHierarchy)
+            if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
                 disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
                 gameObject.SetActive(false);
             }
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
+        }
+
+        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
+        {
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FireFX]: FireFX on {parentPartName} ({parentVesselName}) was destroyed!");
+            // Clean up emitters.
+            if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
+            {
+                BDArmorySetup.numberOfParticleEmitters--;
+                foreach (var pe in pEmitters)
+                    if (pe != null)
+                    {
+                        pe.emit = false;
+                        EffectBehaviour.RemoveParticleEmitter(pe);
+                    }
+            }
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
     }
 }

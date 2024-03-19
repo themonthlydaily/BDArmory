@@ -43,6 +43,7 @@ namespace BDArmory.Competition.RemoteOrchestration
         public Dictionary<string, int> rocketPartsIn = new Dictionary<string, int>();
         public Dictionary<string, double> rocketDamageOut = new Dictionary<string, double>();
         public Dictionary<string, double> rocketDamageIn = new Dictionary<string, double>();
+        public Dictionary<string, int> asteroidPartsIn = new Dictionary<string, int>();
         public Dictionary<string, int> waypoints = new Dictionary<string, int>();
         public Dictionary<string, double> elapsedTime = new Dictionary<string, double>(); // AUBRANIUM, I'd recommend renaming elapsedTime and deviation as waypointsElapsedTime and waypointsDeviation for clarity. Similarly for the Compute... functions.
         public Dictionary<string, double> deviation = new Dictionary<string, double>();
@@ -193,7 +194,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         private IEnumerator CoordinateTournament(string hash)
         {
-            if( client.competition == null )
+            if (client.competition == null)
             {
                 Debug.Log("[BDArmory.BDAScoreService] Unexpected null competition");
                 status = StatusType.Invalid;
@@ -268,7 +269,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             yield return client.GetHeatVessels(hash, heat);
 
             // check for active vessels
-            if( client.activeVessels.Count == 0 )
+            if (client.activeVessels.Count == 0)
             {
                 Debug.Log("[BDArmory.BDAScoreService] Unexpected empty active vessel set");
                 yield break;
@@ -279,7 +280,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             yield return client.StartHeat(hash, heat);
 
             // check active heat (null means start failed)
-            if( client.activeHeat == null )
+            if (client.activeHeat == null)
             {
                 Debug.Log("[BDArmory.BDAScoreService] Unable to start heat");
                 yield break;
@@ -290,7 +291,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
             // run heat using tournament coordinator
             var coordinator = RemoteTournamentCoordinator.BuildFromDescriptor(client.competition);
-            if( coordinator == null )
+            if (coordinator == null)
             {
                 Debug.Log("[BDArmory.BDAScoreService] Failed to build tournament coordinator");
                 yield break;
@@ -325,7 +326,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (!client.playerVessels.ContainsKey(playerName))
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched player {0}", playerName));
-                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
 
@@ -334,7 +334,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (player == null)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched player {0}", playerNamePart));
-                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
 
@@ -343,7 +342,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (vessel == null)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched vessel for playerId {0}", player.id));
-                    Debug.Log("DEBUG vessels were " + string.Join(", ", client.vessels.Values.Select(p => p.id)));
                     continue;
                 }
 
@@ -369,6 +367,7 @@ namespace BDArmory.Competition.RemoteOrchestration
                 record.roc_parts_in = ComputeTotalRocketPartsIn(playerName);
                 record.roc_dmg_out = ComputeTotalRocketDamageOut(playerName);
                 record.roc_dmg_in = ComputeTotalRocketDamageIn(playerName);
+                record.ast_parts_in = ComputeTotalAsteroidPartsIn(playerName);
                 record.wins = ComputeWins(playerName);
                 record.kills = ComputeTotalKills(playerName);
                 record.deaths = ComputeTotalDeaths(playerName);
@@ -430,6 +429,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             missilePartsOut.Clear();
             rammedPartsIn.Clear();
             rammedPartsOut.Clear();
+            asteroidPartsIn.Clear();
         }
 
         public int ComputeTotalHitsOut(string playerName)
@@ -570,6 +570,13 @@ namespace BDArmory.Competition.RemoteOrchestration
             return 0;
         }
 
+        private int ComputeTotalAsteroidPartsIn(string playerName)
+        {
+            if (asteroidPartsIn.ContainsKey(playerName))
+                return asteroidPartsIn[playerName];
+            return 0;
+        }
+
         private int ComputeTotalKills(string playerName)
         {
             int result = 0;
@@ -646,7 +653,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public int ComputeWaypoints(string playerName)
         {
-            if( waypoints.ContainsKey(playerName) )
+            if (waypoints.ContainsKey(playerName))
             {
                 return waypoints[playerName];
             }
@@ -658,7 +665,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public float ComputeElapsedTime(string playerName)
         {
-            if( elapsedTime.ContainsKey(playerName) )
+            if (elapsedTime.ContainsKey(playerName))
             {
                 return (float)elapsedTime[playerName];
             }
@@ -670,7 +677,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public float ComputeDeviation(string playerName)
         {
-            if( deviation.ContainsKey(playerName) )
+            if (deviation.ContainsKey(playerName))
             {
                 return (float)deviation[playerName];
             }
@@ -900,6 +907,15 @@ namespace BDArmory.Competition.RemoteOrchestration
             }
         }
 
+        public void TrackPartsLostToAsteroids(string target, int count)
+        {
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.BDAScoreService]: TrackPartsLostToAsteroids by {target} for {count} parts.");
+
+            activePlayers.Add(target);
+            if (asteroidPartsIn.ContainsKey(target)) asteroidPartsIn[target] += count;
+            else asteroidPartsIn.Add(target, count);
+        }
+
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
             if (BDArmorySettings.DEBUG_OTHER)
@@ -944,7 +960,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             }
             if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
             {
-                Debug.Log(string.Format("[BDACompetitionMode] Tracked longest hit for {0} with {1} at {2}m", attacker, weaponName, hitDistance));
+                Debug.Log(string.Format("[BDArmory.BDACompetitionMode]: Tracked longest hit for {0} with {1} at {2}m", attacker, weaponName, hitDistance));
                 if (longestHitDistance.ContainsKey(attacker))
                 {
                     longestHitWeapon[attacker] = weaponName;
