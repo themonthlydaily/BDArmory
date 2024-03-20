@@ -26,8 +26,8 @@ namespace BDArmory.UI
         public bool _ready = false;
         Dictionary<string, NumericInputField> spawnFields;
 
-        int selected_index = 1;
-        int selected_gate_index = 1;
+        int selected_index = 0;
+        int selected_gate_index = 0;
         public float SelectedGate = 0;
         public static string Gatepath;
         public string SelectedModel;
@@ -324,6 +324,7 @@ namespace BDArmory.UI
                         ShowNewCourse = false;
                         showCourseWPsComboBox = true;
                         recording = true;
+                        selected_gate_index = -1;
                         //clear any previously loaded gates
                         foreach (var gate in loadedGates)
                         {
@@ -358,6 +359,7 @@ namespace BDArmory.UI
                     {
                         recording = false;
                     }
+                    line++;
                 }
                 int i = 0;
                 foreach (var gate in WaypointCourses.CourseLocations[selected_index].waypoints)
@@ -373,7 +375,11 @@ namespace BDArmory.UI
                                 loadedGates[selected_gate_index].disabled = true;
                                 loadedGates[selected_gate_index].gameObject.SetActive(false);
                                 WaypointCourses.CourseLocations[selected_index].waypoints.Remove(gate);
-                                if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count) selected_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
+                                if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count)
+                                {
+                                    if (WaypointCourses.CourseLocations[selected_index].waypoints.Count > 0) selected_gate_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
+                                    else selected_gate_index = -1;
+                                }
                                 WaypointField.Save();
                                 break;
                             default:
@@ -406,6 +412,7 @@ namespace BDArmory.UI
             if (showPositioningControls)
             {
                 //need to get these setup and configured - TODO
+                if (selected_gate_index == -1) return;
                 var currGate = WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index];
                 if (loadedGates[selected_gate_index] != null)
                 {
@@ -469,11 +476,11 @@ namespace BDArmory.UI
 
                     if (GUI.Button(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
                     {
-                        if ((movementIncrement - 1) > 1)
+                        if (movementIncrement >= 2)
                             spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 1);
                         else
                         {
-                            if ((movementIncrement - 1) > 0.1)
+                            if (movementIncrement >= 0.2)
                                 spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.1); //there is almost certainly a more elegant way to do scaling, FIXME later
                             else
                                 spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.01);
@@ -514,8 +521,7 @@ namespace BDArmory.UI
         void AddGate(string newName)
         {
             Vector3d gateCoords;
-            if (!recording) FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + FlightCamera.fetch.Distance * FlightCamera.fetch.mainCamera.transform.forward, out gateCoords.x, out gateCoords.y, out gateCoords.z);
-            else FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out gateCoords.x, out gateCoords.y, out gateCoords.z);
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out gateCoords.x, out gateCoords.y, out gateCoords.z);
             WaypointCourses.CourseLocations[selected_index].waypoints.Add(new Waypoint(newName, gateCoords, 500));
             WaypointField.Save();
 
