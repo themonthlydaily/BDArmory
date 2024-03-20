@@ -13,6 +13,7 @@ using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using UnityEngine.UIElements;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {
@@ -314,7 +315,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 if (WPTemplate == null)
                 {
                     Debug.LogError("[BDArmory.WayPointMarker]: " + ModelPath + " was not found, using the default model instead. Please fix your model.");
-                    WPTemplate = GameDatabase.Instance.GetModel("BDArmory/Models/WayPoint/model");
+                    WPTemplate = GameDatabase.Instance.GetModel("BDArmory/Models/WayPoint/Ring");
                 }
                 WPTemplate.SetActive(false);
                 WPTemplate.AddComponent<WayPointMarker>();
@@ -353,10 +354,10 @@ namespace BDArmory.Competition.OrchestrationStrategies
             var direction = (WorldCoords - previousLocation).normalized;
             Quaternion rotation = Quaternion.LookRotation(direction, -FlightGlobals.getGeeForceAtPosition(Vector3.zero).normalized); //this needed, so the model is aligned to the ground normal, not the body transform orientation
 
-            transform.SetPositionAndRotation(waypoint.location, rotation);
+            transform.SetPositionAndRotation(WorldCoords, rotation);
 
-            transform.RotateAround(waypoint.location, transform.up, Vector3.Angle(transform.forward, direction)); //rotate model on horizontal plane towards last gate
-            transform.RotateAround(waypoint.location, transform.right, Vector3.Angle(transform.forward, direction)); //and on vertical plane if elevation change between the two
+            transform.RotateAround(WorldCoords, transform.up, Vector3.Angle(transform.forward, direction)); //rotate model on horizontal plane towards last gate
+            transform.RotateAround(WorldCoords, transform.right, Vector3.Angle(transform.forward, direction)); //and on vertical plane if elevation change between the two
 
             float WPScale = waypoint.scale / 500; //default ring/torii models scaled for 500m
             transform.localScale = new Vector3(WPScale, WPScale, WPScale);

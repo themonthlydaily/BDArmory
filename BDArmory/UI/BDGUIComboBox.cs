@@ -40,7 +40,6 @@ namespace BDArmory.UI
         /// <param name="persistant">Does the box remain open after clicking a selection</param>
         public BDGUIComboBox(Rect buttonRect, Rect listRect, GUIContent buttonContent, GUIContent[] listContent, float maxHeight, GUIStyle listStyle, int columns = 2, bool persistant = false)
 		{
-            this.rect = rect;
             this.buttonRect = buttonRect;
             this.listRect = listRect;
             this.buttonContent = buttonContent;
