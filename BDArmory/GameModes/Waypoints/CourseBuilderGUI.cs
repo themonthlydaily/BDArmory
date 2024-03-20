@@ -230,12 +230,12 @@ namespace BDArmory.UI
             float line = 0.25f;
             var rects = new List<Rect>();
 
-            if (GUI.Button(SLeftButtonRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_LoadCourse")}", ShowLoadMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
+            if (GUI.Button(SLeftButtonRect(++line), $"{StringUtils.Localize("Load Course")}", ShowLoadMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
             {
                 ShowLoadMenu = !ShowLoadMenu;
             }
 
-            if (GUI.Button(SRightButtonRect(line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_NewCourse")}", ShowNewCourse ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
+            if (GUI.Button(SRightButtonRect(line), $"{StringUtils.Localize("New Course")}", ShowNewCourse ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
             {
                 ShowNewCourse = !ShowNewCourse;
             }
@@ -245,13 +245,14 @@ namespace BDArmory.UI
                 int i = 0;
                 foreach (var wpCourse in WaypointCourses.CourseLocations)
                 {
-                    if (GUI.Button(SQuarterRect(line, i++), wpCourse.name, BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, i++), wpCourse.name, i - 1 == selected_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                     {
                         switch (Event.current.button)
                         {
                             case 1: // right click
                                 WaypointCourses.CourseLocations.Remove(wpCourse);
                                 WaypointField.Save();
+                                if (selected_index >= WaypointCourses.CourseLocations.Count) selected_index = WaypointCourses.CourseLocations.Count - 1;
                                 break;
                             default:
                                 //if loading an off-world course, warp to world
@@ -351,8 +352,9 @@ namespace BDArmory.UI
                     GUI.Label(SQuarterRect(++line, 1), "Timestep (s)", leftLabel);
                     spawnFields["interval"].tryParseValue(GUI.TextField(SQuarterRect(line, 2), spawnFields["interval"].possibleValue, 8, spawnFields["interval"].style));
                     if (spawnFields["interval"].currentValue != recordingIncrement) recordingIncrement = (float)spawnFields["interval"].currentValue;
+
                     line += 0.25f;
-                    if (GUI.Button(SLineRect(line++), "Finish Recording", BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SLineRect(++line), "Finish Recording", BDArmorySetup.BDGuiSkin.button))
                     {
                         recording = false;
                     }
@@ -360,7 +362,7 @@ namespace BDArmory.UI
                 int i = 0;
                 foreach (var gate in WaypointCourses.CourseLocations[selected_index].waypoints)
                 {
-                    if (GUI.Button(SQuarterRect(line, i++), gate.name, BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, i++), gate.name, i - 1 == selected_gate_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                     {
                         selected_gate_index = i - 1;
                         Debug.Log($"selected gate index: {selected_gate_index}, ({WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].name})");
@@ -371,6 +373,7 @@ namespace BDArmory.UI
                                 loadedGates[selected_gate_index].disabled = true;
                                 loadedGates[selected_gate_index].gameObject.SetActive(false);
                                 WaypointCourses.CourseLocations[selected_index].waypoints.Remove(gate);
+                                if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count) selected_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
                                 WaypointField.Save();
                                 break;
                             default:
@@ -391,7 +394,7 @@ namespace BDArmory.UI
                 if (!recording)
                 {
                     txtName = GUI.TextField(SRightButtonRect(++line), txtName);
-                    if (GUI.Button(SLeftButtonRect(line), StringUtils.Localize("#Add Gate"), BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SLeftButtonRect(line), StringUtils.Localize("Add Gate"), BDArmorySetup.BDGuiSkin.button))
                     {
                         string newName = string.IsNullOrEmpty(txtName.Trim()) ? ("Waypoint " + WaypointCourses.CourseLocations[selected_index].waypoints.Count.ToString()) : txtName.Trim();
                         AddGate(newName);
