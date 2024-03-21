@@ -114,6 +114,7 @@ namespace BDArmory.Settings
         if (field.Name.EndsWith("_SETTINGS_TOGGLE")) continue; // Don't toggle the section headers.
         if (field.Name.StartsWith("RUNWAY_PROJECT")) continue; // Skip settings beginning with RWP (toggle and slider) to avoid recursion.
         if (field.Name.StartsWith("VESSEL_SPAWN_")) continue; // Skip spawn settings so they are the same between RWP and non-RWP.
+        if (field.Name.StartsWith("TOURNAMENT_")) continue; // Skip tournament settings so they are the same between RWP and non-RWP.
         settings.Add(field.Name, field.GetValue(null));
       }
       if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
