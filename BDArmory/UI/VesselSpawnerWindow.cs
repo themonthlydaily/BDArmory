@@ -791,6 +791,15 @@ namespace BDArmory.UI
             {
                 if (GUI.Button(SLineRect(++line), "Run waypoints", BDArmorySetup.BDGuiSkin.button))
                 {
+                    if (BDArmorySetup.showWPBuilderGUI && !TournamentCoordinator.Instance.IsRunning) //delete loaded gates if builder is closed, but not if WP course is currently running
+                    {
+                        foreach (var gate in CourseBuilderGUI.Instance.loadedGates)
+                        {
+                            gate.disabled = true;
+                            gate.gameObject.SetActive(false);
+                        }
+                        CourseBuilderGUI.Instance.loadedGates.Clear();
+                    }
                     BDATournament.Instance.StopTournament();
                     if (TournamentCoordinator.Instance.IsRunning) // Stop either case.
                     {

@@ -9,6 +9,7 @@ using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
 using System.Linq.Expressions;
+using BDArmory.Competition;
 
 namespace BDArmory.UI
 {
@@ -40,6 +41,7 @@ namespace BDArmory.UI
         private bool recording = false;
         private bool showCourseWPsComboBox = false;
         private bool showPositioningControls = false;
+        bool moddingSpawnPoint = false;
         public List<WayPointMarker> loadedGates;
         #endregion
 
@@ -125,6 +127,7 @@ namespace BDArmory.UI
                 { "increment", gameObject.AddComponent<NumericInputField>().Initialise(0.001f, movementIncrement) },
                 { "diameter", gameObject.AddComponent<NumericInputField>().Initialise(0, 500) },
                 { "interval", gameObject.AddComponent<NumericInputField>().Initialise(0, recordingIncrement) },
+                { "speed", gameObject.AddComponent<NumericInputField>().Initialise(0, -1) },
             };
             selected_index = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
             loadedGates = new List<WayPointMarker>();
@@ -209,6 +212,20 @@ namespace BDArmory.UI
             );
             BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectWayPointSpawner, _guiCheckIndex);
+            if (showCourseWPsComboBox)
+            {
+                //draw spawnpoint
+                float terrainAlt = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].spawnPoint.x, WaypointCourses.CourseLocations[selected_index].spawnPoint.y);
+                Vector3d SpawnCoords = new Vector3((float)WaypointCourses.CourseLocations[selected_index].spawnPoint.x, (float)WaypointCourses.CourseLocations[selected_index].spawnPoint.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + terrainAlt);
+                GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(SpawnCoords, FlightGlobals.currentMainBody), BDArmorySetup.Instance.greenPointCircleTexture, new Vector2(96, 96), 0);
+                if (selected_index >= 0 && selected_gate_index >=0)
+                {
+                    terrainAlt = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.y);
+                    terrainAlt += (WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].scale * 1.1f);
+                    SpawnCoords = new Vector3((float)WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.x, (float)WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE) + terrainAlt);
+                    GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(SpawnCoords, FlightGlobals.currentMainBody), BDArmorySetup.Instance.greenDiamondTexture, new Vector2(36, 36), 0);
+                }
+            }
         }
 
         private void SetNewHeight(float windowHeight)
@@ -250,6 +267,17 @@ namespace BDArmory.UI
                         switch (Event.current.button)
                         {
                             case 1: // right click
+                                if (selected_index == i - 1) //deleting currently loaded ocurse
+                                {
+                                    foreach (var gate in loadedGates)
+                                    {
+                                        gate.disabled = true;
+                                        gate.gameObject.SetActive(false);
+                                    }
+                                    selected_gate_index = -1;
+                                    showCourseWPsComboBox = false;
+                                    moddingSpawnPoint = false;
+                                }
                                 WaypointCourses.CourseLocations.Remove(wpCourse);
                                 WaypointField.Save();
                                 if (selected_index >= WaypointCourses.CourseLocations.Count) selected_index = WaypointCourses.CourseLocations.Count - 1;
@@ -269,6 +297,7 @@ namespace BDArmory.UI
                                 ShowLoadMenu = false;
                                 selected_index = i -1;
                                 showCourseWPsComboBox = true;
+                                moddingSpawnPoint = false;
                                 //spawn in course gates
                                 Debug.Log($"Loading Course; selected index: {selected_index}, ({WaypointCourses.CourseLocations[selected_index].name}) starting gate spawn");
                                 for (int wp = 0; wp < wpCourse.waypoints.Count; wp++)
@@ -297,9 +326,11 @@ namespace BDArmory.UI
                 {
                     if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("Create"), BDArmorySetup.BDGuiSkin.button))
                     {
-                        Vector3d spawnCoords = VectorUtils.GetWorldSurfacePostion(FlightGlobals.ActiveVessel.transform.position, FlightGlobals.currentMainBody);
+                        Vector3d spawnCoords = Vector3d.zero;
+                        FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out spawnCoords.x, out spawnCoords.y, out spawnCoords.z);
+
                         if (!WaypointCourses.CourseLocations.Select(l => l.name).ToList().Contains(newCourseName))
-                            WaypointCourses.CourseLocations.Add(new WaypointCourse(newCourseName, FlightGlobals.GetBodyIndex(FlightGlobals.currentMainBody), new Vector2d(spawnCoords.x, spawnCoords.y), new List<GameModes.Waypoints.Waypoint>()));
+                            WaypointCourses.CourseLocations.Add(new WaypointCourse(newCourseName, FlightGlobals.GetBodyIndex(FlightGlobals.currentMainBody), new Vector2d(spawnCoords.x, spawnCoords.y), new List<Waypoint>()));
                         WaypointField.Save();
                         selected_index = WaypointCourses.CourseLocations.FindIndex(l => l.name == newCourseName);
                         newCourseName = "";
@@ -315,9 +346,11 @@ namespace BDArmory.UI
                     }
                     if (GUI.Button(SQuarterRect(line, 3), StringUtils.Localize("Record"), BDArmorySetup.BDGuiSkin.button))
                     {
-                        Vector3d spawnCoords = VectorUtils.GetWorldSurfacePostion(FlightGlobals.ActiveVessel.transform.position, FlightGlobals.currentMainBody);
+                        Vector3d spawnCoords = Vector3d.zero;
+                        FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out spawnCoords.x, out spawnCoords.y, out spawnCoords.z);
+
                         if (!WaypointCourses.CourseLocations.Select(l => l.name).ToList().Contains(newCourseName))
-                            WaypointCourses.CourseLocations.Add(new WaypointCourse(newCourseName, FlightGlobals.GetBodyIndex(FlightGlobals.currentMainBody), new Vector2d(spawnCoords.x, spawnCoords.y), new List<GameModes.Waypoints.Waypoint>()));
+                            WaypointCourses.CourseLocations.Add(new WaypointCourse(newCourseName, FlightGlobals.GetBodyIndex(FlightGlobals.currentMainBody), new Vector2d(spawnCoords.x, spawnCoords.y), new List<Waypoint>()));
                         WaypointField.Save();
                         selected_index = WaypointCourses.CourseLocations.FindIndex(l => l.name == newCourseName);
                         newCourseName = "";
@@ -339,13 +372,12 @@ namespace BDArmory.UI
                     if (spawnFields["interval"].currentValue != recordingIncrement) recordingIncrement = (float)spawnFields["interval"].currentValue;
                 }
             }
-
             if (showCourseWPsComboBox)
             {
                 if (WaypointCourses.CourseLocations[selected_index].worldIndex != FlightGlobals.GetBodyIndex(FlightGlobals.currentMainBody)) return;
-                line+= 1.25f;
+                line += 1.25f;
                 GUI.Label(SLineRect(line++), WaypointCourses.CourseLocations[selected_index].name, centreLabel);
-                line+= 0.25f;
+                line += 0.25f;
                 if (recording)
                 {
                     GUI.Label(SLineRect(line++), "Recording Course....", centreLabel);
@@ -361,14 +393,25 @@ namespace BDArmory.UI
                     }
                     line++;
                 }
-                int i = 0;
+                if (GUI.Button(SQuarterRect(line, 0), StringUtils.Localize("SpawnPoint"), moddingSpawnPoint ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    SnapCameraToGate();
+                    //show gate position buttons/location textboxes
+                    spawnFields["lat"].SetCurrentValue(WaypointCourses.CourseLocations[selected_index].spawnPoint.x);
+                    spawnFields["lon"].SetCurrentValue(WaypointCourses.CourseLocations[selected_index].spawnPoint.y);
+                    spawnFields["alt"].SetCurrentValue(BDArmorySettings.VESSEL_SPAWN_ALTITUDE);
+                    showPositioningControls = true;
+                    moddingSpawnPoint = true;
+                    selected_gate_index = -1;
+                }
+                int i = 1;
                 foreach (var gate in WaypointCourses.CourseLocations[selected_index].waypoints)
                 {
-                    if (GUI.Button(SQuarterRect(line, i++), gate.name, i - 1 == selected_gate_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, i++), gate.name, i - 2 == selected_gate_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                     {
-                        selected_gate_index = i - 1;
+                        selected_gate_index = i - 2;
                         Debug.Log($"selected gate index: {selected_gate_index}, ({WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].name})");
-
+                        moddingSpawnPoint = false;
                         switch (Event.current.button)
                         {
                             case 1: // right click, remove gate from course
@@ -378,7 +421,7 @@ namespace BDArmory.UI
                                 if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count)
                                 {
                                     if (WaypointCourses.CourseLocations[selected_index].waypoints.Count > 0) selected_gate_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
-                                    else selected_gate_index = -1;
+                                    else selected_gate_index = -2;
                                 }
                                 WaypointField.Save();
                                 break;
@@ -390,6 +433,8 @@ namespace BDArmory.UI
                                 spawnFields["lon"].SetCurrentValue(gate.location.y);
                                 spawnFields["alt"].SetCurrentValue(gate.location.z);
                                 spawnFields["diameter"].SetCurrentValue(gate.scale);
+                                spawnFields["speed"].SetCurrentValue(gate.maxSpeed);
+                                txtName = WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].name;
                                 showPositioningControls = true;
                                 break;
                         }
@@ -404,64 +449,77 @@ namespace BDArmory.UI
                     {
                         string newName = string.IsNullOrEmpty(txtName.Trim()) ? ("Waypoint " + WaypointCourses.CourseLocations[selected_index].waypoints.Count.ToString()) : txtName.Trim();
                         AddGate(newName);
-                     }
+                    }
                 }
             }
-            else showPositioningControls = false;
+            else
+            {
+                showPositioningControls = false;
+                moddingSpawnPoint = false;
+            }
 
             if (showPositioningControls)
             {
                 //need to get these setup and configured - TODO
-                if (selected_gate_index == -1) return;
-                var currGate = WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index];
-                if (loadedGates[selected_gate_index] != null)
+                if (selected_gate_index == -1 && !moddingSpawnPoint) return;
+                Waypoint currGate = null;
+                if (selected_gate_index >= 0)
                 {
-                    line += 0.5f;
-                    rects = SRight3Rects(++line);
-                    GUI.Label(rects[0], "lat.", centreLabel);
-                    GUI.Label(rects[1], "lon.", centreLabel);
-                    GUI.Label(rects[2], "alt.", centreLabel);
-                    rects = SRight3Rects(++line);
-                    if (GUI.Button(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - (movementIncrement / 10)); //having lat/long increase by 1 per frame while the button is held is going to cause gates to go *flying* across the continent
-                        if (spawnFields["lat"].currentValue < -90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + 180);
-                    }
-                    spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8, spawnFields["lat"].style));
-                    if (GUI.Button(SFieldButtonRect(line, 7), ">", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + (movementIncrement / 10));
-                        if (spawnFields["lat"].currentValue > 90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - 180);
-                    }
+                    currGate = WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index];
+                    if (loadedGates[selected_gate_index] == null) return;
+                }
+                line += 0.5f;
+                rects = SRight3Rects(++line);
+                GUI.Label(rects[0], "lat.", centreLabel);
+                GUI.Label(rects[1], "lon.", centreLabel);
+                GUI.Label(rects[2], "alt.", centreLabel);
+                rects = SRight3Rects(++line);
+                if (GUI.Button(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - (movementIncrement / 10)); //having lat/long increase by 1 per frame while the button is held is going to cause gates to go *flying* across the continent
+                    if (spawnFields["lat"].currentValue < -90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + 180);
+                }
+                spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8, spawnFields["lat"].style));
+                if (GUI.Button(SFieldButtonRect(line, 7), ">", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + (movementIncrement / 10));
+                    if (spawnFields["lat"].currentValue > 90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - 180);
+                }
 
-                    if (GUI.Button(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - (movementIncrement / 10));
-                        if (spawnFields["lon"].currentValue < -180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + 360);
-                    }
-                    spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8, spawnFields["lon"].style));
-                    if (GUI.Button(SFieldButtonRect(line, 14.5f), ">", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + (movementIncrement / 10));
-                        if (spawnFields["lon"].currentValue > 180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - 360);
-                    }
+                if (GUI.Button(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - (movementIncrement / 10));
+                    if (spawnFields["lon"].currentValue < -180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + 360);
+                }
+                spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8, spawnFields["lon"].style));
+                if (GUI.Button(SFieldButtonRect(line, 14.5f), ">", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + (movementIncrement / 10));
+                    if (spawnFields["lon"].currentValue > 180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - 360);
+                }
 
-                    if (GUI.Button(SFieldButtonRect(line, 16), "<", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["alt"].SetCurrentValue(spawnFields["alt"].currentValue - movementIncrement);
-                        if (spawnFields["alt"].currentValue < 0) spawnFields["alt"].SetCurrentValue(0);
-                    }
-                    spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8, spawnFields["alt"].style));
-                    if (GUI.Button(SFieldButtonRect(line, 22), ">", BDArmorySetup.BDGuiSkin.button))
-                    {
-                        spawnFields["alt"].SetCurrentValue(spawnFields["alt"].currentValue + movementIncrement);
-                        if (spawnFields["alt"].currentValue > (FlightGlobals.currentMainBody.atmosphere ? FlightGlobals.currentMainBody.atmosphereDepth : 40000)) spawnFields["alt"].SetCurrentValue((FlightGlobals.currentMainBody.atmosphere ? FlightGlobals.currentMainBody.atmosphereDepth : 40000));
-                    }
+                if (GUI.Button(SFieldButtonRect(line, 16), "<", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["alt"].SetCurrentValue(spawnFields["alt"].currentValue - movementIncrement);
+                    if (spawnFields["alt"].currentValue < 0) spawnFields["alt"].SetCurrentValue(0);
+                }
+                spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8, spawnFields["alt"].style));
+                if (GUI.Button(SFieldButtonRect(line, 22), ">", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["alt"].SetCurrentValue(spawnFields["alt"].currentValue + movementIncrement);
+                    if (spawnFields["alt"].currentValue > (FlightGlobals.currentMainBody.atmosphere ? FlightGlobals.currentMainBody.atmosphereDepth : 40000)) spawnFields["alt"].SetCurrentValue((FlightGlobals.currentMainBody.atmosphere ? FlightGlobals.currentMainBody.atmosphereDepth : 40000));
+                }
 
-                    rects = SRight3Rects(++line);
-                    GUI.Label(rects[0], "diameter", centreLabel);
-                    GUI.Label(rects[1], "increment", centreLabel);
-                    rects = SRight3Rects(++line);
+                rects = SRight3Rects(++line);
+                if (!moddingSpawnPoint)
+                {
+                    GUI.Label(rects[0], "radius", centreLabel);
+                    GUI.Label(rects[1], "Speed Limit", centreLabel);
+                }
+                GUI.Label(rects[moddingSpawnPoint ? 0 : 2], "increment", centreLabel);
+                rects = SRight3Rects(++line);
+                if (!moddingSpawnPoint)
+                {
                     if (GUI.Button(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
                     {
                         spawnFields["diameter"].SetCurrentValue(spawnFields["diameter"].currentValue - movementIncrement);
@@ -473,39 +531,69 @@ namespace BDArmory.UI
                         spawnFields["diameter"].SetCurrentValue(spawnFields["diameter"].currentValue + movementIncrement);
                         if (spawnFields["diameter"].currentValue > 1000) spawnFields["diameter"].SetCurrentValue(1000);
                     }
-
                     if (GUI.Button(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
                     {
-                        if (movementIncrement >= 2)
-                            spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 1);
-                        else
-                        {
-                            if (movementIncrement >= 0.2)
-                                spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.1); //there is almost certainly a more elegant way to do scaling, FIXME later
-                            else
-                                spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.01);
-                        }
-                        if (spawnFields["increment"].currentValue < 0.001f) spawnFields["increment"].SetCurrentValue(0.001f);
+                        spawnFields["speed"].SetCurrentValue(spawnFields["speed"].currentValue - (movementIncrement));
+                        if (spawnFields["speed"].currentValue < 0) spawnFields["speed"].SetCurrentValue(-1);
                     }
-                    spawnFields["increment"].tryParseValue(GUI.TextField(rects[1], spawnFields["increment"].possibleValue, 8, spawnFields["increment"].style));
+                    spawnFields["speed"].tryParseValue(GUI.TextField(rects[1], spawnFields["speed"].possibleValue, 8, spawnFields["speed"].style));
                     if (GUI.Button(SFieldButtonRect(line, 14.5f), ">", BDArmorySetup.BDGuiSkin.button))
                     {
-                        spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue + 1);
-                        if (spawnFields["increment"].currentValue > 1000) spawnFields["increment"].SetCurrentValue(1000);
+                        spawnFields["speed"].SetCurrentValue(spawnFields["speed"].currentValue + movementIncrement);
+                        if (spawnFields["speed"].currentValue > 3000) spawnFields["speed"].SetCurrentValue(3000);
                     }
-                    movementIncrement = spawnFields["increment"].currentValue;
+                }
+                if (GUI.Button(SFieldButtonRect(line, moddingSpawnPoint ? 1 : 16), "<", BDArmorySetup.BDGuiSkin.button))
+                {
+                    if (movementIncrement >= 2)
+                        spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 1);
+                    else
+                    {
+                        if (movementIncrement >= 0.2)
+                            spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.1); //there is almost certainly a more elegant way to do scaling, FIXME later
+                        else
+                            spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue - 0.01);
+                    }
+                    if (spawnFields["increment"].currentValue < 0.001f) spawnFields["increment"].SetCurrentValue(0.001f);
+                }
+                spawnFields["increment"].tryParseValue(GUI.TextField(rects[moddingSpawnPoint ? 0 : 2], spawnFields["increment"].possibleValue, 8, spawnFields["increment"].style));
+                if (GUI.Button(SFieldButtonRect(line, moddingSpawnPoint ? 7 : 22), ">", BDArmorySetup.BDGuiSkin.button))
+                {
+                    spawnFields["increment"].SetCurrentValue(spawnFields["increment"].currentValue + 1);
+                    if (spawnFields["increment"].currentValue > 1000) spawnFields["increment"].SetCurrentValue(1000);
+                }
+                movementIncrement = spawnFields["increment"].currentValue;
+                if (!moddingSpawnPoint)
+                {
                     if (spawnFields["lat"].currentValue != currGate.location.x ||
                     spawnFields["lon"].currentValue != currGate.location.y ||
                     spawnFields["alt"].currentValue != currGate.location.z ||
+                    spawnFields["speed"].currentValue != currGate.maxSpeed ||
                     spawnFields["diameter"].currentValue != currGate.scale)
                     {
                         currGate.location = new Vector3d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue, spawnFields["alt"].currentValue);
                         currGate.scale = (float)spawnFields["diameter"].currentValue;
+                        currGate.maxSpeed = (float)spawnFields["speed"].currentValue;
                         WaypointField.Save(); //instead have a separate button and do saving manually?
                         loadedGates[selected_gate_index].UpdateWaypoint(currGate, selected_gate_index, WaypointCourses.CourseLocations[selected_index].waypoints);
                         SnapCameraToGate();
                     }
                 }
+                else
+                {
+                    if (spawnFields["lat"].currentValue != WaypointCourses.CourseLocations[selected_index].spawnPoint.x ||
+spawnFields["lon"].currentValue != WaypointCourses.CourseLocations[selected_index].spawnPoint.x ||
+spawnFields["alt"].currentValue != BDArmorySettings.VESSEL_SPAWN_ALTITUDE)
+                    {
+                        WaypointCourses.CourseLocations[selected_index].spawnPoint = new Vector2d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue);
+                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
+
+                        WaypointField.Save(); //instead have a separate button and do saving manually?
+                        SnapCameraToGate();
+                    }
+                }
+                if (!string.IsNullOrEmpty(txtName.Trim()) && txtName != currGate.name)
+                   currGate.name = txtName;
                 line += 0.3f;
             }
 
@@ -517,19 +605,27 @@ namespace BDArmory.UI
         {
             BDArmorySetup.showWPBuilderGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
+            if (!visible && !TournamentCoordinator.Instance.IsRunning) //don't delete gates if running course
+            {
+                foreach (var gate in loadedGates)
+                {
+                    gate.disabled = true;
+                    gate.gameObject.SetActive(false);
+                }
+                loadedGates.Clear();
+            }
         }
         void AddGate(string newName)
         {
             Vector3d gateCoords;
             FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out gateCoords.x, out gateCoords.y, out gateCoords.z);
-            WaypointCourses.CourseLocations[selected_index].waypoints.Add(new Waypoint(newName, gateCoords, 500));
+            WaypointCourses.CourseLocations[selected_index].waypoints.Add(new Waypoint(newName, gateCoords, 500, -1));
             WaypointField.Save();
 
             int wp = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
-            float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.y);
-            Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE + terrainAltitude)), FlightGlobals.currentMainBody);
+            Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE)), FlightGlobals.currentMainBody);
             Vector3d previousLocation = FlightGlobals.ActiveVessel.transform.position;
-            if (wp > 0) previousLocation = VectorUtils.GetWorldSurfacePostion(new Vector3(WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE + terrainAltitude)), FlightGlobals.currentMainBody);
+            if (wp > 0) previousLocation = VectorUtils.GetWorldSurfacePostion(new Vector3(WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[wp - 1].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE)), FlightGlobals.currentMainBody);
 
             var direction = (WorldCoords - previousLocation).normalized;
             WayPointMarker.CreateWaypoint(WorldCoords, direction, "BDArmory/Models/WayPoint/Ring", WaypointCourses.CourseLocations[selected_index].waypoints[wp].scale);
@@ -546,6 +642,7 @@ namespace BDArmory.UI
                 spawnFields["lon"].SetCurrentValue(newGate.location.y);
                 spawnFields["alt"].SetCurrentValue(newGate.location.z);
                 spawnFields["diameter"].SetCurrentValue(500);
+                spawnFields["speed"].SetCurrentValue(-1);
             }
         }
     }

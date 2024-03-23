@@ -37,7 +37,7 @@ namespace BDArmory.Control
         /// The default is BDAirspeedControl. If you want to use something else, just override ActivatePilot  (and, potentially, DeactivatePilot), and make it use something else.
         /// </summary>
         protected BDAirspeedControl speedController;
-
+        public float originalMaxSpeed = -1;
         protected bool hasAxisGroupsModule = false;
         protected AxisGroupsModule axisGroupsModule;
 
@@ -591,6 +591,20 @@ namespace BDArmory.Control
                     activeWaypointLap++;
                 }
                 UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
+                //Modify AI maxSpeed if the gate we just pased has a speed limit
+                float mSpeed = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].maxSpeed;
+                var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the vessel has one.
+                var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
+                var vtolAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel); // Get the VTOL AI if the vessel has one.
+                var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel); // Get the Orbital AI if the vessel has one.
+                if (pilotAI != null)
+                {
+                    pilotAI.maxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed;
+                    pilotAI.OnMaxSpeedChanged();
+                }
+                if (surfaceAI != null) surfaceAI.MaxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed; 
+                if (vtolAI != null) vtolAI.MaxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed;
+                if (orbitalAI != null) orbitalAI.ManeuverSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed;
             }
         }
 

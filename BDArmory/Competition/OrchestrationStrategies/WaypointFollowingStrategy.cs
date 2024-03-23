@@ -76,6 +76,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 char T = (char)(Convert.ToUInt16('A') + BDATournament.Instance.currentHeat);
                 pilots[0].weaponManager.SetTeam(BDTeam.Get(T.ToString()));
             }
+
             PrepareCompetition();
 
             // Configure the pilots' waypoints.
