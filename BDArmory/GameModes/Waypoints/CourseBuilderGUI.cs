@@ -247,12 +247,12 @@ namespace BDArmory.UI
             float line = 0.25f;
             var rects = new List<Rect>();
 
-            if (GUI.Button(SLeftButtonRect(++line), $"{StringUtils.Localize("Load Course")}", ShowLoadMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
+            if (GUI.Button(SLeftButtonRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_WP_LoadCourse")}", ShowLoadMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
             {
                 ShowLoadMenu = !ShowLoadMenu;
             }
 
-            if (GUI.Button(SRightButtonRect(line), $"{StringUtils.Localize("New Course")}", ShowNewCourse ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
+            if (GUI.Button(SRightButtonRect(line), $"{StringUtils.Localize("#LOC_BDArmory_WP_newCourse")}", ShowNewCourse ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Load Course
             {
                 ShowNewCourse = !ShowNewCourse;
             }
@@ -324,7 +324,7 @@ namespace BDArmory.UI
                 newCourseName = GUI.TextField(SLeftButtonRect(++line), newCourseName);
                 if (!string.IsNullOrEmpty(newCourseName))
                 {
-                    if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("Create"), BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("#LOC_BDArmory_WP_Create"), BDArmorySetup.BDGuiSkin.button))
                     {
                         Vector3d spawnCoords = Vector3d.zero;
                         FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out spawnCoords.x, out spawnCoords.y, out spawnCoords.z);
@@ -344,7 +344,7 @@ namespace BDArmory.UI
                         }
                         loadedGates.Clear();
                     }
-                    if (GUI.Button(SQuarterRect(line, 3), StringUtils.Localize("Record"), BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, 3), StringUtils.Localize("#LOC_BDArmory_WP_Record"), BDArmorySetup.BDGuiSkin.button))
                     {
                         Vector3d spawnCoords = Vector3d.zero;
                         FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.CoM, out spawnCoords.x, out spawnCoords.y, out spawnCoords.z);
@@ -367,7 +367,7 @@ namespace BDArmory.UI
                         loadedGates.Clear();
                         StartCoroutine(RecordCourse());
                     }
-                    GUI.Label(SQuarterRect(++line, 2), "Timestep (s)", leftLabel);
+                    GUI.Label(SQuarterRect(++line, 2), StringUtils.Localize("#LOC_BDArmory_WP_TimeStep"), leftLabel);
                     spawnFields["interval"].tryParseValue(GUI.TextField(SQuarterRect(line, 3), spawnFields["interval"].possibleValue, 8, spawnFields["interval"].style));
                     if (spawnFields["interval"].currentValue != recordingIncrement) recordingIncrement = (float)spawnFields["interval"].currentValue;
                 }
@@ -380,20 +380,20 @@ namespace BDArmory.UI
                 line += 0.25f;
                 if (recording)
                 {
-                    GUI.Label(SLineRect(line++), "Recording Course....", centreLabel);
+                    GUI.Label(SLineRect(line++), StringUtils.Localize("#LOC_BDArmory_WP_Recording"), centreLabel);
                     line += 0.25f;
-                    GUI.Label(SQuarterRect(++line, 1), "Timestep (s)", leftLabel);
+                    GUI.Label(SQuarterRect(++line, 1), StringUtils.Localize("#LOC_BDArmory_WP_TimeStep"), leftLabel);
                     spawnFields["interval"].tryParseValue(GUI.TextField(SQuarterRect(line, 2), spawnFields["interval"].possibleValue, 8, spawnFields["interval"].style));
                     if (spawnFields["interval"].currentValue != recordingIncrement) recordingIncrement = (float)spawnFields["interval"].currentValue;
 
                     line += 0.25f;
-                    if (GUI.Button(SLineRect(++line), "Finish Recording", BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_WP_FinishRecording"), BDArmorySetup.BDGuiSkin.button))
                     {
                         recording = false;
                     }
                     line++;
                 }
-                if (GUI.Button(SQuarterRect(line, 0), StringUtils.Localize("SpawnPoint"), moddingSpawnPoint ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(SQuarterRect(line, 0), StringUtils.Localize("#LOC_BDArmory_WP_Spawnpoint"), moddingSpawnPoint ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
                     SnapCameraToGate();
                     //show gate position buttons/location textboxes
@@ -445,9 +445,9 @@ namespace BDArmory.UI
                 if (!recording)
                 {
                     txtName = GUI.TextField(SRightButtonRect(++line), txtName);
-                    if (GUI.Button(SLeftButtonRect(line), StringUtils.Localize("Add Gate"), BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SLeftButtonRect(line), StringUtils.Localize("#LOC_BDArmory_WP_AddGate"), BDArmorySetup.BDGuiSkin.button))
                     {
-                        string newName = string.IsNullOrEmpty(txtName.Trim()) ? ("Waypoint " + WaypointCourses.CourseLocations[selected_index].waypoints.Count.ToString()) : txtName.Trim();
+                        string newName = string.IsNullOrEmpty(txtName.Trim()) ? $"{StringUtils.Localize("#LOC_BDArmory_WP_AddGate")} {(WaypointCourses.CourseLocations[selected_index].waypoints.Count.ToString())}" : txtName.Trim();
                         AddGate(newName);
                     }
                 }
@@ -470,9 +470,9 @@ namespace BDArmory.UI
                 }
                 line += 0.5f;
                 rects = SRight3Rects(++line);
-                GUI.Label(rects[0], "lat.", centreLabel);
-                GUI.Label(rects[1], "lon.", centreLabel);
-                GUI.Label(rects[2], "alt.", centreLabel);
+                GUI.Label(rects[0], StringUtils.Localize("#autoLOC_463474"), centreLabel); //latitude
+                GUI.Label(rects[1], StringUtils.Localize("#autoLOC_463478"), centreLabel); //longitude
+                GUI.Label(rects[2], StringUtils.Localize("#autoLOC_463493"), centreLabel); //Altitude
                 rects = SRight3Rects(++line);
                 if (GUI.Button(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
                 {
@@ -513,10 +513,10 @@ namespace BDArmory.UI
                 rects = SRight3Rects(++line);
                 if (!moddingSpawnPoint)
                 {
-                    GUI.Label(rects[0], "radius", centreLabel);
-                    GUI.Label(rects[1], "Speed Limit", centreLabel);
+                    GUI.Label(rects[0], StringUtils.Localize("#autoLOC_8200035"), centreLabel); //Radius
+                    GUI.Label(rects[1], StringUtils.Localize("#LOC_BDArmory_WP_SpeedLimit"), centreLabel);
                 }
-                GUI.Label(rects[moddingSpawnPoint ? 0 : 2], "increment", centreLabel);
+                GUI.Label(rects[moddingSpawnPoint ? 0 : 2], StringUtils.Localize("#LOC_BDArmory_WP_Increment"), centreLabel);
                 rects = SRight3Rects(++line);
                 if (!moddingSpawnPoint)
                 {
