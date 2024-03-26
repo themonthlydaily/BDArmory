@@ -13,7 +13,6 @@ using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
-using UnityEngine.UIElements;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {

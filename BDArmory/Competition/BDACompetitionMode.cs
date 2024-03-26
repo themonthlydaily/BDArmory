@@ -2553,7 +2553,7 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
-            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 || BDArmorySettings.WAYPOINT_GUARD_INDEX < 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint (...or if set to podracers...?)
+            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 || BDArmorySettings.WAYPOINT_GUARD_INDEX < 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
 
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.

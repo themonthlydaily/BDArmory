@@ -43,7 +43,6 @@ namespace BDArmory.GameModes.Waypoints
         public Vector3 location;
         public float scale;
         public float maxSpeed;
-        //have it so gates can set AI max speed on a per gate basis if you want a fast section, slow section, etc?
         //public string mutator;
         //have it so gates can trigger a specific mutator on passing? Speed boost/add ballast/fuel regen/etc?
         public Waypoint(string _name, Vector3 _location, float _scale, float _speed) { name = _name; location = _location; scale = _scale; maxSpeed = _speed; }
