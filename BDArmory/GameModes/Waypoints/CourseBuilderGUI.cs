@@ -523,7 +523,6 @@ namespace BDArmory.UI
                     if (GUI.Button(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
                     {
                         spawnFields["diameter"].SetCurrentValue(spawnFields["diameter"].currentValue - movementIncrement);
-                        if (spawnFields["diameter"].currentValue < 5) spawnFields["diameter"].SetCurrentValue(5);
                     }
                     spawnFields["diameter"].tryParseValue(GUI.TextField(rects[0], spawnFields["diameter"].possibleValue, 8, spawnFields["diameter"].style));
                     if (GUI.Button(SFieldButtonRect(line, 7), ">", BDArmorySetup.BDGuiSkin.button))
@@ -531,6 +530,7 @@ namespace BDArmory.UI
                         spawnFields["diameter"].SetCurrentValue(spawnFields["diameter"].currentValue + movementIncrement);
                         if (spawnFields["diameter"].currentValue > 1000) spawnFields["diameter"].SetCurrentValue(1000);
                     }
+                    if (spawnFields["diameter"].currentValue < 5) spawnFields["diameter"].SetCurrentValue(5);
                     if (GUI.Button(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
                     {
                         spawnFields["speed"].SetCurrentValue(spawnFields["speed"].currentValue - (movementIncrement));
