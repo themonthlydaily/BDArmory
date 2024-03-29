@@ -375,7 +375,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         void Update()
         {
             if (!gameObject.activeInHierarchy) return;
-            if (disabled || (!BDACompetitionMode.Instance.competitionIsActive && !BDArmorySetup.Instance.hasWPCourseSpawner) || !HighLogic.LoadedSceneIsFlight)
+            if (disabled || (!BDACompetitionMode.Instance.competitionIsActive && !BDArmorySetup.showWPBuilderGUI) || !HighLogic.LoadedSceneIsFlight)
             {
                 gameObject.SetActive(false);
                 return;

@@ -436,7 +436,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
-            competitiveTeamsAliveLimit = BDArmorySettings.WAYPOINTS_MODE ? 1 : 2;
+            competitiveTeamsAliveLimit = (BDArmorySettings.WAYPOINTS_MODE && BDArmorySettings.WAYPOINT_GUARD_INDEX < 0) ? 1 : 2;
             altitudeLimitGracePeriod = BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -2553,8 +2553,8 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
-            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 || BDArmorySettings.WAYPOINT_GUARD_INDEX < 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
+            if (competitionType == CompetitionType.WAYPOINTS && !(BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 || BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
 
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)

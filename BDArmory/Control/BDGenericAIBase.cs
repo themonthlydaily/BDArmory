@@ -571,10 +571,10 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
                 BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, waypointCourseIndex, activeWaypointIndex, activeWaypointLap, waypointLapLimit, deviation);
 
-                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && activeWaypointIndex >= BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
+                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && !weaponManager.guardMode && activeWaypointIndex + (waypoints.Count * (activeWaypointLap - 1)) >= Mathf.Min(BDArmorySettings.WAYPOINT_GUARD_INDEX, waypoints.Count * waypointLapLimit)) //allow guard activating, i.e. halfway through lap2), guarantee guard activation after last guate
                 {
-                    // activate guard mode
-                    weaponManager.guardMode = true;
+                    // activate guard mode   
+                    weaponManager.guardMode = true; 
                 }
 
                 ++activeWaypointIndex;
