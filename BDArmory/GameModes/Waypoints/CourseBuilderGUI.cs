@@ -226,6 +226,10 @@ namespace BDArmory.UI
                     GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(SpawnCoords, FlightGlobals.currentMainBody), BDArmorySetup.Instance.greenDiamondTexture, new Vector2(36, 36), 0);
                 }
             }
+            for (int gate = 0; gate < loadedGates.Count; gate++)
+            {
+                GUIUtils.DrawLineBetweenWorldPositions(loadedGates[gate].Position, loadedGates[Math.Max(gate - 1, 0)].Position, 4, Color.red);
+            }
         }
 
         private void SetNewHeight(float windowHeight)
@@ -296,6 +300,7 @@ namespace BDArmory.UI
                                 loadedGates.Clear();
                                 ShowLoadMenu = false;
                                 selected_index = i -1;
+                                selected_gate_index = -1;
                                 showCourseWPsComboBox = true;
                                 moddingSpawnPoint = false;
                                 //spawn in course gates
@@ -407,9 +412,10 @@ namespace BDArmory.UI
                 int i = 1;
                 foreach (var gate in WaypointCourses.CourseLocations[selected_index].waypoints)
                 {
-                    if (GUI.Button(SQuarterRect(line, i++), gate.name, i - 2 == selected_gate_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                    if (GUI.Button(SQuarterRect(line, i++), gate.name, Math.Max(i - 2, 0) == selected_gate_index ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                     {
-                        selected_gate_index = i - 2;
+                        moddingSpawnPoint = false;
+                        selected_gate_index = Math.Max(i - 2, 0);
                         Debug.Log($"selected gate index: {selected_gate_index}, ({WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].name})");
                         moddingSpawnPoint = false;
                         switch (Event.current.button)
@@ -421,7 +427,7 @@ namespace BDArmory.UI
                                 if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count)
                                 {
                                     if (WaypointCourses.CourseLocations[selected_index].waypoints.Count > 0) selected_gate_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
-                                    else selected_gate_index = -2;
+                                    else selected_gate_index = -1;
                                 }
                                 WaypointField.Save();
                                 break;
@@ -461,7 +467,7 @@ namespace BDArmory.UI
             if (showPositioningControls)
             {
                 //need to get these setup and configured - TODO
-                if (selected_gate_index == -1 && !moddingSpawnPoint) return;
+                if (selected_gate_index < 0 && !moddingSpawnPoint) return;
                 Waypoint currGate = null;
                 if (selected_gate_index >= 0)
                 {
