@@ -41,6 +41,7 @@ namespace BDArmory.UI
         private bool recording = false;
         private bool showCourseWPsComboBox = false;
         private bool showPositioningControls = false;
+        private bool showCoursePath = false;
         bool moddingSpawnPoint = false;
         public List<WayPointMarker> loadedGates;
         #endregion
@@ -162,22 +163,34 @@ namespace BDArmory.UI
 
         void SnapCameraToGate() //this is locking cam to gate, can zoom, but can't rotate cam, can't return to vessel, cam sometimes shoots into orbit; Ask doc about Camera modification - FIXME
         {
-            return; //returning until I can get Doc to look at this and tell me what I'm doing wrong
+            if (selected_gate_index < 0 || selected_index < 0 || selected_index >= WaypointCourses.CourseLocations.Count || selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count) return; // FIXME What transform holds the spawnPoint?
+            // return; //returning until I can get Doc to look at this and tell me what I'm doing wrong
             //ideally, camera should snap to selected gate, but still allow camera movement to allow user to look around, return cam to vessel when coursebuilder GUi closed.
             var flightCamera = FlightCamera.fetch;
             var cameraHeading = FlightCamera.CamHdg;
             var cameraPitch = FlightCamera.CamPitch;
             var distance = 1000;
-            if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.PatchedConicsAttached) FlightGlobals.ActiveVessel.DetachPatchedConicsSolver();
+            //if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.PatchedConicsAttached) FlightGlobals.ActiveVessel.DetachPatchedConicsSolver();
             Waypoint gate = WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(gate.location.x, gate.location.y);
             var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(gate.location.x, gate.location.y, terrainAltitude + gate.location.z);
-            FloatingOrigin.SetOffset(gate.location); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
+            // FloatingOrigin.SetOffset(gate.location); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
+            // var radialUnitVector = -FlightGlobals.currentMainBody.transform.position.normalized;
+            // var cameraPosition = Vector3.RotateTowards(distance * radialUnitVector, Quaternion.AngleAxis(cameraHeading * Mathf.Rad2Deg, radialUnitVector) * -VectorUtils.GetNorthVector(spawnPoint, FlightGlobals.currentMainBody), 70f * Mathf.Deg2Rad, 0);
+
+            // flightCamera.transform.parent = loadedGates[selected_gate_index].transform;
+            if (moddingSpawnPoint)
+            {
+                float terrainAlt = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].spawnPoint.x, WaypointCourses.CourseLocations[selected_index].spawnPoint.y);
+                Vector3d SpawnCoords = new Vector3((float)WaypointCourses.CourseLocations[selected_index].spawnPoint.x, (float)WaypointCourses.CourseLocations[selected_index].spawnPoint.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + terrainAlt);
+                flightCamera.transform.parent.position = SpawnCoords;
+            }
+            else
+                flightCamera.transform.parent.position = loadedGates[selected_gate_index].transform.position; //working, but has the pivot point near-ish gate, not gate itself
+            FloatingOrigin.SetOffset(flightCamera.transform.parent.position); // This adjusts local coordinates, such that gate is (0,0,0).
+            if (!moddingSpawnPoint) flightCamera.SetTarget(loadedGates[selected_gate_index].transform);
             var radialUnitVector = -FlightGlobals.currentMainBody.transform.position.normalized;
             var cameraPosition = Vector3.RotateTowards(distance * radialUnitVector, Quaternion.AngleAxis(cameraHeading * Mathf.Rad2Deg, radialUnitVector) * -VectorUtils.GetNorthVector(spawnPoint, FlightGlobals.currentMainBody), 70f * Mathf.Deg2Rad, 0);
-
-            flightCamera.transform.parent = loadedGates[selected_gate_index].transform;
-            flightCamera.SetTarget(loadedGates[selected_gate_index].transform);
             flightCamera.transform.localPosition = cameraPosition;
             flightCamera.transform.localRotation = Quaternion.identity;
             flightCamera.ActivateUpdate();
@@ -226,9 +239,12 @@ namespace BDArmory.UI
                     GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(SpawnCoords, FlightGlobals.currentMainBody), BDArmorySetup.Instance.greenDiamondTexture, new Vector2(36, 36), 0);
                 }
             }
-            for (int gate = 0; gate < loadedGates.Count; gate++)
+            if (selected_index >= 0 && showCoursePath && HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
             {
-                GUIUtils.DrawLineBetweenWorldPositions(loadedGates[gate].Position, loadedGates[Math.Max(gate - 1, 0)].Position, 4, Color.red);
+                for (int gate = 0; gate < loadedGates.Count; gate++)
+                {
+                    GUIUtils.DrawLineBetweenWorldPositions(loadedGates[gate].Position, loadedGates[Math.Max(gate - 1, 0)].Position, 4, Color.red);
+                }
             }
         }
 
@@ -400,7 +416,10 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SQuarterRect(line, 0), StringUtils.Localize("#LOC_BDArmory_WP_Spawnpoint"), moddingSpawnPoint ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
-                    SnapCameraToGate();
+                    if (Event.current.button == 0)
+                    {
+                        SnapCameraToGate(); // Don't snap every frame when the spawn point button is selected... unless that's intended behaviour?
+                    }
                     //show gate position buttons/location textboxes
                     spawnFields["lat"].SetCurrentValue(WaypointCourses.CourseLocations[selected_index].spawnPoint.x);
                     spawnFields["lon"].SetCurrentValue(WaypointCourses.CourseLocations[selected_index].spawnPoint.y);
@@ -588,7 +607,7 @@ namespace BDArmory.UI
                 else
                 {
                     if (spawnFields["lat"].currentValue != WaypointCourses.CourseLocations[selected_index].spawnPoint.x ||
-spawnFields["lon"].currentValue != WaypointCourses.CourseLocations[selected_index].spawnPoint.x ||
+spawnFields["lon"].currentValue != WaypointCourses.CourseLocations[selected_index].spawnPoint.y ||
 spawnFields["alt"].currentValue != BDArmorySettings.VESSEL_SPAWN_ALTITUDE)
                     {
                         WaypointCourses.CourseLocations[selected_index].spawnPoint = new Vector2d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue);
@@ -598,9 +617,14 @@ spawnFields["alt"].currentValue != BDArmorySettings.VESSEL_SPAWN_ALTITUDE)
                         SnapCameraToGate();
                     }
                 }
-                if (!string.IsNullOrEmpty(txtName.Trim()) && txtName != currGate.name)
-                   currGate.name = txtName;
+                if (currGate != null && !string.IsNullOrEmpty(txtName.Trim()) && txtName != currGate.name)
+                    currGate.name = txtName;
                 line += 0.3f;
+            }
+
+            if (GUI.Button(SLeftButtonRect(++line), StringUtils.Localize("#autoLOC_900627") + StringUtils.Localize("#autoLOC_6003085"), showCoursePath ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) //view path
+            {
+                showCoursePath = !showCoursePath;
             }
 
             line += 1.25f; // Bottom internal margin

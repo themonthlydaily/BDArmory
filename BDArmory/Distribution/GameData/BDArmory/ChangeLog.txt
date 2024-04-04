@@ -8,7 +8,7 @@
 	- Add a time-sync logging option (with auto-enable for competitions) for logging in-game vs real-time timestamps for post-recording resynchronisation.
 		- Toggle and logging interval options are available in the "Other Settings" section of the settings.
 		- The timestamps are logged as compressed CSV files in the BDArmory/Logs/TimeSync folder.
-    - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses﻿
+    - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses﻿.
 		- Can either manually construct course from scratch, or recording a course as you manually pilot a craft along the course path. Courses/gates on loaded courses can be deleted via right-click.
 	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
 	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
@@ -20,7 +20,7 @@
 	- Fix heatRays not adding heat to hit parts.
 	- Missiles:
 		- Can now set cluster missile trigger distance when mounting cluster missiles on reloadable rails.
-    - ModIntegration:
+- ModIntegration:
 	- Fix the type to unbox MidChordSweep to.
 
 v1.6.11.0
