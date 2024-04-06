@@ -2558,7 +2558,7 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
-            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 && BDArmorySettings.WAYPOINT_GUARD_INDEX == 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
+            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 && BDArmorySettings.WAYPOINT_GUARD_INDEX < 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
 
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
@@ -2952,17 +2952,24 @@ namespace BDArmory.Competition
             {
                 if (finalGracePeriodStart < 0)
                     finalGracePeriodStart = now;
-                if (numberOfCompetitiveTeams == 1)
+                bool runningWPs = false;
+                if (BDArmorySettings.WAYPOINTS_MODE)
                 {
-                    foreach (var vessel in FlightGlobals.Vessels)
-                    {
-                        if (vessel == null || !vessel.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
-                            continue;
-                        var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
-                        if (mf.AI != null && !((BDGenericAIBase)mf.AI).IsRunningWaypoints) return; //if only one craft left, but WP mode and craft still running WPs, don't prematurely exit
-                    }
+                    using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                        while (loadedVessels.MoveNext())
+                        {
+                            if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType)) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
+                                continue;
+                            IBDAIControl pilot = VesselModuleRegistry.GetModule<IBDAIControl>(loadedVessels.Current);
+                            if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue;
+                            if (((BDGenericAIBase)pilot).IsRunningWaypoints)
+                            {
+                                runningWPs = true;
+                                break;//if only one craft left, but WP mode and craft still running WPs, don't prematurely exit
+                            }
+                        }
                 }
-                if (!(BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD > 60) && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
+                if (!runningWPs && BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD <= 60 && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
                 {
                     competitionStatus.Add("All Pilots are Dead");
                     foreach (string key in alive)
