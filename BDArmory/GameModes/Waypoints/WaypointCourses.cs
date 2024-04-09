@@ -196,34 +196,7 @@ namespace BDArmory.GameModes.Waypoints
         {
             try
             {
-                if (type == typeof(string))
-                {
-                    return value;
-                }
-                else if (type == typeof(bool))
-                {
-                    return bool.Parse(value);
-                }
-                else if (type == typeof(int))
-                {
-                    return int.Parse(value);
-                }
-                else if (type == typeof(float))
-                {
-                    return float.Parse(value);
-                }
-                else if (type == typeof(Vector2d))
-                {
-                    char[] charsToTrim = { '(', ')', ' ' };
-                    string[] strings = value.Trim(charsToTrim).Split(',');
-                    if (strings.Length == 2)
-                    {
-                        float x = float.Parse(strings[0]);
-                        float y = float.Parse(strings[1]);
-                        return new Vector2d(x, y);
-                    }
-                }
-                else if (type == typeof(Vector3))
+                if (type == typeof(Vector3))
                 {
                     char[] charsToTrim = { '[', ']', '(', ')', ' ' };
                     string[] strings = value.Trim(charsToTrim).Split(',');
@@ -263,6 +236,10 @@ namespace BDArmory.GameModes.Waypoints
                         if (name != null && spawnPoint != null && waypointList.Count > 0)
                             return new WaypointCourse(name, worldIndex, spawnPoint, waypointList);
                     }
+                }
+                else
+                {
+                    return BDAPersistentSettingsField.ParseValue(type, value);
                 }
             }
             catch (Exception e)

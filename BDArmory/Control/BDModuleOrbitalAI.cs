@@ -207,7 +207,7 @@ namespace BDArmory.Control
         public override void ActivatePilot()
         {
             base.ActivatePilot();
-            originalMaxSpeed = ManeuverSpeed;
+            //originalMaxSpeed = ManeuverSpeed;
             if (!fc)
             {
                 fc = gameObject.AddComponent<BDOrbitalControl>();

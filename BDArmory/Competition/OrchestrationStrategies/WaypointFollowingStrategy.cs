@@ -327,7 +327,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             CreateObjectPool(ModelPath);
 
             GameObject newWayPoint = WaypointPools[ModelPath].GetPooledObject();
-            Quaternion rotation = Quaternion.LookRotation(direction, -FlightGlobals.getGeeForceAtPosition(Vector3.zero).normalized); //this needed, so the model is aligned to the ground normal, not the body transform orientation
+            Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(position, FlightGlobals.currentMainBody);
+            Quaternion rotation = Quaternion.LookRotation(direction, VectorUtils.GetUpDirection(WorldCoords)); //this needed, so the model is aligned to the ground normal, not the body transform orientation
 
 
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
@@ -352,7 +353,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 previousLocation = VectorUtils.GetWorldSurfacePostion(new Vector3(wpList[wpIndex - 1].location.x, wpList[wpIndex - 1].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? wpList[wpIndex - 1].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE) + (float)terrainAltitude), FlightGlobals.currentMainBody);
 
             var direction = (WorldCoords - previousLocation).normalized;
-            Quaternion rotation = Quaternion.LookRotation(direction, -FlightGlobals.getGeeForceAtPosition(Vector3.zero).normalized); //this needed, so the model is aligned to the ground normal, not the body transform orientation
+            Quaternion rotation = Quaternion.LookRotation(direction, VectorUtils.GetUpDirection(WorldCoords)); //this needed, so the model is aligned to the ground normal, not the body transform orientation
 
             transform.SetPositionAndRotation(WorldCoords, rotation);
 

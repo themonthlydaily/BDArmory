@@ -9,7 +9,7 @@
 		- Toggle and logging interval options are available in the "Other Settings" section of the settings.
 		- The timestamps are logged as compressed CSV files in the BDArmory/Logs/TimeSync folder.
     - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses﻿.
-		- Can either manually construct course from scratch, or recording a course as you manually pilot a craft along the course path. Courses/gates on loaded courses can be deleted via right-click.
+		- Can either manually construct course from scratch or record a course as you manually pilot a craft along the course path. Courses/gates on loaded courses can be deleted via right-click.
 	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
 	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
 	- List of things that cannot be set to Wood hull material expanded to other functional parts (servos/radiators/ISRU converters/RTGs) that couldn't logically be made out of wood.

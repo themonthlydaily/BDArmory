@@ -732,7 +732,7 @@ namespace BDArmory.Damage
                             {
                                 fireStarter = part.vessel.GetName();
                             }
-                            FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter, 9999999);
+                            FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter, float.MaxValue);
                             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDarmory.HitPointTracker]: Hull auto-ignition! {part.name} is on fire!; temperature: {part.temperature}");
                             isOnFire = true;
                         }

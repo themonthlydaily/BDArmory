@@ -2767,7 +2767,7 @@ namespace BDArmory.Competition
                             else
                             {
                                 var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel);
-                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed))
+                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed) || (surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water && vessel.IsUnderwater()))
                                 {
                                     KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
                                     if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)

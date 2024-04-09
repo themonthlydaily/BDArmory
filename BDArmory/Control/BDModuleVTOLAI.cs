@@ -209,7 +209,7 @@ namespace BDArmory.Control
         public override void ActivatePilot()
         {
             base.ActivatePilot();
-            originalMaxSpeed = MaxSpeed;
+            //originalMaxSpeed = MaxSpeed;
             pathingMatrix = new AIUtils.TraversabilityMatrix();
 
             if (!altitudeControl)
