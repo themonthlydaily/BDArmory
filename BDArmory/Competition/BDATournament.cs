@@ -205,7 +205,8 @@ namespace BDArmory.Competition
             var scoreData = scoreDetails[player];
             var shotsFired = scoreData.Sum(sd => sd.shotsFired);
             var rocketsFired = scoreData.Sum(sd => sd.rocketsFired);
-            Dictionary<string, float> playerScore = new Dictionary<string, float>{
+            Dictionary<string, float> playerScore = new()
+            {
                 {"Wins", competitionOutcomes.Count(comp => comp.competitionResult == CompetitionResult.Win && comp.survivingTeams.Any(team => team.Contains(player)))},
                 {"Survived", scoreData.Count(sd => sd.survivalState == SurvivalState.Alive)},
                 {"MIA", scoreData.Count(sd => sd.survivalState == SurvivalState.MIA)},
@@ -235,9 +236,12 @@ namespace BDArmory.Competition
                 {"Battle Damage", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.battleDamageFrom.ContainsKey(player) ? sd.battleDamageFrom[player] : 0f))},
                 {"Parts Lost To Asteroids", scoreData.Sum(sd => sd.partsLostToAsteroids)},
                 {"HP Remaining", (float)scoreData.Sum(sd => sd.remainingHP)},
-                {"Accuracy", (shotsFired > 0 ? scoreData.Sum(sd => sd.hits) / (float)shotsFired : 0f)},
-                {"Rocket Accuracy", (rocketsFired > 0 ? scoreData.Sum(sd => sd.rocketStrikes) / (float)rocketsFired : 0f)},
-                {"Waypoint Count", scoreData.Sum(sd => sd.waypointsReached.Count)},
+                {"Accuracy", shotsFired > 0 ? scoreData.Sum(sd => sd.hits) / (float)shotsFired : 0f},
+                {"Rocket Accuracy", rocketsFired > 0 ? scoreData.Sum(sd => sd.rocketStrikes) / (float)rocketsFired : 0f}
+            };
+            Dictionary<string, float> playerWPScore = new()
+            {
+                {"Waypoint Count", scoreData.Sum(sd => sd.totalWPReached)},
                 {"Waypoint Time", scoreData.Sum(sd => sd.totalWPTime)},
                 {"Waypoint Deviation", scoreData.Sum(sd => sd.totalWPDeviation)}
             };
@@ -249,7 +253,7 @@ namespace BDArmory.Competition
                     playersToTeamNames[player] = teamName;
             }
             else playersToTeamNames[player] = "";
-            return weights.Sum(kvp => kvp.Value * playerScore[kvp.Key]);
+            return playerScore.Sum(kvp => kvp.Value * weights[kvp.Key]) + Mathf.Max(0, playerWPScore.Sum(kvp => kvp.Value * weights[kvp.Key])); // Prevent negative WP scores.
         }
 
         /// <summary>
@@ -1600,6 +1604,8 @@ namespace BDArmory.Competition
 
             // Run the waypoint competition.
             TournamentCoordinator.Instance.Run();
+            // Wait until spawning is completed and the competition is actually about to start.
+            yield return new WaitWhile(() => TournamentCoordinator.Instance.IsRunning && !BDACompetitionMode.Instance.competitionIsActive);
             competitionStarted = true;
             // Register all the active vessels as part of the tournament.
             foreach (var kvp in CircularSpawning.Instance.GetSpawnedVesselURLs())

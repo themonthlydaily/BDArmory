@@ -339,7 +339,7 @@ namespace BDArmory.UI
         {
             if (!BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(player)) return 0f;
             var score = BDACompetitionMode.Instance.Scores.ScoreData[player];
-            return (float)score.waypointsReached.Count - 0.001f * score.totalWPTime; // Rank in the VS based primarily on #waypoints passed and secondly on time.
+            return (float)score.totalWPReached - 0.001f * score.totalWPTime; // Rank in the VS based primarily on #waypoints passed and secondly on time.
         }
 
         private void WindowVesselSwitcher(int id)
@@ -750,7 +750,7 @@ namespace BDArmory.UI
                 if (scoreData != null) // This probably won't work if running waypoints in continuous spawning mode, but that probably doesn't work anyway!
                 {
                     if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && currentScore > 0) VSEntryString.Append($" ({currentScore} hits)");
-                    VSEntryString.Append($"  ({scoreData.waypointsReached.Count:0}, {scoreData.totalWPTime:0.0}s, {scoreData.totalWPDeviation:0.00}m), ");
+                    VSEntryString.Append($"  ({scoreData.totalWPReached:0}, {scoreData.totalWPTime:0.0}s, {scoreData.totalWPDeviation:0.00}m), ");
                 }
             }
             else
