@@ -1036,8 +1036,8 @@ namespace BDArmory.Competition
         public string previousPersonWhoDamagedMe = "";
         public int deathOrder = -1;
         public double deathTime = -1;
-        public HashSet<DamageFrom> damageTypesTaken = new HashSet<DamageFrom>();
-        public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel.
+        public HashSet<DamageFrom> damageTypesTaken = [];
+        public HashSet<string> everyoneWhoDamagedMe = []; // Every other vessel that damaged this vessel.
         #endregion
 
         /// <summary>
