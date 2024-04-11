@@ -2575,7 +2575,8 @@ namespace BDArmory.Weapons
                                                             if (hitEVA != null) hitPart = hitEVA.part;
                                                             if (hitPart != null && hitPart == hitP)
                                                             {
-                                                                p.AddThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                                p.skinTemperature += (damage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)); //add modifier to adjust damage by armor diffusivity value
+                                                                
                                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to {p.name}");
                                                             }
                                                         }
@@ -3160,6 +3161,8 @@ namespace BDArmory.Weapons
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
+            vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); 
+            ammoCount = ammoCurrent;
             if (ammoCount >= AmmoPerShot)
             {
                 if (externalAmmo)

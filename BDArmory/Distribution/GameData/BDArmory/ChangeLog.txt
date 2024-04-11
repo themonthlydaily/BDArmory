@@ -1,22 +1,28 @@
+1.6.11.1
+=======
 ﻿IMPROVEMENTS / FIXES
-- General:
-	- Add a time-sync logging option (with auto-enable for competitions) for logging in-game vs real-time timestamps for post-recording resynchronisation.
-		- Toggle and logging interval options are available in the "Other Settings" section of the settings.
-		- The timestamps are logged as compressed CSV files in the BDArmory/Logs/TimeSync folder.
-
-v1.6.11.1
-IMPROVEMENTS / FIXES
 - General:
 	- Fix Pwing HP scaling for large pwings being used as fuselages.
 	- Gravity Gun moved to the Lasers tab.
-- RWP: 
 	- Fix PWing Control Surface Offset angle resetting on one side.
+	- Add a time-sync logging option (with auto-enable for competitions) for logging in-game vs real-time timestamps for post-recording resynchronisation.
+		- Toggle and logging interval options are available in the "Other Settings" section of the settings.
+		- The timestamps are logged as compressed CSV files in the BDArmory/Logs/TimeSync folder.
+    - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses﻿.
+		- Can either manually construct course from scratch or record a course as you manually pilot a craft along the course path. Courses/gates on loaded courses can be deleted via right-click.
+	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
+	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
+	- List of things that cannot be set to Wood hull material expanded to other functional parts (servos/radiators/ISRU converters/RTGs) that couldn't logically be made out of wood.
 - Weapons:
 	- Fix lasers being able to fire as long as > 0 EC is present.
-  - Add bulletLuminance field for setting non-tracer brightness.
+	- Add bulletLuminance field for setting non-tracer brightness.
+	- Fix weapons in salvo mode with symmetry twins firing when only enough ammo for one weapon to fire.
+	- Fix heatRays not adding heat to hit parts.
+	- Missiles:
+		- Can now set cluster missile trigger distance when mounting cluster missiles on reloadable rails.
 - ModIntegration:
 	- Fix the type to unbox MidChordSweep to.
-  
+
 v1.6.11.0
 IMPROVEMENTS / FIXES
 - General:

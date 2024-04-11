@@ -54,8 +54,11 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
         [BDAWindowSettingsField] public static Rect WindowRectEvolution;
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
+
+        [BDAWindowSettingsField] public static Rect WindowRectWayPointSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
+		
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
         [BDAWindowSettingsField] static Rect _WindowRectScoresUIHidden;
@@ -955,10 +958,12 @@ namespace BDArmory.UI
 
         public bool hasVesselSwitcher = false;
         public bool hasVesselSpawner = false;
+        public bool hasWPCourseSpawner = false;
         public bool hasVesselMover = false;
         public bool hasEvolution = false;
         public static bool showVesselSwitcherGUI = false;
         public static bool showVesselSpawnerGUI = false;
+        public static bool showWPBuilderGUI = false;
         public static bool showVesselMoverGUI = false;
         public bool showEvolutionGUI = false;
 

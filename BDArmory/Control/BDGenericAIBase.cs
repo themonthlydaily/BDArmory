@@ -37,7 +37,7 @@ namespace BDArmory.Control
         /// The default is BDAirspeedControl. If you want to use something else, just override ActivatePilot  (and, potentially, DeactivatePilot), and make it use something else.
         /// </summary>
         protected BDAirspeedControl speedController;
-
+        public float originalMaxSpeed = -1;
         protected bool hasAxisGroupsModule = false;
         protected AxisGroupsModule axisGroupsModule;
 
@@ -564,17 +564,17 @@ namespace BDArmory.Control
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
             var timeToCPA = AIUtils.TimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-            if (waypointRange < WaypointCourses.CourseLocations[waypointCourseIndex].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            if (waypointRange < (BDArmorySettings.WAYPOINTS_SCALE > 0 ? BDArmorySettings.WAYPOINTS_SCALE : (WaypointCourses.CourseLocations[waypointCourseIndex].waypoints[activeWaypointIndex].scale)) && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
-                if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}; active index{2} of {3}", activeWaypointIndex, deviation, activeWaypointIndex * (activeWaypointLap - 1), waypoints.Count * waypointLapLimit));
                 BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, waypointCourseIndex, activeWaypointIndex, activeWaypointLap, waypointLapLimit, deviation);
 
-                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && activeWaypointIndex >= BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
+                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && !weaponManager.guardMode && activeWaypointIndex + (waypoints.Count * (activeWaypointLap - 1)) >= Mathf.Min(BDArmorySettings.WAYPOINT_GUARD_INDEX, waypoints.Count * waypointLapLimit)) //allow guard activating, i.e. halfway through lap2), guarantee guard activation after last guate
                 {
-                    // activate guard mode
-                    weaponManager.guardMode = true;
+                    // activate guard mode   
+                    weaponManager.guardMode = true; 
                 }
 
                 ++activeWaypointIndex;
@@ -583,6 +583,7 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
+                    if(BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && !weaponManager.guardMode) weaponManager.guardMode = true;
                     return;
                 }
                 else if (activeWaypointIndex >= waypoints.Count && activeWaypointLap <= waypointLapLimit)
@@ -591,6 +592,20 @@ namespace BDArmory.Control
                     activeWaypointLap++;
                 }
                 UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
+                //Modify AI maxSpeed if the gate we just pased has a speed limit
+                float mSpeed = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].maxSpeed;
+                var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the vessel has one.
+                var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
+                var vtolAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel); // Get the VTOL AI if the vessel has one.
+                var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel); // Get the Orbital AI if the vessel has one.
+                if (pilotAI != null)
+                {
+                    pilotAI.maxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed;
+                    pilotAI.OnMaxSpeedChanged();
+                }
+                if (surfaceAI != null) surfaceAI.MaxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed; 
+                //if (vtolAI != null) vtolAI.MaxSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed; //VTOL AI really needs expanding to actually include behavior beyond stationary hovering; could do WPs, but only if it has a fixed horizontal thrusters under IndependantThrottle...
+                //if (orbitalAI != null) orbitalAI.ManeuverSpeed = mSpeed > 0 ? mSpeed : originalMaxSpeed; //Don' think WPs would work, period, with an orbital reference frame?
             }
         }
 

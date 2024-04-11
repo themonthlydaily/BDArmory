@@ -1787,7 +1787,7 @@ namespace BDArmory.Control
         public override void ActivatePilot()
         {
             base.ActivatePilot();
-
+            originalMaxSpeed = maxSpeed;
             belowMinAltitude = vessel.LandedOrSplashed;
             prevTargetDir = vesselTransform.up;
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
