@@ -1,6 +1,6 @@
-1.6.11.1
+﻿1.6.11.1
 =======
-﻿IMPROVEMENTS / FIXES
+IMPROVEMENTS / FIXES
 - General:
 	- Fix Pwing HP scaling for large pwings being used as fuselages.
 	- Gravity Gun moved to the Lasers tab.
@@ -13,6 +13,8 @@
 	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
 	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
 	- List of things that cannot be set to Wood hull material expanded to other functional parts (servos/radiators/ISRU converters/RTGs) that couldn't logically be made out of wood.
+- Competition:
+	- Save/load tournament score weights to/from the settings.cfg.
 - Weapons:
 	- Fix lasers being able to fire as long as > 0 EC is present.
 	- Add bulletLuminance field for setting non-tracer brightness.

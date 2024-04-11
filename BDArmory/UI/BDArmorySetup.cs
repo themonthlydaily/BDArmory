@@ -833,6 +833,7 @@ namespace BDArmory.UI
                 }
                 BDAPersistentSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
+                TournamentScores.LoadWeights();
                 SanitiseSettings();
                 RWPSettings.Load();
                 RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Set RWP overrides if RWP is enabled. Note: this won't preserve custom RWP settings between restarts, but will set RWP defaults.
@@ -863,6 +864,7 @@ namespace BDArmory.UI
                 }
 
                 BDInputSettingsFields.SaveSettings();
+                TournamentScores.SaveWeights();
 
                 if (OnSavedSettings != null)
                 {
