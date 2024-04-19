@@ -1271,10 +1271,10 @@ namespace BDArmory.UI
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(wm.Current.vessel, true);
                                     var OAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(wm.Current.vessel, true);
 
-                                    // If we're running a waypoints competition, only focus on vessels still running waypoints.
+                                    // If we're running a waypoints competition (without combat), only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS)
                                     {
-                                        if (AI == null || !AI.IsRunningWaypoints) continue;
+                                        if (AI == null || (BDArmorySettings.WAYPOINT_GUARD_INDEX < 0 && !AI.IsRunningWaypoints)) continue;
                                         vesselScore *= 2f - Mathf.Clamp01((float)wm.Current.vessel.speed / AI.maxSpeed); // For waypoints races, craft going near their max speed are more interesting.
                                         vesselScore *= Mathf.Max(0.5f, 1f - 15.8f / BDAMath.Sqrt(AI.waypointRange)); // Favour craft the are approaching a gate (capped at 1km).
                                     }
