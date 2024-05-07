@@ -505,7 +505,7 @@ namespace BDArmory.Bullets
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
-        {
+        {            
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
 
@@ -964,6 +964,7 @@ namespace BDArmory.Bullets
                 distanceTraveled += hit.distance;
                 if (!BDArmorySettings.PAINTBALL_MODE)
                 { hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Impulse); }
+                // comment this out and allow impulse rounds to do damage?
                 ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.DisplayName, ExplosionSourceType.Bullet, true);
                 if (BDArmorySettings.BULLET_HITS)
                 {
@@ -971,6 +972,7 @@ namespace BDArmory.Bullets
                 }
                 KillBullet();
                 return true; //impulse rounds shouldn't penetrate/do damage
+                //
             }
             float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
             //calculate armor thickness
@@ -978,6 +980,7 @@ namespace BDArmory.Bullets
             //calculate armor strength
             float penetration = 0;
             float penetrationFactor = 0;
+            int armorType = 1;
             //float length = 0; //Moved up for the new bullet wear over distance system
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
@@ -1006,7 +1009,7 @@ namespace BDArmory.Bullets
                     }
                 }
 
-                int armorType = (int)Armor.ArmorTypeNum;
+                armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log($"[BDArmory.PooledBullet]: ArmorVars found: Strength : {Strength}; Ductility: {Ductility}; Hardness: {hardness}; MaxTemp: {safeTemp}; Density: {Density}; thickness: {thickness}; hit angle: {hitAngle}");
@@ -1234,8 +1237,6 @@ namespace BDArmory.Bullets
                             massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * adjustedPenRatio;
                         }
 
-
-
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
                         if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
@@ -1262,8 +1263,8 @@ namespace BDArmory.Bullets
 
                             // In the case we are reaching that cap we decrease the velocity by
                             // the adjustedPenRatio minus the portion that went into erosion
-                            impactVelocity = impactVelocity * adjustedPenRatio;
-                            currentVelocity = hitPartVelocity + impactVelocity;
+                            //impactVelocity = impactVelocity * adjustedPenRatio;
+                            //currentVelocity = hitPartVelocity + impactVelocity;
                         }
                         else
                         {
@@ -1271,27 +1272,27 @@ namespace BDArmory.Bullets
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease
                             // the velocity by a max of 5%, proportional to the adjustedPenRatio
-                            impactVelocity = impactVelocity * (0.95f + 0.05f * adjustedPenRatio);
-                            currentVelocity = hitPartVelocity + impactVelocity;
+                            //impactVelocity = impactVelocity * (0.95f + 0.05f * adjustedPenRatio);
+                            adjustedPenRatio *= 0.05f;
+                            adjustedPenRatio += 0.95f;
+                            //impactVelocity = impactVelocity * adjustedPenRatio;
+                            //currentVelocity = hitPartVelocity + impactVelocity;
                         }
                     }
                     else
                     {
                         // If the projectile has already been eroded away we just decrease the
                         // velocity by the adjustedPenRatio
-                        impactVelocity = impactVelocity * adjustedPenRatio;
-                        currentVelocity = hitPartVelocity + impactVelocity;
+                        //impactVelocity = impactVelocity * adjustedPenRatio;
+                        //currentVelocity = hitPartVelocity + impactVelocity;
                     }
                 }
                 else
                 {
                     // Low velocity impacts behave the same as before
-                    impactVelocity = impactVelocity * adjustedPenRatio;
-                    currentVelocity = hitPartVelocity + impactVelocity;
+                    //impactVelocity = impactVelocity * adjustedPenRatio;
+                    //currentVelocity = hitPartVelocity + impactVelocity;
                 }
-
-                currentSpeed = currentVelocity.magnitude;
-                timeElapsedSinceCurrentSpeedWasAdjusted = 0;
 
                 float bulletDragArea = Mathf.PI * (caliber * caliber / 4f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
                 ballisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
@@ -1311,9 +1312,15 @@ namespace BDArmory.Bullets
                 else
                 {
                     float cockpitPen = (float)(16f * impactVelocity.magnitude * BDAMath.Sqrt(bulletMass / 1000) / BDAMath.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
-                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, impactVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, (impactVelocity * (armorType == 1 ? 1 : adjustedPenRatio)).magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                     //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
+
+                impactVelocity = impactVelocity * adjustedPenRatio; //moving this here so unarmored parts take proper damage from the full impact speed and energy delivery of the round, vs everything else properly recieving reduced damage from a round that has to punch through armor first
+                currentVelocity = hitPartVelocity + impactVelocity;
+
+                currentSpeed = currentVelocity.magnitude;
+                timeElapsedSinceCurrentSpeedWasAdjusted = 0;
 
                 //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
                 //if penetration is very great, they will have moved on                            
@@ -1473,7 +1480,7 @@ namespace BDArmory.Bullets
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                     pBullet.timeToLiveUntil = Mathf.Max(sBullet.projectileTTL, detonationRange / pBullet.bulletVelocity * 1.1f) + Time.time;
                     //Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                    Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
+                    Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle; 
                     pBullet.currentVelocity = firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
