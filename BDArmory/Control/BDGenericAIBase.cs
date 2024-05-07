@@ -106,10 +106,21 @@ namespace BDArmory.Control
             debugString.Length = 0;
             if (!weaponManager || !vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
                 return;
-            // nobody is controlling any more possibly due to G forces?
-            if (!vessel.isCommandable)
+            //vessel lost command parts from damage?
+            if (!vessel.isCommandable) //isCommandable is only false when there is *no* command parts on the vessel (cockpits/probecores/etc)
             {
+                DeactivatePilot();
+                debugString.AppendLine($"Vessel: No Command parts!");
                 if (vessel.Autopilot.Enabled) Debug.Log("[BDArmory.BDGenericAIBase]: " + vessel.vesselName + " is not commandable, disabling autopilot.");
+                s.NeutralizeStick();
+                vessel.Autopilot.Disable();
+                return;
+            }
+            // nobody is controlling any more possibly due to G forces?
+            if (!vessel.IsControllable) //false when probes out of EC/cockpits don't have pilots
+            {
+                debugString.AppendLine($"Vessel: No Control!");
+                if (vessel.Autopilot.Enabled) Debug.Log("[BDArmory.BDGenericAIBase]: " + vessel.vesselName + " is not controllable, disabling autopilot.");
                 s.NeutralizeStick();
                 vessel.Autopilot.Disable();
                 return;
@@ -290,7 +301,7 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                GUI.Label(new Rect(200, Screen.height - 350, 600, 350), $"{vessel.name}\n{debugString.ToString()}");
+                GUI.Label(new Rect(200, Screen.height - 700, 600, 700), $"{vessel.name}\n{debugString.ToString()}");
             }
         }
 
