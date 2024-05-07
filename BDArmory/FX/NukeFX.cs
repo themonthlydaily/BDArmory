@@ -364,7 +364,7 @@ namespace BDArmory.FX
                     CalculateBlastEvents();
 
                     LightFx = gameObject.GetComponent<Light>();
-                    LightFx.range = thermalRadius;
+                    LightFx.range = BDAMath.Sqrt(yield) * 1000;
                     LightFx.intensity = thermalRadius / 3f;
                     if (lastValidAtmDensity < 0.05)
                     {
