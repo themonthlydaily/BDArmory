@@ -750,7 +750,7 @@ namespace BDArmory.UI
                 if (scoreData != null) // This probably won't work if running waypoints in continuous spawning mode, but that probably doesn't work anyway!
                 {
                     if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && currentScore > 0) VSEntryString.Append($" ({currentScore} hits)");
-                    VSEntryString.Append($"  ({scoreData.totalWPReached:0}, {scoreData.totalWPTime:0.0}s, {scoreData.totalWPDeviation:0.00}m), ");
+                    VSEntryString.Append($"  ({scoreData.totalWPReached:0}, {scoreData.totalWPTime:0.00}s, {scoreData.totalWPDeviation:0.00}m), ");
                 }
             }
             else

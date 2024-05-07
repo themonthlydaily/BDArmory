@@ -122,7 +122,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 {
                     displayName += " (" + BDArmorySettings.HOS_BADGE + ")";
                 }
-                BDACompetitionMode.Instance.competitionStatus.Add($"  - {displayName}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
+                BDACompetitionMode.Instance.competitionStatus.Add($"  - {displayName}: Time: {elapsedTime:F2}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
 
                 Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", player, elapsedTime, waypointCount, deviation));
             }
