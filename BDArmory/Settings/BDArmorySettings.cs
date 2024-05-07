@@ -345,6 +345,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
         [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
         [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
+        [BDAPersistentSettingsField] public static int WAYPOINT_MAX_LAPS = 5;                     // Configurable max number of laps for the laps slider
         #endregion
 
         #region Heartbleed
