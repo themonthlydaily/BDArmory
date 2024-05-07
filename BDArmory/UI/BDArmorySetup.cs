@@ -1835,6 +1835,18 @@ namespace BDArmory.UI
                     moduleLines += 0.1f;
 
                     numberOfModules = 0;
+
+                    if (ActiveWeaponManager.radars.Count > 0)
+                    {
+                        numberOfModules++;
+                        string Radarlabel = StringUtils.Localize("#LOC_BDArmory_DynamicRadar", (ActiveWeaponManager.targetRandom ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Dynamic Radar vs ARMs: True, False
+                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight), Radarlabel, ActiveWeaponManager.targetRandom ? BDGuiSkin.box : BDGuiSkin.button))
+                        {
+                            ActiveWeaponManager.DynamicRadarOverride = !ActiveWeaponManager.DynamicRadarOverride;
+                        }
+                        moduleLines += 1.1f;
+                    }
+
                     //RWR
                     if (ActiveWeaponManager.rwr)
                     {
@@ -3360,8 +3372,11 @@ namespace BDArmory.UI
                             BDArmorySettings.MUTATOR_APPLY_GUNGAME = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GUNGAME, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorGungame"));
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
                             BDArmorySettings.MUTATOR_APPLY_TIMER = false;
-                            BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("#LOC_BDArmory_settings_gungame_progression"));
-                            BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SRightRect(line), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("#LOC_BDArmory_settings_gungame_cycle"));
+                            if (BDArmorySettings.MUTATOR_APPLY_GUNGAME)
+                            {
+                                BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("#LOC_BDArmory_settings_gungame_progression"));
+                                BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SRightRect(line, 1f), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("#LOC_BDArmory_settings_gungame_cycle"));
+                            }
                             if (GUI.Button(SLeftRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_reset")} {StringUtils.Localize("#LOC_BDArmory_Weapons")}")) SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
                             if (!MutatorInfo.gunGameConfigured) MutatorInfo.SetupGunGame();
                         }

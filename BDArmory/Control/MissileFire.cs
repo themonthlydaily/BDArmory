@@ -725,6 +725,10 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_NonGuardModeCMs", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true), // Non-guard mode CMs.
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool nonGuardModeCMs = false; // Allows for manually flying the craft while still auto-deploying CMs.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicRadar", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true), // Disable Radar vs ARMs
+    UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
+        public bool DynamicRadarOverride = false; // toggle AI toggling radar when incoming ARMs
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
@@ -6541,7 +6545,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
         public bool CanSeeTarget(TargetInfo target, bool checkForNonVisualDetection = true, bool checkForstaleTarget = true)
         {
-            // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar
+            // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar/IRST
             // but to prevent AI from stopping an engagement just because a target dropped behind a small hill 5 seconds ago, clamp the timeout to 30 seconds
             // i.e. let's have at least some object permanence :)
             // If we can't directly see the target via sight or radar, AI will head to last known position of target, based on target's vector at time contact was lost,
@@ -6577,7 +6581,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             float objectPermanenceThreshold = (target.Vessel.LandedOrSplashed && target.Vessel.srfSpeed < 10) ? 30 * (10 - (float)target.Vessel.srfSpeed) : 30; //have slow/stationary targets have much longer timeouts since they are't going anywhere.
                                                                                                                                                                 //needs to use lastGoodVesselVel, not current speed, since if we can't see it, we can't know how fast it's going
             if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (visDistance * visDistance) &&
-            Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
+            Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < (guardAngle * 1.1f) / 2)
             {
                 if ((target.Vessel.LandedOrSplashed && vessel.LandedOrSplashed) && ((target.Vessel.transform.position - transform.position).sqrMagnitude > 2250000f)) //land Vee vs land Vee will have a max of ~1.8km viewDist, due to curvature of Kerbin
                 {
@@ -7220,12 +7224,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 FireFlares();
                                 FireOCM(true);
                             }
-                            if (results.foundAntiRadiationMissile)
+                            if (results.foundAntiRadiationMissile && DynamicRadarOverride)
                             {
                                 using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                     while (rd.MoveNext())
                                     {
-                                        if (rd.Current != null || rd.Current.canLock)
+                                        if (rd.Current != null && rd.Current.DynamicRadar)
                                             rd.Current.DisableRadar();
                                     }
                                 _radarsEnabled = false;
@@ -7240,12 +7244,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         {
                             if (vessel.LandedOrSplashed) //assume antirads against ground targets
                             {
-                                if (radars.Count > 0)
+                                if (radars.Count > 0 && DynamicRadarOverride)
                                 {
                                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                         while (rd.MoveNext())
                                         {
-                                            if (rd.Current != null || rd.Current.canLock)
+                                            if (rd.Current != null && rd.Current.DynamicRadar)
                                                 rd.Current.DisableRadar();
                                             _radarsEnabled = false;
                                         }
@@ -7269,12 +7273,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     else //it's an Antirad!? Uh-oh, blip radar!
                                     {
-                                        if (radars.Count > 0)
+                                        if (radars.Count > 0 && DynamicRadarOverride)
                                         {
                                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                                 while (rd.MoveNext())
                                                 {
-                                                    if (rd.Current != null || rd.Current.canLock)
+                                                    if (rd.Current != null && rd.Current.DynamicRadar)
                                                         rd.Current.DisableRadar();
                                                 }
                                             _radarsEnabled = false;
