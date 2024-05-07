@@ -1584,7 +1584,9 @@ namespace BDArmory.Control
             }
 
             SetAutoTuneFields();
-            CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
+            MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            //doesn't work for FS helicopter engines, reverting to older method for inf. fuel.
+            //CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
             OtherUtils.SetTimeOverride(autoTune);
         }
         void SetAutoTuneFields()
@@ -2518,7 +2520,7 @@ namespace BDArmory.Control
             {
                 isPSM = false;
             }
-            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
+            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;                        
             if (AutoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
             {
                 steerMode = SteerModes.Aiming; // Pretend to aim when on target.
