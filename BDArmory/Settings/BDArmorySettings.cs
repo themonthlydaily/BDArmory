@@ -380,6 +380,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int MUTATOR_APPLY_NUM = 1;
         [BDAPersistentSettingsField] public static bool MUTATOR_ICONS = false;
         [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GUNGAME = false;
+        [BDAPersistentSettingsField] public static float VENGEANCE_DELAY = 2.5f;
+        [BDAPersistentSettingsField] public static float VENGEANCE_YIELD = 1.5f;
         #endregion
         #region GunGame
         [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;
