@@ -10,6 +10,7 @@ namespace BDArmory.Settings
     [AttributeUsage(AttributeTargets.Field)]
     public class BDAPersistentSettingsField : Attribute
     {
+        public bool RWPFilter = false;
         public BDAPersistentSettingsField()
         {
         }

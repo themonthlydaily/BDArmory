@@ -108,16 +108,25 @@ namespace BDArmory.Settings
       Debug.Log($"[BDArmory.RWPSettings]: Storing {(temp ? "temporary" : "base")} settings.");
       var settings = temp ? tempSettings : storedSettings;
       settings.Clear();
-      var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-      foreach (var field in fields)
-      {
-        if (field.Name.EndsWith("_SETTINGS_TOGGLE")) continue; // Don't toggle the section headers.
-        if (field.Name.StartsWith("RUNWAY_PROJECT")) continue; // Skip settings beginning with RWP (toggle and slider) to avoid recursion.
-        if (field.Name.StartsWith("VESSEL_SPAWN_")) continue; // Skip spawn settings so they are the same between RWP and non-RWP.
-        if (field.Name.StartsWith("TOURNAMENT_")) continue; // Skip tournament settings so they are the same between RWP and non-RWP.
-        settings.Add(field.Name, field.GetValue(null));
-      }
-      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
+            
+            var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+            foreach (var field in fields)
+            {
+                //if (field.Name.EndsWith("_SETTINGS_TOGGLE")) continue; // Don't toggle the section headers.
+                //if (field.Name.StartsWith("RUNWAY_PROJECT")) continue; // Skip settings beginning with RWP (toggle and slider) to avoid recursion.
+                //if (field.Name.StartsWith("VESSEL_SPAWN_")) continue; // Skip spawn settings so they are the same between RWP and non-RWP.
+                //if (field.Name.StartsWith("TOURNAMENT_")) continue; // Skip tournament settings so they are the same between RWP and non-RWP.
+                if (!field.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
+
+                BDAPersistentSettingsField attr = field.GetCustomAttribute<BDAPersistentSettingsField>();
+                if (!attr.RWPFilter)
+                {
+                    //Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is non-RWP setting, skipping...");
+                    continue;
+                }
+
+                settings.Add(field.Name, field.GetValue(null));
+            }
     }
 
     /// <summary>
