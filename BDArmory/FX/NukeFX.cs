@@ -324,7 +324,11 @@ namespace BDArmory.FX
             {
                 if (hasDetonated)
                 {
-                    if (LightFx != null) LightFx.intensity -= 12 * scale * Time.deltaTime;
+                    if (LightFx != null)
+                    {
+                        LightFx.intensity -= 12 * scale * Time.deltaTime;
+                        LightFx.range -= 12 * scale * Time.deltaTime;
+                    }
                     if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
                     {
                         if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
@@ -339,6 +343,14 @@ namespace BDArmory.FX
                     foreach (var fx in fxEmitters) if (fx.gameObject.activeSelf) fx.Position = Position; // Update FX emitter positions.
                 }
             }
+			else
+			{
+				hasDetonated = false;
+                LightFx.intensity = 0;
+                LightFx.range = 0;
+                gameObject.SetActive(false);
+                return;
+			}			
         }
 
         public void FixedUpdate()
@@ -416,8 +428,11 @@ namespace BDArmory.FX
                 }
             }
 
-            if (hasDetonated && explosionEvents.Count == 0 && TimeIndex > MaxTime)
+            if (hasDetonated && explosionEvents.Count == 0 || TimeIndex > MaxTime)
             {
+                hasDetonated = false;
+                LightFx.intensity = 0;
+                LightFx.range = 0;
                 gameObject.SetActive(false);
                 return;
             }
@@ -621,6 +636,7 @@ namespace BDArmory.FX
                 eFx.audioSource.volume = 5;
                 eFx.LightFx = templateFX.AddComponent<Light>();
                 eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
+                eFx.LightFx.range = radius / 3;
                 eFx.LightFx.intensity = radius / 3;
                 eFx.LightFx.shadows = LightShadows.None;
                 templateFX.SetActive(false);
