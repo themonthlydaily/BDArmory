@@ -1600,7 +1600,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             if (!BDArmorySettings.DEBUG_LINES && lr != null) { lr.enabled = false; }
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
-            {
+            {                
                 if (BDArmorySettings.DEBUG_LINES)
                 {
                     if (incomingMissileVessel)
@@ -1613,7 +1613,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         ((vessel.LandedOrSplashed && (guardTarget.transform.position - transform.position).sqrMagnitude > 2250000f) ?
                         transform.position + (SurfaceVisionOffset.Evaluate((guardTarget.CoM - transform.position).magnitude) * VectorUtils.GetUpDirection(transform.position)) : transform.position), 3, Color.yellow);
                 }
-
+                
                 if (showBombAimer)
                 {
                     MissileBase ml = CurrentMissile;
@@ -6343,8 +6343,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                             }
                             // check DLZ                            
-                            MissileLauncher mlauncher = ml as MissileLauncher;
-                            float fireFOV = mlauncher.missileTurret ? mlauncher.missileTurret.turret.yawRange : mlauncher.multiLauncher && mlauncher.multiLauncher.turret ? mlauncher.multiLauncher.turret.turret.yawRange : -1;
+							float fireFOV = -1;
+							MissileLauncher mlauncher = ml as MissileLauncher;
+							if (mlauncher != null) //else MMGs throw an Error here
+                            fireFOV = mlauncher.missileTurret ? mlauncher.missileTurret.turret.yawRange : mlauncher.multiLauncher && mlauncher.multiLauncher.turret ? mlauncher.multiLauncher.turret.turret.yawRange : -1;
+
                             MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, fireFOV,
                                 (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 || ml.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !ml.radarLOAL));
                             if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
