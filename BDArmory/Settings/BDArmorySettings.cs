@@ -48,6 +48,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_FUEL = false;              //Infinite propellant
         [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_EC = false;                          //Infinite electric charge
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
+        [BDAPersistentSettingsField] public static bool WATER_HIT_FX = true;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
         [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;

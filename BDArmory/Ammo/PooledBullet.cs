@@ -145,6 +145,7 @@ namespace BDArmory.Bullets
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
+        float atmosphereDensity;
         public int penTicker = 0;
 
         Ray bulletRay;
@@ -471,7 +472,7 @@ namespace BDArmory.Bullets
                                 if (nuclear)
                                     NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                                 hasDetonated = true;
-                                FXMonger.Splash(currentPosition, caliber / 2);
+                                if (BDArmorySettings.WATER_HIT_FX) FXMonger.Splash(currentPosition, caliber / 2);
                                 KillBullet();
                                 return;
                             }
@@ -505,7 +506,8 @@ namespace BDArmory.Bullets
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
-        {            
+        {
+            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); //moving this here so it's not getting called 2x a tick in LeapFrogVelocityHalfStep
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
 
@@ -533,7 +535,7 @@ namespace BDArmory.Bullets
                 {
                     underwater = true;
                 }
-                FXMonger.Splash(currentPosition, caliber / 2);
+                if (BDArmorySettings.WATER_HIT_FX) FXMonger.Splash(currentPosition, caliber / 2);
             }
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
@@ -1203,7 +1205,7 @@ namespace BDArmory.Bullets
 
                 // Calculating this ratio once since we're going to need it a bunch
                 float adjustedPenRatio = (1 - BDAMath.Sqrt(thickness / penetration));
-
+                float oldBulletMass = bulletMass;
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
                 {
@@ -1278,6 +1280,9 @@ namespace BDArmory.Bullets
                             //impactVelocity = impactVelocity * adjustedPenRatio;
                             //currentVelocity = hitPartVelocity + impactVelocity;
                         }
+                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber, 
+                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, "standard", null, 1f, 
+                            -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
                     }
                     else
                     {
@@ -1409,7 +1414,7 @@ namespace BDArmory.Bullets
                     {
                         double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(currentPosition);
                         double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(currentPosition);
-                        FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass * 20);
+                        if (BDArmorySettings.WATER_HIT_FX) FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass * 20);
                     }
                 }
                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Delayed Detonation at: " + Time.time);
@@ -1675,7 +1680,7 @@ namespace BDArmory.Bullets
             if (underwater)
                 atmDensity = 1030f; // Sea water (3% salt) has a density of 1030kg/m^3 at 4°C at sea level. https://en.wikipedia.org/wiki/Density#Various_materials
             else
-                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition));
+                atmDensity = atmosphereDensity;
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
 

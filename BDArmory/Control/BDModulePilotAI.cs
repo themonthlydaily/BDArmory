@@ -2264,7 +2264,9 @@ namespace BDArmory.Control
                         {
                             target = MissileGuidance.GetAirToAirFireSolution(missile, v);
                         }
-
+                        Vector3 leadOffset = (missile.MissileReferenceTransform.position + (missile.MissileReferenceTransform.forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
+                        target -= leadOffset; //correctly account for missiles mounted at an angle (important if heater to keep them pointed at heatsource and/or keep target within boresight)
+                        angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (angleToTarget < 20f)
                         {
                             steerMode = SteerModes.Aiming;
