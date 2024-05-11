@@ -7197,10 +7197,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 //radar missiles
                 if (!results.foundTorpedo)
                 {
+                    //if (results.foundMissile) //make sure underAttack still gets called if incoming missile is GPS/INS
+                        StartCoroutine(UnderAttackRoutine());
                     if (results.foundRadarMissile) //have this require an RWR?
                     {
                         //if (!rwr && incomingMissileDistance <= guardRange * 0.33f) //within ID range?
-                        StartCoroutine(UnderAttackRoutine());
+                        //StartCoroutine(UnderAttackRoutine());
 
                         FireChaff();
                         FireECM(10);
@@ -7208,7 +7210,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     //laser missiles
                     if (results.foundAGM) //Assume Laser Warning Receiver regardless of omniDetection? Or move laser missiles to the passive missiles section?
                     {
-                        StartCoroutine(UnderAttackRoutine());
+                        //StartCoroutine(UnderAttackRoutine());
 
                         FireSmoke();
                         if (targetMissiles && guardTarget == null)
@@ -7241,7 +7243,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                             if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
                                 FireECM(cmThreshold);
-                            StartCoroutine(UnderAttackRoutine());
+                            //StartCoroutine(UnderAttackRoutine());
                         }
                         else //one passive missile is going to be indistinguishable from another, until it gets close enough to evaluate
                         {
@@ -7298,7 +7300,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     FireOCM(true);
                                 }
                             }
-                            StartCoroutine(UnderAttackRoutine());
+                            //StartCoroutine(UnderAttackRoutine());
                         }
                     }
                 }
