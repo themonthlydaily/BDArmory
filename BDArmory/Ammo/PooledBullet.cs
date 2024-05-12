@@ -1467,6 +1467,7 @@ namespace BDArmory.Bullets
                 float incrementVelocity = 1000 / (bulletVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
+                float subProjVelocity = GetDragAdjustedVelocity().magnitude + sBullet.bulletVelocity;
                 for (int s = 0; s < count * sBullet.projectileCount; s++) //this does mean that setting a subMunitionType to, say, shotgun shells and then setting a sMT projectile count of, say, 5, would have only 5 shotgun pellets spawn, even if the shutgun shell projectileCount = 30. Could always have it be count * subMunitiontype.projectileCount if you want shotshells as an allowable submunition
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1474,7 +1475,7 @@ namespace BDArmory.Bullets
                     pBullet.transform.position = currentPosition;
 
                     pBullet.caliber = sBullet.caliber;
-                    pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + sBullet.bulletVelocity;
+                    pBullet.bulletVelocity = subProjVelocity;
                     pBullet.bulletMass = sBullet.bulletMass;
                     pBullet.incendiary = sBullet.incendiary;
                     pBullet.apBulletMod = sBullet.apBulletMod;
