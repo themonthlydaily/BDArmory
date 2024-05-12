@@ -4831,6 +4831,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0)) //prioritize turreted lasers
                                     {
+                                        ModuleTurret turret = Laser.turret;
+                                        if (!TargetInTurretRange(turret, 15, default, Laser)) continue; // weight selection towards turrets that can fire on missile
                                         targetWeapon = item.Current;
                                         break;
                                     }
@@ -4860,7 +4862,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Gun.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 5, default, Gun) ? 2.0f : 0.01f; // weight selection towards turrets that can fire on missile
                                     }
                                     if (candidatePFuzed || candidateVTFuzed)
                                     {
@@ -4904,7 +4907,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Rocket.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 5, default, Rocket) ? 2.0f : 0.01f; // weight selection towards turrets that can fire on missile
                                     }
                                     if (targetRocketAccel < candidateRocketAccel)
                                     {
@@ -5108,7 +5112,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Rocket.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 15, default, Rocket) ? 2.0f : 0.01f; // weight selection towards turrets that can face in the right direction
                                     }
 
                                     if (targetRocketAccel < candidateRocketAccel)
@@ -5192,7 +5197,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateCaliber *= 1.5f; // weight selection towards turrets
+                                            ModuleTurret turret = Gun.turret;
+                                            candidateCaliber *= TargetInTurretRange(turret, 15, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can face the right direction
                                         }
                                         if (candidatePFuzed || candidateVTFuzed)
                                         {
@@ -5212,7 +5218,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateRPM *= 1.5f; // weight selection towards turrets
+                                            ModuleTurret turret = Gun.turret;
+                                            candidateRPM *= TargetInTurretRange(turret, 15, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can face the right direction
                                         }
                                         if (candidatePFuzed || candidateVTFuzed)
                                         {
@@ -5285,7 +5292,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateGimbal = true && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                        ModuleTurret turret = Laser.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 15, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (candidateMinrange > distance || distance > candidateMaxRange)
                                     {
@@ -5467,7 +5475,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateGimbal = true && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                        ModuleTurret turret = Laser.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 0, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (HEpulses)
                                     {
@@ -5534,7 +5543,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (candidateGimbal && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turrets
+                                        ModuleTurret turret = Gun.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 0, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (candidateMinrange > distance || distance > candidateMaxRange)
                                     {
@@ -6111,7 +6121,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                            ModuleTurret turret = Laser.turret;
+                                            candidateRPM *= TargetInTurretRange(turret, 15, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                         }
                                         if (candidateMinrange > distance || distance > candidateMaxrange / 10)
                                         {
@@ -6248,11 +6259,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             if (distanceToTarget < gun.minSafeDistance) return false;
 
                             // check yaw range of turret
-                            ModuleTurret turret = gun.turret;
-                            float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
-                            if (turret != null)
-                                if (!TargetInTurretRange(turret, gimbalTolerance, default, gun))
-                                    return false;
+                            //ModuleTurret turret = gun.turret;
+                            //float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
+                            //if (turret != null)
+                                //if (!TargetInTurretRange(turret, gimbalTolerance, default, gun))
+                                    //return false;
 
                             // check overheat, reloading, ability to fire soon
                             if (!gun.hasGunner)
