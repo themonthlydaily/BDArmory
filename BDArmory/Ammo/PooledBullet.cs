@@ -1276,7 +1276,7 @@ namespace BDArmory.Bullets
                             // If we don't, I.E. the round isn't completely eroded, we decrease
                             // the velocity by a max of 5%, proportional to the adjustedPenRatio
                             //impactVelocity = impactVelocity * (0.95f + 0.05f * adjustedPenRatio);
-                            adjustedPenRatio = 0.95f + 0.05f * adjustedPenRatio;
+                            adjustedPenRatio *= 0.95f + 0.05f * adjustedPenRatio;
                             //impactVelocity = impactVelocity * adjustedPenRatio;
                             //currentVelocity = hitPartVelocity + impactVelocity;
                         }
