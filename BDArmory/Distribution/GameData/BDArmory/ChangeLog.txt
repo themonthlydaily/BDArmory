@@ -36,6 +36,7 @@ IMPROVEMENTS / FIXES
 		- Can now set cluster missile trigger distance when mounting cluster missiles on reloadable rails.
 		- Nuke LightFX radius now set by effective blast range, not thermalRadius value.
 		- Fix NRE when AI tries to fire Modular Missiles.
+		- Fix heatseeking Missiles with very narrow sensorFOVs losing lock right before impact with a target.
 - RWP:
 	- Add S6R5 dynamic recoil gamemode; recoil scales with vessel thrust.
 - ModIntegration:
