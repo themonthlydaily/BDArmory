@@ -42,11 +42,11 @@ namespace BDArmory.Settings
         //[BDAPersistentSettingsField] public static bool INSTAKILL = true; //Deprecated, only affects lasers; use an Instagib mutator isntead
         [BDAPersistentSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
         [BDAPersistentSettingsField] public static bool VM_TOOLBAR_BUTTON = true;                 // Show or hide the BDA VM toolbar button.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_AMMO = false;              //infinite Bullets/rockets/laserpower
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_ORDINANCE = false;         //infinite missiles/bombs (on ordinance w/ Reload Module)
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool LIMITED_ORDINANCE = false;         //MML ammo clamped to salvo size, no relaods
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_FUEL = false;              //Infinite propellant
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool INFINITE_EC = false;                          //Infinite electric charge
+        [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;              //infinite Bullets/rockets/laserpower
+        [BDAPersistentSettingsField] public static bool INFINITE_ORDINANCE = false;         //infinite missiles/bombs (on ordinance w/ Reload Module)
+        [BDAPersistentSettingsField] public static bool LIMITED_ORDINANCE = false;         //MML ammo clamped to salvo size, no relaods
+        [BDAPersistentSettingsField] public static bool INFINITE_FUEL = false;              //Infinite propellant
+        [BDAPersistentSettingsField] public static bool INFINITE_EC = false;                          //Infinite electric charge
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistentSettingsField] public static bool WATER_HIT_FX = true;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
@@ -54,7 +54,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST_MODE = true;              // true = reticle follows bullet CPA position, false = reticle follows aiming position.
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESTORE_KAL = true;                  // Restore the Part, Module and AxisField references on the KAL to make it work.
+        [BDAPersistentSettingsField] public static bool RESTORE_KAL = true;                  // Restore the Part, Module and AxisField references on the KAL to make it work.
 
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
@@ -63,17 +63,17 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistentSettingsField] public static bool GAPLESS_PARTICLE_EMITTERS = true;         // Use gapless particle emitters.
         [BDAPersistentSettingsField] public static bool FLARE_SMOKE = true;                       // Flares leave a trail of smoke.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool DISABLE_RAMMING = false;                  // Prevent craft from going into ramming mode when out of ammo.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour). This could be removed now.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
+        [BDAPersistentSettingsField] public static bool DISABLE_RAMMING = false;                  // Prevent craft from going into ramming mode when out of ammo.
+        [BDAPersistentSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour). This could be removed now.
+        [BDAPersistentSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
         //[BDAPersistentSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
         [BDAPersistentSettingsField] public static bool AUTO_ENABLE_VESSEL_SWITCHING = false;     // Automatically enables vessel switching on competition start.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool DESTROY_UNCONTROLLED_WMS = true;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor material of parts of vessels when they're spawned in flight mode.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
+        [BDAPersistentSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
+        [BDAPersistentSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = true;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
+        [BDAPersistentSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistentSettingsField] public static bool AUTO_LOG_TIME_SYNC = false;               // Log time synchronisation info automatically during competitions.
         [BDAPersistentSettingsField] public static float LOG_TIME_SYNC_INTERVAL = 0.2f;           // Interval for logging time synchronisation information (approx).
@@ -87,10 +87,10 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistentSettingsField] public static bool SCROLL_ZOOM_PREVENTION = true;                 // Prevent scroll-zoom when over most BDA windows.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BULLET_WATER_DRAG = true;                       // do bullets/rockets get slowed down if fired into/under water
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool UNDERWATER_VISION = false;                       //If false, Subs and other submerged vessels fully visible to surface/air craft and vice versa without detectors?
+        [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;                       // do bullets/rockets get slowed down if fired into/under water
+        [BDAPersistentSettingsField] public static bool UNDERWATER_VISION = false;                       //If false, Subs and other submerged vessels fully visible to surface/air craft and vice versa without detectors?
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool LEGACY_ARMOR = false;
+        [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
         [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
         [BDAPersistentSettingsField] public static bool AUTO_LOAD_TO_KSC = false;                      // Automatically load the last used save and go to the KSC.
@@ -112,22 +112,22 @@ namespace BDArmory.Settings
         #endregion
 
         #region General slider settings
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int COMPETITION_DURATION = 0;                       // Competition duration in minutes (0=unlimited)
+        [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 0;                       // Competition duration in minutes (0=unlimited)
         [BDAPersistentSettingsField] public static float COMPETITION_INITIAL_GRACE_PERIOD = 10;        // Competition initial grace period in seconds.
         [BDAPersistentSettingsField] public static float COMPETITION_FINAL_GRACE_PERIOD = 10;          // Competition final grace period in seconds.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_KILL_TIMER = 15;                  // Competition kill timer in seconds.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_KILLER_GM_FREQUENCY = 60;         // Competition killer GM timer in seconds.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_KILLER_GM_GRACE_PERIOD = 150;     // Competition killer GM grace period in seconds.
+        [BDAPersistentSettingsField] public static float COMPETITION_KILL_TIMER = 15;                  // Competition kill timer in seconds.
+        [BDAPersistentSettingsField] public static float COMPETITION_KILLER_GM_FREQUENCY = 60;         // Competition killer GM timer in seconds.
+        [BDAPersistentSettingsField] public static float COMPETITION_KILLER_GM_GRACE_PERIOD = 150;     // Competition killer GM grace period in seconds.
         [BDAPersistentSettingsField] public static float COMPETITION_ALTITUDE_LIMIT_HIGH = 55;         // Altitude (high) in km at which to kill off craft.
         [BDAPersistentSettingsField] public static float COMPETITION_ALTITUDE_LIMIT_LOW = -39;          // Altitude (low) in km at which to kill off craft.
         [BDAPersistentSettingsField] public static bool COMPETITION_ALTITUDE__LIMIT_ASL = false;       // Does Killer GM use ASL or AGL for latitide ceiling/floor?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool COMPETITION_GM_KILL_WEAPON = false;             // Competition GM will kill weaponless craft?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool COMPETITION_GM_KILL_ENGINE = false;             // Competition GM will kill engineless craft?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool COMPETITION_GM_KILL_DISABLED = false;           // Competition GM will kill craft that are disabled (no weapons or ammo, no engine [Pilot/VTOL/Ship/Sub] or no wheels [Surface])
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_GM_KILL_HP = 0;                    // Competition GM will kill craft with low HP craft?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_GM_KILL_TIME = 0;                  // CompetitionGM Kill time
+        [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_WEAPON = false;             // Competition GM will kill weaponless craft?
+        [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_ENGINE = false;             // Competition GM will kill engineless craft?
+        [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_DISABLED = false;           // Competition GM will kill craft that are disabled (no weapons or ammo, no engine [Pilot/VTOL/Ship/Sub] or no wheels [Surface])
+        [BDAPersistentSettingsField] public static float COMPETITION_GM_KILL_HP = 0;                    // Competition GM will kill craft with low HP craft?
+        [BDAPersistentSettingsField] public static float COMPETITION_GM_KILL_TIME = 0;                  // CompetitionGM Kill time
         [BDAPersistentSettingsField] public static float COMPETITION_NONCOMPETITOR_REMOVAL_DELAY = 30; // Competition non-competitor removal delay in seconds.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float COMPETITION_WAYPOINTS_GM_KILL_PERIOD = 60;    // Waypoint Competition GM kill period in seconds. Craft that don't pass a waypoint within this time are killed off.
+        [BDAPersistentSettingsField] public static float COMPETITION_WAYPOINTS_GM_KILL_PERIOD = 60;    // Waypoint Competition GM kill period in seconds. Craft that don't pass a waypoint within this time are killed off.
         [BDAPersistentSettingsField] public static float COMPETITION_DISTANCE = 1000;                  // Competition distance.
         [BDAPersistentSettingsField] public static float COMPETITION_INTRA_TEAM_SEPARATION_BASE = 800; // Intra-team separation (base value).
         [BDAPersistentSettingsField] public static float COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER = 100; // Intra-team separation (per member value).
@@ -139,7 +139,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 10;                    // Controls the minimum time between automated camera switches
         [BDAPersistentSettingsField] public static int DEATH_CAMERA_SWITCH_INHIBIT_PERIOD = 2;         // Controls the delay before the next switch after the currently active vessel dies
         [BDAPersistentSettingsField] public static bool CAMERA_SWITCH_INCLUDE_MISSILES = false;        // Include missiles in the camera switching logic.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int KERBAL_SAFETY_INVENTORY = 2;                    // Controls how Kerbal Safety adjusts the inventory of kerbals.
+        [BDAPersistentSettingsField] public static int KERBAL_SAFETY_INVENTORY = 2;                    // Controls how Kerbal Safety adjusts the inventory of kerbals.
         [BDAPersistentSettingsField] public static float TRIGGER_HOLD_TIME = 0.2f;
         [BDAPersistentSettingsField] public static float BDARMORY_UI_VOLUME = 0.35f;
         [BDAPersistentSettingsField] public static float BDARMORY_WEAPONS_VOLUME = 0.45f;
@@ -154,10 +154,10 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.4f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HP_THRESHOLD = 2000;                    //HP above this value will be scaled to a logarithmic value
+        [BDAPersistentSettingsField] public static float HP_THRESHOLD = 2000;                    //HP above this value will be scaled to a logarithmic value
         [BDAPersistentSettingsField] public static float HP_CLAMP = 0;                           //HP will be clamped to this value
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool PWING_EDGE_LIFT = true;                  //Toggle lift on PWing edges for balance with stock wings/remove edge abuse
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool PWING_THICKNESS_AFFECT_MASS_HP = false;  //pWing thickness contributes to its mass calc instead of a static LiftArea derived value
+        [BDAPersistentSettingsField] public static bool PWING_EDGE_LIFT = true;                  //Toggle lift on PWing edges for balance with stock wings/remove edge abuse
+        [BDAPersistentSettingsField] public static bool PWING_THICKNESS_AFFECT_MASS_HP = false;  //pWing thickness contributes to its mass calc instead of a static LiftArea derived value
         [BDAPersistentSettingsField] public static float MAX_PWING_LIFT = 4.54f;                //Clamp pWing lift to this amount
         [BDAPersistentSettingsField] public static float MAX_SAS_TORQUE = 30;                   //Clamp vessel total non-cockpit torque to this
         [BDAPersistentSettingsField] public static bool NUMERIC_INPUT_SELF_UPDATE = true;             // Automatically update the display string in NumericInputField after attempting to parse the value.
@@ -166,23 +166,23 @@ namespace BDArmory.Settings
         #endregion
 
         #region Physics constants
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float GLOBAL_DRAG_MULTIPLIER = 6f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float RECOIL_FACTOR = 0.75f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float DMG_MULTIPLIER = 100f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BALLISTIC_DMG_FACTOR = 1.55f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HITPOINT_MULTIPLIER = 3.0f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.55f;     // HE bullet explosion damage multiplier
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_PEN_RESIST_MULT = 2.50f;           // Armor HE penetration resistance multiplier
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_DMG_MOD_MISSILE = 6.75f;           // Missile explosion damage multiplier
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_DMG_MOD_ROCKET = 1f;               // Rocket explosion damage multiplier (FIXME needs tuning; Note: rockets used Ballistic mod before, but probably ought to be more like missiles)
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_DMG_MOD_BATTLE_DAMAGE = 1f;        // Battle damage explosion damage multiplier (FIXME needs tuning; Note: CASE-0 explosions used Missile mod, while CASE-1, CASE-2 and fuel explosions used Ballistic mod)
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float EXP_IMP_MOD = 0.25f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BUILDING_DMG_MULTIPLIER = 1f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool EXTRA_DAMAGE_SLIDERS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ZOMBIE_DMG_MULT = 0.1f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ARMOR_MASS_MOD = 1f;                   //Armor mass multiplier
+        [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
+        [BDAPersistentSettingsField] public static float GLOBAL_DRAG_MULTIPLIER = 6f;
+        [BDAPersistentSettingsField] public static float RECOIL_FACTOR = 0.75f;
+        [BDAPersistentSettingsField] public static float DMG_MULTIPLIER = 100f;
+        [BDAPersistentSettingsField] public static float BALLISTIC_DMG_FACTOR = 1.55f;
+        [BDAPersistentSettingsField] public static float HITPOINT_MULTIPLIER = 3.0f;
+        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.55f;     // HE bullet explosion damage multiplier
+        [BDAPersistentSettingsField] public static float EXP_PEN_RESIST_MULT = 2.50f;           // Armor HE penetration resistance multiplier
+        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;           // Missile explosion damage multiplier
+        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_ROCKET = 1f;               // Rocket explosion damage multiplier (FIXME needs tuning; Note: rockets used Ballistic mod before, but probably ought to be more like missiles)
+        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_BATTLE_DAMAGE = 1f;        // Battle damage explosion damage multiplier (FIXME needs tuning; Note: CASE-0 explosions used Missile mod, while CASE-1, CASE-2 and fuel explosions used Ballistic mod)
+        [BDAPersistentSettingsField] public static float EXP_IMP_MOD = 0.25f;
+        [BDAPersistentSettingsField] public static float BUILDING_DMG_MULTIPLIER = 1f;
+        [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
+        [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
+        [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
+        [BDAPersistentSettingsField] public static float ARMOR_MASS_MOD = 1f;                   //Armor mass multiplier
         #endregion
 
         #region FX
@@ -208,76 +208,79 @@ namespace BDArmory.Settings
         #endregion
 
         #region Game modes
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool PEACE_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool TAG_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool PAINTBALL_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool GRAVITY_HACKS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ALTITUDE_HACKS = false; //transfer to a RunWayRound number?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BATTLEDAMAGE = true;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool HEART_BLEED_ENABLED = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESOURCE_STEAL_ENABLED = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ASTEROID_FIELD = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ASTEROID_FIELD_ANOMALOUS_ATTRACTION = false; // Asteroids are attracted to vessels.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 0.2f; // Strength of the effect.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ASTEROID_RAIN = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_RAIN_ALTITUDE = 2f; // Km.k
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ZOMBIE_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool DISCO_MODE = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool NO_ENGINES = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool WAYPOINTS_MODE = false;         // Waypoint section of Vessel Spawner Window.
+        [BDAPersistentSettingsField] public static bool PEACE_MODE = false;
+        [BDAPersistentSettingsField] public static bool TAG_MODE = false;
+        [BDAPersistentSettingsField] public static bool PAINTBALL_MODE = false;
+        [BDAPersistentSettingsField] public static bool GRAVITY_HACKS = false;
+        [BDAPersistentSettingsField] public static bool ALTITUDE_HACKS = false; //transfer to a RunWayRound number?
+        [BDAPersistentSettingsField] public static bool BATTLEDAMAGE = true;
+        [BDAPersistentSettingsField] public static bool HEART_BLEED_ENABLED = false;
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
+        [BDAPersistentSettingsField] public static bool ASTEROID_FIELD = false;
+        [BDAPersistentSettingsField] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
+        [BDAPersistentSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
+        [BDAPersistentSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
+        [BDAPersistentSettingsField] public static bool ASTEROID_FIELD_ANOMALOUS_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistentSettingsField] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 0.2f; // Strength of the effect.
+        [BDAPersistentSettingsField] public static bool ASTEROID_RAIN = false;
+        [BDAPersistentSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
+        [BDAPersistentSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
+        [BDAPersistentSettingsField] public static float ASTEROID_RAIN_ALTITUDE = 2f; // Km.k
+        [BDAPersistentSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
+        [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
+        [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
+        [BDAPersistentSettingsField] public static bool MUTATOR_MODE = false;
+        [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
+        [BDAPersistentSettingsField] public static bool DISCO_MODE = false;
+        [BDAPersistentSettingsField] public static bool NO_ENGINES = false;
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_MODE = false;         // Waypoint section of Vessel Spawner Window.
         [BDAPersistentSettingsField] public static string PINATA_NAME = "Pinata";
         #endregion
 
         #region Battle Damage settings
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_DAMAGE_CHANCE = 5;          // Base chance per-hit to proc damage
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_SUBSYSTEMS = true;           // Non-critical module damage?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_TANKS = true;                // Fuel tanks, batteries can leak/burn
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_TANK_LEAK_TIME = 20;        // Leak duration
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_TANK_LEAK_RATE = 1;         // Leak rate modifier
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_AMMOBINS = true;             // Can ammo bins explode?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_VOLATILE_AMMO = false;       // Ammo bins guaranteed to explode when destroyed
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_PROPULSION = true;           // Engine thrust reduction, fires
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_PROP_FLOOR = 20;            // Minimum thrust% damaged engines produce
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_PROP_FLAMEOUT = 25;         // Remaining HP% engines flameout
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_PART_STRENGTH = false;        // Part strength - breakingForce/Torque - decreases as part takes damage
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_PROP_DAM_RATE = 1;          // Rate multiplier, 0.1-2
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_INTAKES = true;              // Can intakes be damaged?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_GIMBALS = true;              // Can gimbals be disabled?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_AEROPARTS = true;            // Lift loss & added drag
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_LIFT_LOSS_RATE = 1;         // Rate multiplier
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_CTRL_SRF = true;             // Disable ctrl srf actuatiors?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_COCKPITS = false;            // Control degredation
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_PILOT_KILLS = false;         // Cockpit damage can kill pilots?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_FIRES_ENABLED = true;        // Can fires occur
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_FIRE_DOT = true;             // Do fires do DoT
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool BD_FIRE_FUELEX = true;          // Can fires detonate fuel tanks
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_FIRE_CHANCE_TRACER = 10;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_FIRE_CHANCE_HE = 25;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool ENABLE_HOS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HOS_FIRE = 0;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HOS_MASS = 0;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HOS_DMG = 0;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HOS_THRUST = 0;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool HOS_SAS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool HOS_ASTEROID = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static string HOS_MUTATOR = "";
-        [BDAPersistentSettingsField(RWPFilter = true)] public static string HOS_BADGE = "";
+        [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
+        [BDAPersistentSettingsField] public static float BD_DAMAGE_CHANCE = 5;          // Base chance per-hit to proc damage
+        [BDAPersistentSettingsField] public static bool BD_SUBSYSTEMS = true;           // Non-critical module damage?
+        [BDAPersistentSettingsField] public static bool BD_TANKS = true;                // Fuel tanks, batteries can leak/burn
+        [BDAPersistentSettingsField] public static float BD_TANK_LEAK_TIME = 20;        // Leak duration
+        [BDAPersistentSettingsField] public static float BD_TANK_LEAK_RATE = 1;         // Leak rate modifier
+        [BDAPersistentSettingsField] public static bool BD_AMMOBINS = true;             // Can ammo bins explode?
+        [BDAPersistentSettingsField] public static bool BD_VOLATILE_AMMO = false;       // Ammo bins guaranteed to explode when destroyed
+        [BDAPersistentSettingsField] public static bool BD_PROPULSION = true;           // Engine thrust reduction, fires
+        [BDAPersistentSettingsField] public static float BD_PROP_FLOOR = 20;            // Minimum thrust% damaged engines produce
+        [BDAPersistentSettingsField] public static float BD_PROP_FLAMEOUT = 25;         // Remaining HP% engines flameout
+        [BDAPersistentSettingsField] public static bool BD_PART_STRENGTH = false;        // Part strength - breakingForce/Torque - decreases as part takes damage
+        [BDAPersistentSettingsField] public static float BD_PROP_DAM_RATE = 1;          // Rate multiplier, 0.1-2
+        [BDAPersistentSettingsField] public static bool BD_INTAKES = true;              // Can intakes be damaged?
+        [BDAPersistentSettingsField] public static bool BD_GIMBALS = true;              // Can gimbals be disabled?
+        [BDAPersistentSettingsField] public static bool BD_AEROPARTS = true;            // Lift loss & added drag
+        [BDAPersistentSettingsField] public static float BD_LIFT_LOSS_RATE = 1;         // Rate multiplier
+        [BDAPersistentSettingsField] public static bool BD_CTRL_SRF = true;             // Disable ctrl srf actuatiors?
+        [BDAPersistentSettingsField] public static bool BD_COCKPITS = false;            // Control degredation
+        [BDAPersistentSettingsField] public static bool BD_PILOT_KILLS = false;         // Cockpit damage can kill pilots?
+        [BDAPersistentSettingsField] public static bool BD_FIRES_ENABLED = true;        // Can fires occur
+        [BDAPersistentSettingsField] public static bool BD_FIRE_DOT = true;             // Do fires do DoT
+        [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
+        [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
+        [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
+        [BDAPersistentSettingsField] public static bool BD_FIRE_FUELEX = true;          // Can fires detonate fuel tanks
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
+        #endregion
+
+        #region Hall of Shame Settings
+        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
+        [BDAPersistentSettingsField] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
+        [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
+        [BDAPersistentSettingsField] public static float HOS_MASS = 0;
+        [BDAPersistentSettingsField] public static float HOS_DMG = 0;
+        [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
+        [BDAPersistentSettingsField] public static bool HOS_SAS = false;
+        [BDAPersistentSettingsField] public static bool HOS_ASTEROID = false;
+        [BDAPersistentSettingsField] public static string HOS_MUTATOR = "";
+        [BDAPersistentSettingsField] public static string HOS_BADGE = "";
         #endregion
 
         #region Remote logging
@@ -339,55 +342,55 @@ namespace BDArmory.Settings
         #endregion
 
         #region Waypoints
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float WAYPOINTS_ALTITUDE = 0f;                // Altitude above ground of the waypoints.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool WAYPOINTS_ONE_AT_A_TIME = false;          // Send the craft one-at-a-time through the course.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool WAYPOINTS_VISUALIZE = true;               // Add Waypoint models to indicate the path
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true;  // Don't consume fuel prior to the first waypoint.
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float WAYPOINTS_SCALE = 0f;                   // Have model(or maybe WP radius proper) scale?
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int WAYPOINT_MAX_LAPS = 5;                     // Configurable max number of laps for the laps slider
+        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 0f;                // Altitude above ground of the waypoints.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = false;          // Send the craft one-at-a-time through the course.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;               // Add Waypoint models to indicate the path
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true;  // Don't consume fuel prior to the first waypoint.
+        [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 0f;                   // Have model(or maybe WP radius proper) scale?
+        [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
+        [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
+        [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
+        [BDAPersistentSettingsField] public static int WAYPOINT_MAX_LAPS = 5;                     // Configurable max number of laps for the laps slider
         #endregion
 
         #region Heartbleed
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HEART_BLEED_RATE = 0.01f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HEART_BLEED_INTERVAL = 10f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float HEART_BLEED_THRESHOLD = 10f;
+        [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
+        [BDAPersistentSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
+        [BDAPersistentSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
         #endregion
 
         #region Resource steal
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = true;     // Respect resource flow state in (stealing).
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT = false;   // Respect resource flow state out (stolen).
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float RESOURCE_STEAL_CM_RATION = 0f;
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = true;     // Respect resource flow state in (stealing).
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT = false;   // Respect resource flow state out (stolen).
+        [BDAPersistentSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
+        [BDAPersistentSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
+        [BDAPersistentSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;
         #endregion
 
         #region Space Friction
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool SPACE_HACKS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool SF_FRICTION = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool SF_GRAVITY = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool SF_REPULSOR = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float SF_REPULSOR_STRENGTH = 5f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float SF_DRAGMULT = 2f;
+        [BDAPersistentSettingsField] public static bool SPACE_HACKS = false;
+        [BDAPersistentSettingsField] public static bool SF_FRICTION = false;
+        [BDAPersistentSettingsField] public static bool SF_GRAVITY = false;
+        [BDAPersistentSettingsField] public static bool SF_REPULSOR = false;
+        [BDAPersistentSettingsField] public static float SF_REPULSOR_STRENGTH = 5f;
+        [BDAPersistentSettingsField] public static float SF_DRAGMULT = 2f;
         #endregion
 
         #region Mutator Mode
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_APPLY_GLOBAL = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_APPLY_KILL = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_APPLY_TIMER = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float MUTATOR_DURATION = 0.5f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static List<string> MUTATOR_LIST = new List<string>();
-        [BDAPersistentSettingsField(RWPFilter = true)] public static int MUTATOR_APPLY_NUM = 1;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_ICONS = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool MUTATOR_APPLY_GUNGAME = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float VENGEANCE_DELAY = 2.5f;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float VENGEANCE_YIELD = 1.5f;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GLOBAL = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_KILL = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
+        [BDAPersistentSettingsField] public static float MUTATOR_DURATION = 0.5f;
+        [BDAPersistentSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
+        [BDAPersistentSettingsField] public static int MUTATOR_APPLY_NUM = 1;
+        [BDAPersistentSettingsField] public static bool MUTATOR_ICONS = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GUNGAME = false;
+        [BDAPersistentSettingsField] public static float VENGEANCE_DELAY = 2.5f;
+        [BDAPersistentSettingsField] public static float VENGEANCE_YIELD = 1.5f;
         #endregion
         #region GunGame
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool GG_PERSISTANT_PROGRESSION = false;
-        [BDAPersistentSettingsField(RWPFilter = true)] public static bool GG_CYCLE_LIST = false;
+        [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;
+        [BDAPersistentSettingsField] public static bool GG_CYCLE_LIST = false;
         //[BDAPersistentSettingsField] public static bool GG_ANNOUNCER = false;
 
         #endregion
@@ -429,8 +432,8 @@ namespace BDArmory.Settings
         #endregion
 
         #region Scoring categories
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit
-        [BDAPersistentSettingsField(RWPFilter = true)] public static float SCORING_KILLSTEAL = 5;                   // Kill-Steal Time Limit
+        [BDAPersistentSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit
+        [BDAPersistentSettingsField] public static float SCORING_KILLSTEAL = 5;                   // Kill-Steal Time Limit
         #endregion
 
         #region Evolution settings

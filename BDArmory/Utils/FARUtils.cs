@@ -235,9 +235,9 @@ namespace BDArmory.Utils
                         float width = ((float)PWType.GetField("sharedBaseWidthRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseWidthTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
                         int edgeLeadingType = Mathf.RoundToInt((float)PWType.GetField("sharedEdgeTypeLeading", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
                         int edgeTrailingType = Mathf.RoundToInt((float)PWType.GetField("sharedEdgeTypeTrailing", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
-                        float edgeWidth = ((ctrlSrf || edgeLeadingType >= 2 ? 
+                        float edgeWidth = ((!ctrlSrf && edgeLeadingType >= 2 ? 
                             ((float)PWType.GetField("sharedEdgeWidthLeadingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
-                        (float)PWType.GetField("sharedEdgeWidthLeadingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0)     
+                        (float)PWType.GetField("sharedEdgeWidthLeadingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0)                            
                         + (ctrlSrf || edgeTrailingType >= 2 ? ((float)PWType.GetField("sharedEdgeWidthTrailingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
                         (float)PWType.GetField("sharedEdgeWidthTrailingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0));
                         float thickness = 0.18f;
