@@ -2264,9 +2264,9 @@ namespace BDArmory.Control
                         {
                             target = MissileGuidance.GetAirToAirFireSolution(missile, v);
                         }
-                        //Vector3 leadOffset = (missile.MissileReferenceTransform.position + (missile.MissileReferenceTransform.forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
-                        //target -= leadOffset; //correctly account for missiles mounted at an angle (important if heater to keep them pointed at heatsource and/or keep target within boresight)
-                        target = Quaternion.FromToRotation(missile.MissileReferenceTransform.forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        Vector3 leadOffset = (missile.MissileReferenceTransform.position + (missile.MissileReferenceTransform.forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
+                        target -= leadOffset; //correctly account for missiles mounted at an angle (important if heater to keep them pointed at heatsource and/or keep target within boresight)
+                        //target = Quaternion.FromToRotation(missile.MissileReferenceTransform.forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (angleToTarget < 20f)
                         {
@@ -2335,9 +2335,9 @@ namespace BDArmory.Control
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
                         target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
                         //need to subtract the angle of the gun if offset/angled from the target est. position
-                        //leadOffset = (weapon.fireTransforms[0].transform.position + (weapon.fireTransforms[0].forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
-                        //target -= leadOffset; //correctly account for offset guns/schrage Musik
-                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        leadOffset = (weapon.fireTransforms[0].transform.position + (weapon.fireTransforms[0].forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
+                        target -= leadOffset; //correctly account for offset guns/schrage Musik
+                        //target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
@@ -2381,8 +2381,8 @@ namespace BDArmory.Control
                         //else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is airborne a long way away or behind us.
                         else if (Vector3.Dot(target - vesselTransform.position, weapon.fireTransforms[0].forward) < 0) //If a gun is selected, craft is probably already within gunrange, or a couple of seconds of being in gunrange
                         {
-                            //target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
-                            target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (v.CoM - vesselTransform.position) + vesselTransform.position;
+                            target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
+                            //target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (v.CoM - vesselTransform.position) + vesselTransform.position;
                         }
                     }
                 }
