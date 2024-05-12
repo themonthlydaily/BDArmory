@@ -1140,7 +1140,7 @@ namespace BDArmory.Competition
                         Debug.Log($"[BDArmory.BDACompetitionMode]: Kerbal has left the seat of {vessel.vesselName} and it has no other controls, disabling the AI.");
                         AI.DeactivatePilot();
                     }
-                }
+                }//no srfAI/VTOLAI/OAI crew check? FIXME later
             }
         }
 

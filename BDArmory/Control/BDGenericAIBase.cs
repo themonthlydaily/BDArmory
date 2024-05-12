@@ -621,13 +621,14 @@ namespace BDArmory.Control
         }
 
         Coroutine maintainingFuelLevelsCoroutine;
+        Coroutine maintainingWaypointFuelLevelsCoroutine;
         /// <summary>
         /// Prevent fuel resource drain until the next waypoint.
         /// </summary>
         public void MaintainFuelLevelsUntilWaypoint()
         {
-            if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
-            maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsUntilWaypointCoroutine());
+            if (maintainingWaypointFuelLevelsCoroutine != null) StopCoroutine(maintainingWaypointFuelLevelsCoroutine);
+            maintainingWaypointFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsUntilWaypointCoroutine());
         }
         /// <summary>
         /// Prevent fuel resource drain until the next waypoint (coroutine).
