@@ -145,7 +145,6 @@ namespace BDArmory.Bullets
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
-        float atmosphereDensity;
         public int penTicker = 0;
 
         Ray bulletRay;
@@ -543,11 +542,11 @@ namespace BDArmory.Bullets
         private void LeapfrogVelocityHalfStep(float period)
         {
             timeElapsedSinceCurrentSpeedWasAdjusted += period; // Track flight time for drag purposes
-            UpdateDragEstimate(); // Update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drag.
             if (bulletDrop)
                 currentVelocity += period * FlightGlobals.getGeeForceAtPosition(currentPosition);
             if (underwater)
             {
+                UpdateDragEstimate(); //update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drop.
                 currentVelocity *= dragVelocityFactor; // Note: If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 currentSpeed = currentVelocity.magnitude;
                 timeElapsedSinceCurrentSpeedWasAdjusted = 0;
@@ -560,8 +559,7 @@ namespace BDArmory.Bullets
         /// <returns></returns>
         Vector3 GetDragAdjustedVelocity()
         {
-            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); //moving this here so it's not getting called 2x a tick in LeapFrogVelocityHalfStep
-
+            UpdateDragEstimate();
             if (timeElapsedSinceCurrentSpeedWasAdjusted > 0)
             {
                 return currentVelocity * dragVelocityFactor;
@@ -1680,7 +1678,7 @@ namespace BDArmory.Bullets
             if (underwater)
                 atmDensity = 1030f; // Sea water (3% salt) has a density of 1030kg/m^3 at 4°C at sea level. https://en.wikipedia.org/wiki/Density#Various_materials
             else
-                atmDensity = atmosphereDensity;
+                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
 
