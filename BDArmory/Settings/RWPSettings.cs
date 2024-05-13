@@ -87,16 +87,17 @@ namespace BDArmory.Settings
       }}
     };
     public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
+    static readonly HashSet<string> currentFilter = [];
 
     public static void SetRWP(bool enabled, int round)
     {
       if (enabled)
       {
-        SetRWPFilters(round);
-        if (!RWPEnabled) StoreSettings(); // Enabling RWP. Store the non-RWP settings.
-        else RestoreSettings(); // Was previously enabled. Restore the non-RWP settings before applying new ones.
+        if (RWPEnabled) RestoreSettings(); // Revert to the original settings if we've been modifying things.
+        SetRWPFilters(); // Figure out what we're going to change and tag those settings.
+        StoreSettings(); // Store the original values of the settings that we're going to change.
         SetOverrides(0); // Set global RWP settings.
-        SetOverrides(round); // Set the round-specific settings.
+        if (round > 0) SetOverrides(round); // Set the round-specific settings.
       }
       else if (!enabled && RWPEnabled) // Disabling RWP.
       {
@@ -108,10 +109,10 @@ namespace BDArmory.Settings
     static Dictionary<string, object> storedSettings = []; // The base stored settings.
     static Dictionary<string, object> tempSettings = []; // Temporary settings for shuffling things around.
 
-    /// <summary>
-    /// Store the non-RWP settings.
-    /// </summary>
-    public static void StoreSettings(bool temp = false)
+        /// <summary>
+        /// Store the settings that RWP is going to change.
+        /// </summary>
+        public static void StoreSettings(bool temp = false)
     {
       Debug.Log($"[BDArmory.RWPSettings]: Storing {(temp ? "temporary" : "base")} settings.");
       var settings = temp ? tempSettings : storedSettings;
@@ -120,14 +121,7 @@ namespace BDArmory.Settings
             var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
             foreach (var field in fields)
             {
-                //if (field.Name.EndsWith("_SETTINGS_TOGGLE")) continue; // Don't toggle the section headers.
-                //if (field.Name.StartsWith("RUNWAY_PROJECT")) continue; // Skip settings beginning with RWP (toggle and slider) to avoid recursion.
-                //if (field.Name.StartsWith("VESSEL_SPAWN_")) continue; // Skip spawn settings so they are the same between RWP and non-RWP.
-                //if (field.Name.StartsWith("TOURNAMENT_")) continue; // Skip tournament settings so they are the same between RWP and non-RWP.
-                if (!field.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
-
-                BDAPersistentSettingsField attr = field.GetCustomAttribute<BDAPersistentSettingsField>();
-                if (!attr.RWPFilter)
+                if (!currentFilter.Contains(field.Name))
                 {
                     //Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is non-RWP setting, skipping...");
                     continue;
@@ -135,16 +129,17 @@ namespace BDArmory.Settings
 
                 settings.Add(field.Name, field.GetValue(null));
             }
-    }
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
+        }
 
     /// <summary>
     /// Restore the non-RWP settings.
     /// </summary>
     public static void RestoreSettings(bool temp = false)
     {
-      Debug.Log($"[BDArmory.RWPSettings]: Restoring {(temp ? "temporary" : "base")} settings.");
       var settings = temp ? tempSettings : storedSettings;
-      foreach (var setting in settings.Keys)
+            Debug.Log($"[BDArmory.RWPSettings]: Restoring {(temp ? "temporary" : "base")} settings.");
+            foreach (var setting in settings.Keys)
       {
         var field = typeof(BDArmorySettings).GetField(setting, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
         if (field == null) continue;
@@ -156,19 +151,18 @@ namespace BDArmory.Settings
         /// <summary>
         /// set whether or not a BDAsetting should be filtered by the store/restore setting
         /// </summary>
-        public static void SetRWPFilters(int round)
+        public static void SetRWPFilters()
         {
             if (!RWPOverrides.ContainsKey(0)) return;
             Debug.Log($"[BDArmory.RWPSettings]: Setting RWP setting filters");
-
+            currentFilter.Clear();
             var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
             foreach (var field in fields)
             {
                 if (field == null) continue;
                 if (!field.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
-                BDAPersistentSettingsField attr = field.GetCustomAttribute<BDAPersistentSettingsField>();
-                attr.RWPFilter = RWPOverrides[0].Keys.Contains(field.Name); //just have it grab the settings from all nodes...?
-                if (attr.RWPFilter) Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is base RWP setting, tagging...");
+                if (RWPOverrides[0].Keys.Contains(field.Name) || RWPOverrides[BDArmorySettings.RUNWAY_PROJECT_ROUND].Keys.Contains(field.Name))
+                    currentFilter.Add(field.Name);
             }
         }
 
@@ -189,24 +183,14 @@ namespace BDArmory.Settings
           Debug.LogWarning($"[BDArmory.RWPSettings]: Invalid field name {setting} for RWP round {round}.");
           continue;
         }
-                try
-                {
-                    if (field.IsDefined(typeof(BDAPersistentSettingsField), false))
-                    {
-                        BDAPersistentSettingsField attr = field.GetCustomAttribute<BDAPersistentSettingsField>();
-                        if (attr.RWPFilter == false) //don't add a setting if already logged from a previous RWPRound that uses it
-                        {
-                            attr.RWPFilter = true;
-                            Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is RWP setting, tagging...");
-                            storedSettings.Add(field.Name, field.GetValue(null)); //switching to new RWP_Round, need to tag the new settings and log their state prior to RPWOverride
-                        }
-                    }
-                    field.SetValue(null, Convert.ChangeType(overrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
-                }
+        try
+        {
+          field.SetValue(null, Convert.ChangeType(overrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
+        }
+        catch (Exception e)
+        {
+           Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
+        }
       }
 
       // Add any additional round-specific setup here.
