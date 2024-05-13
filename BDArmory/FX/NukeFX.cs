@@ -141,6 +141,14 @@ namespace BDArmory.FX
                     audioSource.PlayOneShot(audioClips[SoundPath]);
                 }
             }
+            else
+            {
+                hasDetonated = false;
+                LightFx.intensity = 0;
+                LightFx.range = 0;
+                gameObject.SetActive(false);
+                return;
+            }
         }
 
         void OnDisable()
@@ -320,37 +328,26 @@ namespace BDArmory.FX
         {
             if (!gameObject.activeInHierarchy) return;
 
-            if (HighLogic.LoadedSceneIsFlight)
+            if (hasDetonated)
             {
-                if (hasDetonated)
+                if (LightFx != null)
                 {
-                    if (LightFx != null)
-                    {
-                        LightFx.intensity -= 12 * scale * Time.deltaTime;
-                        LightFx.range -= 12 * scale * Time.deltaTime;
-                    }
+                    LightFx.intensity -= 12 * scale * Time.deltaTime;
+                    LightFx.range -= 12 * scale * Time.deltaTime;
+                }
+                if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
+                {
                     if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
                     {
-                        if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
+                        foreach (var pe in pEmitters)
                         {
-                            foreach (var pe in pEmitters)
-                            {
-                                if (pe == null) continue;
-                                pe.emit = false;
-                            }
+                            if (pe == null) continue;
+                            pe.emit = false;
                         }
                     }
-                    foreach (var fx in fxEmitters) if (fx.gameObject.activeSelf) fx.Position = Position; // Update FX emitter positions.
                 }
+                foreach (var fx in fxEmitters) if (fx.gameObject.activeSelf) fx.Position = Position; // Update FX emitter positions.
             }
-			else
-			{
-				hasDetonated = false;
-                LightFx.intensity = 0;
-                LightFx.range = 0;
-                gameObject.SetActive(false);
-                return;
-			}			
         }
 
         public void FixedUpdate()
@@ -428,7 +425,7 @@ namespace BDArmory.FX
                 }
             }
 
-            if (hasDetonated && explosionEvents.Count == 0 || TimeIndex > MaxTime)
+            if (hasDetonated && explosionEvents.Count == 0 && TimeIndex > MaxTime)
             {
                 hasDetonated = false;
                 LightFx.intensity = 0;
