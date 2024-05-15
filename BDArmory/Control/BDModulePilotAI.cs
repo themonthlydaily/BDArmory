@@ -2337,7 +2337,7 @@ namespace BDArmory.Control
                         //need to subtract the angle of the gun if offset/angled from the target est. position
                         //target -= leadOffset; //correctly account for offset guns/schrage Musik
                         target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
-                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].transform.position, target - vesselTransform.position);
+                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].forward, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
