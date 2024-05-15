@@ -2329,14 +2329,8 @@ namespace BDArmory.Control
                     {
                         Vector3 leadOffset = weapon.GetLeadOffset();
 
-                        float targetAngVel = Vector3.Angle(v.transform.position - vessel.transform.position, v.transform.position + (vessel.Velocity()) - vessel.transform.position);
-                        float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
-                        magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
-                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
-                        target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
-                        //need to subtract the angle of the gun if offset/angled from the target est. position
-                        //target -= leadOffset; //correctly account for offset guns/schrage Musik
-                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        target -= leadOffset;
+                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; //correctly account for offset guns/schrage Musik
                         angleToTarget = Vector3.Angle(weapon.fireTransforms[0].forward, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
