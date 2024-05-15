@@ -448,8 +448,10 @@ namespace BDArmory.GameModes
                 }
             }
         }
+        bool hasDetonated = false;
         void Detonate()
         {
+            if (hasDetonated) return;
             if (!Vengeance) return;
             if (!BDACompetitionMode.Instance.competitionIsActive) return;
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: triggering vengeance nuke");
@@ -462,6 +464,7 @@ namespace BDArmory.GameModes
                 "BDArmory/Models/explosion/nuke/nukeScatter",
                 "BDArmory/Models/Mutators/Vengence",
                 nukePart: part);
+            hasDetonated = true;
         }
     }
 }

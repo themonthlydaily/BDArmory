@@ -2333,12 +2333,11 @@ namespace BDArmory.Control
                         float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
                         magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
-                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
                         target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
                         //need to subtract the angle of the gun if offset/angled from the target est. position
-                        //leadOffset = (weapon.fireTransforms[0].transform.position + (weapon.fireTransforms[0].forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
-                        //target -= leadOffset; //correctly account for offset guns/schrage Musik                        
-                        angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
+                        //target -= leadOffset; //correctly account for offset guns/schrage Musik
+                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].transform.position, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
