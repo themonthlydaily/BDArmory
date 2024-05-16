@@ -2327,17 +2327,19 @@ namespace BDArmory.Control
                     ModuleWeapon weapon = weaponManager.currentGun;
                     if (weapon != null)
                     {
+                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; //correctly account for offset guns/schrage Musik
+                        Vector3 weaponOffset = Vector3.zero;
+                        if (part.symmetryCounterparts.Count == 0)
+                            weaponOffset = (vessel.ReferenceTransform.position - weapon.fireTransforms[0].position);
+                        else
+                        {
+                            weaponOffset = (vessel.ReferenceTransform.position - weapon.part.parent.partBuoyancy.transform.position); //symmetry twins would be equally offset from parent part's center, so just use that for the average
+                        }
+                        debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                        target += weaponOffset; //account for weapons with translational offset from longitudinal axis
                         Vector3 leadOffset = weapon.GetLeadOffset();
-
-                        float targetAngVel = Vector3.Angle(v.transform.position - vessel.transform.position, v.transform.position + (vessel.Velocity()) - vessel.transform.position);
-                        float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
-                        magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
-                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
-                        target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
-                        //need to subtract the angle of the gun if offset/angled from the target est. position
-                        //target -= leadOffset; //correctly account for offset guns/schrage Musik
-                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
-                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].transform.position, target - vesselTransform.position);
+                        target -= leadOffset;
+                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].forward, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
