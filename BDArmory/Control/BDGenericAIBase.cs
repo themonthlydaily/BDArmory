@@ -104,7 +104,7 @@ namespace BDArmory.Control
         private void autoPilot(FlightCtrlState s)
         {
             debugString.Length = 0;
-            if (!weaponManager || !vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
+            if (!vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
                 return;
             // nobody is controlling any more possibly due to G forces?
             if (!vessel.isCommandable)
