@@ -33,6 +33,7 @@ namespace BDArmory.Settings
         {"HP_THRESHOLD", 2000},
         {"INFINITE_AMMO", false},
         {"INFINITE_ORDINANCE", false}, // Note: don't set inf fuel or inf EC as those are used during autotuning and are handled differently in order to sync with the cheats menu.
+        {"MAX_SAS_TORQUE", 30},
         {"PWING_THICKNESS_AFFECT_MASS_HP", true},
         {"VESSEL_SPAWN_FILL_SEATS", 1},
         {"VESSEL_SPAWN_RANDOM_ORDER", true},

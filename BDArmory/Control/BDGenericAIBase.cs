@@ -104,7 +104,7 @@ namespace BDArmory.Control
         private void autoPilot(FlightCtrlState s)
         {
             debugString.Length = 0;
-            if (!weaponManager || !vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
+            if (!vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
                 return;
             //vessel lost command parts from damage?
             if (!vessel.isCommandable) //isCommandable is only false when there is *no* command parts on the vessel (cockpits/probecores/etc)
