@@ -2327,10 +2327,18 @@ namespace BDArmory.Control
                     ModuleWeapon weapon = weaponManager.currentGun;
                     if (weapon != null)
                     {
-                        Vector3 leadOffset = weapon.GetLeadOffset();
-
-                        target -= leadOffset;
                         target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; //correctly account for offset guns/schrage Musik
+                        Vector3 weaponOffset = Vector3.zero;
+                        if (part.symmetryCounterparts.Count == 0)
+                            weaponOffset = (vessel.ReferenceTransform.position - weapon.fireTransforms[0].position);
+                        else
+                        {
+                            weaponOffset = (vessel.ReferenceTransform.position - weapon.part.parent.partBuoyancy.transform.position); //symmetry twins would be equally offset from parent part's center, so just use that for the average
+                        }
+                        debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                        target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                        Vector3 leadOffset = weapon.GetLeadOffset();
+                        target -= leadOffset;
                         angleToTarget = Vector3.Angle(weapon.fireTransforms[0].forward, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
