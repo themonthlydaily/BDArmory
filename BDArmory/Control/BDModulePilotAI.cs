@@ -2327,19 +2327,27 @@ namespace BDArmory.Control
                     ModuleWeapon weapon = weaponManager.currentGun;
                     if (weapon != null)
                     {
-                        target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; //correctly account for offset guns/schrage Musik
-                        Vector3 weaponOffset = Vector3.zero;
-                        if (part.symmetryCounterparts.Count == 0)
-                            weaponOffset = (vessel.ReferenceTransform.position - weapon.fireTransforms[0].position);
-                        else
+                        Vector3 leadOffset = weapon.GetLeadOffset();
+                        target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
+                                                // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                        Vector3 weaponPosition = weapon.fireTransforms[0].position;
+                        Vector3 weaponDirection = weapon.fireTransforms[0].forward;
+                        if (weapon.part.symmetryCounterparts.Count > 0)
                         {
-                            weaponOffset = (vessel.ReferenceTransform.position - weapon.part.parent.partBuoyancy.transform.position); //symmetry twins would be equally offset from parent part's center, so just use that for the average
+                        foreach (var part in weapon.part.symmetryCounterparts)
+                        {
+                                weaponPosition += part.transform.position;
+                                weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
                         }
+                        weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
+                        weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
+                        }
+                        target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
+                        var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
+
                         debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
                         target += weaponOffset; //account for weapons with translational offset from longitudinal axis
-                        Vector3 leadOffset = weapon.GetLeadOffset();
-                        target -= leadOffset;
-                        angleToTarget = Vector3.Angle(weapon.fireTransforms[0].forward, target - vesselTransform.position);
+                        angleToTarget = Vector3.Angle(weaponDirection, target - weaponPosition);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
@@ -2379,11 +2387,10 @@ namespace BDArmory.Control
                                 steerMode = SteerModes.Aiming;
                             }
                         }
-                        //else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is airborne a long way away or behind us.
-                        else if (Vector3.Dot(target - vesselTransform.position, weapon.fireTransforms[0].forward) < 0) //If a gun is selected, craft is probably already within gunrange, or a couple of seconds of being in gunrange
+                        else if (Vector3.Dot(target - weaponPosition, weaponDirection) < 0) //If a gun is selected, craft is probably already within gunrange, or a couple of seconds of being in gunrange
                         {
-                            //target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
-                            target = Quaternion.FromToRotation(weapon.fireTransforms[0].forward, vesselTransform.up) * (v.CoM - vesselTransform.position) + vesselTransform.position;
+                            // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
+                            target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (v.CoM - vesselTransform.position) + vesselTransform.position;
                         }
                     }
                 }
