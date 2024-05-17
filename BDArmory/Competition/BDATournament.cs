@@ -57,14 +57,15 @@ namespace BDArmory.Competition
     [Serializable]
     public class TournamentScores
     {
-        public Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
-        public Dictionary<string, string> playersToTeamNames = new Dictionary<string, string>(); // Match the players with team names (for teams competitions).
-        public Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
+        public Dictionary<string, string> playersToFileNames = []; // Match players with craft filenames for extending ranks rounds.
+        public Dictionary<string, string> playersToTeamNames = []; // Match the players with team names (for teams competitions).
+        public Dictionary<string, float> scores = []; // The current scores for the tournament.
         public float lastUpdated = 0;
-        HashSet<string> npcs = new HashSet<string>();
-        Dictionary<string, List<ScoringData>> scoreDetails = new Dictionary<string, List<ScoringData>>(); // Scores per player per round. Rounds players weren't involved in contain default ScoringData entries.
-        List<CompetitionOutcome> competitionOutcomes = new List<CompetitionOutcome>();
-        public static Dictionary<string, float> weights = new Dictionary<string, float> {
+        HashSet<string> npcs = [];
+        Dictionary<string, List<ScoringData>> scoreDetails = []; // Scores per player per round. Rounds players weren't involved in contain default ScoringData entries.
+        List<CompetitionOutcome> competitionOutcomes = [];
+        public static Dictionary<string, float> weights = new()
+        {
             {"Wins",                    1f},
             {"Survived",                0f},
             {"MIA",                     0f},
@@ -152,6 +153,7 @@ namespace BDArmory.Competition
                 }
                 weights[key] = newWeights[key];
             }
+            SaveWeights();
         }
 
         /// <summary>
@@ -460,6 +462,43 @@ namespace BDArmory.Competition
                 survivingTeams = _survivingTeams.Select(t => JsonUtility.FromJson<StringList>(t).ls).ToList();
                 deadTeams = _deadTeams.Select(t => JsonUtility.FromJson<StringList>(t).ls).ToList();
                 return this;
+            }
+        }
+        
+        public static void SaveWeights()
+        {
+            ConfigNode fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
+
+            if (!fileNode.HasNode("ScoreWeights"))
+            {
+                fileNode.AddNode("ScoreWeights");
+            }
+
+            ConfigNode settings = fileNode.GetNode("ScoreWeights");
+
+            foreach(var kvp in weights)
+            {
+                settings.SetValue(kvp.Key, kvp.Value.ToString(), true);
+            }
+            fileNode.Save(BDArmorySettings.settingsConfigURL);
+        }
+
+        public static void LoadWeights()
+        {
+            ConfigNode fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
+            if (!fileNode.HasNode("ScoreWeights")) return;
+
+            ConfigNode settings = fileNode.GetNode("ScoreWeights");
+
+            foreach(var key in weights.Keys.ToList())
+            {
+                if (!settings.HasValue(key)) continue;
+
+                object parsedValue = BDAPersistentSettingsField.ParseValue(typeof(float), settings.GetValue(key));
+                if (parsedValue != null)
+                {
+                    weights[key] = (float)parsedValue;
+                }
             }
         }
         #endregion

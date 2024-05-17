@@ -221,14 +221,17 @@ namespace BDArmory.GameModes.Waypoints
                         {
                             string[] datavars;
                             datavars = waypoints[i].Split(new char[] { '|' });
-                            if (datavars.Length < 4)
-                                datavars[3] = "-1";
                             string WPname = (string)ParseValue(typeof(string), datavars[0]);
                             WPname = WPname.Trim(' ');
                             if (string.IsNullOrEmpty(WPname)) WPname = $"Waypoint {i}";
                             var location = (Vector3)ParseValue(typeof(Vector3), datavars[1]);
                             var scale = (float)ParseValue(typeof(float), datavars[2]);
-                            var speed = (float)ParseValue(typeof(float), datavars[3]);
+                            float speed;
+                            try
+                            {
+                                speed = (float)ParseValue(typeof(float), datavars[3]);
+                            }
+                            catch {speed = -1f; }
                             if (name != null && location != null)
                                 waypointList.Add(new Waypoint(WPname, location, scale, speed));
                         }

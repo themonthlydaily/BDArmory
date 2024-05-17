@@ -718,7 +718,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else // No target, look straight ahead
                 {
-                    lookRay = new Ray(transform.position, vessel.srf_vel_direction);
+                    lookRay = new Ray(transform.position, MissileReferenceTransform.forward);
                 }
 
                 // Prevent seeker from looking past maxOffBoresight
@@ -727,7 +727,6 @@ namespace BDArmory.Weapons.Missiles
                     lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
                 DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
-
                 // Update heat target
                 if (activeRadarRange < 0)
                     heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, lockedSensorFOVBias, lockedSensorVelocityBias,

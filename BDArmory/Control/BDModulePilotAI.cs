@@ -1581,7 +1581,9 @@ namespace BDArmory.Control
             }
 
             SetAutoTuneFields();
-            CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
+            MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            //doesn't work for FS helicopter engines, reverting to older method for inf. fuel.
+            //CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
             OtherUtils.SetTimeOverride(autoTune);
         }
         void SetAutoTuneFields()
@@ -2246,7 +2248,7 @@ namespace BDArmory.Control
                 {
                     if (missile.GetWeaponClass() == WeaponClasses.Missile)
                     {
-                        if (distanceToTarget > 5500f)
+                        if (distanceToTarget > 5500f) //why 5.5km?
                         {
                             finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                         }
@@ -2260,7 +2262,10 @@ namespace BDArmory.Control
                         {
                             target = MissileGuidance.GetAirToAirFireSolution(missile, v);
                         }
-
+                        //Vector3 leadOffset = (missile.MissileReferenceTransform.position + (missile.MissileReferenceTransform.forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
+                        //target -= leadOffset; //correctly account for missiles mounted at an angle (important if heater to keep them pointed at heatsource and/or keep target within boresight)
+                        target = Quaternion.FromToRotation(missile.MissileReferenceTransform.forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (angleToTarget < 20f)
                         {
                             steerMode = SteerModes.Aiming;
@@ -2321,13 +2326,26 @@ namespace BDArmory.Control
                     if (weapon != null)
                     {
                         Vector3 leadOffset = weapon.GetLeadOffset();
+                        target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
+                                                // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                        Vector3 weaponPosition = weapon.fireTransforms[0].position;
+                        Vector3 weaponDirection = weapon.fireTransforms[0].forward;
+                        if (weapon.part.symmetryCounterparts.Count > 0)
+                        {
+                        foreach (var part in weapon.part.symmetryCounterparts)
+                        {
+                                weaponPosition += part.transform.position;
+                                weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                        }
+                        weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
+                        weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
+                        }
+                        target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
+                        var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
 
-                        float targetAngVel = Vector3.Angle(v.transform.position - vessel.transform.position, v.transform.position + (vessel.Velocity()) - vessel.transform.position);
-                        float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
-                        magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
-                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
-                        target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
-                        angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
+                        debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                        target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                        angleToTarget = Vector3.Angle(weaponDirection, target - weaponPosition);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
@@ -2367,10 +2385,10 @@ namespace BDArmory.Control
                                 steerMode = SteerModes.Aiming;
                             }
                         }
-                        //else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is airborne a long way away or behind us.
-                        else if (Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) //If a gun is selected, craft is probably already within gunrange, or a couple of seconds of being in gunrange
+                        else if (Vector3.Dot(target - weaponPosition, weaponDirection) < 0) //If a gun is selected, craft is probably already within gunrange, or a couple of seconds of being in gunrange
                         {
-                            target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
+                            // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
+                            target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (v.CoM - vesselTransform.position) + vesselTransform.position;
                         }
                     }
                 }
@@ -2516,7 +2534,7 @@ namespace BDArmory.Control
             {
                 isPSM = false;
             }
-            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
+            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;                        
             if (AutoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
             {
                 steerMode = SteerModes.Aiming; // Pretend to aim when on target.

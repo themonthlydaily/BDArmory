@@ -725,6 +725,10 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_NonGuardModeCMs", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true), // Non-guard mode CMs.
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool nonGuardModeCMs = false; // Allows for manually flying the craft while still auto-deploying CMs.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicRadar", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true), // Disable Radar vs ARMs
+    UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
+        public bool DynamicRadarOverride = false; // toggle AI toggling radar when incoming ARMs
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
@@ -1596,7 +1600,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             if (!BDArmorySettings.DEBUG_LINES && lr != null) { lr.enabled = false; }
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
-            {
+            {                
                 if (BDArmorySettings.DEBUG_LINES)
                 {
                     if (incomingMissileVessel)
@@ -1609,7 +1613,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         ((vessel.LandedOrSplashed && (guardTarget.transform.position - transform.position).sqrMagnitude > 2250000f) ?
                         transform.position + (SurfaceVisionOffset.Evaluate((guardTarget.CoM - transform.position).magnitude) * VectorUtils.GetUpDirection(transform.position)) : transform.position), 3, Color.yellow);
                 }
-
+                
                 if (showBombAimer)
                 {
                     MissileBase ml = CurrentMissile;
@@ -4827,6 +4831,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0)) //prioritize turreted lasers
                                     {
+                                        ModuleTurret turret = Laser.turret;
+                                        if (!TargetInTurretRange(turret, 15, default, Laser)) continue; // weight selection towards turrets that can fire on missile
                                         targetWeapon = item.Current;
                                         break;
                                     }
@@ -4856,7 +4862,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Gun.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 5, default, Gun) ? 2.0f : 0.01f; // weight selection towards turrets that can fire on missile
                                     }
                                     if (candidatePFuzed || candidateVTFuzed)
                                     {
@@ -4900,7 +4907,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Rocket.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 5, default, Rocket) ? 2.0f : 0.01f; // weight selection towards turrets that can fire on missile
                                     }
                                     if (targetRocketAccel < candidateRocketAccel)
                                     {
@@ -5104,7 +5112,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateYTraverse > 0 || candidatePTraverse > 0)
                                     {
-                                        candidateRPM *= 2.0f; // weight selection towards turrets
+                                        ModuleTurret turret = Rocket.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 15, default, Rocket) ? 2.0f : 0.01f; // weight selection towards turrets that can face in the right direction
                                     }
 
                                     if (targetRocketAccel < candidateRocketAccel)
@@ -5188,7 +5197,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateCaliber *= 1.5f; // weight selection towards turrets
+                                            ModuleTurret turret = Gun.turret;
+                                            candidateCaliber *= TargetInTurretRange(turret, 15, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can face the right direction
                                         }
                                         if (candidatePFuzed || candidateVTFuzed)
                                         {
@@ -5208,7 +5218,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateRPM *= 1.5f; // weight selection towards turrets
+                                            ModuleTurret turret = Gun.turret;
+                                            candidateRPM *= TargetInTurretRange(turret, 15, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can face the right direction
                                         }
                                         if (candidatePFuzed || candidateVTFuzed)
                                         {
@@ -5281,7 +5292,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateGimbal = true && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                        ModuleTurret turret = Laser.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 15, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (candidateMinrange > distance || distance > candidateMaxRange)
                                     {
@@ -5463,7 +5475,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                     if (candidateGimbal = true && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                        ModuleTurret turret = Laser.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 0, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (HEpulses)
                                     {
@@ -5530,7 +5543,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (candidateGimbal && candidateTraverse > 0)
                                     {
-                                        candidateRPM *= 1.5f; // weight selection towards turrets
+                                        ModuleTurret turret = Gun.turret;
+                                        candidateRPM *= TargetInTurretRange(turret, 0, default, Gun) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                     }
                                     if (candidateMinrange > distance || distance > candidateMaxRange)
                                     {
@@ -6107,7 +6121,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                                         if (candidateGimbal = true && candidateTraverse > 0)
                                         {
-                                            candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                            ModuleTurret turret = Laser.turret;
+                                            candidateRPM *= TargetInTurretRange(turret, 15, default, Laser) ? 1.5f : 0.01f; // weight selection towards turrets that can point in the right direction
                                         }
                                         if (candidateMinrange > distance || distance > candidateMaxrange / 10)
                                         {
@@ -6244,11 +6259,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             if (distanceToTarget < gun.minSafeDistance) return false;
 
                             // check yaw range of turret
-                            ModuleTurret turret = gun.turret;
-                            float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
-                            if (turret != null)
-                                if (!TargetInTurretRange(turret, gimbalTolerance, default, gun))
-                                    return false;
+                            //ModuleTurret turret = gun.turret;
+                            //float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
+                            //if (turret != null)
+                                //if (!TargetInTurretRange(turret, gimbalTolerance, default, gun))
+                                    //return false;
 
                             // check overheat, reloading, ability to fire soon
                             if (!gun.hasGunner)
@@ -6339,8 +6354,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                             }
                             // check DLZ                            
-                            MissileLauncher mlauncher = ml as MissileLauncher;
-                            float fireFOV = mlauncher.missileTurret ? mlauncher.missileTurret.turret.yawRange : mlauncher.multiLauncher && mlauncher.multiLauncher.turret ? mlauncher.multiLauncher.turret.turret.yawRange : -1;
+							float fireFOV = -1;
+							MissileLauncher mlauncher = ml as MissileLauncher;
+							if (mlauncher != null) //else MMGs throw an Error here
+                            fireFOV = mlauncher.missileTurret ? mlauncher.missileTurret.turret.yawRange : mlauncher.multiLauncher && mlauncher.multiLauncher.turret ? mlauncher.multiLauncher.turret.turret.yawRange : -1;
+
                             MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, fireFOV,
                                 (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 || ml.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !ml.radarLOAL));
                             if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
@@ -6541,7 +6559,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
         public bool CanSeeTarget(TargetInfo target, bool checkForNonVisualDetection = true, bool checkForstaleTarget = true)
         {
-            // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar
+            // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar/IRST
             // but to prevent AI from stopping an engagement just because a target dropped behind a small hill 5 seconds ago, clamp the timeout to 30 seconds
             // i.e. let's have at least some object permanence :)
             // If we can't directly see the target via sight or radar, AI will head to last known position of target, based on target's vector at time contact was lost,
@@ -6577,7 +6595,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             float objectPermanenceThreshold = (target.Vessel.LandedOrSplashed && target.Vessel.srfSpeed < 10) ? 30 * (10 - (float)target.Vessel.srfSpeed) : 30; //have slow/stationary targets have much longer timeouts since they are't going anywhere.
                                                                                                                                                                 //needs to use lastGoodVesselVel, not current speed, since if we can't see it, we can't know how fast it's going
             if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (visDistance * visDistance) &&
-            Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
+            Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < (guardAngle * 1.1f) / 2)
             {
                 if ((target.Vessel.LandedOrSplashed && vessel.LandedOrSplashed) && ((target.Vessel.transform.position - transform.position).sqrMagnitude > 2250000f)) //land Vee vs land Vee will have a max of ~1.8km viewDist, due to curvature of Kerbin
                 {
@@ -7190,10 +7208,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 //radar missiles
                 if (!results.foundTorpedo)
                 {
+                    //if (results.foundMissile) //make sure underAttack still gets called if incoming missile is GPS/INS
+                        StartCoroutine(UnderAttackRoutine());
                     if (results.foundRadarMissile) //have this require an RWR?
                     {
                         //if (!rwr && incomingMissileDistance <= guardRange * 0.33f) //within ID range?
-                        StartCoroutine(UnderAttackRoutine());
+                        //StartCoroutine(UnderAttackRoutine());
 
                         FireChaff();
                         FireECM(10);
@@ -7201,7 +7221,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     //laser missiles
                     if (results.foundAGM) //Assume Laser Warning Receiver regardless of omniDetection? Or move laser missiles to the passive missiles section?
                     {
-                        StartCoroutine(UnderAttackRoutine());
+                        //StartCoroutine(UnderAttackRoutine());
 
                         FireSmoke();
                         if (targetMissiles && guardTarget == null)
@@ -7220,12 +7240,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 FireFlares();
                                 FireOCM(true);
                             }
-                            if (results.foundAntiRadiationMissile)
+                            if (results.foundAntiRadiationMissile && DynamicRadarOverride)
                             {
                                 using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                     while (rd.MoveNext())
                                     {
-                                        if (rd.Current != null || rd.Current.canLock)
+                                        if (rd.Current != null && rd.Current.DynamicRadar)
                                             rd.Current.DisableRadar();
                                     }
                                 _radarsEnabled = false;
@@ -7234,18 +7254,18 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                             if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
                                 FireECM(cmThreshold);
-                            StartCoroutine(UnderAttackRoutine());
+                            //StartCoroutine(UnderAttackRoutine());
                         }
                         else //one passive missile is going to be indistinguishable from another, until it gets close enough to evaluate
                         {
                             if (vessel.LandedOrSplashed) //assume antirads against ground targets
                             {
-                                if (radars.Count > 0)
+                                if (radars.Count > 0 && DynamicRadarOverride)
                                 {
                                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                         while (rd.MoveNext())
                                         {
-                                            if (rd.Current != null || rd.Current.canLock)
+                                            if (rd.Current != null && rd.Current.DynamicRadar)
                                                 rd.Current.DisableRadar();
                                             _radarsEnabled = false;
                                         }
@@ -7269,12 +7289,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     else //it's an Antirad!? Uh-oh, blip radar!
                                     {
-                                        if (radars.Count > 0)
+                                        if (radars.Count > 0 && DynamicRadarOverride)
                                         {
                                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                                 while (rd.MoveNext())
                                                 {
-                                                    if (rd.Current != null || rd.Current.canLock)
+                                                    if (rd.Current != null && rd.Current.DynamicRadar)
                                                         rd.Current.DisableRadar();
                                                 }
                                             _radarsEnabled = false;
@@ -7291,7 +7311,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     FireOCM(true);
                                 }
                             }
-                            StartCoroutine(UnderAttackRoutine());
+                            //StartCoroutine(UnderAttackRoutine());
                         }
                     }
                 }
