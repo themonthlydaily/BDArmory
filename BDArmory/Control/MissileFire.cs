@@ -2550,8 +2550,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         {
                             FireCurrentMissile(ml, true);
                         }
-                        unguidedWeapon = false;
                     }
+                    unguidedWeapon = false;
                 }
                 guardFiringMissile = false;
             }
