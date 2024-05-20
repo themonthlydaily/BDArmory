@@ -6988,8 +6988,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             ml.targetGPSCoords = designatedINSCoords;
                             ml.TargetAcquired = true;
-                            designatedINSCoords = Vector3d.zero;
                         }
+                        designatedINSCoords = Vector3d.zero;
                         break;
                     }
                 default:

@@ -37,6 +37,8 @@ IMPROVEMENTS / FIXES
 		- Nuke LightFX radius now set by effective blast range, not thermalRadius value.
 		- Fix NRE when AI tries to fire Modular Missiles.
 		- Fix heatseeking Missiles with very narrow sensorFOVs losing lock right before impact with a target.
+		- Fix manually fired INS missiles using GPS coords if set.
+		- Fix issue with AI fired radar missiles getting stuck and not firing if the first missile fired could not get a lock.
 - RWP:
 	- Add S6R5 dynamic recoil gamemode; recoil scales with vessel thrust.
 - ModIntegration:
