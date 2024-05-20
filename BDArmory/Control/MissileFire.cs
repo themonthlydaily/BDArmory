@@ -6973,6 +6973,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             {
                                 Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
                                 designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody);
+                                ml.targetGPSCoords = designatedINSCoords;
                             }
                             else
                             {
@@ -6984,9 +6985,9 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 else
                                 {
                                     designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
+                                    ml.targetGPSCoords = designatedINSCoords;
                                 }
-                            }
-                            ml.targetGPSCoords = designatedINSCoords;
+                            }                            
                             ml.TargetAcquired = true;
                         }
                         designatedINSCoords = Vector3d.zero;
