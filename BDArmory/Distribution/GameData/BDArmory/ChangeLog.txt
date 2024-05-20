@@ -39,6 +39,7 @@ IMPROVEMENTS / FIXES
 		- Fix heatseeking Missiles with very narrow sensorFOVs losing lock right before impact with a target.
 		- Fix manually fired INS missiles using GPS coords if set.
 		- Fix issue with AI fired radar missiles getting stuck and not firing if the first missile fired could not get a lock.
+		- Fix an issue with unguided INS bomb guidance.
 - RWP:
 	- Add S6R5 dynamic recoil gamemode; recoil scales with vessel thrust.
 - ModIntegration:

@@ -6981,14 +6981,15 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     dumbfire = true;
                                     validTarget = true;
+                                    ml.TargetAcquired = false;
                                 }
                                 else
                                 {
                                     designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
                                     ml.targetGPSCoords = designatedINSCoords;
+                                    ml.TargetAcquired = true;
                                 }
-                            }                            
-                            ml.TargetAcquired = true;
+                            }  
                         }
                         designatedINSCoords = Vector3d.zero;
                         break;
