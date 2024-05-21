@@ -2449,11 +2449,14 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         }
                     case MissileBase.TargetingModes.Inertial:
                         {
+                            float BayTriggerTime = -1;
                             if (SetCargoBays())
                             {
-                                yield return new WaitForSecondsFixed(2f);
+                                BayTriggerTime = Time.time;
+                                //yield return new WaitForSecondsFixed(2f);
                                 if (vessel == null || targetVessel == null) break;
                             }
+
                             float attemptStartTime = Time.time;
 
                             float attemptLockTime = Time.time;
@@ -2511,15 +2514,19 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             yield return wait;
 
-                            if (vessel && targetVessel)
+                            if (vessel && ml && targetVessel)
                             {
-                                designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), targetVessel.mainBody);
-                            }
+                                if (vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
+                                {
+                                    if (BayTriggerTime > 0 && (Time.time - BayTriggerTime < 2)) //if bays opening, see if 2 sec for the bays to open have elapsed, if not, wait remaining time needed
+                                    {
+                                        yield return new WaitForSecondsFixed(2 - (Time.time - BayTriggerTime));
+                                    }
 
-                            if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
-                            {
-                                FireCurrentMissile(ml, true);
-                                //StartCoroutine(MissileAwayRoutine(ml));
+                                    designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), targetVessel.mainBody);
+                                    FireCurrentMissile(ml, true);
+                                    //StartCoroutine(MissileAwayRoutine(ml));
+                                }
                             }
                             break;
                         }
@@ -6970,6 +6977,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     validTarget = true;
                                     targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
                                 }
+                                vesselRadarData.LastMissile = ml;
                             }
                             if (validTarget)
                             {

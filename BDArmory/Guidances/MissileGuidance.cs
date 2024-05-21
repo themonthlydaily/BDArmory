@@ -202,7 +202,7 @@ namespace BDArmory.Guidances
 
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Lofting");
 
-                float altitudeClamp = Mathf.Clamp(targetAlt + 10f * rangeFac * Mathf.Pow(Vector3.Dot(targetPosition - ml.vessel.CoM, planarDirectionToTarget), -vertVelComp), targetAlt, Mathf.Max(maxAltitude, targetAlt));
+                float altitudeClamp = Mathf.Clamp(targetAlt + 10f * rangeFac * Mathf.Pow(Vector3.Dot(targetPosition - ml.vessel.CoM, planarDirectionToTarget), Mathf.Abs(vertVelComp)), targetAlt, Mathf.Max(maxAltitude, targetAlt));
 
                 // Stolen from my AAMloft guidance
                 // Limit climb angle by turnFactor, turnFactor goes negative when above target alt
