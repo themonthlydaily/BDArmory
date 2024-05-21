@@ -155,8 +155,8 @@ namespace BDArmory.Guidances
 
         // Kappa/Trajectory Curvature Optimal Guidance 
         public static Vector3 GetKappaTarget(Vector3 targetPosition, Vector3 targetVelocity,
-            MissileLauncher ml, float thrust, float shapingAngle,
-            float terminalHomingRange, float loftAngle, float loftTermAngle, 
+            MissileLauncher ml, float thrust, float shapingAngle, float rangeFac, float vertVelComp,
+            float targetAlt, float terminalHomingRange, float loftAngle, float loftTermAngle, 
             float midcourseRange, float maxAltitude, out float ttgo, out float gLimit,
             ref MissileBase.LoftStates loftState)
         {
@@ -193,7 +193,7 @@ namespace BDArmory.Guidances
             // Set up PIP vector
             Vector3 predictedImpactPoint = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime);
 
-            float sinTarget = Vector3.Dot((targetPosition - ml.vessel.CoM), -upDirection) / R;
+            float sinTarget = Vector3.Dot((targetPosition - ml.vessel.CoM).normalized, -upDirection); //Vector3.Dot((targetPosition - ml.vessel.CoM), -upDirection) / R;
 
             // If still in boost phase
             if ((loftState < MissileBase.LoftStates.Midcourse) && (R > midcourseRange) && (sinTarget < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad)) && (-sinTarget < Mathf.Sin(loftAngle * Mathf.Deg2Rad)))
@@ -202,9 +202,11 @@ namespace BDArmory.Guidances
 
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Lofting");
 
+                float altitudeClamp = Mathf.Clamp(targetAlt + 10f * rangeFac * Mathf.Pow(Vector3.Dot(targetPosition - ml.vessel.CoM, planarDirectionToTarget), -vertVelComp), targetAlt, Mathf.Max(maxAltitude, targetAlt));
+
                 // Stolen from my AAMloft guidance
                 // Limit climb angle by turnFactor, turnFactor goes negative when above target alt
-                float turnFactor = (float)(maxAltitude - ml.vessel.altitude) / (4f * currSpeed);
+                float turnFactor = (float)(altitudeClamp - ml.vessel.altitude) / (4f * currSpeed);
                 turnFactor = Mathf.Clamp(turnFactor, -1f, 1f);
 
                 // Limit gs during climb

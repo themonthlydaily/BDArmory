@@ -426,6 +426,8 @@ namespace BDArmory.Control
 
         public Vector3d designatedGPSCoords => designatedGPSInfo.gpsCoordinates;
         public int designatedGPSCoordsIndex = -1;
+
+        public Vector3d designatedINSCoords = Vector3.zero;
         public void SelectNextGPSTarget()
         {
             var targets = BDATargetManager.GPSTargetList(Team);
@@ -2452,8 +2454,33 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 yield return new WaitForSecondsFixed(2f);
                                 if (vessel == null || targetVessel == null) break;
                             }
-
                             float attemptStartTime = Time.time;
+
+                            float attemptLockTime = Time.time;
+                            while (ml && vesselRadarData && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2f)
+                            {
+                                if (vesselRadarData.locked)
+                                {
+                                    vesselRadarData.SwitchActiveLockedTarget(targetVessel);
+                                    yield return wait;
+                                }
+                                else
+                                {
+                                    vesselRadarData.TryLockTarget(targetVessel);
+                                }
+                                yield return new WaitForSecondsFixed(0.25f);
+                            }
+                            if (vesselRadarData && vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == targetVessel) //no GPS coords, missile is now expensive rocket
+                            {
+                                designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), targetVessel.mainBody); ;//VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody);
+                            }
+                            else
+                            {
+                                unguidedWeapon = true; //so let them be used as unguided ordinance
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No radar target! Switching to unguided firing.");
+                                break;
+                            }
+
                             MissileLauncher mlauncher = ml as MissileLauncher;
                             if (mlauncher)
                             {
@@ -2483,10 +2510,10 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                             }
                             yield return wait;
+
                             if (vessel && targetVessel)
                             {
-                                Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
-                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), targetVessel.mainBody);
                             }
 
                             if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
@@ -2550,8 +2577,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         {
                             FireCurrentMissile(ml, true);
                         }
-                        unguidedWeapon = false;
                     }
+                    unguidedWeapon = false;
                 }
                 guardFiringMissile = false;
             }
@@ -6921,14 +6948,16 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     }
                 case MissileBase.TargetingModes.Inertial:
                     {
-                        if (designatedGPSCoords != Vector3d.zero)
+                        if (designatedINSCoords != Vector3d.zero)
                         {
-                            ml.targetGPSCoords = designatedGPSCoords;
+                            ml.targetGPSCoords = designatedINSCoords;
                             ml.TargetAcquired = true;
                             validTarget = true;
+                            designatedINSCoords = Vector3d.zero;
                         }
                         else
                         {
+                            Vector3d targetCoords = Vector3.zero;
                             if (vesselRadarData)
                             {
                                 if (vesselRadarData.locked)
@@ -6945,7 +6974,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             if (validTarget)
                             {
                                 Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
-                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                //designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                targetCoords = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody);
                             }
                             else
                             {
@@ -6953,13 +6983,17 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     dumbfire = true;
                                     validTarget = true;
+                                    ml.TargetAcquired = false;
+                                    break;
                                 }
                                 else
                                 {
-                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
+                                    //designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
+                                    targetCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
                                 }
+                                
                             }
-                            ml.targetGPSCoords = designatedGPSCoords;
+                            ml.targetGPSCoords = targetCoords;
                             ml.TargetAcquired = true;
                         }
                         break;
