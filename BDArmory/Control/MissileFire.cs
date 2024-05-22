@@ -5399,7 +5399,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
                                         bool heat = mlauncher.TargetingMode == MissileBase.TargetingModes.Heat;
                                         bool radar = mlauncher.TargetingMode == MissileBase.TargetingModes.Radar;
-                                        bool inertial = mlauncher.TargetingMode == MissileBase.TargetingModes.Radar;
+                                        bool inertial = mlauncher.TargetingMode == MissileBase.TargetingModes.Inertial;
                                         float heatThresh = mlauncher.heatThreshold;
                                         if (EMP && target.isDebilitated) continue;
                                         if (vessel.Splashed && (!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
@@ -5433,7 +5433,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         }
                                         if (inertial)
                                         {
-                                            if (!_radarsEnabled)
+                                            if (!(_radarsEnabled || _irstsEnabled))
                                             {
                                                 candidateTDPS *= 0.001f; //no radar, skip to something else unless nothing else available
                                             }
@@ -5840,7 +5840,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             if (!candidateAGM)
                                             {
                                                 if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)) && !Missile.radarLOAL) candidateYield *= 0.1f;
-                                                if (Missile.TargetingMode == MissileBase.TargetingModes.Inertial && !_radarsEnabled) candidateYield *= 0.1f;
+                                                if (Missile.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _irstsEnabled)) candidateYield *= 0.1f;
                                                 if (targetWeapon != null && targetYield > candidateYield) continue;
                                                 //targetYield = candidateYield;
                                                 //targetWeapon = item.Current;
@@ -5911,7 +5911,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             if (!candidateAGM)
                                             {
                                                 if (mm.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)) && !mm.radarLOAL) candidateYield *= 0.1f;
-                                                if (mm.TargetingMode == MissileBase.TargetingModes.Inertial && !_radarsEnabled) candidateYield *= 0.1f;
+                                                if (mm.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _irstsEnabled)) candidateYield *= 0.1f;
                                                 if (targetWeapon != null && targetYield > candidateYield) continue;
                                                 //targetYield = candidateYield;
                                                 //targetWeapon = item.Current;
@@ -6024,7 +6024,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             case (WeaponClasses.SLW):
                                 {
                                     MissileLauncher SLW = item.Current as MissileLauncher;
-                                    if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && ((!_sonarsEnabled || !_radarsEnabled) && !SLW.radarLOAL)) continue; //dont select RH missiles when no radar aboard
+                                    if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && (!(_sonarsEnabled || _radarsEnabled) && !SLW.radarLOAL)) continue; //dont select RH missiles when no radar aboard
                                     if (SLW.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                     if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                                     float candidateYield = SLW.GetBlastRadius();
@@ -6085,7 +6085,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (radar)
                                     {
-                                        if ((!_radarsEnabled || !_sonarsEnabled) || (vesselRadarData != null && !vesselRadarData.locked))
+                                        if (!(_radarsEnabled || _sonarsEnabled) || (vesselRadarData != null && !vesselRadarData.locked))
                                         {
                                             if (!SLW.radarLOAL) candidateTDPS *= 0.001f; //no radar/sonar lock, skip to something else unless nothing else available
                                             else
@@ -6096,7 +6096,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     if (inertial)
                                     {
-                                        if (!_radarsEnabled || !_sonarsEnabled)
+                                        if (!(_radarsEnabled || _sonarsEnabled))
                                         {
                                             candidateTDPS *= 0.001f; //no radar/sonar, skip to something else unless nothing else available
                                         }
@@ -6442,11 +6442,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                             MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, fireFOV,
                                 (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 ||
-                                ml.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || !_sonarsEnabled) && !ml.radarLOAL ||
-                                ml.TargetingMode == MissileBase.TargetingModes.Inertial && (!_radarsEnabled || !_sonarsEnabled || !_irstsEnabled)));
+                                ml.TargetingMode == MissileBase.TargetingModes.Radar && !(_radarsEnabled || _sonarsEnabled) && !ml.radarLOAL ||
+                                ml.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _sonarsEnabled || _irstsEnabled)));
                             if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
                             {
-                                if (ml.TargetingMode == MissileBase.TargetingModes.Radar && ((!_radarsEnabled || !_sonarsEnabled) || (vesselRadarData != null && !vesselRadarData.locked)))
+                                if (ml.TargetingMode == MissileBase.TargetingModes.Radar && (!(_radarsEnabled || !_sonarsEnabled) || (vesselRadarData != null && !vesselRadarData.locked)))
                                 {
                                     if (!mlauncher.radarLOAL) return false;
                                     else
@@ -6455,7 +6455,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         if (msl != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / msl.optimumAirspeed)) return false; //outside missile self-lock zone, wait
                                     }
                                 }
-                                if (ml.TargetingMode == MissileBase.TargetingModes.Inertial && (!_radarsEnabled || !_sonarsEnabled || !_irstsEnabled))
+                                if (ml.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _sonarsEnabled || _irstsEnabled))
                                 {
                                     return false;
                                 }
@@ -7206,8 +7206,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(CurrentMissile, guardTarget.Velocity(), guardTarget.CoM, -1,
                                     (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 ||
-                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || !_sonarsEnabled) && !CurrentMissile.radarLOAL ||
-                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Inertial && (!_radarsEnabled || !_sonarsEnabled || !_irstsEnabled)));
+                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !(_radarsEnabled || _sonarsEnabled) && !CurrentMissile.radarLOAL ||
+                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _sonarsEnabled || _irstsEnabled)));
 
                                 if (targetAngle > guardAngle / 2) //dont fire yet if target out of guard angle
                                 {
