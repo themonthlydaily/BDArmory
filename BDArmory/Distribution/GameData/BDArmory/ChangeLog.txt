@@ -1,31 +1,37 @@
-﻿1.6.11.1
-=======
+﻿1.6.12.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix Pwing HP scaling for large pwings being used as fuselages.
-	- Gravity Gun moved to the Lasers tab.
 	- Fix PWing Control Surface Offset angle resetting on one side.
 	- Add a time-sync logging option (with auto-enable for competitions) for logging in-game vs real-time timestamps for post-recording resynchronisation.
 		- Toggle and logging interval options are available in the "Other Settings" section of the settings.
 		- The timestamps are logged as compressed CSV files in the BDArmory/Logs/TimeSync folder.
-    - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses﻿.
+    - Add Waypoint Mode Course Builder GUI tool (accessible from the Waypoints Section of the vessel Spawner GUI) for easy construction of custom waypoint courses.
 		- Can either manually construct course from scratch or record a course as you manually pilot a craft along the course path. Courses/gates on loaded courses can be deleted via right-click.
-	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
-	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
 	- List of things that cannot be set to Wood hull material expanded to other functional parts (servos/radiators/ISRU converters/RTGs) that couldn't logically be made out of wood.
-	- Vengeance Mutator blast radius and delay can now be set in the BDA settings menu.
-	- Fixes AutoTune infinite fuel not applying to Firespitter helicopter engines.
-	- BDA settings no longer blanket reset on KSP restart.
+	- Restore the 'ControlledActions' on the KAL too.
+	- Restructuring of the localisation files (both layout and many tags) for maintainability and ease-of-editing in IDEs.
+		- Adds a script for maintaining structure between localisation files.
+		- Some entries in languages other than en-us will require updating — these are currently commented out with "???" as a placeholder.
 - UI:
 	- Vessel Switcher GUI and competition Marquee now display Waypoint times to hundredths of a second.
-- AI:
+	- Gravity Gun moved to the Lasers tab.
+	- VTOL and Orbital AIs added to the AI GUI and adjustments made to the layout for the surface AI for consistency.
+- AI / WM:
 	- Fix Kerbal G-Loss of Consciousness implementation; AI now goes deadstick when pilot is knocked out.
 	- Can now toggle AI radar shut-off behavior when targeted by HARMs either on a per-radar basis, or globally for all radars on a craft via the Weapon Manager.
 	- AI now understands how to aim weapons not aligned with prograde for Schrage Musik-style weapon arrangements.
 	- AI now takes evasive maneuvers when under attack from incoming INS/GPS missiles.
+	- Fixes AutoTune infinite fuel not applying to Firespitter helicopter engines.
+	- Remove the requirement of having a WM for the AI to work.
 - Competition:
 	- Save/load tournament score weights to/from the settings.cfg.
 	- Waypoint Mode max laps can now be set to a user-specified value (WAYPOINT_MAX_LAPS, default 5) in the BDA settings menu.
+- Game Modes:
+	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
+	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
+	- Vengeance Mutator blast radius and delay can now be set in the BDA settings menu.
+	- Don't check for fuel for afterburners if infinite fuel is enabled.
 - Weapons:
 	- Fix lasers being able to fire as long as > 0 EC is present.
 	- Add bulletLuminance field for setting non-tracer brightness.
@@ -42,6 +48,8 @@ IMPROVEMENTS / FIXES
 		- Fix an issue with unguided INS bomb guidance.
 - RWP:
 	- Add S6R5 dynamic recoil gamemode; recoil scales with vessel thrust.
+	- Improved handling of auto-adjusted BDA settings for RWP.
+	- Update the RWP specific settings for recent rounds.
 - ModIntegration:
 	- Fix the type to unbox MidChordSweep to.
 
