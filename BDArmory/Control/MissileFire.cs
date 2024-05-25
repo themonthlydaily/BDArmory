@@ -427,10 +427,9 @@ namespace BDArmory.Control
         public GPSTargetInfo designatedGPSInfo;
 
         public Vector3d designatedGPSCoords => designatedGPSInfo.gpsCoordinates;
-        Vector3d designatedINSCoords = Vector3d.zero;
         public int designatedGPSCoordsIndex = -1;
 
-        public Vector3d designatedINSCoords = Vector3.zero;
+        Vector3d designatedINSCoords = Vector3d.zero;
         public void SelectNextGPSTarget()
         {
             var targets = BDATargetManager.GPSTargetList(Team);
@@ -7088,7 +7087,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             ml.targetGPSCoords = designatedINSCoords;
                             ml.TargetAcquired = true;
                         }
-                        designatedINSCoords = Vector3.zero;
+                        designatedINSCoords = Vector3d.zero;
                         break;
                     }
                 default:
