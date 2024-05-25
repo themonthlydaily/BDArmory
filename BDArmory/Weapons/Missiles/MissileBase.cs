@@ -1063,6 +1063,9 @@ namespace BDArmory.Weapons.Missiles
                 //float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300; Expand threshold if no target to search for, grab first available target
 
                 float smallestAngle = maxOffBoresight;
+                float sqrDist = float.PositiveInfinity;
+                float currDist = 0;
+                float currAngle = 0;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
                 Vector3 soughtTarget = radarTarget.exists ? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
                 for (int i = 0; i < scannedTargets.Length; i++)
@@ -1073,14 +1076,23 @@ namespace BDArmory.Weapons.Missiles
                         if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
                         {
                             if (scannedTargets[i].targetInfo.Team == Team) continue;//Don't lock friendlies
-                            float angle = Vector3.Angle(scannedTargets[i].predictedPosition - transform.position, GetForwardTransform());
-                            if (angle < smallestAngle)
-                            {
-                                lockedTarget = scannedTargets[i];
-                                smallestAngle = angle;
-                            }
 
-                            ActiveRadar = true;
+                            if (targetVessel == null)
+                            {
+                                currAngle = Mathf.Rad2Deg*Mathf.Acos(Vector3.Dot((scannedTargets[i].predictedPosition - transform.position).normalized, GetForwardTransform()));
+                                if (currAngle > (smallestAngle + 5f)) continue; // Look for the smallest angle, give 5 degrees of wiggle room.
+                                smallestAngle = currAngle;
+                            }
+                            
+                            // Look for closest target, either to the previous target location if available, or to the missile if not
+                            currDist = (targetVessel != null ? scannedTargets[i].predictedPosition : vessel.CoM - soughtTarget).sqrMagnitude;
+
+                            if (currDist < sqrDist)
+                            {
+                                sqrDist = currDist;
+                                lockedTarget = scannedTargets[i];
+                                ActiveRadar = true;
+                            }
                             //return;
                         }
                     }
