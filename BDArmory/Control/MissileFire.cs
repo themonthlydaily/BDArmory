@@ -427,6 +427,7 @@ namespace BDArmory.Control
         public GPSTargetInfo designatedGPSInfo;
 
         public Vector3d designatedGPSCoords => designatedGPSInfo.gpsCoordinates;
+        Vector3d designatedINSCoords = Vector3d.zero;
         public int designatedGPSCoordsIndex = -1;
 
         public Vector3d designatedINSCoords = Vector3.zero;
@@ -2059,7 +2060,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             mlauncher.missileTurret.slaved = true;
                                             mlauncher.missileTurret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(mlauncher, targetVessel.CoM, targetVessel.Velocity());
                                             mlauncher.missileTurret.SlavedAim();
-                                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] bringing radarMsl turret to bear...");
+                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] bringing radarMsl turret to bear...");
                                             yield return wait;
                                         }
                                     }
@@ -2072,7 +2073,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             mlauncher.multiLauncher.turret.slaved = true;
                                             mlauncher.multiLauncher.turret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(mlauncher, targetVessel.CoM, targetVessel.Velocity());
                                             mlauncher.multiLauncher.turret.SlavedAim();
-                                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] bringing radarMsl turret to bear...");
+                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] bringing radarMsl turret to bear...");
                                             yield return wait;
                                         }
                                     }
@@ -7040,7 +7041,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     }
                 case MissileBase.TargetingModes.Inertial:
                     {
-                        if (designatedINSCoords != Vector3d.zero)
+                        if (designatedINSCoords != Vector3d.zero) //coords from GRM under AI control
                         {
                             ml.targetGPSCoords = designatedINSCoords;
                             ml.TargetAcquired = true;
@@ -7050,12 +7051,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         {
                             if (vesselRadarData)
                             {
-                                if (vesselRadarData.locked)
+                                if (vesselRadarData.locked) //grab target from pirmary lock
                                 {
                                     validTarget = true;
                                     targetVessel = vesselRadarData.lockedTargetData.targetData.vessel;
                                 }
-                                else if (irsts.Count > 0)
+                                else if (irsts.Count > 0) //or brightest ping on IRST
                                 {
                                     validTarget = true;
                                     targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
