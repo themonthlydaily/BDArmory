@@ -561,14 +561,13 @@ namespace BDArmory.UI
                     IRSig = GetVesselHeatSignature(vessel, BDArmorySettings.ASPECTED_IR_SEEKERS ? missileVessel.CoM : Vector3.zero, frontAspectHeatModifier); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
                     float score = IRSig.Item1 * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m
-
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
-                    //if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) 
-                    if (score > 0f && priorHeatScore > 0) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
-                    { //finalScore will always be 0? only thing that modifies it is below this?
+                    if (finalScore > 0f && score > 0f && priorHeatScore > 0) 
+                    // If we were passed a target Sheat score, look for the most similar non-zero heat score after picking a target
+                    {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
                         {
                             finalScore = score;
@@ -583,7 +582,6 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score, IRSig.Item2);
                         }
                     }
-                    //Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} is {score}");
                 }
             }
             // see if there are flares decoying us:
