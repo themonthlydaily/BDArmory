@@ -7092,13 +7092,13 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             {
                                 if (vesselRadarData.locked) //grab target from pirmary lock
                                 {
-                                    validTarget = true;
                                     targetVessel = vesselRadarData.lockedTargetData.targetData.vessel;
+                                    validTarget = true;
                                 }
                                 else if (irsts.Count > 0) //or brightest ping on IRST
                                 {
-                                    validTarget = true;
                                     targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
+                                    validTarget = targetVessel;
                                 }
                                 vesselRadarData.LastMissile = ml;
                             }
