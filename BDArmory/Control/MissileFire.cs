@@ -1746,53 +1746,55 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         case MissileBase.TargetingModes.Inertial:
                             {
                                 MissileBase ml = CurrentMissile;
-                                GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
                                 float distanceToTarget = 0;
-                                if (guardMode && guardTarget)
+
+                                if (!vesselRadarData)
                                 {
-                                    distanceToTarget = Vector3.Distance(guardTarget.CoM, ml.MissileReferenceTransform.position);
-                                    Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, guardTarget.CoM, guardTarget.Velocity());
+                                    GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
+                                    break;
+                                }
+
+                                TargetSignatureData targetData = TargetSignatureData.noTarget;
+                                bool radarTarget = false;
+                                if (_radarsEnabled && vesselRadarData.locked)
+                                {
+                                    targetData = vesselRadarData.lockedTargetData.targetData;
+                                    radarTarget = true;
+                                }
+                                else if (_irstsEnabled)
+                                {
+                                    targetData = vesselRadarData.activeIRTarget(null, this);
+                                }
+
+                                if (!targetData.exists)
+                                {
+                                    GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
+                                    break;
+                                }
+
+                                distanceToTarget = Vector3.Distance(targetData.predictedPosition, ml.MissileReferenceTransform.position);
+                                GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * ml.GetForwardTransform()), BDArmorySetup.Instance.dottedLargeGreenCircle, new Vector2(128, 128), 0);
+                                    
+                                if (radarTarget)
+                                {
+                                    Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, targetData.predictedPosition, targetData.velocity);
                                     Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
-                                    GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenCircleTexture, new Vector2(36, 36), 5);
+                                    GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
                                 }
                                 else
                                 {
-                                    if (!vesselRadarData)
-                                    {
-                                        break;
-                                    }
-
-                                    TargetSignatureData targetData = TargetSignatureData.noTarget;
-                                    bool radarTarget = false;
-                                    if (_radarsEnabled && vesselRadarData.locked)
-                                    {
-                                        targetData = vesselRadarData.lockedTargetData.targetData;
-                                        radarTarget = true;
-                                    }
-                                    else if (_irstsEnabled)
-                                    {
-                                        targetData = vesselRadarData.activeIRTarget(null, this);
-                                    }
-
-                                    distanceToTarget = Vector3.Distance(targetData.predictedPosition, ml.MissileReferenceTransform.position);
-                                    GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * ml.GetForwardTransform()), BDArmorySetup.Instance.dottedLargeGreenCircle, new Vector2(128, 128), 0);
-                                    
-                                    if (radarTarget)
-                                    {
-                                        Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, targetData.predictedPosition, targetData.velocity);
-                                        Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
-                                        GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
-                                    }
-
-                                    if (BDArmorySettings.DEBUG_TELEMETRY)
-                                    {
-                                        string dynRangeDebug = string.Empty;
-                                        MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(missile, targetData.velocity, targetData.predictedPosition);
-                                        dynRangeDebug += "MaxDLZ: " + dlz.maxLaunchRange;
-                                        dynRangeDebug += "\nMinDLZ: " + dlz.minLaunchRange;
-                                        GUI.Label(new Rect(800, 600, 200, 200), dynRangeDebug);
-                                    }
+                                    GUIUtils.DrawTextureOnWorldPos(targetData.position, BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
                                 }
+
+                                if (BDArmorySettings.DEBUG_TELEMETRY)
+                                {
+                                    string dynRangeDebug = string.Empty;
+                                    MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(missile, targetData.velocity, targetData.predictedPosition);
+                                    dynRangeDebug += "MaxDLZ: " + dlz.maxLaunchRange;
+                                    dynRangeDebug += "\nMinDLZ: " + dlz.minLaunchRange;
+                                    GUI.Label(new Rect(800, 600, 200, 200), dynRangeDebug);
+                                }
+                                
                                 break;
                             }
                         case MissileBase.TargetingModes.None:
