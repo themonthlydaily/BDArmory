@@ -24,6 +24,7 @@ IMPROVEMENTS / FIXES
 	- AI now takes evasive maneuvers when under attack from incoming INS/GPS missiles.
 	- Fixes AutoTune infinite fuel not applying to Firespitter helicopter engines.
 	- Remove the requirement of having a WM for the AI to work.
+	- Add the post-terrain avoidance cool-down slider to the AI GUI.
 - Competition:
 	- Save/load tournament score weights to/from the settings.cfg.
 	- Waypoint Mode max laps can now be set to a user-specified value (WAYPOINT_MAX_LAPS, default 5) in the BDA settings menu.
