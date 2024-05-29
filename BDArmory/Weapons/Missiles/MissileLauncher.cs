@@ -1953,11 +1953,15 @@ namespace BDArmory.Weapons.Missiles
                         float prevDist = float.PositiveInfinity;
                         int lockIndex = -1;
 
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Active radar found: {scannedTargets.Length} targets.");
+
                         for (int i = 0; i < scannedTargets.Length; i++)
                         {
                             if (scannedTargets[i].exists)
                             {
                                 currDist = (scannedTargets[i].predictedPosition - tempTargetPos).sqrMagnitude;
+
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Target: {scannedTargets[i].vessel.name} has currDist: {currDist}.");
 
                                 //re-check engagement envelope, only lock appropriate targets
                                 if (currDist < sqrThresh && currDist < prevDist && CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
@@ -1994,7 +1998,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetVelocity = Vector3.zero;
                             TargetAcceleration = Vector3.zero;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); //tgtPos/tgtGPS should relly be not set here, so the last valid postion/coords are used, in case of non-GPS primary guidance
-                            if (radarLOAL || dumbTerminalGuidance)
+                            if (!radarLOAL || dumbTerminalGuidance)
                                 terminalGuidanceActive = true;
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
                         }
@@ -2138,7 +2142,7 @@ namespace BDArmory.Weapons.Missiles
             StartCoroutine(updateCrashTolerance());
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
-            while (Time.time - boostStartTime < boostTime)
+            while (Time.time - boostStartTime < boostTime || (useFuel && burnedFuelMass < boosterFuelMass))
             {
                 //light, sound & particle fx
                 //sound
@@ -2153,6 +2157,22 @@ namespace BDArmory.Weapons.Missiles
                 {
                     audioSource.Stop();
                 }
+
+                //thrust
+                if (useFuel && burnRate > 0)
+                {
+                    if (boosterFuelMass - burnedFuelMass < burnRate * Throttle)
+                    {
+                        Throttle = (boosterFuelMass - burnedFuelMass) / burnRate;
+                        burnedFuelMass = boosterFuelMass;
+                    }
+                    else
+                    {
+                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, boosterFuelMass);
+                    }
+                }
+
+                audioSource.volume = Throttle;
 
                 //particleFx
                 using (var emitter = boostEmitters.GetEnumerator())
@@ -2183,12 +2203,6 @@ namespace BDArmory.Weapons.Missiles
                             gpe.Current.emit = false;
                         }
                     }
-
-                //thrust
-                if (useFuel && burnRate > 0 && burnedFuelMass < boosterFuelMass)
-                {
-                    burnedFuelMass = Mathf.Min(burnedFuelMass + burnRate, boosterFuelMass);
-                }
 
                 if (spoolEngine)
                 {
@@ -2293,7 +2307,7 @@ namespace BDArmory.Weapons.Missiles
             StartCruise();
             var wait = new WaitForFixedUpdate();
             float cruiseStartTime = Time.time;
-            while (Time.time - cruiseStartTime < cruiseTime)
+            while (Time.time - cruiseStartTime < cruiseTime || (useFuel && burnedFuelMass < massToBurn))
             {
                 if (!BDArmorySetup.GameIsPaused)
                 {
@@ -2307,6 +2321,21 @@ namespace BDArmory.Weapons.Missiles
                 {
                     audioSource.Stop();
                 }
+
+                //Thrust
+                if (useFuel && burnRate > 0)
+                {
+                    if (massToBurn - burnedFuelMass < burnRate * Throttle)
+                    {
+                        Throttle = (massToBurn - burnedFuelMass) / burnRate;
+                        burnedFuelMass = massToBurn;
+                    }
+                    else
+                    {
+                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, massToBurn);
+                    }
+                }
+
                 audioSource.volume = Throttle;
 
                 //particleFx
@@ -2345,11 +2374,6 @@ namespace BDArmory.Weapons.Missiles
                             gpe.Current.emit = false;
                         }
                     }
-                //Thrust
-                if (useFuel && burnRate > 0 && burnedFuelMass < massToBurn)
-                {
-                    burnedFuelMass = Mathf.Min(burnedFuelMass + burnRate, massToBurn);
-                }
 
                 if (spoolEngine)
                 {
