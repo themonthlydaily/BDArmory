@@ -42,16 +42,20 @@ namespace BDArmory.Settings
         {"OUT_OF_AMMO_KILL_TIME", 60},
         {"BATTLEDAMAGE", true},
       }},
+      {17, new(){}},
+      {33, new(){}},
       // Round specific overrides (also overrides global settings).
       {42, new(){ // Fly the Unfriendly Skies
         {"VESSEL_SPAWN_FILL_SEATS", 3},
       }},
+      {44, new(){}},
       {46, new(){ // Vertigo to Jool
         {"NO_ENGINES", true},
       }},
       {50, new(){ // Mach-ing Bird
         {"WAYPOINTS_MODE", true},
       }},
+      {53, new(){}},
       {55, new(){ // Boonta Eve Classic
         {"WAYPOINTS_MODE", true},
       }},
@@ -107,7 +111,11 @@ namespace BDArmory.Settings
         {"MUTATOR_LIST", new List<string>{ "Vengeance" }},
         {"VENGEANCE_DELAY", 3},
         {"VENGEANCE_YIELD", 1.5},
-      }}
+      }},
+      {66, new(){
+        {"OUT_OF_AMMO_KILL_TIME", 0},
+      }},
+      {67, new(){}},
     };
     public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
     static readonly HashSet<string> currentFilter = [];
