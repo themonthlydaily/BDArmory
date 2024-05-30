@@ -108,6 +108,9 @@ namespace BDArmory.Weapons.Missiles
         public float cruiseDelay = 0;
 
         [KSPField]
+        public float cruiseRangeTrigger = -1;
+
+        [KSPField]
         public float maxAoA = 35;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Direction"),//Direction: 
@@ -1998,7 +2001,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetVelocity = Vector3.zero;
                             TargetAcceleration = Vector3.zero;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); //tgtPos/tgtGPS should relly be not set here, so the last valid postion/coords are used, in case of non-GPS primary guidance
-                            if (!radarLOAL || dumbTerminalGuidance)
+                            if (dumbTerminalGuidance)
                                 terminalGuidanceActive = true;
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
                         }
@@ -2070,7 +2073,15 @@ namespace BDArmory.Weapons.Missiles
 
             if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
+            if (cruiseRangeTrigger > 0)
+                yield return new WaitUntilFixed(checkCruiseRangeTrigger);
+                
             yield return StartCoroutine(CruiseRoutine());
+        }
+
+        bool checkCruiseRangeTrigger()
+        {
+            return ((TargetPosition - vessel.CoM).sqrMagnitude < cruiseRangeTrigger * cruiseRangeTrigger);
         }
 
         IEnumerator DeployAnimRoutine()
@@ -2294,7 +2305,7 @@ namespace BDArmory.Weapons.Missiles
                     }
             }
 
-            if (cruiseDelay > 0)
+            if (cruiseDelay > 0 || cruiseRangeTrigger > 0)
             {
                 currentThrust = 0;
             }
