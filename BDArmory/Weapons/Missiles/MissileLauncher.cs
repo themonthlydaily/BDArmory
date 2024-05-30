@@ -2137,7 +2137,11 @@ namespace BDArmory.Weapons.Missiles
                 yield return new WaitUntilFixed(() => vessel == null || vessel.LandedOrSplashed);//don't start torpedo thrust until underwater
                 if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
             }
-            if (useFuel) burnRate = boostTime > 0 ? boosterFuelMass / boostTime * Time.fixedDeltaTime : 0;
+            if (useFuel)
+            {
+                burnRate = boostTime > 0 ? boosterFuelMass / boostTime * Time.fixedDeltaTime : 0;
+                burnedFuelMass = 0f;
+            }
             StartBoost();
             StartCoroutine(updateCrashTolerance());
             var wait = new WaitForFixedUpdate();
@@ -2161,15 +2165,15 @@ namespace BDArmory.Weapons.Missiles
                 //thrust
                 if (useFuel && burnRate > 0)
                 {
-                    if (boosterFuelMass - burnedFuelMass < burnRate * Throttle)
-                    {
-                        Throttle = (boosterFuelMass - burnedFuelMass) / burnRate;
-                        burnedFuelMass = boosterFuelMass;
-                    }
-                    else
-                    {
-                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, boosterFuelMass);
-                    }
+                    //if (boosterFuelMass - burnedFuelMass < burnRate * Throttle)
+                    //{
+                    //    Throttle = (boosterFuelMass - burnedFuelMass) / burnRate;
+                    //    burnedFuelMass = boosterFuelMass;
+                    //}
+                    //else
+                    //{
+                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, boosterFuelMass); // Impulse conservation code was showing issues
+                    //}
                 }
 
                 audioSource.volume = Throttle;
@@ -2325,15 +2329,15 @@ namespace BDArmory.Weapons.Missiles
                 //Thrust
                 if (useFuel && burnRate > 0)
                 {
-                    if (massToBurn - burnedFuelMass < burnRate * Throttle)
-                    {
-                        Throttle = (massToBurn - burnedFuelMass) / burnRate;
-                        burnedFuelMass = massToBurn;
-                    }
-                    else
-                    {
-                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, massToBurn);
-                    }
+                    //if (massToBurn - burnedFuelMass < burnRate * Throttle)
+                    //{
+                    //    Throttle = (massToBurn - burnedFuelMass) / burnRate;
+                    //    burnedFuelMass = massToBurn;
+                    //}
+                    //else
+                    //{
+                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, massToBurn); // Other code was causing issues
+                    //}
                 }
 
                 audioSource.volume = Throttle;
