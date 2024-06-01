@@ -722,7 +722,12 @@ namespace BDArmory.Guidances
             }
             else // Not accurate enough for orbital speeds, but more resilient to acceleration changes
             {
-                targetPosition += (Vector3)targetVessel.acceleration_immediate * 0.05f * leadTime * leadTime;
+                targetPosition += leadTime * targetVessel.Velocity();
+
+                if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy
+                {
+                    targetPosition += (Vector3)targetVessel.acceleration * 0.05f * leadTime * leadTime;
+                }
             }
 
             return targetPosition;
