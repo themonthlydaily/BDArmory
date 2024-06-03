@@ -926,6 +926,8 @@ namespace BDArmory.UI
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, top).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, bottom).Item1.ToString("0"));
             var radarSig = RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel);
+            if ((radarSig.radarBaseSignature == radarSig.radarMassAtUpdate) && (!VesselModuleRegistry.ignoredVesselTypes.Contains(FlightGlobals.ActiveVessel.vesselType) && FlightGlobals.ActiveVessel.IsControllable))
+                RadarUtils.ForceUpdateRadarCrossSections();
             string aspectedText = "";
             if (BDArmorySettings.ASPECTED_RCS)
             {
