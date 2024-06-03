@@ -1748,43 +1748,39 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 MissileBase ml = CurrentMissile;
                                 float distanceToTarget = 0;
 
-                                if (!vesselRadarData)
+                                if (vesselRadarData)
                                 {
-                                    GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
-                                    break;
-                                }
+                                    TargetSignatureData targetData = TargetSignatureData.noTarget;
+                                    if (_radarsEnabled)
+                                    {
+                                        if (vesselRadarData.locked)
+                                            targetData = vesselRadarData.lockedTargetData.targetData;
+                                        else
+                                            targetData = vesselRadarData.detectedRadarTarget(guardTarget != null ? guardTarget : null, this);
+                                    }
+                                    else if (_irstsEnabled)
+                                        targetData = vesselRadarData.activeIRTarget(null, this);
 
-                                TargetSignatureData targetData = TargetSignatureData.noTarget;
-                                bool radarTarget = false;
-                                if (_radarsEnabled && vesselRadarData.locked)
-                                {
-                                    targetData = vesselRadarData.lockedTargetData.targetData;
-                                    radarTarget = true;
-                                }
-                                else if (_irstsEnabled)
-                                {
-                                    targetData = vesselRadarData.activeIRTarget(null, this);
-                                }
-
-                                if (!targetData.exists)
-                                {
-                                    GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
-                                    break;
-                                }
-
-                                distanceToTarget = Vector3.Distance(targetData.predictedPosition, ml.MissileReferenceTransform.position);
-                                GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * ml.GetForwardTransform()), BDArmorySetup.Instance.dottedLargeGreenCircle, new Vector2(128, 128), 0);
-                                    
-                                if (radarTarget)
-                                {
-                                    Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, targetData.predictedPosition, targetData.velocity);
-                                    Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
-                                    GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
+                                    if (targetData.exists)
+                                    {
+                                        distanceToTarget = Vector3.Distance(targetData.predictedPosition, ml.MissileReferenceTransform.position);
+                                        Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, targetData.predictedPosition, targetData.velocity);
+                                        Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
+                                        if (vesselRadarData.locked)
+                                            GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
+                                        else
+                                            GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenCircleTexture, new Vector2(36, 36), 5);
+                                        GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * ml.GetForwardTransform()), BDArmorySetup.Instance.dottedLargeGreenCircle, new Vector2(128, 128), 0);
+                                    }
+                                    else
+                                    {
+                                        GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
+                                        break;
+                                    }
                                 }
                                 else
-                                {
-                                    GUIUtils.DrawTextureOnWorldPos(targetData.position, BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
-                                }
+                                    GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
+                                break;
 
                                 if (BDArmorySettings.DEBUG_TELEMETRY)
                                 {
@@ -7094,13 +7090,13 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     targetVessel = vesselRadarData.lockedTargetData.targetData.vessel;
                                     validTarget = true;
+                                    vesselRadarData.LastMissile = ml;
                                 }
                                 else if (irsts.Count > 0) //or brightest ping on IRST
                                 {
                                     targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
                                     validTarget = targetVessel;
                                 }
-                                vesselRadarData.LastMissile = ml;
                             }
                             if (validTarget)
                             {
