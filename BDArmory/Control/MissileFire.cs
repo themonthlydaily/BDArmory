@@ -1771,6 +1771,15 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         else
                                             GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenCircleTexture, new Vector2(36, 36), 5);
                                         GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * ml.GetForwardTransform()), BDArmorySetup.Instance.dottedLargeGreenCircle, new Vector2(128, 128), 0);
+
+                                        if (BDArmorySettings.DEBUG_TELEMETRY)
+                                        {
+                                            string dynRangeDebug = string.Empty;
+                                            MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(missile, targetData.velocity, targetData.predictedPosition);
+                                            dynRangeDebug += "MaxDLZ: " + dlz.maxLaunchRange;
+                                            dynRangeDebug += "\nMinDLZ: " + dlz.minLaunchRange;
+                                            GUI.Label(new Rect(800, 600, 200, 200), dynRangeDebug);
+                                        }
                                     }
                                     else
                                     {
@@ -1780,17 +1789,6 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                                 else
                                     GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(156, 156), 0);
-                                break;
-
-                                if (BDArmorySettings.DEBUG_TELEMETRY)
-                                {
-                                    string dynRangeDebug = string.Empty;
-                                    MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(missile, targetData.velocity, targetData.predictedPosition);
-                                    dynRangeDebug += "MaxDLZ: " + dlz.maxLaunchRange;
-                                    dynRangeDebug += "\nMinDLZ: " + dlz.minLaunchRange;
-                                    GUI.Label(new Rect(800, 600, 200, 200), dynRangeDebug);
-                                }
-                                
                                 break;
                             }
                         case MissileBase.TargetingModes.None:
