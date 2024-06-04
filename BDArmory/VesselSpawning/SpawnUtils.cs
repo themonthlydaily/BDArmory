@@ -989,10 +989,13 @@ namespace BDArmory.VesselSpawning
                         }
                         if (part.Current.GetComponent<ModuleCommand>() != null)
                         {
-                            ModuleCommand MC;
-                            MC = part.Current.GetComponent<ModuleCommand>();
-                            if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0 && !SpawnUtils.IsModularMissilePart(part.Current)) //Non-MMG drone core, nuke it
-                                part.Current.RemoveModule(MC);
+                            if (!vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                            {
+                                ModuleCommand MC;
+                                MC = part.Current.GetComponent<ModuleCommand>();
+                                if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0 && !SpawnUtils.IsModularMissilePart(part.Current)) //Non-MMG drone core, nuke it
+                                    part.Current.RemoveModule(MC);
+                            }
                         }
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
                         {
