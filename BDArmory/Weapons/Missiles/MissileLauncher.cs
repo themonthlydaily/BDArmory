@@ -1878,8 +1878,22 @@ namespace BDArmory.Weapons.Missiles
         // feature_engagementenvelope: terminal guidance mode for cruise missiles
         private void UpdateTerminalGuidance()
         {
+            Vector3 tempTargetPos = TargetPosition;
+
+            if (TargetingMode == TargetingModes.Inertial)
+            {
+                float deltaT = TimeIndex - TimeOfLastINS;
+                tempTargetPos = VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody);
+                if (deltaT > GpsUpdateMax)
+                {
+                    deltaT /= INStimetogo;
+
+                    tempTargetPos = new Vector3((1f - deltaT) * tempTargetPos.x + deltaT * TargetPosition.x, (1f - deltaT) * tempTargetPos.y + deltaT * TargetPosition.y, (1f - deltaT) * tempTargetPos.z + deltaT * TargetPosition.z);
+                }
+            }
+
             // check if guidance mode should be changed for terminal phase
-            float distanceSqr = (TargetPosition - transform.position).sqrMagnitude;
+            float distanceSqr = (tempTargetPos - vessel.CoM).sqrMagnitude;
 
             if (terminalGuidanceShouldActivate && !terminalGuidanceActive && (TargetingModeTerminal != TargetingModes.None) && (distanceSqr < terminalGuidanceDistance * terminalGuidanceDistance))
             {
@@ -1949,24 +1963,6 @@ namespace BDArmory.Weapons.Missiles
 
                         //float smallestAngle = maxOffBoresight;
                         //TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
-
-                        float deltaT = TimeIndex - TimeOfLastINS;
-                        Vector3 tempTargetPos = Vector3.zero;
-
-                        if (TargetingMode == TargetingModes.Inertial)
-                        {
-                            tempTargetPos = VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody);
-                            if (deltaT > GpsUpdateMax)
-                            {
-                                deltaT /= INStimetogo;
-
-                                tempTargetPos = new Vector3((1f - deltaT) * tempTargetPos.x + deltaT * TargetPosition.x, (1f - deltaT) * tempTargetPos.y + deltaT * TargetPosition.y, (1f - deltaT) * tempTargetPos.z + deltaT * TargetPosition.z);
-                            }
-                        }
-                        else
-                        {
-                            tempTargetPos = TargetPosition;
-                        }
 
                         float currDist = float.PositiveInfinity;
                         float prevDist = float.PositiveInfinity;

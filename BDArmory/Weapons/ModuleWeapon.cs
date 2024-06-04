@@ -5885,7 +5885,15 @@ private float S6R5dynamicRecoil;
                         }
                         else if (eHEType == FillerTypes.Shaped)
                         {
-                            guiAmmoTypeString  = StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            if (bulletInfo.projectileCount > 1)
+                            {
+                                guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " " +
+                                                    StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            }
+                            else
+                            {
+                                guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            }
                         }
                         guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Explosive") + " ";
                     }
