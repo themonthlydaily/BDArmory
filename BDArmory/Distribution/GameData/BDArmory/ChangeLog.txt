@@ -32,6 +32,7 @@ IMPROVEMENTS / FIXES
 	- Fix weapons in salvo mode with symmetry twins firing when only enough ammo for one weapon to fire.
 	- Fix heatRays not adding heat to hit parts.
 	- Fix kinetic damage having damage reduction from armor being applied when hitting unarmored parts.
+	- Fix sabot rounds reporting incorrect penetration values in the right click menu.
 	- Missiles:
 		- Can now set cluster missile trigger distance when mounting cluster missiles on reloadable rails.
 		- Nuke LightFX radius now set by effective blast range, not thermalRadius value.
@@ -40,6 +41,13 @@ IMPROVEMENTS / FIXES
 		- Fix manually fired INS missiles using GPS coords if set.
 		- Fix issue with AI fired radar missiles getting stuck and not firing if the first missile fired could not get a lock.
 		- Fix an issue with unguided INS bomb guidance.
+		- Improved inertial guidance performance when handing off to terminal radar guidance
+		- Added adapted rangeFac behavior to Kappa guidance to improve guidance performance, particularly for close ranged targets. Now an altitude limit is prescribed for the missile based on 10 * rangeFac * range^(vertVelComp).
+		- Fixed maddog/dumbfire behavior of ARH missiles, missile should now be able to lock onto targets in front of it when launched
+		- Throttle now determines fuel burn, missile burnout for missiles with fuel burn now depends on fuel expenditure rather than just preset burn times.
+		- Fix some typos and inconsistencies in the wording of the right click menu
+- Detectors:
+	- Fixed rare bug where, when spawning in vehicles while the on-screen debug elements are turned on the vessel radar cross-section would update too early, causing the radar cross-section to default to the vessel's mass.
 - RWP:
 	- Add S6R5 dynamic recoil gamemode; recoil scales with vessel thrust.
 - ModIntegration:
