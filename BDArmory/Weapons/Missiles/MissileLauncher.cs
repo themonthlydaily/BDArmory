@@ -1710,7 +1710,7 @@ namespace BDArmory.Weapons.Missiles
                         UpdateInertialTarget();
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {
-                            debugGuidanceTarget = $"TgtPos: {UpdateInertialTarget().ToString()}; Drift: {(TargetPosition - targetGPSCoords).ToString()}";
+                            debugGuidanceTarget = $"TgtPos: {TargetPosition}; Drift: {(TargetPosition - VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody)).ToString()}";
                         }
                         break;
                     default:
@@ -1950,7 +1950,23 @@ namespace BDArmory.Weapons.Missiles
                         //float smallestAngle = maxOffBoresight;
                         //TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
 
-                        Vector3 tempTargetPos = (TargetingMode == TargetingModes.Inertial && TimeIndex - TimeOfLastINS < GpsUpdateMax) ? TargetINSPosition : TargetPosition;
+                        float deltaT = TimeIndex - TimeOfLastINS;
+                        Vector3 tempTargetPos = Vector3.zero;
+
+                        if (TargetingMode == TargetingModes.Inertial)
+                        {
+                            tempTargetPos = VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody);
+                            if (deltaT > GpsUpdateMax)
+                            {
+                                deltaT /= INStimetogo;
+
+                                tempTargetPos = new Vector3((1f - deltaT) * tempTargetPos.x + deltaT * TargetPosition.x, (1f - deltaT) * tempTargetPos.y + deltaT * TargetPosition.y, (1f - deltaT) * tempTargetPos.z + deltaT * TargetPosition.z);
+                            }
+                        }
+                        else
+                        {
+                            tempTargetPos = TargetPosition;
+                        }
 
                         float currDist = float.PositiveInfinity;
                         float prevDist = float.PositiveInfinity;
@@ -2435,6 +2451,8 @@ namespace BDArmory.Weapons.Missiles
         void EndCruise()
         {
             MissileState = MissileStates.PostThrust;
+
+            currentThrust = 0f;
 
             if (useFuel) burnedFuelMass = cruiseFuelMass + boosterFuelMass;
 

@@ -676,16 +676,23 @@ namespace BDArmory.Guidances
             return LOSRate.magnitude;
         }
 
+        public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vessel targetVessel)
+        {
+            float temp;
+            return GetAirToAirFireSolution(missile, targetVessel, out temp);
+        }
+
         /// <summary>
         /// Air-2-Air fire solution used by the AI for steering, WM checking if a missile can be launched, unguided missiles
         /// </summary>
         /// <param name="missile"></param>
         /// <param name="targetVessel"></param>
         /// <returns></returns>
-        public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vessel targetVessel)
+        public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vessel targetVessel, out float timetogo)
         {
             if (!targetVessel)
             {
+                timetogo = float.PositiveInfinity;
                 return missile.vessel.CoM + (missile.GetForwardTransform() * 1000);
             }
             Vector3 targetPosition = targetVessel.CoM;
@@ -730,6 +737,7 @@ namespace BDArmory.Guidances
                 }
             }
 
+            timetogo = leadTime;
             return targetPosition;
         }
         /// <summary>

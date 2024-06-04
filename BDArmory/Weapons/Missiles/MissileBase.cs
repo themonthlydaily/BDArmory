@@ -450,8 +450,9 @@ namespace BDArmory.Weapons.Missiles
         private LineRenderer LR;
 
         //INS stuff
-        public Vector3 TargetINSPosition { get; set; } = Vector3.zero;
-        public float TimeOfLastINS { get; set; } = 0;
+        public Vector3d TargetINSCoords { get; set; } = Vector3d.zero;
+        public float TimeOfLastINS = 0;
+        public float INStimetogo = 0;
 
         private int snapshotTicker;
         private int locksCount = 0;
@@ -1280,9 +1281,9 @@ namespace BDArmory.Weapons.Missiles
                         {
                             if (gpsUpdates == 0 && (detectedByRadar && radarLocked)) // Constant updates
                             {
-                                TargetINSPosition = targetVessel.Vessel.CoM;
+                                TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
                                 TimeOfLastINS = TimeIndex;
-                                TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel);
+                                TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel, out INStimetogo);
                                 if (detectedByRadar) TargetLead += (INStarget.predictedPositionWithChaffFactor(chaffEffectivity) - INStarget.position);
                                 TargetCoords_ = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.Vessel.mainBody);
                                 targetGPSCoords = TargetCoords_;
@@ -1293,9 +1294,9 @@ namespace BDArmory.Weapons.Missiles
                                 if (updateCount > gpsUpdateCounter)
                                 {
                                     gpsUpdateCounter++;
-                                    TargetINSPosition = targetVessel.Vessel.CoM;
+                                    TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
                                     TimeOfLastINS = TimeIndex;
-                                    TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel);
+                                    TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel, out INStimetogo);
                                     if (detectedByRadar) TargetLead += (INStarget.predictedPositionWithChaffFactor(chaffEffectivity) - INStarget.position);
                                     TargetCoords_ = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.Vessel.mainBody);
                                     targetGPSCoords = TargetCoords_;
@@ -1308,7 +1309,7 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
-                TargetINSPosition += driftSeed * TimeIndex;
+                TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
                 TargetVelocity = Vector3.zero;
                 TargetAcceleration = Vector3.zero;
                 TargetPosition += driftSeed * TimeIndex;
