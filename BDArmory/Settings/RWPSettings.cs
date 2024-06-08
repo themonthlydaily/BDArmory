@@ -5,6 +5,7 @@ using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
 using System;
+using BDArmory.UI;
 
 namespace BDArmory.Settings
 {
@@ -33,6 +34,7 @@ namespace BDArmory.Settings
         {"HP_THRESHOLD", 2000},
         {"INFINITE_AMMO", false},
         {"INFINITE_ORDINANCE", false}, // Note: don't set inf fuel or inf EC as those are used during autotuning and are handled differently in order to sync with the cheats menu.
+        {"MAX_SAS_TORQUE", 30},
         {"PWING_THICKNESS_AFFECT_MASS_HP", true},
         {"VESSEL_SPAWN_FILL_SEATS", 1},
         {"VESSEL_SPAWN_RANDOM_ORDER", true},
@@ -40,16 +42,20 @@ namespace BDArmory.Settings
         {"OUT_OF_AMMO_KILL_TIME", 60},
         {"BATTLEDAMAGE", true},
       }},
+      {17, new(){}},
+      {33, new(){}},
       // Round specific overrides (also overrides global settings).
       {42, new(){ // Fly the Unfriendly Skies
         {"VESSEL_SPAWN_FILL_SEATS", 3},
       }},
+      {44, new(){}},
       {46, new(){ // Vertigo to Jool
         {"NO_ENGINES", true},
       }},
       {50, new(){ // Mach-ing Bird
         {"WAYPOINTS_MODE", true},
       }},
+      {53, new(){}},
       {55, new(){ // Boonta Eve Classic
         {"WAYPOINTS_MODE", true},
       }},
@@ -84,7 +90,32 @@ namespace BDArmory.Settings
         {"VESSEL_SPAWN_WORLDINDEX", 5}, // Eve
         {"VESSEL_SPAWN_GEOCOORDS", new Vector2d(33.3616, -67.2242)}, // Poison Pond
         {"VESSEL_SPAWN_ALTITUDE", 2500},
-      }}
+      }},
+      {64, new(){
+        {"WAYPOINTS_MODE" , true},
+        {"VESSEL_SPAWN_ALTITUDE" , 2500},
+        {"WAYPOINTS_ONE_AT_A_TIME" , false},
+        {"WAYPOINT_GUARD_INDEX" , 0},
+        {"COMPETITION_WAYPOINTS_GM_KILL_PERIOD" , 0},
+        {"WAYPOINT_COURSE_INDEX" , 8},
+        {"VESSEL_SPAWN_DISTANCE" , 300},
+        {"COMPETITION_KILL_TIMER" , 10},
+        {"COMPETITION_DURATION" , 5},
+      }},
+      {65, new(){
+        {"MUTATOR_MODE", true},
+        {"MUTATOR_DURATION", 0},
+        {"MUTATOR_APPLY_GLOBAL", true},
+        {"MUTATOR_APPLY_NUM", 1},
+        {"MUTATOR_ICONS", false},
+        {"MUTATOR_LIST", new List<string>{ "Vengeance" }},
+        {"VENGEANCE_DELAY", 3},
+        {"VENGEANCE_YIELD", 1.5},
+      }},
+      {66, new(){
+        {"OUT_OF_AMMO_KILL_TIME", 0},
+      }},
+      {67, new(){}},
     };
     public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
     static readonly HashSet<string> currentFilter = [];
@@ -104,33 +135,34 @@ namespace BDArmory.Settings
         RestoreSettings(); // Restore the non-RWP settings.
       }
       RWPEnabled = enabled;
+      if (BDArmorySetup.Instance != null) BDArmorySetup.Instance.UpdateSelectedMutators(); // Update the mutators selected in the UI.
     }
 
     static Dictionary<string, object> storedSettings = []; // The base stored settings.
     static Dictionary<string, object> tempSettings = []; // Temporary settings for shuffling things around.
 
-        /// <summary>
-        /// Store the settings that RWP is going to change.
-        /// </summary>
-        public static void StoreSettings(bool temp = false)
+    /// <summary>
+    /// Store the settings that RWP is going to change.
+    /// </summary>
+    public static void StoreSettings(bool temp = false)
     {
-      Debug.Log($"[BDArmory.RWPSettings]: Storing {(temp ? "temporary" : "base")} settings.");
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Storing {(temp ? "temporary" : "base")} settings.");
       var settings = temp ? tempSettings : storedSettings;
       settings.Clear();
-            
-            var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-            foreach (var field in fields)
-            {
-                if (!currentFilter.Contains(field.Name))
-                {
-                    //Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is non-RWP setting, skipping...");
-                    continue;
-                }
 
-                settings.Add(field.Name, field.GetValue(null));
-            }
-            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
+      var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+      foreach (var field in fields)
+      {
+        if (!currentFilter.Contains(field.Name))
+        {
+          //Debug.Log($"[BDArmory.RWPSettings]: {field.Name} is non-RWP setting, skipping...");
+          continue;
         }
+
+        settings.Add(field.Name, field.GetValue(null));
+      }
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
+    }
 
     /// <summary>
     /// Restore the non-RWP settings.
@@ -138,8 +170,8 @@ namespace BDArmory.Settings
     public static void RestoreSettings(bool temp = false)
     {
       var settings = temp ? tempSettings : storedSettings;
-            Debug.Log($"[BDArmory.RWPSettings]: Restoring {(temp ? "temporary" : "base")} settings.");
-            foreach (var setting in settings.Keys)
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Restoring {(temp ? "temporary" : "base")} settings.");
+      foreach (var setting in settings.Keys)
       {
         var field = typeof(BDArmorySettings).GetField(setting, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
         if (field == null) continue;
@@ -148,23 +180,23 @@ namespace BDArmory.Settings
       if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Restored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
     }
 
-        /// <summary>
-        /// set whether or not a BDAsetting should be filtered by the store/restore setting
-        /// </summary>
-        public static void SetRWPFilters()
-        {
-            if (!RWPOverrides.ContainsKey(0)) return;
-            Debug.Log($"[BDArmory.RWPSettings]: Setting RWP setting filters");
-            currentFilter.Clear();
-            var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-            foreach (var field in fields)
-            {
-                if (field == null) continue;
-                if (!field.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
-                if (RWPOverrides[0].Keys.Contains(field.Name) || RWPOverrides[BDArmorySettings.RUNWAY_PROJECT_ROUND].Keys.Contains(field.Name))
-                    currentFilter.Add(field.Name);
-            }
-        }
+    /// <summary>
+    /// set whether or not a BDAsetting should be filtered by the store/restore setting
+    /// </summary>
+    public static void SetRWPFilters()
+    {
+      if (!RWPOverrides.ContainsKey(0)) return;
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Setting RWP setting filters");
+      currentFilter.Clear();
+      var fields = typeof(BDArmorySettings).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+      foreach (var field in fields)
+      {
+        if (field == null) continue;
+        if (!field.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
+        if (RWPOverrides[0].Keys.Contains(field.Name) || RWPOverrides[BDArmorySettings.RUNWAY_PROJECT_ROUND].Keys.Contains(field.Name))
+          currentFilter.Add(field.Name);
+      }
+    }
 
     /// <summary>
     /// Override settings based on the RWP overrides.
@@ -173,7 +205,7 @@ namespace BDArmory.Settings
     public static void SetOverrides(int round)
     {
       if (!RWPOverrides.ContainsKey(round)) return;
-      Debug.Log($"[BDArmory.RWPSettings]: Setting overrides for RWP round {round}");
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Setting overrides for RWP round {round}");
       var overrides = RWPOverrides[round];
       foreach (var setting in overrides.Keys)
       {
@@ -189,7 +221,7 @@ namespace BDArmory.Settings
         }
         catch (Exception e)
         {
-           Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
+          Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
         }
       }
 

@@ -206,11 +206,12 @@ namespace BDArmory.Radar
             irstEnabled = true;
 
             var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null && vesselRadarData != null) vesselRadarData.weaponManager = mf;
             UpdateToggleGuiName();
             vesselRadarData.AddIRST(this);
             if (mf != null)
             {
-                mf._radarsEnabled = true;
+                mf._irstsEnabled = true;
             }
         }
 
@@ -233,12 +234,12 @@ namespace BDArmory.Radar
             {
                 if (mf.irsts.Count > 1)
                 {
-                    using (List<ModuleIRST>.Enumerator rd = mf.irsts.GetEnumerator())
-                        while (rd.MoveNext())
+                    using (List<ModuleIRST>.Enumerator irst = mf.irsts.GetEnumerator())
+                        while (irst.MoveNext())
                         {
-                            if (rd.Current == null) continue;
+                            if (irst.Current == null) continue;
                             mf._irstsEnabled = false;
-                            if (rd.Current != this && rd.Current.irstEnabled)
+                            if (irst.Current != this && irst.Current.irstEnabled)
                             {
                                 mf._irstsEnabled = true;
                                 break;

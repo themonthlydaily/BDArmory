@@ -816,7 +816,7 @@ namespace BDArmory.VesselSpawning
                         var controlledActions = protoPartModuleSnapshot.moduleValues.GetNode("CONTROLLEDACTIONS");
                         kal.ControlledActions.Clear(); // Clear the existing actions (they should be clear already due to mismatching part persistent IDs, but better safe than sorry).
                         rowIndex = 0;
-                        foreach (var actionNode in controlledActions.GetNodes("ACTION")) // For each action to be controlled, locate the part in the spawned vessel that has the correct module.
+                        foreach(var actionNode in controlledActions.GetNodes("ACTION")) // For each action to be controlled, locate the part in the spawned vessel that has the correct module.
                             if (uint.TryParse(actionNode.GetValue("moduleId"), out uint moduleId)) // Get the persistentId of the module it's supposed to be affecting, which is correctly set in some part.
                             {
                                 foreach (var part in vessel.Parts)
