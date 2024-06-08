@@ -498,6 +498,7 @@ namespace BDArmory.UI
                             nameof(AI.turnRadiusTwiddleFactorMax),
                             nameof(AI.terrainAvoidanceCriticalAngle),
                             nameof(AI.controlSurfaceDeploymentTime),
+                            nameof(AI.postTerrainAvoidanceCoolDownDuration),
                             nameof(AI.waypointTerrainAvoidance),
 
                             nameof(AI.controlSurfaceLag),
@@ -1274,6 +1275,7 @@ namespace BDArmory.UI
                                     if (AI.terrainAvoidanceCriticalAngle != oldTerrainAvoidanceCriticalAngle) { AI.OnTerrainAvoidanceCriticalAngleChanged(); }
 
                                     gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.controlSurfaceDeploymentTime, nameof(AI.controlSurfaceDeploymentTime), "TerrainAvoidanceVesselReactionTime", $"{AI.controlSurfaceDeploymentTime:0.0}s");
+                                    gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.postTerrainAvoidanceCoolDownDuration, nameof(AI.postTerrainAvoidanceCoolDownDuration), "TerrainAvoidancePostAvoidanceCoolDown", $"{AI.postTerrainAvoidanceCoolDownDuration:0.00}s");
                                     gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.waypointTerrainAvoidance, nameof(AI.waypointTerrainAvoidance), "WaypointTerrainAvoidance", $"{AI.waypointTerrainAvoidance:0.00}");
 
                                     GUI.EndGroup();
