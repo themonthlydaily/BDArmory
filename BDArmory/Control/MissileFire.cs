@@ -6500,9 +6500,13 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             fireFOV = mlauncher.missileTurret ? mlauncher.missileTurret.turret.yawRange : mlauncher.multiLauncher && mlauncher.multiLauncher.turret ? mlauncher.multiLauncher.turret.turret.yawRange : -1;
 
                             MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, fireFOV,
-                                (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 ||
-                                ml.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !ml.radarLOAL ||
-                                ml.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _irstsEnabled)));
+                                (ml.TargetingMode switch
+                                {
+                                    MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
+                                    MissileBase.TargetingModes.Radar => !_radarsEnabled && !ml.radarLOAL,
+                                    MissileBase.TargetingModes.Inertial => !(_radarsEnabled || _irstsEnabled),
+                                    _ => false
+                                }));
                             if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
                             {
                                 if (ml.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)))
@@ -7263,9 +7267,13 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                 }
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(CurrentMissile, guardTarget.Velocity(), guardTarget.CoM, -1,
-                                    (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 ||
-                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !(_radarsEnabled || _sonarsEnabled) && !CurrentMissile.radarLOAL ||
-                                    CurrentMissile.TargetingMode == MissileBase.TargetingModes.Inertial && !(_radarsEnabled || _sonarsEnabled || _irstsEnabled)));
+                                    (CurrentMissile.TargetingMode switch
+                                    {
+                                        MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
+                                        MissileBase.TargetingModes.Radar => !(_radarsEnabled || _sonarsEnabled) && !CurrentMissile.radarLOAL,
+                                        MissileBase.TargetingModes.Inertial => !(_radarsEnabled || _sonarsEnabled || _irstsEnabled),
+                                        _ => false
+                                    }));
 
                                 if (targetAngle > guardAngle / 2) //dont fire yet if target out of guard angle
                                 {
