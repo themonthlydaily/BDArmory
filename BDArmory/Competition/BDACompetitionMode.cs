@@ -205,29 +205,32 @@ namespace BDArmory.Competition
                             competitionStatus.lastActiveVessel = vesselName;
                         }
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
-                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        if (BDArmorySettings.RUNWAY_PROJECT)
                         {
-                            guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
-                        }
-                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
-                        {
-                            double hpPercent = 1;
-                            float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum());
-                            hpPercent = Mathf.Clamp((BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken) / BDArmorySettings.MAX_ACTIVE_RADAR_RANGE, 0, 1);
-                            if (hpPercent > 0)
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
-                                Rect barRect = new Rect((Screen.width / 2) - (Screen.width / 6) - 5, Screen.height / 6 + 10, (Screen.width / 3) + 10, 60);
-                                Rect healthRect = new Rect((Screen.width / 2) - ((Screen.width / 6)), (Screen.height / 6) + 5, ((Screen.width / 3) * (float)hpPercent), 50);
-                                Color temp = XKCDColors.Grey;
-                                GUIUtils.DrawRectangle(barRect, temp);
-                                temp = Color.HSVToRGB((85f * (float)hpPercent) / 255, 1f, 1f);
-                                GUIUtils.DrawRectangle(healthRect, temp);
-
+                                guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
                             }
-                            Rect labelrect = new Rect((Screen.width / 2) - 75, (Screen.height / 6) + 70, Screen.width / 3, 60);
-                            Rect shadowRect = new Rect((labelrect.x + 1), (labelrect.y + 1), Screen.width / 3, 60);
-                            GUI.Label(shadowRect, "Asteroid HP:" + (BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken).ToString("0"), statusStyleShadow);
-                            GUI.Label(labelrect, "Asteroid HP:" + (BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken).ToString("0"), statusStyle);
+                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
+                            {
+                                double hpPercent = 1;
+                                float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum());
+                                hpPercent = Mathf.Clamp((BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken) / BDArmorySettings.MAX_ACTIVE_RADAR_RANGE, 0, 1);
+                                if (hpPercent > 0)
+                                {
+                                    Rect barRect = new Rect((Screen.width / 2) - (Screen.width / 6) - 5, Screen.height / 6 + 10, (Screen.width / 3) + 10, 60);
+                                    Rect healthRect = new Rect((Screen.width / 2) - ((Screen.width / 6)), (Screen.height / 6) + 5, ((Screen.width / 3) * (float)hpPercent), 50);
+                                    Color temp = XKCDColors.Grey;
+                                    GUIUtils.DrawRectangle(barRect, temp);
+                                    temp = Color.HSVToRGB((85f * (float)hpPercent) / 255, 1f, 1f);
+                                    GUIUtils.DrawRectangle(healthRect, temp);
+
+                                }
+                                Rect labelrect = new Rect((Screen.width / 2) - 75, (Screen.height / 6) + 70, Screen.width / 3, 60);
+                                Rect shadowRect = new Rect((labelrect.x + 1), (labelrect.y + 1), Screen.width / 3, 60);
+                                GUI.Label(shadowRect, "Asteroid HP:" + (BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken).ToString("0"), statusStyleShadow);
+                                GUI.Label(labelrect, "Asteroid HP:" + (BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken).ToString("0"), statusStyle);
+                            }
                         }
                     }
                 }
@@ -1168,7 +1171,7 @@ namespace BDArmory.Competition
         {
             if (vessel == null || vessel.vesselName == null) return;
             if (VesselModuleRegistry.GetModuleCount<MissileFire>(vessel) == 0) return; // The weapon managers are already dead.
-            if (vessel.GetName().Contains(BDArmorySettings.PINATA_NAME) && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) return; //don't delete asteroid pinata
+            if (vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)) return; //don't delete uncontrolled pinata
             // Check for partial or full control state.
             foreach (var moduleCommand in VesselModuleRegistry.GetModuleCommands(vessel)) { moduleCommand.UpdateNetwork(); }
             foreach (var kerbalSeat in VesselModuleRegistry.GetKerbalSeats(vessel)) { kerbalSeat.UpdateNetwork(); }
@@ -2818,7 +2821,7 @@ namespace BDArmory.Competition
                         else if (KillTimer.ContainsKey(vesselName))
                             KillTimer.Remove(vesselName);
                     }
-                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vesselName.Contains(BDArmorySettings.PINATA_NAME))
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vesselName.Contains(BDArmorySettings.PINATA_NAME))
                     {
                         if (vessel.radarAltitude <= 1000)
                         {
@@ -2845,7 +2848,7 @@ namespace BDArmory.Competition
                 }
                 else if (pinataAlive && !alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
-                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
                     {
                         competitionStatus.Add("Asteroid destroyed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "!");
                         Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API

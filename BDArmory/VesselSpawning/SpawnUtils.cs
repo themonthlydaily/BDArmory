@@ -1070,6 +1070,18 @@ namespace BDArmory.VesselSpawning
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + vessel.GetName());
                     }
                 }
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
+                {
+                    if (vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                    {
+                        HitpointTracker armor = vessel.rootPart.GetComponent<HitpointTracker>();
+                        if (armor != null)
+                        {
+                            armor.maxHitPoints = BDArmorySettings.MAX_ACTIVE_RADAR_RANGE; //not used by RWP, so can be hacked to serve as a asteroid Hp value
+                            armor.SetupPrefab();
+                        }
+                    }
+                }
             }
         }
         #endregion
