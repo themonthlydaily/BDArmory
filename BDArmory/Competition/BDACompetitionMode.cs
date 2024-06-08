@@ -209,14 +209,14 @@ namespace BDArmory.Competition
                         {
                             guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
                         }
-                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive)
+                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
                         {
                             double hpPercent = 1;
                             float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum());
                             hpPercent = Mathf.Clamp((BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken) / BDArmorySettings.MAX_ACTIVE_RADAR_RANGE, 0, 1);
                             if (hpPercent > 0)
                             {
-                                Rect barRect = new Rect((Screen.width / 2) - (Screen.width / 6) - 5, Screen.height / 6 + 10, Screen.width / 3, 60);
+                                Rect barRect = new Rect((Screen.width / 2) - (Screen.width / 6) - 5, Screen.height / 6 + 10, (Screen.width / 3) + 10, 60);
                                 Rect healthRect = new Rect((Screen.width / 2) - ((Screen.width / 6)), (Screen.height / 6) + 5, ((Screen.width / 3) * (float)hpPercent), 50);
                                 Color temp = XKCDColors.Grey;
                                 GUIUtils.DrawRectangle(barRect, temp);
