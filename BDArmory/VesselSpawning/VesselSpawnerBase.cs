@@ -442,7 +442,7 @@ namespace BDArmory.VesselSpawning
             {
                 if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Lowering vessels", false);
                 var vesselsToPlace = spawnedVessels.Values.ToList();
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) vesselsToPlace = vesselsToPlace.Where(vessel => !vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)).ToList(); // Exclude specific vessels (e.g., some piñatas).
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) vesselsToPlace = vesselsToPlace.Where(vessel => !vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)).ToList(); // Exclude specific vessels (e.g., some piÃ±atas).
                 yield return PlaceSpawnedVessels(vesselsToPlace);
                 if (spawnFailureReason != SpawnFailureReason.None) yield break;
 
@@ -467,7 +467,7 @@ namespace BDArmory.VesselSpawning
             SpawnUtils.CheckForRenamedVessels(spawnedVessels);
             foreach (var vessel in spawnedVessels.Values.Where(v => v.GetName().Contains(BDArmorySettings.PINATA_NAME)))
             {
-                LogMessage($"Spawning Piñata: {vessel.GetName()}"); // Warn about spawning piñatas in case of poorly named craft.
+                LogMessage($"Spawning PiÃ±ata: {vessel.GetName()}"); // Warn about spawning piÃ±atas in case of poorly named craft.
                 SpawnUtils.ApplyRWP(vessel);
             }
             if (BDArmorySettings.RUNWAY_PROJECT && !ignoreValidity)
@@ -727,7 +727,7 @@ namespace BDArmory.VesselSpawning
 
                 foreach (var v in spawnedVessels.Values.Where(v => v.GetName().Contains(BDArmorySettings.PINATA_NAME)))
                 {
-                    LogMessage($"Spawning Piñata: {vessel.GetName()}"); // Warn about spawning piñatas in case of poorly named craft.
+                    LogMessage($"Spawning PiÃ±ata: {vessel.GetName()}"); // Warn about spawning piÃ±atas in case of poorly named craft.
                     SpawnUtils.ApplyRWP(vessel);
                 }
             }
