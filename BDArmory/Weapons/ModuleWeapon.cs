@@ -5885,7 +5885,15 @@ private float S6R5dynamicRecoil;
                         }
                         else if (eHEType == FillerTypes.Shaped)
                         {
-                            guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            if (bulletInfo.projectileCount > 1)
+                            {
+                                guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " " +
+                                                    StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            }
+                            else
+                            {
+                                guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                            }
                         }
                         guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Explosive") + " ";
                     }
@@ -6128,7 +6136,9 @@ private float S6R5dynamicRecoil;
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
-                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod):F2} mm");
+                        bool sabotTemp = (((((binfo.bulletMass * 1000) / ((binfo.caliber * binfo.caliber * Mathf.PI / 400f) * 19f) + 1f) * 10f) > binfo.caliber * 4f)) ? true : false;
+
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
