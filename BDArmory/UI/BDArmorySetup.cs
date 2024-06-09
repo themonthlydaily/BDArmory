@@ -58,7 +58,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectWayPointSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
-		
+
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
         [BDAWindowSettingsField] static Rect _WindowRectScoresUIHidden;
@@ -879,7 +879,7 @@ namespace BDArmory.UI
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
             BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE;
         }
-        
+
         /// <summary>
         /// Update which mutators are selected in the UI.
         /// Call this if the mutators are modified somewhere other than by toggling them in the UI.
@@ -2410,7 +2410,6 @@ namespace BDArmory.UI
                         GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel); // Max Bullet Holes
                         if (BDArmorySettings.MAX_NUM_BULLET_DECALS != (BDArmorySettings.MAX_NUM_BULLET_DECALS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999f))))
                             BulletHitFX.AdjustDecalPoolSizes(BDArmorySettings.MAX_NUM_BULLET_DECALS);
-                        BDArmorySettings.WATER_HIT_FX = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.WATER_HIT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_WaterHitFX"));//"Water Hit FX"
                     }
                     BDArmorySettings.EJECT_SHELLS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.EJECT_SHELLS, StringUtils.Localize("#LOC_BDArmory_Settings_EjectShells"));//"Eject Shells"
                     if (BDArmorySettings.EJECT_SHELLS)
@@ -2420,21 +2419,57 @@ namespace BDArmory.UI
                 }
 
                 BDArmorySettings.SHOW_AMMO_GAUGES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_AMMO_GAUGES, StringUtils.Localize("#LOC_BDArmory_Settings_AmmoGauges"));//"Ammo Gauges"
-                //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line), BDArmorySettings.PERSISTENT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
-                BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, StringUtils.Localize("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
-                if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line), BDArmorySettings.FLARE_SMOKE, StringUtils.Localize("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
+                if (!BDArmorySettings.ADVANCED_USER_SETTINGS)
                 {
-                    if (CMDropper.flarePool != null)
-                    {
-                        foreach (var flareObj in CMDropper.flarePool.pool)
-                            if (flareObj.activeInHierarchy)
-                            {
-                                var flare = flareObj.GetComponent<CMFlare>();
-                                if (flare == null) continue;
-                                flare.EnableEmitters();
-                            }
-                    }
+                    BDArmorySettings.PERFORMANCE_OPTIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_OPTIONS, StringUtils.Localize("#LOC_BDArmory_Settings_PerfOptions"));//"Enable FX"
+                    BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = BDArmorySettings.PERFORMANCE_OPTIONS;
+                    BDArmorySettings.FLARE_SMOKE = BDArmorySettings.PERFORMANCE_OPTIONS;
+                    BDArmorySettings.LIGHTFX = BDArmorySettings.PERFORMANCE_OPTIONS;
+                    BDArmorySettings.WATER_HIT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
+                    //BDArmorySettings.PERSISTENT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
                 }
+                else
+                {
+                    BDArmorySettings.PERFORMANCE_OPTIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_OPTIONS, StringUtils.Localize("#LOC_BDArmory_Settings_PerfOptions"));//"Enable FX"
+                    if (BDArmorySettings.PERFORMANCE_OPTIONS)
+                    {
+                        BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, StringUtils.Localize("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
+                        //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.PERSISTENT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
+                        if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.FLARE_SMOKE, StringUtils.Localize("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
+                        {
+                            if (CMDropper.flarePool != null)
+                            {
+                                foreach (var flareObj in CMDropper.flarePool.pool)
+                                    if (flareObj.activeInHierarchy)
+                                    {
+                                        var flare = flareObj.GetComponent<CMFlare>();
+                                        if (flare == null) continue;
+                                        flare.EnableEmitters();
+                                    }
+                            }
+                        }
+                        BDArmorySettings.WATER_HIT_FX = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.WATER_HIT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_WaterHitFX"));//"Water Hit FX"
+                        //BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"));//Light FX"
+                        //comment out below and uncomment above if !LIGHTFX = light range/intensity = o, but LightFX components still added.
+                        if (BDArmorySettings.LIGHTFX != (BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"))))//"Light FX"
+                        {
+                            if (ExplosionFx.explosionFXPools != null)
+                                ExplosionFx.explosionFXPools.Clear();
+                            if (NukeFX.nukePool != null)
+                                NukeFX.nukePool.Clear();
+                        }
+                    }
+                    else
+                    {
+                        BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = BDArmorySettings.PERFORMANCE_OPTIONS;
+                        BDArmorySettings.FLARE_SMOKE = BDArmorySettings.PERFORMANCE_OPTIONS;
+                        BDArmorySettings.LIGHTFX = BDArmorySettings.PERFORMANCE_OPTIONS;
+                        BDArmorySettings.WATER_HIT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
+                        //BDArmorySettings.PERSISTENT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
+                    }
+
+                }
+
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, StringUtils.Localize("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.AI_TOOLBAR_BUTTON, StringUtils.Localize("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button
                 {

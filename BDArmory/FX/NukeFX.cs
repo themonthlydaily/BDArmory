@@ -133,8 +133,18 @@ namespace BDArmory.FX
                         emission.enabled = true;
                         EffectBehaviour.AddParticleEmitter(pe);
                     }
-                LightFx = gameObject.GetComponent<Light>();
-                LightFx.range = 0;
+
+                if (BDArmorySettings.LIGHTFX)
+                {
+                    LightFx = gameObject.GetComponent<Light>();
+                    LightFx.range = BDAMath.Sqrt(yield) * 500;
+                    LightFx.intensity = 8f; // Reset light intensity.
+                }
+                //comment out the above and uncomment the below if !LIGHTFX = light range/intensity remains 0;
+                //LightFx = gameObject.GetComponent<Light>();
+                //LightFx.range = BDArmorySettings.LIGHTFX ? 0 : BDAMath.Sqrt(yield) * 500;
+                //LightFx.intensity = BDArmorySettings.LIGHTFX ? 0 : 8f; // Reset light intensity.
+
                 audioSource = gameObject.GetComponent<AudioSource>();
                 if (!string.IsNullOrEmpty(SoundPath))
                 {
@@ -144,8 +154,11 @@ namespace BDArmory.FX
             else
             {
                 hasDetonated = false;
-                LightFx.intensity = 0;
-                LightFx.range = 0;
+                if (LightFx != null)
+                {
+                    LightFx.intensity = 0;
+                    LightFx.range = 0;
+                }
                 gameObject.SetActive(false);
                 return;
             }
@@ -330,10 +343,9 @@ namespace BDArmory.FX
 
             if (hasDetonated)
             {
-                if (LightFx != null)
+                if (LightFx != null && BDArmorySettings.LIGHTFX)
                 {
-                    LightFx.intensity -= 12 * scale * Time.deltaTime;
-                    LightFx.range -= 12 * scale * Time.deltaTime;
+                    LightFx.intensity -= 3 * scale * Time.deltaTime;
                 }
                 if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
                 {
@@ -372,9 +384,6 @@ namespace BDArmory.FX
                     hasDetonated = true;
                     CalculateBlastEvents();
 
-                    LightFx = gameObject.GetComponent<Light>();
-                    LightFx.range = BDAMath.Sqrt(yield) * 1000;
-                    LightFx.intensity = thermalRadius / 3f;
                     if (lastValidAtmDensity < 0.05)
                     {
                         if (!string.IsNullOrWhiteSpace(flashModelPath))
@@ -428,8 +437,11 @@ namespace BDArmory.FX
             if (hasDetonated && explosionEvents.Count == 0 && TimeIndex > MaxTime)
             {
                 hasDetonated = false;
-                LightFx.intensity = 0;
-                LightFx.range = 0;
+                if (LightFx != null)
+                {
+                    LightFx.intensity = 0;
+                    LightFx.range = 0;
+                }
                 gameObject.SetActive(false);
                 return;
             }
@@ -631,11 +643,14 @@ namespace BDArmory.FX
                 eFx.audioSource.maxDistance = radius * 3;
                 eFx.audioSource.spatialBlend = 1;
                 eFx.audioSource.volume = 5;
-                eFx.LightFx = templateFX.AddComponent<Light>();
-                eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
-                eFx.LightFx.range = radius / 3;
-                eFx.LightFx.intensity = radius / 3;
-                eFx.LightFx.shadows = LightShadows.None;
+                if (BDArmorySettings.LIGHTFX) //comment this if check out if swapping out for !LightFX = light range/intensity remains 0
+                {
+                    eFx.LightFx = templateFX.AddComponent<Light>();
+                    eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
+                    eFx.LightFx.range = BDArmorySettings.LIGHTFX ? 0 : 2000;
+                    eFx.LightFx.intensity = BDArmorySettings.LIGHTFX ? 0 : 8f; // Reset light intensity.
+                    eFx.LightFx.shadows = LightShadows.None;
+                }
                 templateFX.SetActive(false);
                 nukePool[ModelPath] = ObjectPool.CreateObjectPool(templateFX, 10, true, true, 0f, false);
             }
