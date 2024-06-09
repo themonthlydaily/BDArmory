@@ -691,9 +691,9 @@ namespace BDArmory.VesselSpawning
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                 FlightCamera.fetch.SetDistance(50);
             }
-            
+
             // Lower vessel to the ground or activate them in the air.
-            if (vessel.radarAltitude >= 0 && !spawnAirborne && !(BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)))
+            if (vessel.radarAltitude >= 0 && !spawnAirborne)
             {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
@@ -879,17 +879,7 @@ namespace BDArmory.VesselSpawning
         {
             loweringVesselsCount = 0; // Reset the counter for good measure.
             foreach (var vessel in vessels)
-                if (!(BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)))
-                    StartCoroutine(PlaceSpawnedVessel(vessel));
-                else
-                {
-                    HitpointTracker armor = vessel.rootPart.GetComponent<HitpointTracker>();
-                    if (armor != null)
-                    {
-                        armor.maxHitPoints = BDArmorySettings.MAX_ACTIVE_RADAR_RANGE; //not used by RWP, so can be hacked to serve as a asteroid Hp value
-                        armor.SetupPrefab();
-                    }
-                }
+                StartCoroutine(PlaceSpawnedVessel(vessel));
             var tic = Time.time;
             yield return new WaitWhileFixed(() => loweringVesselsCount > 0 && Time.time - tic < 30); // Wait up to 30s for lowering to complete (it shouldn't take anywhere near this long!).
             if (loweringVesselsCount > 0)
