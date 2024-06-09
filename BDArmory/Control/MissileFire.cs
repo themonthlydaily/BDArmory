@@ -5500,10 +5500,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             candidateTDPS += candidateDetDist; // weight selection towards misiles with proximity warheads
                                         }
                                     }
-                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget || (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10))
                                         candidateTDPS *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    if (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10)
-                                        candidateTDPS *= -1f; // don't fire unguided ordinance from long range
                                     if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                                     {
                                         if (distance <= gunRange && candidateTDPS < 1 && targetWeapon != null) continue; //missiles are within min range/can't lock, don't replace existing gun if in gun range
@@ -5884,10 +5882,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                                 //targetWeaponPriority = candidatePriority;
                                             }
                                         }
-                                        if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                                        if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget || (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10))
                                             candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                        if (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10)
-                                            candidateYield *= -1f; // don't fire unguided ordinance from long range
                                         if (!vessel.LandedOrSplashed || (vessel.LandedOrSplashed && (distance > gunRange || targetWeapon == null || (distance <= gunRange && targetWeapon != null && (targetWeapon.GetWeaponClass() != WeaponClasses.Rocket || targetWeapon.GetWeaponClass() != WeaponClasses.Gun))))) // If we're not airborne, we want to prioritize guns
                                         {
                                             if (distance <= gunRange && candidateYield < 1 && targetWeapon != null) continue; //missiles are within min range/can't lock, don't replace existing gun if in gun range
@@ -6015,7 +6011,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         }
                                     }
 
-                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget || (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10))
                                         candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
 
                                     //if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) 
@@ -6139,10 +6135,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             candidateTDPS *= 0.001f; //no radar/sonar, skip to something else unless nothing else available
                                         }
                                     }
-                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                                    if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget || (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10))
                                         candidateTDPS *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    if (unguidedWeapon && distance > ((EngageableWeapon)item.Current).engageRangeMax / 10)
-                                        candidateTDPS *= -1f; // don't fire unguided ordinance from long range
                                     if ((!vessel.Splashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                                     {
                                         if ((distance <= 500 || distance < candidateYield || candidateTDPS < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, don't replace existing gun if in gun range
@@ -6404,7 +6398,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     case WeaponClasses.Missile:
                         {
                             MissileBase ml = (MissileBase)weaponCandidate;
-                            if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
+                            //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //handled by bool smartWeapon select
 
                             bool readyMissiles = false;
                             using (var msl = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
@@ -6487,7 +6481,6 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     _ => false
                                 })); //unify unguidedWeapon conditions
 
-                            if (unguidedWeapon && distanceToTarget > engageableWeapon.GetEngagementRangeMax() / 10) return false;
                             // check DLZ                            
                             float fireFOV = -1;
 
@@ -6586,11 +6579,19 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
                                     }
                             }
-                            unguidedWeapon = (ml.TargetingMode == MissileBase.TargetingModes.None || ml.GuidanceMode == MissileBase.GuidanceModes.None) ||
-(ml.TargetingMode == MissileBase.TargetingModes.Radar && !_sonarsEnabled && !CurrentMissile.radarLOAL) ||
-(ml.TargetingMode == MissileBase.TargetingModes.Inertial && (!_sonarsEnabled && !_irstsEnabled));
+                            MissileLauncher mlauncher = ml as MissileLauncher;
 
-                            return distanceToTarget < engageableWeapon.GetEngagementRangeMax() / (unguidedWeapon ? 10 : 1);
+                            unguidedWeapon = (ml.GuidanceMode == MissileBase.GuidanceModes.None ||
+    CurrentMissile.TargetingMode switch
+    {
+        MissileBase.TargetingModes.None => true,
+        MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
+        MissileBase.TargetingModes.Radar => !_sonarsEnabled && (!CurrentMissile.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
+        MissileBase.TargetingModes.Inertial => !(_sonarsEnabled || _irstsEnabled),
+        MissileBase.TargetingModes.Gps => (BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled),
+        _ => false
+    }); //unify unguidedWeapon conditions
+                            return true;
                         }
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -7254,6 +7255,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     launchAuthorized = false;
                                 }
+                                if (unguidedWeapon && targetDistance > CurrentMissile.GetEngagementRangeMax() / 10) launchAuthorized = false;
                                 if (engagedTargets > multiMissileTgtNum) launchAuthorized = false; //already fired on max allowed targets
                                 // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
                                 MissileLauncher ml = CurrentMissile as MissileLauncher;
