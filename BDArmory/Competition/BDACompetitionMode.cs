@@ -355,6 +355,8 @@ namespace BDArmory.Competition
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
+                if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
+                    BDArmorySetup.Instance.SetTimeSyncLogging(true);
                 if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
                 { Time.timeScale = BDArmorySettings.TIME_SCALE; }
                 if (BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START && BDArmorySetup.showVesselMoverGUI) VesselMover.Instance.SetVisible(false);
@@ -365,6 +367,8 @@ namespace BDArmory.Competition
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
             LogResults(tag: competitionTag);
+            if (BDArmorySettings.AUTO_LOG_TIME_SYNC)
+                BDArmorySetup.Instance.SetTimeSyncLogging(false, !string.IsNullOrEmpty(competitionTag) ? competitionTag : CompetitionID.ToString());
             if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
@@ -436,7 +440,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
-            competitiveTeamsAliveLimit = BDArmorySettings.WAYPOINTS_MODE ? 1 : 2;
+            competitiveTeamsAliveLimit = (BDArmorySettings.WAYPOINTS_MODE && BDArmorySettings.WAYPOINT_GUARD_INDEX < 0) ? 1 : 2;
             altitudeLimitGracePeriod = BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -1136,7 +1140,7 @@ namespace BDArmory.Competition
                         Debug.Log($"[BDArmory.BDACompetitionMode]: Kerbal has left the seat of {vessel.vesselName} and it has no other controls, disabling the AI.");
                         AI.DeactivatePilot();
                     }
-                }
+                }//no srfAI/VTOLAI/OAI crew check? FIXME later
             }
         }
 
@@ -2267,6 +2271,7 @@ namespace BDArmory.Competition
         List<MissileFire> craftToCull = new List<MissileFire>();
         void CullSlowWaypointRunners(double threshold)
         {
+            //if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0) return;
             var now = Planetarium.GetUniversalTime();
             craftToCull.Clear();
             foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
@@ -2553,8 +2558,8 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
-            if (competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.RUNWAY_PROJECT_ROUND != 55) return; // Don't do anything below when running waypoints (for now).
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
+            if (competitionType == CompetitionType.WAYPOINTS && (BDArmorySettings.RUNWAY_PROJECT_ROUND != 55 && BDArmorySettings.WAYPOINT_GUARD_INDEX < 0)) return; // Don't do anything below when running waypoints unless guardmode is set to activate at somepoint or if set to podracers (for tuskenRaider GM culling of slow pods)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
 
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
@@ -2762,7 +2767,7 @@ namespace BDArmory.Competition
                             else
                             {
                                 var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel);
-                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed))
+                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed) || (surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water && vessel.IsUnderwater()))
                                 {
                                     KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
                                     if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
@@ -2947,7 +2952,24 @@ namespace BDArmory.Competition
             {
                 if (finalGracePeriodStart < 0)
                     finalGracePeriodStart = now;
-                if (!(BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD > 60) && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
+                bool runningWPs = false;
+                if (BDArmorySettings.WAYPOINTS_MODE)
+                {
+                    using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                        while (loadedVessels.MoveNext())
+                        {
+                            if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType)) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
+                                continue;
+                            IBDAIControl pilot = VesselModuleRegistry.GetModule<IBDAIControl>(loadedVessels.Current);
+                            if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue;
+                            if (((BDGenericAIBase)pilot).IsRunningWaypoints)
+                            {
+                                runningWPs = true;
+                                break;//if only one craft left, but WP mode and craft still running WPs, don't prematurely exit
+                            }
+                        }
+                }
+                if (!runningWPs && BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD <= 60 && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
                 {
                     competitionStatus.Add("All Pilots are Dead");
                     foreach (string key in alive)
@@ -3027,7 +3049,7 @@ namespace BDArmory.Competition
 
             if (now - competitionStartTime > altitudeLimitGracePeriod)
                 CheckAltitudeLimits();
-            if (competitionIsActive && competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
+            if (competitionIsActive && competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 FindVictim();
