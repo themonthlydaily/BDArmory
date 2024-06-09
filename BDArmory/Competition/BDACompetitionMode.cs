@@ -207,7 +207,7 @@ namespace BDArmory.Competition
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
                         if (BDArmorySettings.RUNWAY_PROJECT)
                         {
-                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
                             }

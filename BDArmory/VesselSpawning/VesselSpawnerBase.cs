@@ -441,7 +441,9 @@ namespace BDArmory.VesselSpawning
             if (spawnConfig.altitude >= 0 && !spawnAirborne)
             {
                 if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Lowering vessels", false);
-                yield return PlaceSpawnedVessels(spawnedVessels.Values.ToList());
+                var vesselsToPlace = spawnedVessels.Values.ToList();
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) vesselsToPlace = vesselsToPlace.Where(vessel => !vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)).ToList(); // Exclude specific vessels (e.g., some piñatas).
+                yield return PlaceSpawnedVessels(vesselsToPlace);
                 if (spawnFailureReason != SpawnFailureReason.None) yield break;
 
                 // Check that none of the vessels have lost parts.
@@ -463,7 +465,11 @@ namespace BDArmory.VesselSpawning
             // One last check for renamed vessels (since we're not entirely sure when this occurs).
             if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Checking for renamed vessels", false);
             SpawnUtils.CheckForRenamedVessels(spawnedVessels);
-            if(spawnedVessels.Any(kvp => kvp.Value.GetName().Contains(BDArmorySettings.PINATA_NAME))) LogMessage("Spawning Pinata", true);
+            foreach (var vessel in spawnedVessels.Values.Where(v => v.GetName().Contains(BDArmorySettings.PINATA_NAME)))
+            {
+                LogMessage($"Spawning Piñata: {vessel.GetName()}"); // Warn about spawning piñatas in case of poorly named craft.
+                SpawnUtils.ApplyRWP(vessel);
+            }
             if (BDArmorySettings.RUNWAY_PROJECT && !ignoreValidity)
             {
                 // Check AI/WM counts and placement for RWP.
@@ -693,7 +699,7 @@ namespace BDArmory.VesselSpawning
             }
             
             // Lower vessel to the ground or activate them in the air.
-            if (vessel.radarAltitude >= 0 && !spawnAirborne && !(BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)))
+            if (vessel.radarAltitude >= 0 && !spawnAirborne)
             {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
@@ -718,6 +724,12 @@ namespace BDArmory.VesselSpawning
                 // Check AI/WM counts and placement for RWP.
                 SpawnUtils.CheckAIWMCounts(vessel);
                 SpawnUtils.CheckAIWMPlacement(vessel);
+
+                foreach (var v in spawnedVessels.Values.Where(v => v.GetName().Contains(BDArmorySettings.PINATA_NAME)))
+                {
+                    LogMessage($"Spawning Piñata: {vessel.GetName()}"); // Warn about spawning piñatas in case of poorly named craft.
+                    SpawnUtils.ApplyRWP(vessel);
+                }
             }
         }
 
@@ -876,8 +888,7 @@ namespace BDArmory.VesselSpawning
         {
             loweringVesselsCount = 0; // Reset the counter for good measure.
             foreach (var vessel in vessels)
-                if (!(BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && vessel.GetName().Contains(BDArmorySettings.PINATA_NAME)))
-                    StartCoroutine(PlaceSpawnedVessel(vessel));
+                StartCoroutine(PlaceSpawnedVessel(vessel));
             var tic = Time.time;
             yield return new WaitWhileFixed(() => loweringVesselsCount > 0 && Time.time - tic < 30); // Wait up to 30s for lowering to complete (it shouldn't take anywhere near this long!).
             if (loweringVesselsCount > 0)
