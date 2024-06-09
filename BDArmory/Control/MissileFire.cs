@@ -6581,16 +6581,16 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
 
-                            unguidedWeapon = (ml.GuidanceMode == MissileBase.GuidanceModes.None ||
-    CurrentMissile.TargetingMode switch
-    {
-        MissileBase.TargetingModes.None => true,
-        MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
-        MissileBase.TargetingModes.Radar => !_sonarsEnabled && (!CurrentMissile.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
-        MissileBase.TargetingModes.Inertial => !(_sonarsEnabled || _irstsEnabled),
-        MissileBase.TargetingModes.Gps => (BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled),
-        _ => false
-    }); //unify unguidedWeapon conditions
+                            unguidedWeapon = ml.GuidanceMode == MissileBase.GuidanceModes.None ||
+                                CurrentMissile.TargetingMode switch
+                                {
+                                    MissileBase.TargetingModes.None => true,
+                                    MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
+                                    MissileBase.TargetingModes.Radar => !_sonarsEnabled && (!CurrentMissile.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
+                                    MissileBase.TargetingModes.Inertial => !(_sonarsEnabled || _irstsEnabled),
+                                    MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled,
+                                    _ => false
+                                }; //unify unguidedWeapon conditions
                             return true;
                         }
                     default:
