@@ -1253,6 +1253,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 targetVessel = null;
                 TargetAcquired = false;
+                guidanceActive = false;
                 return TargetCoords_;
             }
             if (targetVessel && lockFailTimer < 0)
@@ -1325,13 +1326,13 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (activeDatalink)
                 {
-                TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
-                TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
+                    TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
+                    TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
                     lockFailTimer = 0;
                 }
                 else
                     lockFailTimer += Time.fixedDeltaTime;
-				}
+            }
             else
                 lockFailTimer += Time.fixedDeltaTime;
             //Debug.Log($"[INSDebug] lockfailTimer {lockFailTimer.ToString("0.00")}; datalink {activeDatalink}");
