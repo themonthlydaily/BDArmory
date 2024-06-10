@@ -127,8 +127,7 @@ namespace BDArmory.FX
                     emission.enabled = true;
                     EffectBehaviour.AddParticleEmitter(pe);
                 }
-
-            if (BDArmorySettings.LIGHTFX)
+            if (BDArmorySettings.LightFX)
             {
                 LightFx = gameObject.GetComponent<Light>();
                 LightFx.range = Range * 3f;
@@ -651,7 +650,7 @@ namespace BDArmory.FX
         {
             if (!HighLogic.LoadedSceneIsFlight || !gameObject.activeInHierarchy) return;
 
-            if (LightFx != null && BDArmorySettings.LIGHTFX) LightFx.intensity -= 12 * Time.deltaTime;
+            if (LightFx != null && BDArmorySettings.LightFX) LightFx.intensity -= 12 * Time.deltaTime;
 
             if (!disabled && TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
             {
@@ -1112,12 +1111,21 @@ namespace BDArmory.FX
                 eFx.audioSource.minDistance = 200;
                 eFx.audioSource.maxDistance = 5500;
                 eFx.audioSource.spatialBlend = 1;
-                if (BDArmorySettings.LIGHTFX) //comment out if check if !LIGHTFX = light range/intensity remains 0
+                if (BDArmorySettings.LightFX) //comment out if check if !LIGHTFX = light range/intensity remains 0
                 {
                     eFx.LightFx = explosionFXTemplate.AddComponent<Light>();
                     eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
                     eFx.LightFx.intensity = 8;
                     eFx.LightFx.shadows = LightShadows.None;
+                }
+                else
+                {
+                    Light[] bakedLights = explosionFXTemplate.GetComponentsInChildren<Light>(); //remove any Light components intrinsic to the Model
+                    foreach (var bL in bakedLights)
+                        if (bL != null)
+                        {
+                            Destroy(bL);
+                        }
                 }
                 explosionFXTemplate.SetActive(false);
                 explosionFXPools[explModelPath] = ObjectPool.CreateObjectPool(explosionFXTemplate, 10, true, true, 0f, false);

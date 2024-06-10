@@ -134,7 +134,7 @@ namespace BDArmory.FX
                         EffectBehaviour.AddParticleEmitter(pe);
                     }
 
-                if (BDArmorySettings.LIGHTFX)
+                if (BDArmorySettings.LightFX)
                 {
                     LightFx = gameObject.GetComponent<Light>();
                     LightFx.range = BDAMath.Sqrt(yield) * 500;
@@ -343,7 +343,7 @@ namespace BDArmory.FX
 
             if (hasDetonated)
             {
-                if (LightFx != null && BDArmorySettings.LIGHTFX)
+                if (LightFx != null && BDArmorySettings.LightFX)
                 {
                     LightFx.intensity -= 3 * scale * Time.deltaTime;
                 }
@@ -643,13 +643,22 @@ namespace BDArmory.FX
                 eFx.audioSource.maxDistance = radius * 3;
                 eFx.audioSource.spatialBlend = 1;
                 eFx.audioSource.volume = 5;
-                if (BDArmorySettings.LIGHTFX) //comment this if check out if swapping out for !LightFX = light range/intensity remains 0
+                if (BDArmorySettings.LightFX) //comment this if check out if swapping out for !LightFX = light range/intensity remains 0
                 {
                     eFx.LightFx = templateFX.AddComponent<Light>();
                     eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
-                    eFx.LightFx.range = BDArmorySettings.LIGHTFX ? 0 : 2000;
-                    eFx.LightFx.intensity = BDArmorySettings.LIGHTFX ? 0 : 8f; // Reset light intensity.
+                    eFx.LightFx.range = BDArmorySettings.LightFX ? 0 : 2000;
+                    eFx.LightFx.intensity = BDArmorySettings.LightFX ? 0 : 8f; // Reset light intensity.
                     eFx.LightFx.shadows = LightShadows.None;
+                }
+                else
+                {
+                    Light[] bakedLights = templateFX.GetComponentsInChildren<Light>(); //remove any Light components intrinsic to the Model
+                    foreach (var bL in bakedLights)
+                        if (bL != null)
+                        {
+                            Destroy(bL);
+                        }
                 }
                 templateFX.SetActive(false);
                 nukePool[ModelPath] = ObjectPool.CreateObjectPool(templateFX, 10, true, true, 0f, false);
@@ -693,6 +702,20 @@ namespace BDArmory.FX
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             eFx.SoundPath = soundPath;
             newExplosion.SetActive(true);
+        }
+        public static void DisableAllExplosionFX()
+        {
+            if (nukePool == null) return;
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.NukeFx]: Setting {nukePool.Values.Where(pool => pool != null && pool.pool != null).Sum(pool => pool.pool.Count(fx => fx != null && fx.activeInHierarchy))} explosion FX inactive.");
+            foreach (var pool in nukePool.Values)
+            {
+                if (pool == null || pool.pool == null) continue;
+                foreach (var fx in pool.pool)
+                {
+                    if (fx == null) continue;
+                    fx.SetActive(false);
+                }
+            }
         }
     }
 

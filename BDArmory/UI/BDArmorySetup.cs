@@ -2419,55 +2419,32 @@ namespace BDArmory.UI
                 }
 
                 BDArmorySettings.SHOW_AMMO_GAUGES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_AMMO_GAUGES, StringUtils.Localize("#LOC_BDArmory_Settings_AmmoGauges"));//"Ammo Gauges"
-                if (!BDArmorySettings.ADVANCED_USER_SETTINGS)
-                {
-                    BDArmorySettings.PERFORMANCE_OPTIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_OPTIONS, StringUtils.Localize("#LOC_BDArmory_Settings_PerfOptions"));//"Enable FX"
-                    BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = BDArmorySettings.PERFORMANCE_OPTIONS;
-                    BDArmorySettings.FLARE_SMOKE = BDArmorySettings.PERFORMANCE_OPTIONS;
-                    BDArmorySettings.LIGHTFX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                    BDArmorySettings.WATER_HIT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                    //BDArmorySettings.PERSISTENT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                }
-                else
-                {
-                    BDArmorySettings.PERFORMANCE_OPTIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_OPTIONS, StringUtils.Localize("#LOC_BDArmory_Settings_PerfOptions"));//"Enable FX"
-                    if (BDArmorySettings.PERFORMANCE_OPTIONS)
-                    {
-                        BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, StringUtils.Localize("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
-                        //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.PERSISTENT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
-                        if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.FLARE_SMOKE, StringUtils.Localize("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
-                        {
-                            if (CMDropper.flarePool != null)
-                            {
-                                foreach (var flareObj in CMDropper.flarePool.pool)
-                                    if (flareObj.activeInHierarchy)
-                                    {
-                                        var flare = flareObj.GetComponent<CMFlare>();
-                                        if (flare == null) continue;
-                                        flare.EnableEmitters();
-                                    }
-                            }
-                        }
-                        BDArmorySettings.WATER_HIT_FX = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.WATER_HIT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_WaterHitFX"));//"Water Hit FX"
-                        //BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"));//Light FX"
-                        //comment out below and uncomment above if !LIGHTFX = light range/intensity = o, but LightFX components still added.
-                        if (BDArmorySettings.LIGHTFX != (BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"))))//"Light FX"
-                        {
-                            if (ExplosionFx.explosionFXPools != null)
-                                ExplosionFx.explosionFXPools.Clear();
-                            if (NukeFX.nukePool != null)
-                                NukeFX.nukePool.Clear();
-                        }
-                    }
-                    else
-                    {
-                        BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = BDArmorySettings.PERFORMANCE_OPTIONS;
-                        BDArmorySettings.FLARE_SMOKE = BDArmorySettings.PERFORMANCE_OPTIONS;
-                        BDArmorySettings.LIGHTFX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                        BDArmorySettings.WATER_HIT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                        //BDArmorySettings.PERSISTENT_FX = BDArmorySettings.PERFORMANCE_OPTIONS;
-                    }
 
+                if (BDArmorySettings.PERFORMANCE_OPTIONS != (BDArmorySettings.PERFORMANCE_OPTIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_OPTIONS, StringUtils.Localize("#LOC_BDArmory_Settings_PerfOptions"))))//"Enable FX"
+                {
+                    // Configure FX pools
+                    if (CMDropper.flarePool != null) CMDropper.ResetFlarePool();
+                    if (ExplosionFx.explosionFXPools != null) ExplosionFx.explosionFXPools.Clear();
+                    if (NukeFX.nukePool != null) NukeFX.nukePool.Clear();
+                }
+                if (BDArmorySettings.ADVANCED_USER_SETTINGS && BDArmorySettings.PERFORMANCE_OPTIONS)
+                {
+                    BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, StringUtils.Localize("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
+                    //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.PERSISTENT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
+                    if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.FLARE_SMOKE, StringUtils.Localize("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
+                    {
+                        if (CMDropper.flarePool != null) CMDropper.ResetFlarePool();
+                    }
+                    BDArmorySettings.WATER_HIT_FX = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.WATER_HIT_FX, StringUtils.Localize("#LOC_BDArmory_Settings_WaterHitFX"));//"Water Hit FX"
+                    //BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"));//Light FX"
+                    //comment out below and uncomment above if !LIGHTFX = light range/intensity = o, but LightFX components still added.
+                    if (BDArmorySettings.LIGHTFX != (BDArmorySettings.LIGHTFX = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.LIGHTFX, StringUtils.Localize("#LOC_BDArmory_Settings_LightFX"))))//"Light FX"
+                    {
+                        if (ExplosionFx.explosionFXPools != null)
+                            ExplosionFx.explosionFXPools.Clear();
+                        if (NukeFX.nukePool != null)
+                            NukeFX.nukePool.Clear();
+                    }
                 }
 
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, StringUtils.Localize("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
@@ -4936,6 +4913,7 @@ namespace BDArmory.UI
             {
                 SpawnUtils.DisableAllBulletsAndRockets();
                 ExplosionFx.DisableAllExplosionFX();
+                NukeFX.DisableAllExplosionFX();
                 FXEmitter.DisableAllFX();
                 CMDropper.DisableAllCMs();
                 BulletHitFX.DisableAllFX();
