@@ -26,6 +26,7 @@ IMPROVEMENTS / FIXES
 	- Remove the requirement of having a WM for the AI to work.
 	- Add the post-terrain avoidance cool-down slider to the AI GUI.
 	- AI now more intelligent about turning on Radars/Sonars; will not automatically turn on Active Sonar if present on a craft.
+	- Improved maneuvering behavior for the Orbital AI, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections.
 - Competition:
 	- Save/load tournament score weights to/from the settings.cfg.
 	- Waypoint Mode max laps can now be set to a user-specified value (WAYPOINT_MAX_LAPS, default 5) in the BDA settings menu.

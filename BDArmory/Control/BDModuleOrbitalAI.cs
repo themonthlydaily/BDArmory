@@ -43,6 +43,7 @@ namespace BDArmory.Control
         private bool hasPropulsion;
         private bool hasWeapons;
         private float maxAcceleration;
+        private float maxThrust;
         private Vector3 maxAngularAcceleration;
         private Vector3 availableTorque;
         private double minSafeAltitude;
@@ -126,11 +127,10 @@ namespace BDArmory.Control
 
 
         // Debugging
-        internal float nearInterceptBurnTime;
-        internal float nearInterceptApproachTime;
-        internal float lateralVelocity;
+        internal float distToCPA;
+        internal float timeToCPA;
+        internal float stoppingDist;
         internal Vector3 debugPosition;
-
 
         /// <summary>
         /// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -487,33 +487,20 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Maneuvering:
                     {
-                        // todo: implement for longer range movement.
-                        // https://github.com/MuMech/MechJeb2/blob/dev/MechJeb2/MechJebModuleRendezvousAutopilot.cs
-                        // https://github.com/MuMech/MechJeb2/blob/dev/MechJeb2/OrbitalManeuverCalculator.cs
-                        // https://github.com/MuMech/MechJeb2/blob/dev/MechJeb2/MechJebLib/Maths/Gooding.cs
+                        Vector3 interceptRanges = InterceptionRanges();
 
-                        float minRange = Mathf.Max(MinEngagementRange, targetVessel.GetRadius() + vesselStandoffDistance);
-                        float maxRange = Mathf.Max(weaponManager.gunRange, minRange * 1.2f);
-
-                        float minRangeProjectile = minRange;
-                        bool complete = false;
-                        bool usingProjectile = true;
+                        float minRange = interceptRanges.x;
+                        float maxRange = interceptRanges.y;
 
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
-                        if (weaponManager != null && weaponManager.selectedWeapon != null)
-                        {
-                            currentWeapon = weaponManager.selectedWeapon;
-                            minRange = Mathf.Max((currentWeapon as EngageableWeapon).engageRangeMin, minRange);
-                            maxRange = Mathf.Min((currentWeapon as EngageableWeapon).engageRangeMax, maxRange);
-                            usingProjectile = weaponManager.selectedWeapon.GetWeaponClass() != WeaponClasses.Missile;
-                        }
-
                         float currentRange = VesselDistance(vessel, targetVessel);
-                        bool nearInt = false;
                         Vector3 relVel = RelVel(vessel, targetVessel);
 
-                        if (currentRange < (!usingProjectile ? minRange : minRangeProjectile) && AwayCheck(minRange))
+                        float speedTarget = Mathf.Max(Mathf.Min(firingSpeed, maxAcceleration * 0.15f), firingSpeed / 5f);
+                        bool killVelOngoing = currentStatus.Contains("Kill Velocity") && (relVel.sqrMagnitude > speedTarget * speedTarget);
+
+                        if (currentRange < minRange && AwayCheck(minRange))
                         {
                             SetStatus("Maneuvering (Away)");
                             fc.throttle = 1;
@@ -521,64 +508,29 @@ namespace BDArmory.Control
                             fc.attitude = FromTo(targetVessel, vessel).normalized;
                             fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         }
-                        // Reduce near intercept time by accounting for target acceleration
-                        // It should be such that "near intercept" is so close that you would go past them after you stop burning despite their acceleration
-                        // Also a chase timeout after which both parties should just use their weapons regardless of range.
-                        else if (hasPropulsion
-                            && currentRange > maxRange
-                            && !(nearInt = NearIntercept(relVel, minRange))
-                            && CanInterceptShip(targetVessel))
-                        {
-                            SetStatus("Maneuvering (Intercept Target)"); // FIXME Josue If possible, it would be nice to see the approximate min separation and time to min separation in the status here and in the Kill Velocity status.
-                            Vector3 toTarget = FromTo(vessel, targetVessel);
-                            relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-
-                            toTarget = ToClosestApproach(toTarget, -relVel, minRange);
-                            debugPosition = toTarget;
-
-                            // Burn the difference between the target and current velocities.
-                            Vector3 desiredVel = toTarget.normalized * ManeuverSpeed;
-                            Vector3 burn = desiredVel + relVel;
-
-                            // Bias towards eliminating lateral velocity early on.
-                            Vector3 lateral = Vector3.ProjectOnPlane(burn, toTarget.normalized);
-                            burn = Vector3.Slerp(burn.normalized, lateral.normalized,
-                                Mathf.Clamp01(lateral.magnitude / (maxAcceleration * 10))) * burn.magnitude;
-
-                            lateralVelocity = lateral.magnitude;
-
-                            float throttle = Vector3.Dot(RelVel(vessel, targetVessel), toTarget.normalized) < ManeuverSpeed ? 1 : 0;
-                            if (burn.magnitude / maxAcceleration < 1 && fc.throttle == 0)
-                                throttle = 0;
-
-                            fc.throttle = throttle * Mathf.Clamp(burn.magnitude / maxAcceleration, 0.2f, 1);
-
-                            if (fc.throttle > 0)
-                                fc.attitude = burn.normalized;
-                            else
-                                fc.attitude = toTarget.normalized;
-                        }
+                        else if (hasPropulsion && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f) || killVelOngoing))
+                            KillVelocity(true);
+                        else if (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : 0.25f))
+                            InterceptTarget();
                         else
                         {
-                            if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed || nearInt))
+                            bool killAngOngoing = currentStatus.Contains("Kill Angular Velocity") && (AngularVelocity(vessel, targetVessel, 5f) < firingAngularVelocityLimit / 2);
+                            if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed))
                             {
-                                SetStatus("Maneuvering (Kill Velocity)");
-                                relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-                                complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 9;
-                                fc.attitude = (relVel + targetVessel.acceleration).normalized;
-                                fc.throttle = !complete ? 1 : 0;
+                                KillVelocity();
                             }
-                            else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)
+                            else if (hasPropulsion && targetVessel != null && (AngularVelocity(vessel, targetVessel, 5f) > firingAngularVelocityLimit || killAngOngoing))
                             {
                                 SetStatus("Maneuvering (Kill Angular Velocity)");
-                                complete = AngularVelocity(vessel, targetVessel) < firingAngularVelocityLimit / 2;
-                                fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)).normalized;
-                                fc.throttle = !complete ? 1 : 0;
+                                fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), vessel.PredictPosition(vessel.TimeToCPA(targetVessel))).normalized;
+                                fc.throttle = 1;
                             }
                             else // Drifting
                             {
                                 fc.throttle = 0;
                                 fc.attitude = FromTo(vessel, targetVessel).normalized;
+                                if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
+                                    fc.attitude = weaponManager.previousGun.FiringSolutionVector ?? fc.attitude;
                                 if (currentRange < minRange)
                                     SetStatus("Maneuvering (Drift Away)");
                                 else
@@ -610,6 +562,30 @@ namespace BDArmory.Control
             UpdateRCSVector(rcsVector);
         }
 
+        void KillVelocity(bool onIntercept = false)
+        {
+            if (onIntercept)
+                SetStatus($"Maneuvering (Kill Velocity), {timeToCPA:G2}s, , {distToCPA:N0}m");
+            else
+                SetStatus("Maneuvering (Kill Velocity)");
+            Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
+            fc.attitude = (relVel + targetVessel.perturbation).normalized;
+            fc.throttle = 1;
+        }
+
+        void InterceptTarget()
+        {
+            SetStatus($"Maneuvering (Intercept Target), {timeToCPA:G2}s, {distToCPA:N0}m");
+            Vector3 relPos = targetVessel.CoM - vessel.CoM;
+            Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
+
+            // Burn the difference between the target and current velocities.
+            Vector3 toIntercept = Intercept(relPos, relVel);
+            Vector3 burn = toIntercept.normalized * ManeuverSpeed + relVel;
+            fc.attitude = burn.normalized;
+            fc.throttle = 1f;
+        }
+
         void AddDebugMessages()
         {
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
@@ -619,14 +595,12 @@ namespace BDArmory.Control
                 debugString.AppendLine($"Has Weapons: {hasWeapons}");
                 if (targetVessel)
                 {
-                    Vector3 relVel = RelVel(vessel, targetVessel);
-                    float minRange = Mathf.Max(MinEngagementRange, targetVessel.GetRadius() + vesselStandoffDistance);
                     debugString.AppendLine($"Target Vessel: {targetVessel.GetDisplayName()}");
                     debugString.AppendLine($"Can Intercept: {CanInterceptShip(targetVessel)}");
-                    debugString.AppendLine($"Near Intercept: {NearIntercept(relVel, minRange)}");
-                    debugString.AppendLine($"Near Intercept Burn Time: {nearInterceptBurnTime:G3}");
-                    debugString.AppendLine($"Near Intercept Approach Time: {nearInterceptApproachTime:G3}");
-                    debugString.AppendLine($"Lateral Velocity: {lateralVelocity:G3}");
+                    debugString.AppendLine($"Target Range: {VesselDistance(vessel, targetVessel):G3}");
+                    debugString.AppendLine($"Time to CPA: {timeToCPA:G3}");
+                    debugString.AppendLine($"Distance to CPA: {distToCPA:G3}");
+                    debugString.AppendLine($"Stopping Distance: {stoppingDist:G3}");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
                 if (weaponManager) debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
@@ -651,7 +625,7 @@ namespace BDArmory.Control
             // Update status mode
             if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
                 currentStatusMode = StatusMode.Evading;
-            else if (CheckOrbitUnsafe() || belowSafeAlt)
+            else if (CheckOrbitDangerous() || belowSafeAlt)
                 currentStatusMode = StatusMode.CorrectingOrbit;
             else if (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow || currentCommand == PilotCommands.Attack)
             {
@@ -676,9 +650,13 @@ namespace BDArmory.Control
                     else
                         currentStatusMode = StatusMode.Stranded;
                 }
+                else if (CheckOrbitUnsafe() || belowSafeAlt)
+                    currentStatusMode = StatusMode.CorrectingOrbit;
                 else
                     currentStatusMode = StatusMode.Idle;
             }
+            else if (CheckOrbitUnsafe() || belowSafeAlt)
+                currentStatusMode = StatusMode.CorrectingOrbit;
             else
                 currentStatusMode = StatusMode.Idle;
 
@@ -784,6 +762,20 @@ namespace BDArmory.Control
             return RelVel(vessel, nearest.Vessel).sqrMagnitude < 200 * 200;
         }
 
+        private bool CheckOrbitDangerous()
+        {
+            Orbit o = vessel.orbit;
+            if (o.referenceBody != safeAltBody) // Body has been updated, update min safe alt
+            {
+                minSafeAltitude = o.referenceBody.MinSafeAltitude();
+                safeAltBody = o.referenceBody;
+            }
+            if (o.altitude < minSafeAltitude)
+                return true;
+            else
+                return false;
+        }
+
         private bool CheckOrbitUnsafe()
         {
             Orbit o = vessel.orbit;
@@ -794,31 +786,6 @@ namespace BDArmory.Control
             }
 
             return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
-        }
-
-        private bool NearIntercept(Vector3 relVel, float minRange)
-        {
-            float timeToKillVelocity = relVel.magnitude / Mathf.Max(maxAcceleration, 0.01f);
-
-            float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, -relVel.normalized) * Mathf.Deg2Rad;
-            float timeToRotate = BDAMath.SolveTime(rotDistance * 0.75f, maxAngularAcceleration.magnitude) / 0.75f;
-
-            Vector3 toTarget = FromTo(vessel, targetVessel);
-            Vector3 toClosestApproach = ToClosestApproach(toTarget, relVel, minRange);
-
-            // Return false if we aren't headed towards the target.
-            float velToClosestApproach = Vector3.Dot(relVel, toTarget.normalized);
-            if (velToClosestApproach < 10)
-                return false;
-
-            float timeToClosestApproach = AIUtils.TimeToCPA(toClosestApproach, -relVel, Vector3.zero, 9999);
-            if (timeToClosestApproach == 0)
-                return false;
-
-            nearInterceptBurnTime = timeToKillVelocity + timeToRotate;
-            nearInterceptApproachTime = timeToClosestApproach;
-
-            return timeToClosestApproach < (timeToKillVelocity + timeToRotate);
         }
 
         private bool CanInterceptShip(Vessel target)
@@ -839,6 +806,89 @@ namespace BDArmory.Control
                     Vector3.Dot(target.GetObtVelocity() - vessel.GetObtVelocity(), toTarget) < 0; // It is getting closer.
             }
             return canIntercept;
+        }
+
+        public float BurnTime(float deltaV, float totalConsumption)
+        {
+            float isp = GetMaxThrust(vessel) / totalConsumption;
+            return ((float)vessel.totalMass * (1.0f - 1.0f / Mathf.Exp(deltaV / isp)) / totalConsumption);
+        }
+
+        public float StoppingDistance(float speed)
+        {
+            float consumptionRate = GetConsumptionRate(vessel);
+            float time = BurnTime(speed, consumptionRate);
+            float jerk = (float)(maxThrust / (vessel.totalMass - consumptionRate)) - maxAcceleration;
+            return speed * time + 0.5f * -maxAcceleration * time * time + 1 / 6 * -jerk * time * time * time;
+        }
+
+        private bool ApproachingIntercept(float margin = 0.0f)
+        {
+            Vector3 relPos = targetVessel.CoM - vessel.CoM;
+            Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
+            if (Vector3.Dot(relVel, (-relPos).normalized) < 10.0)
+                return false;
+            float angleToRotate = Vector3.Angle(vessel.ReferenceTransform.up, relVel.normalized) * ((float)Math.PI / 180.0f) * 0.75f;
+            Vector3 angularAcceleration = maxAngularAcceleration;
+            float angAccelMag = angularAcceleration.magnitude;
+            float timeToRotate = BDAMath.SolveTime(angleToRotate, angAccelMag) / 0.75f;
+            float interceptStoppingDistance = StoppingDistance(relVel.magnitude) + relVel.magnitude * (margin + timeToRotate * 3f);
+            Vector3 toIntercept = Intercept(relPos, relVel);
+            float distanceToIntercept = toIntercept.magnitude;
+            distToCPA = distanceToIntercept;
+            timeToCPA = vessel.TimeToCPA(targetVessel);
+            stoppingDist = interceptStoppingDistance;
+
+            return distanceToIntercept < interceptStoppingDistance;
+        }
+
+        private bool OnIntercept(float tolerance)
+        {
+            if (targetVessel is null)
+                return false;
+            Vector3 relPos = targetVessel.CoM - vessel.CoM;
+            Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
+            if (Vector3.Dot(relPos, relVel) >= 0.0)
+                return false;
+            timeToCPA = vessel.TimeToCPA(targetVessel);
+            Vector3 cpa = vessel.PredictPosition(timeToCPA);
+            float interceptRange = InterceptionRange();
+            float interceptRangeTolSqr = (interceptRange * (tolerance + 1f)) * (interceptRange * (tolerance + 1f));
+            return cpa.sqrMagnitude < interceptRangeTolSqr && Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
+        }
+
+        private Vector3 Intercept(Vector3 relPos, Vector3 relVel)
+        {
+            Vector3 lateralVel = Vector3.ProjectOnPlane(-relVel, relPos);
+            Vector3 lateralOffset = lateralVel.normalized * InterceptionRange();
+            return relPos + lateralOffset;
+        }
+
+        private Vector3 InterceptionRanges()
+        {
+            Vector3 interceptRanges = Vector3.zero;
+            float minRange = Mathf.Max(MinEngagementRange, targetVessel.GetRadius());
+            float maxRange = Mathf.Max(weaponManager.gunRange, minRange * 1.2f);
+            bool usingProjectile = true;
+            if (weaponManager != null && weaponManager.selectedWeapon != null)
+            {
+                currentWeapon = weaponManager.selectedWeapon;
+                EngageableWeapon engageableWeapon = currentWeapon as EngageableWeapon;
+                minRange = Mathf.Max(engageableWeapon.GetEngagementRangeMin(), minRange);
+                maxRange = Mathf.Min(engageableWeapon.GetEngagementRangeMax(), maxRange);
+                usingProjectile = weaponManager.selectedWeapon.GetWeaponClass() != WeaponClasses.Missile;
+            }
+            float interceptRange = minRange + (maxRange - minRange) * (usingProjectile ? 0.25f : 0.75f);
+            interceptRanges.x = minRange;
+            interceptRanges.y = maxRange;
+            interceptRanges.z = interceptRange;
+            return interceptRanges;
+        }
+
+        private float InterceptionRange()
+        {
+            Vector3 interceptRanges = InterceptionRanges();
+            return interceptRanges.z;
         }
 
         private bool GunReady(ModuleWeapon gun)
@@ -889,33 +939,6 @@ namespace BDArmory.Control
 
             fc.RCSVector = inputVec;
         }
-
-        private Vector3 ToClosestApproach(Vector3 toTarget, Vector3 relVel, float minRange)
-        {
-            Vector3 relVelInverse = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-            float timeToIntercept = AIUtils.TimeToCPA(toTarget, relVelInverse, Vector3.zero, 9999);
-
-            // Minimising the target closest approach to the current closest approach prevents
-            // ships that are targeting each other from fighting over the closest approach based on their min ranges.
-            // todo: allow for trajectory fighting if fuel is high.
-            Vector3 actualClosestApproach = toTarget + Displacement(relVelInverse, Vector3.zero, timeToIntercept);
-            float actualClosestApproachDistance = actualClosestApproach.magnitude;
-
-            // Get a position that is laterally offset from the target by our desired closest approach distance.
-            Vector3 rotatedVector = Vector3.ProjectOnPlane(relVel, toTarget.normalized).normalized;
-
-            // Lead if the target is accelerating away from us.
-            if (Vector3.Dot(targetVessel.acceleration.normalized, toTarget.normalized) > 0)
-                toTarget += Displacement(Vector3.zero, toTarget.normalized * Vector3.Dot(targetVessel.acceleration, toTarget.normalized), Mathf.Min(timeToIntercept, 999));
-
-            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, weaponManager ? weaponManager.gunRange * 0.5f : actualClosestApproachDistance));
-
-            // Need a maximum angle so that we don't end up going further away at close range.
-            toClosestApproach = Vector3.RotateTowards(toTarget, toClosestApproach, 22.5f * Mathf.Deg2Rad, float.MaxValue);
-
-            return toClosestApproach;
-        }
-
         #endregion
 
         #region Utils
@@ -936,11 +959,11 @@ namespace BDArmory.Control
                 MoI.z.Equals(0) ? float.MaxValue : torque.z / MoI.z);
         }
 
-        public static float AngularVelocity(Vessel v, Vessel t)
+        public static float AngularVelocity(Vessel v, Vessel t, float window)
         {
             Vector3 tv1 = FromTo(v, t);
-            Vector3 tv2 = tv1 + RelVel(v, t);
-            return Vector3.Angle(tv1.normalized, tv2.normalized);
+            Vector3 tv2 = tv1 + window * RelVel(v, t);
+            return Vector3.Angle(tv1.normalized, tv2.normalized) / window;
         }
 
         public static float VesselDistance(Vessel v1, Vessel v2)
@@ -972,9 +995,10 @@ namespace BDArmory.Control
             }
         }
 
-        public static float GetMaxAcceleration(Vessel v)
+        public float GetMaxAcceleration(Vessel v)
         {
-            return GetMaxThrust(v) / v.GetTotalMass();
+            maxThrust = GetMaxThrust(v);
+            return maxThrust / v.GetTotalMass();
         }
 
         public static float GetMaxThrust(Vessel v)
@@ -982,6 +1006,14 @@ namespace BDArmory.Control
             float thrust = VesselModuleRegistry.GetModuleEngines(v).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.MaxThrustOutputVac(true));
             thrust += VesselModuleRegistry.GetModules<ModuleRCS>(v).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
             return thrust;
+        }
+
+        private static float GetConsumptionRate(Vessel v)
+        {
+            float consumptionRate = 0.0f;
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(v))
+                consumptionRate += Mathf.Lerp(engine.minFuelFlow, engine.maxFuelFlow, 0.01f * engine.thrustPercentage) * engine.flowMultiplier;
+            return consumptionRate;
         }
         #endregion
 
