@@ -35,7 +35,7 @@ IMPROVEMENTS / FIXES
 	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.
 	- Vengeance Mutator blast radius and delay can now be set in the BDA settings menu.
 	- Don't check for fuel for afterburners if infinite fuel is enabled.
-	- Fix issue with subSystem Battledamage option occasionally setting non-flammable parts/parts without subsystem modules on fire.
+	- Fix issue with Subsystem Battle Damage option occasionally setting non-flammable parts/parts without subsystem modules on fire.
 - Weapons:
 	- Fix lasers being able to fire as long as > 0 EC is present.
 	- Add bulletLuminance field for setting non-tracer brightness.
@@ -56,7 +56,7 @@ IMPROVEMENTS / FIXES
 		- Fixed maddog/dumbfire behavior of ARH missiles, missile should now be able to lock onto targets in front of it when launched
 		- Throttle now determines fuel burn, missile burnout for missiles with fuel burn now depends on fuel expenditure rather than just preset burn times.
 		- Fix some typos and inconsistencies in the wording of the right click menu.
-		- Improve logic for when and how AI attempts dumbfire launches when missing requisite senors.
+		- Improve logic for when and how AI attempts dumbfire launches when missing requisite sensors.
 		- Improve logic for sonar-guided weapons, will no longer try to satisfy sonar need with radars if present.
 - Detectors:
 	- Fixed rare bug where, when spawning in vehicles while the on-screen debug elements are turned on the vessel radar cross-section would update too early, causing the radar cross-section to default to the vessel's mass.
