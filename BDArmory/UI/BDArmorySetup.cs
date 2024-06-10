@@ -58,7 +58,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectWayPointSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
-		
+
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
         [BDAWindowSettingsField] static Rect _WindowRectScoresUIHidden;
@@ -879,7 +879,7 @@ namespace BDArmory.UI
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
             BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE;
         }
-        
+
         /// <summary>
         /// Update which mutators are selected in the UI.
         /// Call this if the mutators are modified somewhere other than by toggling them in the UI.
@@ -2871,6 +2871,10 @@ namespace BDArmory.UI
                         // if (GUI.Button(SLineRect(++line), "Quit KSP."))
                         // {
                         //     TournamentAutoResume.AutoQuit(0);
+                        // }
+                        // if (GUI.Button(SLineRect(++line), $"Min Safe Altitudes"))
+                        // {
+                        //     foreach (var body in FlightGlobals.Bodies) Debug.Log($"DEBUG Min Safe Altitude for {body.GetName()} is {body.MinSafeAltitude()}m");
                         // }
                     }
 #endif
