@@ -62,6 +62,7 @@ namespace BDArmory.FX
 
         private float EMPRadius = 100;
         private float scale = 1;
+        private float lightScale = 1;
         const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
 
         static RaycastHit[] lineOfSightHits;
@@ -138,12 +139,14 @@ namespace BDArmory.FX
                 {
                     LightFx = gameObject.GetComponent<Light>();
                     LightFx.range = BDAMath.Sqrt(yield) * 500;
-                    LightFx.intensity = 8f; // Reset light intensity.
+                    lightScale = 8f * Mathf.Log(yield);
+                    LightFx.intensity = lightScale; // Reset light intensity.                    
                 }
                 //comment out the above and uncomment the below if !LIGHTFX = light range/intensity remains 0;
                 //LightFx = gameObject.GetComponent<Light>();
                 //LightFx.range = BDArmorySettings.LIGHTFX ? 0 : BDAMath.Sqrt(yield) * 500;
-                //LightFx.intensity = BDArmorySettings.LIGHTFX ? 0 : 8f; // Reset light intensity.
+                //lightScale = 8f * Mathf.Log(yield);
+                //LightFx.intensity = BDArmorySettings.LIGHTFX ? 0 : lightScale; // Reset light intensity.
 
                 audioSource = gameObject.GetComponent<AudioSource>();
                 if (!string.IsNullOrEmpty(SoundPath))
@@ -345,7 +348,7 @@ namespace BDArmory.FX
             {
                 if (LightFx != null && BDArmorySettings.LightFX)
                 {
-                    LightFx.intensity -= 3 * scale * Time.deltaTime;
+                    LightFx.intensity -= 3 * lightScale * Time.deltaTime;
                 }
                 if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
                 {
