@@ -72,7 +72,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DISABLE_RAMMING = false;                  // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistentSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour). This could be removed now.
         [BDAPersistentSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
-        [BDAPersistentSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
+        //[BDAPersistentSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
         [BDAPersistentSettingsField] public static bool AUTO_ENABLE_VESSEL_SWITCHING = false;     // Automatically enables vessel switching on competition start.
         [BDAPersistentSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistentSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = true;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
