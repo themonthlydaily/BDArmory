@@ -62,7 +62,7 @@ namespace BDArmory.Evolution
             }
             if ((axisMask & MASK_YAW) == MASK_YAW)
             {
-                if (node.HasValue("ignoreRoll") && node.GetValue("ignoreRoll") == "False")
+                if (node.HasValue("ignoreYaw") && node.GetValue("ignoreYaw") == "False")
                 {
                     shouldMutate = true;
                 }
