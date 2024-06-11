@@ -16,7 +16,10 @@ namespace BDArmory.Evolution
 
         private Dictionary<string, ConfigNode> nodeMap = new Dictionary<string, ConfigNode>();
 
-        List<string> includedModules = new List<string>() { "ModuleGimbal", "ModuleControlSurface", "BDModulePilotAI", "MissileFire" };
+        // Lifting surfaces to detect for rotation and position modification
+        List<string> includedLiftParts = new List<string>() { "ModuleControlSurface", "ModuleLiftingSurface" };
+
+        List<string> includedModules = new List<string>() { "ModuleGimbal", "ModuleControlSurface", "BDModulePilotAI", "MissileFire", "ModuleLiftingSurface"};
 
         List<string> includedParams = new List<string>()
         {
@@ -260,6 +263,14 @@ namespace BDArmory.Evolution
             // check for engine gimbals
             CheckSymmetry(craft, "ModuleGimbal", "gimbalLimiter");
 
+            // check for lifting surfaces and create key for each offset vector direction
+            foreach (var mod_name in includedLiftParts)
+            {
+                CheckSymmetry(craft, mod_name, "offsetX");
+                CheckSymmetry(craft, mod_name, "offsetY");
+                CheckSymmetry(craft, mod_name, "offsetZ");
+            }
+
             if ( shouldRandomize )
             {
                 Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine randomizing weight map with {0} keys", mutationWeightMap.Count));
@@ -366,9 +377,17 @@ namespace BDArmory.Evolution
                 case "BDModulePilotAI":
                     return GeneratePilotAINudgeMutation(param, key);
                 case "ModuleControlSurface":
+                    if (param.StartsWith("offset")){
+                        return GenerateLiftSurfaceOffsetMutation(part, param, key);
+                    }
+                    else
+                    {
                     return GenerateControlSurfaceMutation(part, key);
+                    }
                 case "ModuleGimbal":
                     return GenerateEngineGimbalMutation(part, key);
+                case "ModuleLiftingSurface":
+                    return GenerateLiftSurfaceOffsetMutation(part, param, key);
             }
             throw new Exception(string.Format("VariantEngine bad key: {0}", key));
         }
@@ -398,6 +417,16 @@ namespace BDArmory.Evolution
             string[] partNames = parts.Split(',');
             var positivePole = new ControlSurfaceNudgeMutation(partNames, "authorityLimiter", crystalRadius, key, 1);
             var negativePole = new ControlSurfaceNudgeMutation(partNames, "authorityLimiter", -crystalRadius, key, -1);
+            var results = new List<VariantMutation>() { positivePole, negativePole };
+            return results;
+        }
+
+        private List<VariantMutation> GenerateLiftSurfaceOffsetMutation(string parts, string paramName, string key)
+        {
+            Debug.Log("Starting VariantEngine.GenerateLiftSurfaceOffsetMutation");
+            string[] partNames = parts.Split(',');
+            var positivePole = new ControlSurfaceOffsetMutation(partNames, paramName, crystalRadius, key, 1);
+            var negativePole = new ControlSurfaceOffsetMutation(partNames, paramName, -crystalRadius, key, -1);
             var results = new List<VariantMutation>() { positivePole, negativePole };
             return results;
         }
@@ -512,6 +541,19 @@ namespace BDArmory.Evolution
         }
 
         public bool MutateNode(ConfigNode node, string key, float value)
+        {
+            if (node.HasValue(key))
+            {
+                node.SetValue(key, value);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool MutateStringNode(ConfigNode node, string key, string value)
         {
             if (node.HasValue(key))
             {
