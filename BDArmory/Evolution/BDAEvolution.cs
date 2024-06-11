@@ -378,6 +378,12 @@ namespace BDArmory.Evolution
             var seedName = LoadSeedCraft();
             engine.Configure(craft, weightMapFile);
 
+            // add the original
+            // Note: should be called first before variants are created since there appears to be some mutation operations that are not fully isolated (debugging WIP)
+            // Saving first also allows avoidance of needing to use craft.CreateCopy() for the reference craft
+            var referenceName = string.Format("R{0}", groupId);
+            SaveVariant(craft, referenceName);
+
             // generate dipolar variants for all primary axes
             var mutations = engine.GenerateMutations(BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT);
             List<Variant> variants = new List<Variant>();
@@ -390,10 +396,6 @@ namespace BDArmory.Evolution
                 variants.Add(mutation.GetVariant(id.ToString(), name));
                 SaveVariant(newVariant, name);
             }
-
-            // add the original
-            var referenceName = string.Format("R{0}", groupId);
-            SaveVariant(craft.CreateCopy(), referenceName);
 
             // select random adversary
             LoadAdversaryCraft();
