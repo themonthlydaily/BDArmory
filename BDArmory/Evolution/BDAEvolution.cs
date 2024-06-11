@@ -109,6 +109,9 @@ namespace BDArmory.Evolution
 
         private EvolutionState evolutionState = null;
 
+        // Current active variant group (used to render in EvolutionWindow or similar)
+        public VariantGroup ActiveVariantGroup() {return evolutionState.groups.Last();}
+
         private VariantEngine engine = null;
 
         // Spawn settings

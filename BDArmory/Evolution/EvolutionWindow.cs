@@ -5,6 +5,7 @@ using KSP.Localization;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using System.Linq;
 
 namespace BDArmory.Evolution
 {
@@ -165,6 +166,19 @@ namespace BDArmory.Evolution
             }
             GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _lineHeight), statusLine);
             offset += _lineHeight;
+
+            // Display configuration of each variant currently running
+            if (status == EvolutionStatus.RunningTournament)
+            {
+                foreach (var variant in evolution.ActiveVariantGroup().variants)
+                {
+                    // Print a line for the first mutated part to represent that variant. (we don't want one line per symmetry part here, only one line per variant)
+                    var part = variant.mutatedParts.First();
+                    GUI.Label(new Rect(_margin, offset, 5 * fifth, _lineHeight), string.Format("{0}:, {2}: {3}, from: {5} to: {4}, part_id: {1}", variant.name, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
+                    offset += _lineHeight;
+                }
+            }
+
             GUI.Label(new Rect(_margin, offset, fifth, _lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_Evolution_Group")}: ");
             GUI.Label(new Rect(_margin + fifth, offset, fifth, _lineHeight), evolution.GroupId.ToString());
             GUI.Label(new Rect(_margin + 2 * fifth, offset, fifth, _lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_Evolution_Heat")}: ");
