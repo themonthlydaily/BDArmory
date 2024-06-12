@@ -14,6 +14,7 @@ IMPROVEMENTS / FIXES
 		- Adds a script for maintaining structure between localisation files.
 		- Some entries in languages other than en-us will require updating — these are currently commented out with "???" as a placeholder.
 	- Adds option to toggle LightFX for explosions on/off for performance/parallax compatibility.
+	- Adds option to toggle off bullet water hit effects for performance.
 	- Skip the 'ProgressTracking' scenario when creating a clean save to avoid triggering tutorials again.
 	- Expand the debug info for missing elements when loading materials to be more helpful.
 - UI:
@@ -26,6 +27,7 @@ IMPROVEMENTS / FIXES
 	- Can now toggle AI radar shut-off behavior when targeted by HARMs either on a per-radar basis, or globally for all radars on a craft via the Weapon Manager.
 	- AI now understands how to aim weapons not aligned with prograde for Schrage Musik-style weapon arrangements.
 		- Note: depending on the airframe, angles outside of roughly -5° — 35° pitch and -10° — 10° yaw are dynamically unstable.
+	- AI now understands how to aim fixed guns laterally offset from CoM for B Wing-style weapon arrangements.
 	- Remove legacy noise added to fly-to-vessel that would throw off a craft's ability to snipe at long-range.
 	- AI now takes evasive maneuvers when under attack from incoming INS/GPS missiles.
 	- Fixes AutoTune infinite fuel not applying to Firespitter helicopter engines.
