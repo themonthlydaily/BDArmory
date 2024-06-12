@@ -37,6 +37,7 @@ IMPROVEMENTS / FIXES
 	- Waypoint Mode max laps can now be set to a user-specified value (WAYPOINT_MAX_LAPS, default 5) in the BDA settings menu.
 	- Only show non-zero fields in the results.csv and when parsing multiple files separately.
 	- Don't break spawning if a craft loses parts while waiting for the WM if "Start Comp. Despite Failures" is enabled.
+	- Disable all FX and projectiles when clearing the field for spawning.
 - Game Modes:
 	- Waypoint Gates can now set AI speed limits on a per-gate basis to permit setting up braking zones before a turn/Rally courses with target speeds/etc.
 	- 'Activate Guard After Gate n' setting now ends the course when FFA is complete, not when last alive craft completes the course.

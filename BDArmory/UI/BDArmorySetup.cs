@@ -4915,14 +4915,18 @@ namespace BDArmory.UI
         {
             if (fromTo.from == GameScenes.FLIGHT && fromTo.to != GameScenes.FLIGHT)
             {
-                SpawnUtils.DisableAllBulletsAndRockets();
-                ExplosionFx.DisableAllExplosionFX();
-                NukeFX.DisableAllExplosionFX();
-                FXEmitter.DisableAllFX();
-                CMDropper.DisableAllCMs();
-                BulletHitFX.DisableAllFX();
-                // FIXME Add in any other things that may otherwise continue doing stuff on scene changes, e.g., various FX.
+                DisableAllFXAndProjectiles();
             }
+        }
+        public static void DisableAllFXAndProjectiles()
+        {
+            SpawnUtils.DisableAllBulletsAndRockets();
+            ExplosionFx.DisableAllExplosionFX();
+            NukeFX.DisableAllExplosionFX();
+            FXEmitter.DisableAllFX();
+            CMDropper.DisableAllCMs();
+            BulletHitFX.DisableAllFX();
+            // FIXME Add in any other things that may otherwise continue doing stuff on scene changes, e.g., various FX.
         }
     }
 }
