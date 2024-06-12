@@ -2884,6 +2884,10 @@ namespace BDArmory.UI
                         // {
                         //     TournamentAutoResume.AutoQuit(0);
                         // }
+                        // if (GUI.Button(SLineRect(++line), $"Min Safe Altitudes"))
+                        // {
+                        //     foreach (var body in FlightGlobals.Bodies) Debug.Log($"DEBUG Min Safe Altitude for {body.GetName()} is {body.MinSafeAltitude()}m");
+                        // }
                     }
 #endif
                 }
