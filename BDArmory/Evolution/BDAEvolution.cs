@@ -419,6 +419,11 @@ namespace BDArmory.Evolution
         {
             var info = new DirectoryInfo(seedDirectory);
             var seeds = info.GetFiles("*.craft").ToList();
+            // TODO:
+            // Pre-existing seed files that are overwritten keep the old creation time
+            // (e.g. if the evolution program is stopped and restarted or started again on a new save) of seeds 
+            // Need to check to make sure previous seed name doesn't exist when saving to avoid this
+            // (can't use file modification time since LastWriteTime is only available on windows NT file systems)
             var latestSeed = seeds.OrderBy(e => e.CreationTimeUtc).Last().Name;
             Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution using latest seed: {0}", latestSeed));
             ConfigNode node = ConfigNode.Load(string.Format("{0}/{1}", seedDirectory, latestSeed));
