@@ -389,8 +389,7 @@ namespace BDArmory.Evolution
             List<Variant> variants = new List<Variant>();
             foreach (var mutation in mutations)
             {
-                ConfigNode newVariant = craft.CreateCopy();
-                mutation.Apply(newVariant, engine);
+                ConfigNode newVariant = mutation.Apply(craft, engine);
                 var id = nextVariantId;
                 var name = GetNextVariantName();
                 variants.Add(mutation.GetVariant(id.ToString(), name));
