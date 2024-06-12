@@ -499,7 +499,8 @@ namespace BDArmory.Weapons.Missiles
                 return (int)reloadableRail.ammoCount;
             }
         }
-
+        public bool isMMG = false;
+        
         public override void OnAwake()
         {
             base.OnAwake();
@@ -507,6 +508,7 @@ namespace BDArmory.Weapons.Missiles
             if (MMG == null)
             {
                 hasAmmo = false;
+                isMMG = true;
             }
         }
 
