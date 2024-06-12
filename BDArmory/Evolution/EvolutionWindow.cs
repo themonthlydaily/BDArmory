@@ -6,6 +6,7 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using System.Linq;
+using System;
 
 namespace BDArmory.Evolution
 {
@@ -174,7 +175,7 @@ namespace BDArmory.Evolution
                 {
                     // Print a line for the first mutated part to represent that variant. (we don't want one line per symmetry part here, only one line per variant)
                     var part = variant.mutatedParts.First();
-                    GUI.Label(new Rect(_margin, offset, 5 * fifth, _lineHeight), string.Format("{0}:, {2}: {3}, from: {5} to: {4}, part_id: {1}", variant.name, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
+                    GUI.Label(new Rect(_margin, offset, 5 * fifth, _lineHeight), string.Format("{0}:, {2}: {3}, from: {5} to: {4}, part_id: {1}", variant.name, part.partName, part.moduleName, part.paramName, Math.Round(part.value, 3), Math.Round(part.referenceValue, 3)));
                     offset += _lineHeight;
                 }
             }
