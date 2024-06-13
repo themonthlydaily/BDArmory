@@ -128,6 +128,7 @@ namespace BDArmory.VesselSpawning
             {
                 yield return SpawnUtils.RemoveAllVessels();
                 yield return WaitForTerrain(spawnConfig, viewDistance, spawnAirborne);
+                BDArmorySetup.DisableAllFXAndProjectiles();
             }
             else // Otherwise, just try spawning at the specified location.
             {
