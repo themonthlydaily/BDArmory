@@ -1,4 +1,8 @@
-﻿1.6.12.0
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Updated Chinese localization thanks to user Marv1n-M.
+
+1.6.12.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix Pwing HP scaling for large pwings being used as fuselages.
