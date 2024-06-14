@@ -6471,7 +6471,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
 
-                            unguidedWeapon = weaponCandidate.GetWeaponClass() == WeaponClasses.Missile && UnguidedMissile(ml, distanceToTarget);
+                            unguidedWeapon = UnguidedMissile(ml, distanceToTarget);
 
                             // check DLZ                            
                             float fireFOV = -1;
