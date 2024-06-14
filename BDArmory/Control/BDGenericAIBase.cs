@@ -666,12 +666,14 @@ namespace BDArmory.Control
         #endregion
         /// <summary>
         /// Prevent fuel drain (control function).
+        /// Note: CheatOptions.InfinitePropellant doesn't work for FS helicopter engines, so we need to maintain fuel manually.
         /// </summary>
         /// <param name="active">Activate or deactive fuel preservation.</param>
         public void MaintainFuelLevels(bool active)
         {
             if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
             if (active) maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsCoroutine());
+            CheatOptions.InfinitePropellant = active || BDArmorySettings.INFINITE_FUEL; // Also set the cheat so that it syncs with the cheat options.
         }
         /// <summary>
         /// Prevent fuel drain (coroutine).
