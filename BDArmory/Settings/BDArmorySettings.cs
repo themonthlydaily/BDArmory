@@ -31,12 +31,15 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
+        [BDAPersistentSettingsField] public static float VESSEL_WAYPOINT_WINDOW_WIDTH = 480f;
         [BDAPersistentSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
         [BDAPersistentSettingsField] public static float GUI_OPACITY = 1f;                   // Modify the GUI opacity.
+        [BDAPersistentSettingsField] public static float UI_SCALE = 1f; // Global UI scaling
+        public static float PREVIOUS_UI_SCALE = 1f; // For tracking changes
         #endregion
 
         #region General toggle settings
-        //[BDAPersistentSettingsField] public static bool INSTAKILL = true; //Deprecated, only affects lasers; use an Instagib mutator isntead
+        //[BDAPersistentSettingsField] public static bool INSTAKILL = true; //Deprecated, only affects lasers; use an Instagib mutator instead
         [BDAPersistentSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
         [BDAPersistentSettingsField] public static bool VM_TOOLBAR_BUTTON = true;                 // Show or hide the BDA VM toolbar button.
         [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;              //infinite Bullets/rockets/laserpower
@@ -44,8 +47,13 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool LIMITED_ORDINANCE = false;         //MML ammo clamped to salvo size, no relaods
         [BDAPersistentSettingsField] public static bool INFINITE_FUEL = false;              //Infinite propellant
         [BDAPersistentSettingsField] public static bool INFINITE_EC = false;                          //Infinite electric charge
+        [BDAPersistentSettingsField] public static bool PERFORMANCE_OPTIONS = true;
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
+        [BDAPersistentSettingsField] public static bool WATER_HIT_FX = true;
+        public static bool waterHitEffect => PERFORMANCE_OPTIONS && WATER_HIT_FX;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
+        [BDAPersistentSettingsField] public static bool LIGHTFX = true;                       // explosions spawn a LightFX
+        public static bool LightFX => PERFORMANCE_OPTIONS && LIGHTFX;
         [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST_MODE = true;              // true = reticle follows bullet CPA position, false = reticle follows aiming position.
@@ -58,7 +66,9 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool SHELL_COLLISIONS = true;
         [BDAPersistentSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistentSettingsField] public static bool GAPLESS_PARTICLE_EMITTERS = true;         // Use gapless particle emitters.
+        public static bool GaplessParticleEmitters => PERFORMANCE_OPTIONS && GAPLESS_PARTICLE_EMITTERS;
         [BDAPersistentSettingsField] public static bool FLARE_SMOKE = true;                       // Flares leave a trail of smoke.
+        public static bool FlareSmoke => PERFORMANCE_OPTIONS && FLARE_SMOKE;
         [BDAPersistentSettingsField] public static bool DISABLE_RAMMING = false;                  // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistentSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour). This could be removed now.
         [BDAPersistentSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
@@ -71,6 +81,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
+        [BDAPersistentSettingsField] public static bool AUTO_LOG_TIME_SYNC = false;               // Log time synchronisation info automatically during competitions.
+        [BDAPersistentSettingsField] public static float LOG_TIME_SYNC_INTERVAL = 0.2f;           // Interval for logging time synchronisation information (approx).
         [BDAPersistentSettingsField] public static bool DRAW_VESSEL_TRAILS = true;                // Draw a trail to visualize vessel path during the heat
         [BDAPersistentSettingsField] public static int VESSEL_TRAIL_LENGTH = 300;                   //Max length of trails, in seconds. Defaults to competition length
         [BDAPersistentSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
@@ -261,6 +273,9 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
+        #endregion
+
+        #region Hall of Shame Settings
         [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
         [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
         [BDAPersistentSettingsField] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
@@ -269,6 +284,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float HOS_DMG = 0;
         [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
         [BDAPersistentSettingsField] public static bool HOS_SAS = false;
+        [BDAPersistentSettingsField] public static bool HOS_ASTEROID = false;
+        [BDAPersistentSettingsField] public static string HOS_MUTATOR = "";
         [BDAPersistentSettingsField] public static string HOS_BADGE = "";
         #endregion
 
@@ -308,6 +325,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;             // Waypoint section of Vessel Spawner Window.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_START_COMPETITION_AUTOMATICALLY = false; // Automatically start a competition after spawning succeeds.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_INITIAL_VELOCITY = false;     // Set planes at their idle speed after dropping them at the start of a competition.
+        [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_CS_FOLLOWS_CENTROID = false;  // The continuous spawning spawn point follows the brawl centroid with bias back to the original spawn point.
         #endregion
 
         #region Vessel Mover settings
@@ -338,6 +356,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
         [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
         [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
+        [BDAPersistentSettingsField] public static int WAYPOINT_MAX_LAPS = 5;                     // Configurable max number of laps for the laps slider
         #endregion
 
         #region Heartbleed
@@ -371,8 +390,16 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
         [BDAPersistentSettingsField] public static int MUTATOR_APPLY_NUM = 1;
         [BDAPersistentSettingsField] public static bool MUTATOR_ICONS = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GUNGAME = false;
+        [BDAPersistentSettingsField] public static float VENGEANCE_DELAY = 2.5f;
+        [BDAPersistentSettingsField] public static float VENGEANCE_YIELD = 1.5f;
         #endregion
+        #region GunGame
+        [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;
+        [BDAPersistentSettingsField] public static bool GG_CYCLE_LIST = false;
+        //[BDAPersistentSettingsField] public static bool GG_ANNOUNCER = false;
 
+        #endregion
         #region Tournament settings
         [BDAPersistentSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
         [BDAPersistentSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, Gauntlet, etc.)
@@ -390,6 +417,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
         [BDAPersistentSettingsField] public static float TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS = 0;   // Timewarp between rounds in minutes.
         [BDAPersistentSettingsField] public static bool AUTO_RESUME_TOURNAMENT = false;            // Automatically load the game the last incomplete tournament was running in and continue the tournament.
+        [BDAPersistentSettingsField] public static bool AUTO_RESUME_CONTINUOUS_SPAWN = false;      // Automatically load the game the last continuous spawn was running in and start running continuous spawn again.
         [BDAPersistentSettingsField] public static float QUIT_MEMORY_USAGE_THRESHOLD = float.MaxValue; // Automatically quit KSP when memory usage is beyond this. (0 = disabled)
         [BDAPersistentSettingsField] public static bool AUTO_QUIT_AT_END_OF_TOURNAMENT = false;    // Automatically quit at the end of a tournament (for automation).
         [BDAPersistentSettingsField] public static bool AUTO_GENERATE_TOURNAMENT_ON_RESUME = false; // Automatically generate a tournament after loading the game if the last tournament was complete or missing.

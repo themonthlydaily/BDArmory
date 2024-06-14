@@ -182,7 +182,7 @@ namespace BDArmory.VesselSpawning
             int spawnedVesselCount = 0; // Reset our spawned vessel count.
             var spawnAirborne = spawnConfig.altitude > 10;
             var spawnBody = FlightGlobals.Bodies[spawnConfig.worldIndex];
-            var spawnInOrbit = spawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
+            var spawnInOrbit = spawnConfig.altitude >= spawnBody.MinSafeAltitude(); // Min safe orbital altitude
             var withInitialVelocity = spawnAirborne && BDArmorySettings.VESSEL_SPAWN_INITIAL_VELOCITY;
             var spawnPitch = (withInitialVelocity || spawnInOrbit) ? 0f : -80f;
             bool PinataMode = false;
@@ -222,7 +222,10 @@ namespace BDArmory.VesselSpawning
                         ++spawnedVesselCount;
                     }
                     if (!spawnInOrbit && spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnConfig.craftFiles.Count)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
-                    vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, spawnPitch, spawnAirborne, spawnInOrbit));
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && craftUrl.Contains(BDArmorySettings.PINATA_NAME))
+                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, 25000, spawnPitch, true, false));
+                    else
+                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, spawnPitch, spawnAirborne, spawnInOrbit));
                 }
             }
             else

@@ -9,6 +9,7 @@ using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.ModIntegration;
 
 namespace BDArmory.GameModes
 {
@@ -198,7 +199,7 @@ namespace BDArmory.GameModes
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid == null) continue;
+                    if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
@@ -238,9 +239,9 @@ namespace BDArmory.GameModes
             if (!(BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID && BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD)) radius = BDArmorySettings.ASTEROID_RAIN_RADIUS * 1000f; // Convert to m.
             numberOfAsteroids = BDArmorySettings.ASTEROID_RAIN_NUMBER;
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
-            if (spawnPoint.magnitude > 9e4f)
+            if (spawnPoint.magnitude > PhysicsRangeExtender.GetPRERange())
             {
-                if (warning) { BDACompetitionMode.Instance.competitionStatus.Add($"Asteroid Rain spawning point is {spawnPoint.magnitude / 1000:F1}km away, which is more than 10 times the radius away. Spawning here instead."); }
+                if (warning) { BDACompetitionMode.Instance.competitionStatus.Add($"Asteroid Rain spawning point is {spawnPoint.magnitude / 1000:F1}km away, which is more than the PRE range away. Spawning here instead."); }
                 geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(Vector3d.zero);
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             }
@@ -457,8 +458,9 @@ namespace BDArmory.GameModes
         /// <param name="count">The minimum number of asteroids in the pool.</param>
         void SetupAsteroidPool(int count)
         {
-            if (asteroidPool == null) { asteroidPool = new List<Vessel>(); }
-            else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 9e4f).ToList(); }
+            var preRange = PhysicsRangeExtender.GetPRERange();
+            if (asteroidPool == null) { asteroidPool = []; }
+            else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < preRange).ToList(); }
             foreach (var asteroid in asteroidPool)
             {
                 if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
@@ -631,10 +633,10 @@ namespace BDArmory.GameModes
         System.Random RNG;
 
         // Pooling of asteroids
-        List<Vessel> asteroidPool = new List<Vessel>();
+        List<Vessel> asteroidPool = [];
         int lastPoolIndex = 0;
-        HashSet<string> asteroidNames = new HashSet<string>();
-        Dictionary<string, float> attractionFactors = new Dictionary<string, float>();
+        HashSet<string> asteroidNames = [];
+        readonly Dictionary<string, float> attractionFactors = [];
         #endregion
 
         void Awake()
@@ -667,7 +669,7 @@ namespace BDArmory.GameModes
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid == null) continue;
+                    if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
@@ -697,6 +699,13 @@ namespace BDArmory.GameModes
             this.radius = radius;
             this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            if (spawnPoint.magnitude > PhysicsRangeExtender.GetPRERange())
+            {
+                var message = $"Asteroid field location is beyond the PRE range, unable to spawn asteroids.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogError($"[BDArmory.Asteroids]: {message}");
+                return;
+            }
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             StartCoroutine(SpawnField(numberOfAsteroids));
@@ -741,12 +750,14 @@ namespace BDArmory.GameModes
             floating = true;
             Vector3d offset;
             float factor = 0;
+            float repulseTimer = Time.time;
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
                     var nudge = new Vector3d(RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5) * 100;
+                    Vector3d anomalousAttractionHOS = Vector3d.zero;
                     if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
                     {
                         anomalousAttraction = Vector3d.zero;
@@ -755,11 +766,46 @@ namespace BDArmory.GameModes
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
                             factor = (1f - (float)offset.sqrMagnitude / 1e6f); // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
-                            if (factor > 0) anomalousAttraction += offset.normalized * factor * attractionFactors[asteroids[i].vesselName];
+                            if (factor > 0) anomalousAttraction += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
                         }
                         anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH;
                     }
-                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity / 10f + nudge + anomalousAttraction) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
+                    if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Count > 0 && BDArmorySettings.HOS_ASTEROID)
+                    {
+                        foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value))
+                        {
+                            if (weaponManager == null) continue;
+                            if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(weaponManager.vessel.GetName()))
+                            {
+                                offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
+                                factor = (Vector3.Dot(asteroids[i].Velocity(), weaponManager.vessel.Velocity()) < 0 ? (float)(asteroids[i].srf_velocity - weaponManager.vessel.srf_velocity).magnitude : 1);
+                                if (offset.sqrMagnitude < 6250000) anomalousAttractionHOS += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
+                            }
+                        }
+                    }
+                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity / 10f + nudge + anomalousAttraction + anomalousAttractionHOS) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
+                }
+                if (Time.time - repulseTimer > 1) // Once per second repulse nearby asteroids from each other to avoid them sticking. Not too often since it's O(N^2). This might be more performant using an OverlapSphere.
+                {
+                    for (int i = 0; i < asteroids.Length - 1; ++i)
+                    {
+                        if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
+                        for (int j = i + 1; j < asteroids.Length; ++j)
+                        {
+                            if (asteroids[j] == null || asteroids[j].packed || !asteroids[j].loaded || asteroids[j].rootPart.Rigidbody == null) continue;
+                            var separation = asteroids[i].transform.position - asteroids[j].transform.position;
+                            var sepSqr = separation.sqrMagnitude;
+                            var proximityFactor = asteroids[i].GetRadius() + asteroids[j].GetRadius();
+                            proximityFactor *= (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION ? 100 : 4) * proximityFactor; // Without anomalous attraction, they don't get stirred up much, so they don't need as much repulsion.
+                            if (sepSqr < proximityFactor)
+                            {
+                                var repulseAmount = TimeWarp.CurrentRate * BDAMath.Sqrt(proximityFactor - sepSqr) * separation.normalized;
+                                asteroids[i].rootPart.Rigidbody.AddForce(repulseAmount, ForceMode.Acceleration);
+                                asteroids[j].rootPart.Rigidbody.AddForce(-repulseAmount, ForceMode.Acceleration);
+                            }
+                        }
+                    }
+                    repulseTimer = Time.time;
                 }
                 yield return wait;
             }
@@ -796,6 +842,8 @@ namespace BDArmory.GameModes
             {
                 if (Time.time - startTime >= 10) Debug.LogWarning($"[BDArmory.Asteroids]: Timed out waiting for colliders on {asteroid.vesselName} to be generated.");
                 AsteroidUtils.CleanOutAsteroid(asteroid);
+                asteroid.rootPart.crashTolerance = float.MaxValue; // Make the asteroids nigh indestructible.
+                asteroid.rootPart.maxTemp = float.MaxValue;
                 asteroid.gameObject.SetActive(false);
             }
             --cleaningInProgress;
@@ -807,7 +855,8 @@ namespace BDArmory.GameModes
         /// <param name="count">The minimum number of asteroids in the pool.</param>
         void SetupAsteroidPool(int count)
         {
-            asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 9e4f).ToList();
+            var preRange = PhysicsRangeExtender.GetPRERange();
+            asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < preRange).ToList();
             foreach (var asteroid in asteroidPool)
             {
                 if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
@@ -932,10 +981,7 @@ namespace BDArmory.GameModes
         void UpdateAttractionFactors()
         {
             attractionFactors.Clear();
-            foreach (var asteroid in asteroidPool)
-            {
-                attractionFactors[asteroid.vesselName] = 50f * Mathf.Clamp(2f / Mathf.Log(asteroid.GetRadius() + 1f) - 1f, 0.1f, 2f);
-            }
+            foreach (var asteroid in asteroidPool) attractionFactors[asteroid.vesselName] = 50f * Mathf.Clamp(4f / Mathf.Log(asteroid.GetRadius() + 3f) - 1f, 0.1f, 2f);
         }
 
         /// <summary>

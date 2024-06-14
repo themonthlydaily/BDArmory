@@ -4,6 +4,7 @@ using UnityEngine;
 using BDArmory.Damage;
 using BDArmory.Initialization;
 using BDArmory.Settings;
+using Expansions.Serenity;
 
 namespace BDArmory.Extensions
 {
@@ -417,6 +418,7 @@ namespace BDArmory.Extensions
 
         public static bool IsMissile(this Part part)
         {
+            if (part == null || part.Modules == null) return false;
             if (part.Modules.Contains("BDModularGuidance")) return true;
             if (part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher"))
             {
@@ -426,7 +428,7 @@ namespace BDArmory.Extensions
                 {
                     if (partModules.Current.moduleName == "MultiMissileLauncher")
                     {
-                        return (((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile);
+                        return ((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile;
                     }
                 }
                 //return ((part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
@@ -437,6 +439,12 @@ namespace BDArmory.Extensions
         public static bool IsWeapon(this Part part)
         {
             return part.Modules.Contains("ModuleWeapon");
+        }
+        public static bool IsFunctional(this Part part)
+        {
+            return (part.isEngine() || part.isAntenna(out ModuleDeployableAntenna antenna) || part.isBaseServo(out BaseServo serv) || part.isDecoupler(out ModuleDecouple decoupler) || part.isGenerator(out ModuleGenerator gen)
+                || part.isRadiator(out ModuleDeployableRadiator rad) || part.isRobotic() || part.isRoboticHinge() || part.isRoboticPiston() || part.isRoboticRotationServo() || part.isRoboticRotor()
+                || part.Modules.Contains("ModuleGrappleNode") || part.Modules.Contains("ModuleResourceConverter") || part.Modules.Contains("ModuleCoreHeat"));
         }
         public static float GetArea(this Part part, bool isprefab = false, Part prefab = null)
         {

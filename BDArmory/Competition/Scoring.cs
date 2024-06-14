@@ -521,6 +521,13 @@ namespace BDArmory.Competition
                 else // Last hit from someone else was recent => Kill Steal
                 { ScoreData[vesselName].aliveState = AliveState.KillSteal; }
 
+                /* //Announcer
+                if (Players.Contains(ScoreData[vesselName].lastPersonWhoDamagedMe))
+                {
+                    ++ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
+                    BDACompetitionMode.Instance.PlayAnnouncer(ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife, false, ScoreData[vesselName].lastPersonWhoDamagedMe);
+                }
+                */
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
             }
@@ -531,7 +538,6 @@ namespace BDArmory.Competition
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
-
             if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && ContinuousSpawning.Instance.vesselsSpawningContinuously) ContinuousSpawning.Instance.DumpContinuousSpawningScores();
 
             return true;
@@ -631,6 +637,7 @@ namespace BDArmory.Competition
             BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: {WaypointCourses.CourseLocations[waypointCourseIndex].waypoints[waypointIndex].name} ({waypointIndex}{(lapLimit > 1 ? $", lap {lapNumber}" : "")}) reached: Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
             ScoreData[vesselName].totalWPTime = (float)(ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp);
             ScoreData[vesselName].totalWPDeviation += distance;
+            ScoreData[vesselName].totalWPReached++;
 
             return true;
         }
@@ -974,6 +981,8 @@ namespace BDArmory.Competition
 
         #region Special
         public int partsLostToAsteroids = 0; // Number of parts lost due to crashing into asteroids.
+        // public int killsThisLife = 0; //number of kills tracking for Announcer barks
+
         #endregion
 
         #region Battle Damage
@@ -1010,7 +1019,8 @@ namespace BDArmory.Competition
             public float deviation; // Deviation from waypoint.
             public double timestamp; // Timestamp of reaching waypoint.
         }
-        public List<WaypointReached> waypointsReached = new List<WaypointReached>();
+        public List<WaypointReached> waypointsReached = [];
+        public int totalWPReached = 0; // Convenience tracker for the Vessel Switcher and tournament (de-)serialisation.
         public float totalWPDeviation = 0; // Convenience tracker for the Vessel Switcher
         public float totalWPTime = 0; // Convenience tracker for the Vessel Switcher
         #endregion
@@ -1026,8 +1036,8 @@ namespace BDArmory.Competition
         public string previousPersonWhoDamagedMe = "";
         public int deathOrder = -1;
         public double deathTime = -1;
-        public HashSet<DamageFrom> damageTypesTaken = new HashSet<DamageFrom>();
-        public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel.
+        public HashSet<DamageFrom> damageTypesTaken = [];
+        public HashSet<string> everyoneWhoDamagedMe = []; // Every other vessel that damaged this vessel.
         #endregion
 
         /// <summary>
@@ -1089,6 +1099,7 @@ namespace BDArmory.Competition
                 tagLastUpdated = tagLastUpdated,
                 // Waypoints
                 waypointsReached = waypointsReached.ToList(),
+                totalWPReached = totalWPReached,
                 totalWPDeviation = totalWPDeviation,
                 totalWPTime = totalWPTime,
                 // Misc.

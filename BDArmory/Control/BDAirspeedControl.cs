@@ -13,6 +13,7 @@ namespace BDArmory.Control
         public float targetSpeed = 0;
         public float throttleOverride = -1f;
         public bool useBrakes = true;
+        public float brakingPriority = 0.5f;
         public bool allowAfterburner = true;
         public bool forceAfterburner = false;
         public float afterburnerPriority = 50f;
@@ -127,7 +128,7 @@ namespace BDArmory.Control
             //use brakes if overspeeding too much
             if (useBrakes)
             {
-                if (requestThrottle < -0.5f)
+                if (requestThrottle < brakingPriority - 1f)
                 {
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
                 }
@@ -221,11 +222,14 @@ namespace BDArmory.Control
                     if (mmes.Current == null) continue;
 
                     bool afterburnerHasFuel = true;
-                    using (var fuel = mmes.Current.SecondaryEngine.propellants.GetEnumerator())
+                    if (!CheatOptions.InfinitePropellant)
+                    {
+                        using var fuel = mmes.Current.SecondaryEngine.propellants.GetEnumerator();
                         while (fuel.MoveNext())
                         {
-                            if (!GetABresources(fuel.Current.id)) afterburnerHasFuel = false;
+                            if (!GetABresources(fuel.Current.id)) { afterburnerHasFuel = false; break; }
                         }
+                    }
                     if (enable && afterburnerHasFuel)
                     {
                         if (mmes.Current.runningPrimary)
@@ -318,12 +322,12 @@ namespace BDArmory.Control
             }
             else
             {
-                float throttle = zeroPoint + (targetSpeed - signedSrfSpeed) * gain; 
+                float throttle = zeroPoint + (targetSpeed - signedSrfSpeed) * gain;
                 lastThrottle = Mathf.Clamp(throttle, -1, 1);
                 zeroPoint = (zeroPoint + lastThrottle * zeroMult) * (1 - zeroMult);
                 if (preventNegativeZeroPoint && zeroPoint < 0) zeroPoint = 0;
                 SetThrottle(s, lastThrottle);
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, (targetSpeed * signedSrfSpeed < -5)); 
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, (targetSpeed * signedSrfSpeed < -5));
             }
         }
 
@@ -444,7 +448,7 @@ namespace BDArmory.Control
         private Vector3 RCSThrust;
         private Vector3 up, right, forward;
         private float RCSThrottle;
-        
+
         //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
 
         void Start()
@@ -554,6 +558,18 @@ namespace BDArmory.Control
             }
 
             ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
+        }
+
+        public void Stability(bool enable)
+        {
+            if (lockAttitude == enable) return;
+            lockAttitude = enable;
+
+            var ap = vessel.Autopilot;
+            if (ap == null) return;
+
+            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
+            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
         }
 
         /// <summary>

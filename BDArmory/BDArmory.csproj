@@ -192,6 +192,7 @@
     <Compile Include="Extensions\BodyExtensions.cs" />
     <Compile Include="Extensions\ClawExtensions.cs" />
     <Compile Include="Extensions\CrewExtensions.cs" />
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\FloatExtensions.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />
     <Compile Include="Extensions\VectorExtensions.cs" />
@@ -216,6 +217,7 @@
     <Compile Include="GameModes\ModuleSpaceFriction.cs" />
     <Compile Include="GameModes\Mutators\BDAMutator.cs" />
     <Compile Include="GameModes\Mutators\MutatorInfo.cs" />
+    <Compile Include="GameModes\Waypoints\CourseBuilderGUI.cs" />
     <Compile Include="GameModes\Waypoints\WaypointCourses.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\CruiseGuidance.cs" />
@@ -224,8 +226,11 @@
     <Compile Include="Initialization\Bootstrapper.cs" />
     <Compile Include="Initialization\Cleanup.cs" />
     <Compile Include="Initialization\Dependencies.cs" />
+    <Compile Include="ModIntegration\BDATeamIcons.cs" />
     <Compile Include="ModIntegration\CameraTools.cs" />
+    <Compile Include="ModIntegration\ModuleManager.cs" />
     <Compile Include="ModIntegration\MouseAimFlight.cs" />
+    <Compile Include="ModIntegration\PhysicsRangeExtender.cs" />
     <Compile Include="ModIntegration\ReflectionUtils.cs" />
     <Compile Include="Modules\CFEnable.cs" />
     <Compile Include="Modules\KerbalSafety.cs" />
@@ -249,6 +254,7 @@
     <Compile Include="Settings\BDInputSettingsFields.cs" />
     <Compile Include="Settings\BDTISettings.cs" />
     <Compile Include="Settings\BDTISettingsFields.cs" />
+    <Compile Include="Settings\RWPSettings.cs" />
     <Compile Include="Shaders\BDAShaderLoader.cs" />
     <Compile Include="Targeting\GPSTargetInfo.cs" />
     <Compile Include="Targeting\ModuleTargetingCamera.cs" />

@@ -46,6 +46,7 @@ namespace BDArmory.UI
             StartCoroutine(WaitForBdaSettings());
 
             // Score weight fields
+            TournamentScores.LoadWeights();
             scoreWeights = TournamentScores.weights.ToDictionary(kvp => kvp.Key, kvp => gameObject.AddComponent<NumericInputField>().Initialise(0, kvp.Value));
             showTeamScores = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS != 0;
         }
@@ -104,6 +105,8 @@ namespace BDArmory.UI
             if (resizingWindow && Event.current.type == EventType.MouseUp) { resizingWindow = false; }
             AdjustWindowRect(windowSize);
             BDArmorySetup.SetGUIOpacity();
+            var guiMatrix = GUI.matrix;
+            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectScores.position);
             BDArmorySetup.WindowRectScores = GUILayout.Window(
                 GUIUtility.GetControlID(FocusType.Passive),
                 BDArmorySetup.WindowRectScores,
@@ -113,6 +116,7 @@ namespace BDArmory.UI
             );
             if (weightsVisible)
             {
+                if (BDArmorySettings.UI_SCALE != 1) { GUI.matrix = guiMatrix; GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, weightsWindowRect.position); }
                 weightsWindowRect = GUILayout.Window(
                     GUIUtility.GetControlID(FocusType.Passive),
                     weightsWindowRect,
@@ -126,7 +130,7 @@ namespace BDArmory.UI
         }
 
         #region Scores
-        private void AdjustWindowRect(Vector2 size, bool force=false)
+        private void AdjustWindowRect(Vector2 size, bool force = false)
         {
             if (!autoResizingWindow && resizingWindow || force)
             {
@@ -134,7 +138,7 @@ namespace BDArmory.UI
                 size.y = Mathf.Clamp(size.y, 70, Screen.height - BDArmorySetup.WindowRectScores.y); // The ScrollView won't let us go smaller than this.
                 BDArmorySetup.WindowRectScores.size = size;
             }
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectScores);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectScores, windowSize.y);
             windowSize = BDArmorySetup.WindowRectScores.size;
         }
 
@@ -183,7 +187,7 @@ namespace BDArmory.UI
                 }
             }
             if (resizingWindow && Event.current.type == EventType.Repaint)
-            { windowSize += Mouse.delta; }
+            { windowSize += Mouse.delta / BDArmorySettings.UI_SCALE; }
             #endregion
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectScores);
         }
@@ -220,7 +224,10 @@ namespace BDArmory.UI
             if (visible)
             {
                 weightsWindowRect.y = BDArmorySetup.WindowRectScores.y;
-                weightsWindowRect.x = BDArmorySetup.WindowRectScores.x + windowSize.x;
+                if (BDArmorySetup.WindowRectScores.x + BDArmorySettings.UI_SCALE * (windowSize.x + weightsWindowRect.width) <= Screen.width)
+                    weightsWindowRect.x = BDArmorySetup.WindowRectScores.x + BDArmorySettings.UI_SCALE * windowSize.x;
+                else
+                    weightsWindowRect.x = BDArmorySetup.WindowRectScores.x - BDArmorySettings.UI_SCALE * weightsWindowRect.width;
             }
             else
             {
@@ -229,6 +236,7 @@ namespace BDArmory.UI
                     weight.Value.tryParseValueNow();
                     TournamentScores.weights[weight.Key] = (float)weight.Value.currentValue;
                 }
+                TournamentScores.SaveWeights();
                 BDATournament.Instance.RecomputeScores();
             }
         }

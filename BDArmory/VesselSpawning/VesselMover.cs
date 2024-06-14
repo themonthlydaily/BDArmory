@@ -47,6 +47,14 @@ namespace BDArmory.VesselSpawning
             ready = false;
             StartCoroutine(WaitForBdaSettings());
             ConfigureStyles();
+            SetUpMoveIndicator();
+            GameEvents.onVesselChange.Add(OnVesselChanged);
+
+            if (BDArmorySettings.VM_TOOLBAR_BUTTON) AddToolbarButton();
+        }
+
+        void SetUpMoveIndicator()
+        {
             moveIndicator = new GameObject().AddComponent<LineRenderer>();
             moveIndicator.material = new Material(Shader.Find("KSP/Emissive/Diffuse"));
             moveIndicator.material.SetColor("_EmissiveColor", Color.green);
@@ -54,9 +62,6 @@ namespace BDArmory.VesselSpawning
             moveIndicator.endWidth = 0.15f;
             moveIndicator.enabled = false;
             moveIndicator.positionCount = circleRes + 3;
-            GameEvents.onVesselChange.Add(OnVesselChanged);
-
-            if (BDArmorySettings.VM_TOOLBAR_BUTTON) AddToolbarButton();
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -746,23 +751,10 @@ namespace BDArmory.VesselSpawning
         IEnumerator GetSpawnPoint()
         {
             messageState = Messages.ChoosingSpawnPoint;
-            // Use the same indicator as the original VesselMover for familiarity.
-            GameObject indicatorObject = new GameObject();
-            LineRenderer lr = indicatorObject.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
-            lr.material.SetColor("_TintColor", Color.green);
-            lr.material.mainTexture = Texture2D.whiteTexture;
-            lr.useWorldSpace = false;
-
-            Vector3[] positions = new Vector3[] { Vector3.zero, 10 * Vector3.forward };
-            lr.SetPositions(positions);
-            lr.positionCount = positions.Length;
-            lr.startWidth = 0.1f;
-            lr.endWidth = 1f;
+            GameObject indicatorObject = SetUpSpawnPointIndicator();
 
             Vector3 mouseAim, point;
             Ray ray;
-            bool altitudeCorrection = false;
             var currentMainBody = FlightGlobals.currentMainBody;
             while (BDArmorySetup.showVesselMoverGUI)
             {
@@ -774,6 +766,7 @@ namespace BDArmory.VesselSpawning
 
                 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                 ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                bool altitudeCorrection;
                 if (Physics.Raycast(ray, out RaycastHit hit, (ray.origin - currentMainBody.transform.position).magnitude, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.Wheels | LayerMasks.EVA)))
                 {
                     point = hit.point;
@@ -802,6 +795,25 @@ namespace BDArmory.VesselSpawning
                 yield return null;
             }
             Destroy(indicatorObject);
+        }
+
+        GameObject SetUpSpawnPointIndicator()
+        {
+            // Use the same indicator as the original VesselMover for familiarity.
+            GameObject indicatorObject = new();
+            LineRenderer lr = indicatorObject.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
+            lr.material.SetColor("_TintColor", Color.green);
+            lr.material.mainTexture = Texture2D.whiteTexture;
+            lr.useWorldSpace = false;
+
+            Vector3[] positions = [Vector3.zero, 10 * Vector3.forward];
+            lr.SetPositions(positions);
+            lr.positionCount = positions.Length;
+            lr.startWidth = 0.1f;
+            lr.endWidth = 1f;
+
+            return indicatorObject;
         }
 
         bool SphereRayIntersect(Ray ray, Vector3 sphereCenter, float sphereRadius, out float distance)
@@ -862,6 +874,7 @@ namespace BDArmory.VesselSpawning
         Messages _messageState = Messages.None;
         string customMessage = "";
         float messageDisplayTime = 0;
+        float previousVesselMoverWindowHeight = 0;
 
         private void OnGUI()
         {
@@ -872,6 +885,8 @@ namespace BDArmory.VesselSpawning
             if (BDArmorySetup.showVesselMoverGUI)
             {
                 BDArmorySetup.SetGUIOpacity();
+                var guiMatrix = GUI.matrix; // Store and restore the GUI.matrix so we can apply a different scaling for the WM window.
+                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMover.position);
                 BDArmorySetup.WindowRectVesselMover = GUILayout.Window(
                     GUIUtility.GetControlID(FocusType.Passive),
                     BDArmorySetup.WindowRectVesselMover,
@@ -880,8 +895,11 @@ namespace BDArmory.VesselSpawning
                     BDArmorySetup.BDGuiSkin.window,
                     GUILayout.Width(windowWidth)
                 );
+                GUI.matrix = guiMatrix;
+                previousVesselMoverWindowHeight = BDArmorySetup.WindowRectVesselMover.height;
                 if (showVesselSelection)
                 {
+                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMoverVesselSelection.position);
                     BDArmorySetup.WindowRectVesselMoverVesselSelection = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
                         BDArmorySetup.WindowRectVesselMoverVesselSelection,
@@ -889,9 +907,11 @@ namespace BDArmory.VesselSpawning
                         StringUtils.Localize("#LOC_BDArmory_VesselMover_VesselSelection"),
                         BDArmorySetup.BDGuiSkin.window
                     );
+                    GUI.matrix = guiMatrix;
                 }
                 else if (showCrewSelection)
                 {
+                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, crewSelectionWindowRect.position);
                     crewSelectionWindowRect = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
                         crewSelectionWindowRect,
@@ -899,6 +919,7 @@ namespace BDArmory.VesselSpawning
                         StringUtils.Localize("#LOC_BDArmory_VesselMover_CrewSelection"),
                         BDArmorySetup.BDGuiSkin.window
                     );
+                    GUI.matrix = guiMatrix;
                 }
                 BDArmorySetup.SetGUIOpacity(false);
                 GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMover, guiCheckIndex);
@@ -1068,7 +1089,7 @@ namespace BDArmory.VesselSpawning
                     }
             }
             GUILayout.EndVertical();
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover, previousVesselMoverWindowHeight);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMover, guiCheckIndex);
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectVesselMover);
         }
@@ -1078,10 +1099,8 @@ namespace BDArmory.VesselSpawning
         /// </summary>
         void ResetWindowHeight()
         {
-            bool reposition = BDArmorySetup.WindowRectVesselMover.y + BDArmorySetup.WindowRectVesselMover.height == Screen.height;
             BDArmorySetup.WindowRectVesselMover.height = 0;
-            if (reposition) BDArmorySetup.WindowRectVesselMover.y = Screen.height;
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover, previousVesselMoverWindowHeight);
         }
 
         public void SetVisible(bool visible)
@@ -1228,7 +1247,7 @@ namespace BDArmory.VesselSpawning
                 resizingSelectionWindow = true;
             }
             if (resizingSelectionWindow && Event.current.type == EventType.Repaint)
-            { BDArmorySetup.WindowRectVesselMoverVesselSelection.size += Mouse.delta; }
+            { BDArmorySetup.WindowRectVesselMoverVesselSelection.size += Mouse.delta / BDArmorySettings.UI_SCALE; }
             #endregion
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();

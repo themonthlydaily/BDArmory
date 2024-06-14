@@ -35,12 +35,13 @@ namespace BDArmory.UI
         private double lastCameraCheck = 0;
         double minCameraCheckInterval = 0.25;
         private Vessel lastActiveVessel = null;
-        private bool currentVesselDied = false;
+        public bool currentVesselDied = false;
         private double currentVesselDiedAt = 0;
 
         //gui params
         bool resizingWindow = false;
         Vector2 windowSize = new(350, 32); // Height is auto-adjusting
+        float previousWindowHeight = 32;
         private string camMode = "A";
         private int currentMode = 1;
         private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
@@ -303,12 +304,11 @@ namespace BDArmory.UI
                 if (BDArmorySettings.GRAVITY_HACKS)
                     windowTitle = windowTitle + " (" + BDACompetitionMode.gravityMultiplier.ToString("0.0") + "G)";
 
-                ResizeWindow();
-                // this Rect initialization ensures any save issues with height or width of the window are resolved
-                BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, windowSize.x, windowSize.y);
                 BDArmorySetup.SetGUIOpacity();
+                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSwitcher.position);
+                previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
                 BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
-                GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
+                ResizeWindow();
                 BDArmorySetup.SetGUIOpacity(false);
             }
             else
@@ -326,14 +326,9 @@ namespace BDArmory.UI
         private void ResizeWindow()
         {
             if (resizingWindow) windowSize.x = Mathf.Clamp(windowSize.x, 350, Screen.width - BDArmorySetup.WindowRectVesselSwitcher.x);
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                if (windowSize.y < BDArmorySetup.WindowRectVesselSwitcher.height && Mathf.RoundToInt(BDArmorySetup.WindowRectVesselSwitcher.yMax) == Screen.height) // Window shrunk while being at edge of screen.
-                    BDArmorySetup.WindowRectVesselSwitcher.y = Screen.height - windowSize.y;
-            }
             BDArmorySetup.WindowRectVesselSwitcher.size = windowSize;
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
-            windowSize = BDArmorySetup.WindowRectVesselSwitcher.size;
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher, previousWindowHeight);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
         }
 
         public void ResetDeadVessels() => deadVesselStrings.Clear(); // Reset the dead vessel strings so that they get recalculated.
@@ -344,7 +339,7 @@ namespace BDArmory.UI
         {
             if (!BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(player)) return 0f;
             var score = BDACompetitionMode.Instance.Scores.ScoreData[player];
-            return (float)score.waypointsReached.Count - 0.001f * score.totalWPTime; // Rank in the VS based primarily on #waypoints passed and secondly on time.
+            return (float)score.totalWPReached - 0.001f * score.totalWPTime; // Rank in the VS based primarily on #waypoints passed and secondly on time.
         }
 
         private void WindowVesselSwitcher(int id)
@@ -667,11 +662,11 @@ namespace BDArmory.UI
 
             height += _margin;
             #region Resizing
-            windowSize.y = Mathf.Max(height, _titleHeight + _buttonHeight);
+            windowSize.y = Mathf.Lerp(windowSize.y, Mathf.Max(height, _titleHeight + _buttonHeight), 0.15f);
             var resizeRect = new Rect(windowSize.x - 16, windowSize.y - 16, 16, 16);
             GUI.DrawTexture(resizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition)) resizingWindow = true;
-            if (resizingWindow && Event.current.type == EventType.Repaint) windowSize.x += Mouse.delta.x;
+            if (resizingWindow && Event.current.type == EventType.Repaint) windowSize.x += Mouse.delta.x / BDArmorySettings.UI_SCALE;
             #endregion
         }
 
@@ -693,6 +688,13 @@ namespace BDArmory.UI
 
             VSEntryString.Clear();
             string vesselName = wm.vessel.vesselName;
+            if (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0)
+            {
+                if (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(vesselName))
+                {
+                    VSEntryString.Append($"(Lives:{(int)BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL - (ContinuousSpawning.Instance.continuousSpawningScores[vesselName].spawnCount - 1)}) ");
+                }
+            }
             VSEntryString.Append(vesselName);
             if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(vesselName))
             {
@@ -747,7 +749,8 @@ namespace BDArmory.UI
             {
                 if (scoreData != null) // This probably won't work if running waypoints in continuous spawning mode, but that probably doesn't work anyway!
                 {
-                    VSEntryString.Append($"  ({scoreData.waypointsReached.Count:0}, {scoreData.totalWPTime:0.0}s, {scoreData.totalWPDeviation:0.00}m), ");
+                    if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && currentScore > 0) VSEntryString.Append($" ({currentScore} hits)");
+                    VSEntryString.Append($"  ({scoreData.totalWPReached:0}, {scoreData.totalWPTime:0.00}s, {scoreData.totalWPDeviation:0.00}m), ");
                 }
             }
             else
@@ -1001,6 +1004,8 @@ namespace BDArmory.UI
                     {
                         if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetName() + " to team " + SpawnUtils.originalTeams[weaponManager.vessel.vesselName]);
                         weaponManager.SetTeam(BDTeam.Get(SpawnUtils.originalTeams[weaponManager.vessel.vesselName]));
+                        if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                            BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                     }
                 }
                 return;
@@ -1026,6 +1031,8 @@ namespace BDArmory.UI
                     Debug.Log("[BDArmory.LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
                     weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString())); // Assign anyone who wasn't specified to a separate team.
                     weaponManagersByName[craftName].Team.Neutral = false;
+                    if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(craftName))
+                        BDACompetitionMode.Instance.Scores.ScoreData[craftName].team = weaponManagersByName[craftName].Team.Name;
                 }
                 return;
             }
@@ -1043,6 +1050,8 @@ namespace BDArmory.UI
                     }
                     weaponManager.SetTeam(BDTeam.Get(T.ToString())); // Otherwise, assign them to team T.
                     weaponManager.Team.Neutral = false;
+                    if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                        BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                     ++count;
                 }
                 return;
@@ -1053,6 +1062,8 @@ namespace BDArmory.UI
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetName() + " to team " + T.ToString());
                 weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                 weaponManager.Team.Neutral = false;
+                if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                    BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                 if (separateTeams) T++;
             }
         }
@@ -1083,14 +1094,14 @@ namespace BDArmory.UI
         {
             if (_autoCameraSwitch && lastActiveVessel == v)
             {
+                currentVesselDied = true;
                 if (v.IsMissile())
                 {
-                    currentVesselDied = true;
-                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) + minCameraCheckInterval;
+                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) / 2f; // Wait half the death cam period on missile death.
+                    // FIXME If the missile is a clustermissile, we should immediately switch to one of the sub-missiles.
                 }
                 else
                 {
-                    currentVesselDied = true;
                     currentVesselDiedAt = Time.time;
                 }
             }
@@ -1136,13 +1147,13 @@ namespace BDArmory.UI
                 if (activeVessel != null && activeVessel.loaded && !activeVessel.packed && activeVessel.IsMissile())
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
-                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its source vessel or target position
+                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its target position
                     bool stayOnMissile = mb != null &&
                         !mb.HasMissed &&
                         Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
-                        ((mb.SourceVessel && (mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6) || // FIXME Josue Why the source vessel, wouldn't the target vessel make more sense?
-                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6;
                     if (stayOnMissile) return;
+                    lastCameraCheck -= TimeWarp.deltaTime; // Speed up moving away from less relevant missiles.
                 }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
@@ -1162,13 +1173,15 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
-                    foreach (MissileBase missile in BDATargetManager.FiredMissiles)
+                    foreach (MissileBase missile in BDATargetManager.FiredMissiles.Cast<MissileBase>())
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
                         if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 2e-8f; // Prioritise missiles that are within 1km from their targets.
+                        if (missile.targetVessel != null && missile.targetVessel.Vessel.IsMissile()) continue; // Ignore missiles targeting missiles.
+                        if (Vector3.Dot(missile.TargetVelocity - missile.vessel.Velocity(), missile.GetForwardTransform()) > -1f) continue; // Ignore missiles that aren't gaining on their targets.
+                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 5e-8f; // Prioritise missiles that are within 1km from their targets and de-prioritise those more than 5km away.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;
@@ -1266,10 +1279,10 @@ namespace BDArmory.UI
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(wm.Current.vessel, true);
                                     var OAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(wm.Current.vessel, true);
 
-                                    // If we're running a waypoints competition, only focus on vessels still running waypoints.
+                                    // If we're running a waypoints competition (without combat), only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS)
                                     {
-                                        if (AI == null || !AI.IsRunningWaypoints) continue;
+                                        if (AI == null || (BDArmorySettings.WAYPOINT_GUARD_INDEX < 0 && !AI.IsRunningWaypoints)) continue;
                                         vesselScore *= 2f - Mathf.Clamp01((float)wm.Current.vessel.speed / AI.maxSpeed); // For waypoints races, craft going near their max speed are more interesting.
                                         vesselScore *= Mathf.Max(0.5f, 1f - 15.8f / BDAMath.Sqrt(AI.waypointRange)); // Favour craft the are approaching a gate (capped at 1km).
                                     }
