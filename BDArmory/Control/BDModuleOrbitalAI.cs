@@ -11,6 +11,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Guidances;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Control
 {
@@ -50,6 +51,7 @@ namespace BDArmory.Control
         private double minSafeAltitude;
         private CelestialBody safeAltBody = null;
         private Vector3 interceptRanges;
+        private Vector3 lastFiringSolution;
 
         // Evading
         bool evadingGunfire = false;
@@ -171,7 +173,9 @@ namespace BDArmory.Control
         internal float distToCPA;
         internal float timeToCPA;
         internal float stoppingDist;
-        internal Vector3 debugPosition;
+        internal Vector3 debugTargetPosition;
+        internal Vector3 debugTargetDirection;
+        internal Vector3 debugRollTarget;
 
         // Dynamic measurements
         float dynAngAccel = 1f; // Start at reasonable value.
@@ -304,11 +308,11 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
 
             if (!BDArmorySettings.DEBUG_LINES) return;
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugPosition, 5, Color.red); // Target intercept position
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.attitude * 100, 5, Color.green); // Attitude command
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, PIDActive ? debugTargetPosition : fc.attitude * 1000, 5, Color.red); // The point we're asked to turn to
+            if (PIDActive) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugTargetDirection, 5, Color.green); // The direction PID control will actually turn to
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVector * 100, 5, Color.cyan); // RCS command
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.blue); // RCS lerped command
-
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.magenta); // RCS lerped command
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugRollTarget, 2, Color.blue);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
         }
 
@@ -392,8 +396,9 @@ namespace BDArmory.Control
             upDir = vessel.up;
             CalculateAngularAcceleration();
             maxAcceleration = GetMaxAcceleration(vessel);
-            debugPosition = Vector3.zero;
             fc.alignmentToleranceforBurn = 5;
+            if (fc.throttle > 0)
+                lastFiringSolution = Vector3.zero; // Forget prior firing solution if we recently used engines
             fc.throttle = 0;
             fc.lerpThrottle = true;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
@@ -534,6 +539,7 @@ namespace BDArmory.Control
 
                         fc.lerpAttitude = false;
                         Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
+                        rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                         if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
@@ -544,14 +550,15 @@ namespace BDArmory.Control
                         {
                             SetStatus("Firing Missiles");
                             firingSolution = MissileGuidance.GetAirToAirFireSolution(weaponManager.CurrentMissile, targetVessel);
+                            firingSolution = (firingSolution - vessel.transform.position).normalized;
+                            rcsVector = Vector3.zero; // Don't RCS maneuver when trying to fire missiles as this can disrupt missile firing solution
                         }
                         else
                             SetStatus("Firing");
 
-
+                        lastFiringSolution = firingSolution;
                         fc.attitude = firingSolution;
                         fc.throttle = 0;
-                        rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
                     }
                     break;
                 case StatusMode.Maneuvering:
@@ -611,6 +618,8 @@ namespace BDArmory.Control
                                 fc.attitude = toTarget;
                                 if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
                                     fc.attitude = weaponManager.previousGun.FiringSolutionVector ?? fc.attitude;
+                                else if (lastFiringSolution != Vector3.zero)
+                                    fc.attitude = lastFiringSolution;
                                 if (currentRange < minRange)
                                     SetStatus("Maneuvering (Drift Away)");
                                 else
@@ -1015,7 +1024,7 @@ namespace BDArmory.Control
                             maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
                         else
                         {
-                            maxRange = Mathf.Max(maxEngageRange, maxRange);
+                            maxRange = Mathf.Max(maxEngageRange * (weaponManager.UnguidedMissile(weapon as MissileBase, maxEngageRange) ? 0.1f : 1f), maxRange);
                             usingProjectile = false;
                         }
                     }
@@ -1191,11 +1200,20 @@ namespace BDArmory.Control
             Vector3 targetDirection = fc.attitude;
             Vector3 currentRoll = -vesselTransform.forward;
             Vector3 rollTarget = currentRoll;
+            if (targetVessel != null) // If we have a target, put broadside toward target
+            {
+                Vector3 toTarget = FromTo(vessel, targetVessel);
+                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).normalized * 100f;
+                debugRollTarget = rollTarget;
+            }
+            else
+                debugRollTarget = Vector3.zero;
 
-            //float pitchError = VectorUtils.SignedAngle(Vector3.up, targetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
-            //float yawError = VectorUtils.SignedAngle(Vector3.up, targetDirection.ProjectOnPlanePreNormalized(Vector3.forward), Vector3.right);
-            float pitchError = VectorUtils.SignedAngle(vesselTransform.up, targetDirection.ProjectOnPlanePreNormalized(vesselTransform.right), -vesselTransform.forward);
-            float yawError = VectorUtils.SignedAngle(vesselTransform.up, targetDirection.ProjectOnPlanePreNormalized(vesselTransform.forward), vesselTransform.right);
+            Vector3 localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
+            localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, 25 * Mathf.Deg2Rad, 0);
+
+            float pitchError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
+            float yawError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.forward), Vector3.right);
             float rollError = BDAMath.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
 
             Vector3 localAngVel = vessel.angularVelocity;
@@ -1225,6 +1243,12 @@ namespace BDArmory.Control
             var steerRoll = rollProportional + rollIntegral - rollDamping;
 
             float maxSteer = 1;
+
+            if (BDArmorySettings.DEBUG_LINES)
+            {
+                debugTargetPosition = vessel.transform.position + targetDirection * 1000; // The asked for target position's direction
+                debugTargetDirection = vessel.transform.position + vesselTransform.TransformDirection(localTargetDirection) * 200; // The actual direction to match the "up" direction of the craft with for pitch (used for PID calculations).
+            }
 
             SetFlightControlState(s,
                 Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
