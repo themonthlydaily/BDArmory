@@ -1246,9 +1246,9 @@ namespace BDArmory.Control
                     case RollModeTypes.Dorsal_Ventral:
                         {
                             if (Vector3.Dot(toTarget, vesselTransform.forward) > 0f)
-                                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                                rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
                             else
-                                rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up).ProjectOnPlanePreNormalized(vesselTransform.up);
+                                rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
                         }
                         break;
                     case RollModeTypes.Port:
