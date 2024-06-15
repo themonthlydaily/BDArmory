@@ -3028,6 +3028,15 @@ namespace BDArmory.Competition
                 }
                 if (!runningWPs && BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD <= 60 && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
                 {
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
+                    {
+                        foreach (var vessel in FlightGlobals.Vessels)
+                        {
+                            Scores.RegisterDeath(vessel.vesselName, GMKillReason.GM, now);
+                            VesselUtils.ForceDeadVessel(vessel);
+                        }
+                        alive.Clear();
+                    }
                     competitionStatus.Add("All Pilots are Dead");
                     foreach (string key in alive)
                     {
