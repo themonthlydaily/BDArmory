@@ -499,22 +499,6 @@ namespace BDArmory.Competition
 
                     if (!string.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
 
-                    if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
-                    {
-                        SpawnUtils.SaveTeams();
-                        if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                        else
-                        {
-                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
-                            if (FlightGlobals.ActiveVessel != pilot.vessel && !(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67))
-                            {
-                                LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
-                            }
-                        }
-                        Scores.ScoreData[pilot.vessel.vesselName].team = pilot.weaponManager.Team.Name;
-                    }
-
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
                     {
                         teamPilots = new List<IBDAIControl>();
@@ -800,6 +784,27 @@ namespace BDArmory.Competition
                 }
                 yield return new WaitForSeconds(1);
             }
+
+            // Switch to piñata teams after everyone is ready.
+            foreach (var pilot in GetAllPilots())
+            {
+                if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                {
+                    SpawnUtils.SaveTeams();
+                    if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                    else
+                    {
+                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                        if (FlightGlobals.ActiveVessel != pilot.vessel && !(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67))
+                        {
+                            LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
+                        }
+                    }
+                    Scores.ScoreData[pilot.vessel.vesselName].team = pilot.weaponManager.Team.Name;
+                }
+            }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) startCompetitionNow = true;
 
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }

@@ -1,4 +1,4 @@
-﻿﻿IMPROVEMENTS / FIXES
+IMPROVEMENTS / FIXES
 - AI / WM:
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
