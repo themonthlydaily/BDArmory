@@ -551,7 +551,6 @@ namespace BDArmory.Control
                             SetStatus("Firing Missiles");
                             firingSolution = MissileGuidance.GetAirToAirFireSolution(weaponManager.CurrentMissile, targetVessel);
                             firingSolution = (firingSolution - vessel.transform.position).normalized;
-                            rcsVector = Vector3.zero; // Don't RCS maneuver when trying to fire missiles as this can disrupt missile firing solution
                         }
                         else
                             SetStatus("Firing");
