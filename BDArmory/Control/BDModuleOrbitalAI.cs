@@ -660,7 +660,7 @@ namespace BDArmory.Control
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
             float targetSpeed = KillVelocityTargetSpeed();
-            bool maintainThrottle = (relVel + timeToCPA * relAccel).sqrMagnitude > targetSpeed * targetSpeed;
+            bool maintainThrottle = ((relVel + timeToCPA * relAccel).sqrMagnitude > targetSpeed * targetSpeed) || (cpa.sqrMagnitude == relPos.sqrMagnitude);
 
             SetStatus($"Maneuvering (Kill Velocity), {timeToCPA:G2}s, {cpaDist:N0}m");
 
