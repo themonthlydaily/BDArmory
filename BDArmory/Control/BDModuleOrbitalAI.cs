@@ -30,6 +30,7 @@ namespace BDArmory.Control
 
         private BDOrbitalControl fc;
         private bool PIDActive;
+        private int ECID;
 
         public IBDWeapon currentWeapon;
 
@@ -42,7 +43,9 @@ namespace BDArmory.Control
         private bool belowSafeAlt = false;
         private bool wasDescendingUnsafe = false;
         private bool hasPropulsion;
+        private bool hasRCS;
         private bool hasWeapons;
+        private bool hasEC;
         private float maxAcceleration;
         private float maxThrust;
         private Vector3 maxAngularAcceleration;
@@ -248,6 +251,7 @@ namespace BDArmory.Control
             if (HighLogic.LoadedSceneIsFlight)
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
             CalculateAvailableTorque(vessel);
+            ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id; // This should always be found.
         }
 
         protected override void OnDestroy()
@@ -648,6 +652,7 @@ namespace BDArmory.Control
                     break;
             }
             UpdateRCSVector(rcsVector);
+            UpdateBurnAlignmentTolerance();
         }
 
         void KillVelocity()
@@ -707,8 +712,10 @@ namespace BDArmory.Control
         void UpdateStatus()
         {
             // Update propulsion and weapon status
-            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
-            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
+            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
+            hasPropulsion = hasRCS || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
+            vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
+            hasEC = EcCurrent > 0 || CheatOptions.InfiniteElectricity;
             hasWeapons = (weaponManager != null) && weaponManager.HasWeaponsAndAmmo();
 
             // Check on command status
@@ -718,9 +725,9 @@ namespace BDArmory.Control
             interceptRanges = InterceptionRanges();
 
             // Prioritize safe orbits over combat outside of weapon range
-            bool fixOrbitNow = (CheckOrbitDangerous() || belowSafeAlt);
+            bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || belowSafeAlt);
             bool fixOrbitLater = false;
-            if (!fixOrbitNow && CheckOrbitUnsafe())
+            if (hasPropulsion && !fixOrbitNow && CheckOrbitUnsafe())
             {
                 fixOrbitLater = true;
                 if (weaponManager && targetVessel != null)
@@ -1102,6 +1109,12 @@ namespace BDArmory.Control
             }
 
             fc.RCSVector = inputVec;
+        }
+
+        private void UpdateBurnAlignmentTolerance()
+        {
+            if (!hasEC && !hasRCS)
+                fc.alignmentToleranceforBurn = 180f;
         }
         #endregion
 

@@ -1,10 +1,12 @@
-﻿IMPROVEMENTS / FIXES
+﻿﻿IMPROVEMENTS / FIXES
 - AI / WM:
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
 		- Improved maneuvering behavior, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections when within combat range.
 		- When PID control is active, AI will try to roll so that the broadside faces the target.
 	- Fix weapon types with no targeting type (i.e. AIR-2) not firing within engage range.
+- UI:
+	- Updated Chinese localization thanks to user Marv1n-M.
 
 1.6.12.0
 IMPROVEMENTS / FIXES
@@ -42,7 +44,6 @@ IMPROVEMENTS / FIXES
 	- Remove the requirement of having a WM for the AI to work.
 	- Add the post-terrain avoidance cool-down slider to the AI GUI.
 	- AI now more intelligent about turning on Radars/Sonars; will not automatically turn on Active Sonar if present on a craft.
-	- Improved maneuvering behavior for the Orbital AI, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections.
 - Competition:
 	- Save/load tournament score weights to/from the settings.cfg.
 	- Waypoint Mode max laps can now be set to a user-specified value (WAYPOINT_MAX_LAPS, default 5) in the BDA settings menu.
