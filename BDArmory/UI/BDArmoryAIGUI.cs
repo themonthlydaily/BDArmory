@@ -10,6 +10,7 @@ using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Extensions;
+using UnityEngine.Rendering;
 
 namespace BDArmory.UI
 {
@@ -40,8 +41,10 @@ namespace BDArmory.UI
         int Drivertype = 0;
         int broadsideDir = 0;
         int pidMode = 0;
+        int rollTowards = 0;
         public AIUtils.VehicleMovementType[] VehicleMovementTypes = (AIUtils.VehicleMovementType[])Enum.GetValues(typeof(AIUtils.VehicleMovementType)); // Get the VehicleMovementType as an array of enum values.
         public BDModuleOrbitalAI.PIDModeTypes[] PIDModeTypes = (BDModuleOrbitalAI.PIDModeTypes[])Enum.GetValues(typeof(BDModuleOrbitalAI.PIDModeTypes)); // Get the PID mode as an array of enum values.
+        public BDModuleOrbitalAI.RollModeTypes[] RollModeTypes = (BDModuleOrbitalAI.RollModeTypes[])Enum.GetValues(typeof(BDModuleOrbitalAI.RollModeTypes)); // Get the roll mode as an array of enum values.
 
         public enum ActiveAIType { PilotAI, SurfaceAI, VTOLAI, OrbitalAI, None }; // Order of priority of AIs.
         public ActiveAIType activeAIType = ActiveAIType.None;
@@ -693,6 +696,7 @@ namespace BDArmory.UI
                     {
                         var AI = ActiveAI as BDModuleOrbitalAI;
                         pidMode = AI.pidModes.IndexOf(AI.pidMode);
+                        rollTowards = AI.rollTowardsModes.IndexOf(AI.rollTowards);
                     }
                     break;
             }
@@ -1922,6 +1926,12 @@ namespace BDArmory.UI
                                     GUI.BeginGroup(new Rect(contentBorder, contentHeight + line * entryHeight, contentWidth, sectionHeight * entryHeight), GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                                     line += 0.25f;
 
+                                    GUI.Label(SettinglabelRect(line), StringUtils.Localize("#LOC_BDArmory_AIWindow_RollMode") + $": {AI.rollTowards}", Label);
+                                    if (rollTowards != (rollTowards = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(line++, contentWidth), rollTowards, 0, RollModeTypes.Length - 1))))
+                                    {
+                                        AI.rollTowards = RollModeTypes[rollTowards].ToString();
+                                        AI.ChooseOptionsUpdated(null, null);
+                                    }
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.MinEngagementRange, nameof(AI.MinEngagementRange), "MinEngagementRange", $"{AI.MinEngagementRange:0}m");
 
                                     GUI.EndGroup();

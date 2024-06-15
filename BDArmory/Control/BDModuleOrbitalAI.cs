@@ -70,6 +70,16 @@ namespace BDArmory.Control
             Everything // PID used for firing weapons and maneuvers
         }
 
+        public enum RollModeTypes
+        {
+            Port_Starboard, // Roll to port or starboard, whichever is closer
+            Dorsal_Ventral, // Roll to dorsal or ventral, whichever is closer
+            Port, // Always roll port to target
+            Starboard, // Always roll starboard to target
+            Dorsal, // Always roll dorsal to target
+            Ventral, // Always roll ventral to target
+        }
+
         // User parameters changed via UI.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_OrbitalPIDActive"),//PID active mode
@@ -95,6 +105,14 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_MinEngagementRange"),//Min engagement range
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, scene = UI_Scene.All)]
         public float MinEngagementRange = 500;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_RollMode"),// Preferred roll direction of ship towards target
+            UI_ChooseOption(options = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" })]
+        public string rollTowards = "Port_Starboard";
+        public readonly string[] rollTowardsModes = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" };
+
+        public RollModeTypes rollMode
+            => (RollModeTypes)Enum.Parse(typeof(RollModeTypes), rollTowards);
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ManeuverRCS"),//RCS active
             UI_Toggle(enabledText = "#LOC_BDArmory_AI_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_AI_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
@@ -316,7 +334,7 @@ namespace BDArmory.Control
             if (PIDActive) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugTargetDirection, 5, Color.green); // The direction PID control will actually turn to
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVector * 100, 5, Color.cyan); // RCS command
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.magenta); // RCS lerped command
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugRollTarget, 2, Color.blue);
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugRollTarget, 2, Color.blue); // Roll target
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
         }
 
@@ -1212,11 +1230,41 @@ namespace BDArmory.Control
             Vector3 targetDirection = fc.attitude;
             Vector3 currentRoll = -vesselTransform.forward;
             Vector3 rollTarget = currentRoll;
-            if (targetVessel != null) // If we have a target, put broadside toward target
+            if (targetVessel != null) // If we have a target, adjust roll orientation relative to target based on rollMode setting
             {
-                Vector3 toTarget = FromTo(vessel, targetVessel);
-                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).normalized * 100f;
-                debugRollTarget = rollTarget;
+                Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
+                switch (rollMode)
+                {
+                    case RollModeTypes.Port_Starboard:
+                        {
+                            if (Vector3.Dot(toTarget, vesselTransform.right) > 0f)
+                                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            else
+                                rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                        }
+                        break;
+                    case RollModeTypes.Dorsal_Ventral:
+                        {
+                            if (Vector3.Dot(toTarget, vesselTransform.forward) > 0f)
+                                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            else
+                                rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up).ProjectOnPlanePreNormalized(vesselTransform.up);
+                        }
+                        break;
+                    case RollModeTypes.Port:
+                        rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                        break;
+                    case RollModeTypes.Starboard:
+                        rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                        break;
+                    case RollModeTypes.Dorsal:
+                        rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                        break;
+                    case RollModeTypes.Ventral:
+                        rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                        break;
+                }
+                debugRollTarget = rollTarget * 100f; ;
             }
             else
                 debugRollTarget = Vector3.zero;
