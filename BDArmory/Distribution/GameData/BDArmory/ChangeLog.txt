@@ -4,6 +4,7 @@ IMPROVEMENTS / FIXES
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
 		- Improved maneuvering behavior, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections when within combat range.
 		- Add option to set which side of the ship AI will present toward target using roll control (only active when PID is enabled).
+		- AI now properly aims and fires unguided missiles in orbit.
 	- Fix weapon types with no targeting type (i.e. AIR-2) not firing within engage range.
 - UI:
 	- Updated Chinese localization thanks to user Marv1n-M.
