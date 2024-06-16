@@ -338,6 +338,8 @@ namespace BDArmory.Weapons.Missiles
         private float burnRate = 0;
         private float burnedFuelMass = 0;
 
+        private int cruiseTerminationFrames = 0;
+
         public bool SetupComplete => StartSetupComplete;
         public float initMaxAoA = 0;
         public SmoothingF smoothedAoA;
@@ -2086,14 +2088,33 @@ namespace BDArmory.Weapons.Missiles
             if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
             if (cruiseRangeTrigger > 0)
-                yield return new WaitUntilFixed(checkCruiseRangeTrigger);
+                yield return new WaitUntilFixed(this.checkCruiseRangeTrigger);
                 
             yield return StartCoroutine(CruiseRoutine());
         }
 
         bool checkCruiseRangeTrigger()
         {
-            return ((TargetPosition - vessel.CoM).sqrMagnitude < cruiseRangeTrigger * cruiseRangeTrigger);
+            float sqrRange = (this.TargetPosition - this.part.rb.position).sqrMagnitude;
+
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Check cruise range trigger range: {Mathf.Sqrt(sqrRange)}");
+
+            if (sqrRange < cruiseRangeTrigger * cruiseRangeTrigger)
+            {
+                if (cruiseTerminationFrames < 5)
+                {
+                    cruiseTerminationFrames++;
+                    return false;
+                }
+
+                cruiseTerminationFrames = 0;
+                return true;
+            }
+
+            cruiseTerminationFrames = 0;
+            return false;
+
+            //return ((this.TargetPosition - this.part.rb.position).sqrMagnitude < cruiseRangeTrigger * cruiseRangeTrigger);
         }
 
         IEnumerator DeployAnimRoutine()
@@ -2285,7 +2306,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (!(thrust > 0)) return;
             sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
-            RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward, TargetingMode == TargetingModes.Radar);
+            RadarWarningReceiver.WarnMissileLaunch(vessel.CoM, transform.forward, TargetingMode == TargetingModes.Radar);
         }
 
         void EndBoost()
