@@ -7,6 +7,11 @@ IMPROVEMENTS / FIXES
 	- Fix weapon types with no targeting type (i.e. AIR-2) not firing within engage range.
 - UI:
 	- Updated Chinese localization thanks to user Marv1n-M.
+- Weapons
+	- Missiles:
+		- Change missile drop time increment from 0.5s to 0.1s
+		- Fix off-by-one frame issue for Modular Missile Orbital Guidance
+		- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space)
 
 1.6.12.0
 IMPROVEMENTS / FIXES
