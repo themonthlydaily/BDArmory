@@ -696,39 +696,56 @@ namespace BDArmory.Guidances
                 return missile.vessel.CoM + (missile.GetForwardTransform() * 1000);
             }
             Vector3 targetPosition = targetVessel.CoM;
+            Vector3 vel = missile.vessel.Velocity();
             float leadTime = 0;
             float targetDistance = Vector3.Distance(targetVessel.CoM, missile.vessel.CoM);
 
             MissileLauncher launcher = missile as MissileLauncher;
             BDModularGuidance modLauncher = missile as BDModularGuidance;
     
-            Vector3 vel = missile.vessel.Velocity();
-            Vector3 VelOpt = missile.GetForwardTransform() * (launcher != null ? launcher.optimumAirspeed : 1500);
             float accel = launcher != null ? (launcher.thrust / missile.part.mass) : modLauncher != null ? (modLauncher.thrust/modLauncher.mass) : 10;
-            Vector3 deltaVel = targetVessel.Velocity() - vel;
-            Vector3 DeltaOptvel = targetVessel.Velocity() - VelOpt;
-            float T = Mathf.Clamp(Vector3.Project(VelOpt - vel, missile.GetForwardTransform()).magnitude / accel, 0, 8); //time to optimal airspeed
+            
+            if (missile.vessel.InNearVacuum() && missile.vessel.InOrbit()) // In orbit, use orbital calc
+            {
+                float timeToImpact;
+                Vector3 relPos = targetVessel.CoM - missile.vessel.CoM;
+                Vector3 relVel = vel - targetVessel.Velocity();
+                Vector3 relAccel = targetVessel.acceleration_immediate - missile.GetForwardTransform() * accel;
 
-            Vector3 relPosition = targetPosition - missile.vessel.CoM;
-            Vector3 relAcceleration = targetVessel.acceleration_immediate - missile.GetForwardTransform() * accel;
-            leadTime = AIUtils.TimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
-            if (T < 8 && leadTime == T)//missile has reached max speed, and is now cruising; sim positions ahead based on T and run CPA from there
-            {
-                relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration_immediate, T) -
-                    AIUtils.PredictPosition(missile.vessel.CoM, vel, missile.GetForwardTransform() * accel, T);
-                relAcceleration = targetVessel.acceleration_immediate; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
-                leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
-            }
+                float thrustTime = launcher != null ? launcher.boostTime : modLauncher != null ? (modLauncher.MaxSpeed / accel) : 8;
 
-            if (missile.vessel.InNearVacuum() && missile.vessel.InOrbit()) // More accurate, but too susceptible to slight acceleration changes for use in-atmo
-            {
-                Vector3 relPos = targetPosition - missile.vessel.CoM;
-                Vector3 relVel = targetVessel.Velocity() - missile.vessel.Velocity();
-                Vector3 relAcc = targetVessel.acceleration_immediate - (missile.vessel.acceleration_immediate + missile.GetForwardTransform() * accel);
-                targetPosition = AIUtils.PredictPosition(relPos, relVel, relAcc, leadTime);
+                timeToImpact = AIUtils.TimeToCPA(relPos, relVel, relAccel, thrustTime);
+                if (timeToImpact == thrustTime)
+                {
+                    relPos = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration_immediate, thrustTime) -
+                    AIUtils.PredictPosition(missile.vessel.CoM, vel, missile.GetForwardTransform() * accel, thrustTime);
+                    relVel = relVel + relAccel * timeToImpact;
+                    relAccel = targetVessel.acceleration_immediate;
+                    timeToImpact = AIUtils.TimeToCPA(relPos, relVel, relAccel, 60f);
+                    leadTime = thrustTime + timeToImpact;   
+                }
+                else
+                    leadTime = timeToImpact;
+                targetPosition += leadTime * (targetVessel.Velocity() - vel) + 0.5f * leadTime * leadTime * targetVessel.acceleration_immediate;
             }
-            else // Not accurate enough for orbital speeds, but more resilient to acceleration changes
+            else // In atmo, use in-atmo calculations
             {
+                Vector3 VelOpt = missile.GetForwardTransform() * (launcher != null ? launcher.optimumAirspeed : 1500);
+                Vector3 deltaVel = targetVessel.Velocity() - vel;
+                Vector3 DeltaOptvel = targetVessel.Velocity() - VelOpt;
+                float T = Mathf.Clamp(Vector3.Project(VelOpt - vel, missile.GetForwardTransform()).magnitude / accel, 0, 8); //time to optimal airspeed
+
+                Vector3 relPosition = targetPosition - missile.vessel.CoM;
+                Vector3 relAcceleration = targetVessel.acceleration_immediate - missile.GetForwardTransform() * accel;
+                leadTime = AIUtils.TimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
+                if (T < 8 && leadTime == T)//missile has reached max speed, and is now cruising; sim positions ahead based on T and run CPA from there
+                {
+                    relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration_immediate, T) -
+                        AIUtils.PredictPosition(missile.vessel.CoM, vel, missile.GetForwardTransform() * accel, T);
+                    relAcceleration = targetVessel.acceleration_immediate; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
+                    leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
+                }
+
                 targetPosition += leadTime * targetVessel.Velocity();
 
                 if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy

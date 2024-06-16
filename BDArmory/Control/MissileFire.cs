@@ -8148,7 +8148,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 }
 
                 float boresightAngle = missile.maxOffBoresight * ((mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f); // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
-                if (unguidedWeapon) // Override boresightAngle based on blast radius for unguidedWeapons
+                if (unguidedWeapon || missile.TargetingMode == MissileBase.TargetingModes.None) // Override boresightAngle based on blast radius for unguidedWeapons or weapons with no targeting mode
                 {
                     if (mlauncher && mlauncher.missileTurret)
                         boresightAngle = 1f;
@@ -8181,12 +8181,12 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             bool unguidedWeapon = false;
             MissileLauncher mlauncher = ml as MissileLauncher;
 
-            unguidedWeapon = ml.GuidanceMode == MissileBase.GuidanceModes.None ||
+            unguidedWeapon = 
                 ml.TargetingMode switch
                 {
                     MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
-                    MissileBase.TargetingModes.Radar => !_sonarsEnabled && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
-                    MissileBase.TargetingModes.Inertial => !(_sonarsEnabled || _irstsEnabled),
+                    MissileBase.TargetingModes.Radar => (mlauncher.torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
+                    MissileBase.TargetingModes.Inertial => !((mlauncher.torpedo ? _sonarsEnabled : _radarsEnabled) || _irstsEnabled),
                     MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled,
                     _ => false
                 }; //unify unguidedWeapon conditions
