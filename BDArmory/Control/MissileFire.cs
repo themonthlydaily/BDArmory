@@ -2600,7 +2600,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     }
                     else
                     {
-                        if ((targetVessel.CoM - ml.vessel.CoM).sqrMagnitude < 0.01f * ml.maxStaticLaunchRange * ml.maxStaticLaunchRange)
+                        if ((ml.TargetingMode == MissileBase.TargetingModes.None) || ((targetVessel.CoM - ml.vessel.CoM).sqrMagnitude < 0.01f * ml.maxStaticLaunchRange * ml.maxStaticLaunchRange))
                         {
                             if (SetCargoBays())
                             {
