@@ -26,7 +26,7 @@ namespace BDArmory.Evolution
             this.direction = direction;
         }
 
-        public ConfigNode Apply(ConfigNode craft, VariantEngine engine)
+        public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
 
             ConfigNode mutatedCraft = craft.CreateCopy();
@@ -41,7 +41,7 @@ namespace BDArmory.Evolution
             {
                 matchingNodeMap[partName] = engine.GetNode(partName, mutationNodeMap);
             }
-            MutateMap(matchingNodeMap, mutatedCraft, engine);
+            MutateMap(matchingNodeMap, mutatedCraft, engine, newValue);
 
             return mutatedCraft;
         }
@@ -52,19 +52,19 @@ namespace BDArmory.Evolution
             return new Variant(id, name, mutatedParts, key, direction);
         }
 
-        private void MutateMap(Dictionary<string, ConfigNode> nodeMap, ConfigNode craft, VariantEngine engine)
+        private void MutateMap(Dictionary<string, ConfigNode> nodeMap, ConfigNode craft, VariantEngine engine, float value = float.NaN)
         {
             Debug.Log("Starting ControlSurfaceOffsetMutation.MutateMap");
             foreach (var partNames in nodeMap.Keys)
             {
                 foreach (var partName in partNames.Split(','))
                 {
-                    MutateNode(nodeMap, engine, partName);
+                    MutateNode(nodeMap, engine, partName, value);
                 }
             }
         }
 
-        private void MutateNode(Dictionary<string, ConfigNode> nodeMap, VariantEngine engine, string partName)
+        private void MutateNode(Dictionary<string, ConfigNode> nodeMap, VariantEngine engine, string partName, float value = float.NaN)
         {
             Debug.Log("Starting ControlSurfaceOffsetMutation.MutateNode");
             ConfigNode partNode = nodeMap[partName];
@@ -100,16 +100,17 @@ namespace BDArmory.Evolution
                 existingValue = 1.0f;
             }
 
-            //float.TryParse(partNode.GetValue(paramName), out existingValue);
             Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation found existing value {0} = {1}", paramName, existingValue));
+            
+            if (float.IsNaN(value))
+            {
+                value = existingValue + (10f * modifier);
+                value = Mathf.Clamp(value, -10f, 10f); // Clamp part repositioning to reasonably small vaues  (10 m).
+                // TODO: Insert logic here using vessel checker, collision checker, etc. util from base KSP ()
+            }
 
-            float offsetDist = (10f * modifier);
-            var value = existingValue + offsetDist;
-            value = Mathf.Clamp(value, -10f, 10f); // Clamp part repositioning to reasonably small vaues  (10 m).
-            // TODO: Insert logic here using vessel checker, collision checker, etc. util from base KSP ()
-
-            // Recalculate offset_distance after clamping
-            offsetDist = value - existingValue;
+            // Recalculate final offset_distance value
+            float offsetDist = value - existingValue;
 
             if (paramName.EndsWith("X"))
             {

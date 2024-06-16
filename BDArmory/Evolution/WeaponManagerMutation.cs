@@ -21,7 +21,7 @@ namespace BDArmory.Evolution
             this.direction = direction;
         }
 
-        public ConfigNode Apply(ConfigNode craft, VariantEngine engine)
+        public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
             ConfigNode mutatedCraft = craft.CreateCopy();
             List<ConfigNode> matchingNodes = engine.FindModuleNodes(mutatedCraft, moduleName);
@@ -30,11 +30,17 @@ namespace BDArmory.Evolution
                 var node = matchingNodes[0];
                 float existingValue;
                 float.TryParse(node.GetValue(paramName), out existingValue);
-                if( engine.MutateNode(node, paramName, value) )
+
+                if (float.IsNaN(newValue))
+                {
+                    newValue = value;
+                }
+
+                if ( engine.MutateNode(node, paramName, newValue) )
                 {
                     ConfigNode partNode = engine.FindParentPart(mutatedCraft, node);
                     string partName = partNode.GetValue("part");
-                    mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, value));
+                    mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, newValue));
                 }
             }
             else

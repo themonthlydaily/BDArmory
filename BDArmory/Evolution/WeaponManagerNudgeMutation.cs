@@ -21,7 +21,7 @@ namespace BDArmory.Evolution
             this.direction = direction;
         }
 
-        public ConfigNode Apply(ConfigNode craft, VariantEngine engine)
+        public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
             ConfigNode mutatedCraft = craft.CreateCopy();
             Debug.Log("[BDArmory.WeaponManagerNudgeMutation]: Evolution WeaponManagerNudgeMutation applying");
@@ -33,7 +33,13 @@ namespace BDArmory.Evolution
                 float existingValue;
                 float.TryParse(node.GetValue(paramName), out existingValue);
                 Debug.Log(string.Format("[BDArmory.WeaponManagerNudgeMutation]: Evolution WeaponManagerNudgeMutation found existing value {0} = {1}", paramName, existingValue));
-                if (engine.NudgeNode(node, paramName, modifier))
+
+                if (float.IsNaN(newValue))
+                {
+                    newValue = existingValue * (1 + modifier);
+                }
+
+                if (engine.MutateNode(node, paramName, newValue))
                 {
                     ConfigNode partNode = engine.FindParentPart(mutatedCraft, node);
                     if( partNode == null )
@@ -42,9 +48,8 @@ namespace BDArmory.Evolution
                         return mutatedCraft;
                     }
                     string partName = partNode.GetValue("part");
-                    var value = existingValue * (1 + modifier);
-                    Debug.Log(string.Format("[BDArmory.WeaponManagerNudgeMutation]: Evolution WeaponManagerNudgeMutation mutated part {0}, module {1}, param {2}, existing: {3}, value: {4}", partName, moduleName, paramName, existingValue, value));
-                    mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, value));
+                    Debug.Log(string.Format("[BDArmory.WeaponManagerNudgeMutation]: Evolution WeaponManagerNudgeMutation mutated part {0}, module {1}, param {2}, existing: {3}, value: {4}", partName, moduleName, paramName, existingValue, newValue));
+                    mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, newValue));
                 }
                 else
                 {

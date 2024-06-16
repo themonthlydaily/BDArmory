@@ -27,14 +27,14 @@ namespace BDArmory.Evolution
             this.direction = direction;
         }
 
-        public ConfigNode Apply(ConfigNode craft, VariantEngine engine)
+        public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
             ConfigNode mutatedCraft = craft.CreateCopy();
             Debug.Log("[BDArmory.ControlSurfaceAxisNudgeMutation]: Evolution ControlSurfaceNudgeMutation applying");
             List<ConfigNode> matchingNodes = engine.FindModuleNodes(mutatedCraft, moduleName);
             foreach (var node in matchingNodes)
             {
-                MutateIfNeeded(node, mutatedCraft, engine);
+                MutateIfNeeded(node, mutatedCraft, engine, newValue);
             }
             return mutatedCraft;
         }
@@ -44,7 +44,7 @@ namespace BDArmory.Evolution
             return new Variant(id, name, mutatedParts, key, direction);
         }
 
-        private void MutateIfNeeded(ConfigNode node, ConfigNode craft, VariantEngine engine)
+        private void MutateIfNeeded(ConfigNode node, ConfigNode craft, VariantEngine engine, float value = float.NaN)
         {
             // check axis mask for included axes
             bool shouldMutate = false;
@@ -73,8 +73,14 @@ namespace BDArmory.Evolution
             {
                 float existingValue;
                 float.TryParse(node.GetValue(paramName), out existingValue);
+
+                if (float.IsNaN(value))
+                {
+                    value = existingValue * (1 + modifier);
+                }
+
                 Debug.Log(string.Format("Evolution ControlSurfaceNudgeMutation found existing value {0} = {1}", paramName, existingValue));
-                if (engine.NudgeNode(node, paramName, modifier))
+                if (engine.MutateNode(node, paramName, value))
                 {
                     ConfigNode partNode = engine.FindParentPart(craft, node);
                     if( partNode == null )
@@ -83,7 +89,6 @@ namespace BDArmory.Evolution
                         return;
                     }
                     string partName = partNode.GetValue("part");
-                    var value = existingValue * (1 + modifier);
                     Debug.Log(string.Format("Evolution ControlSurfaceNudgeMutation mutated part {0}, module {1}, param {2}, existing: {3}, value: {4}", partName, moduleName, paramName, existingValue, value));
                     mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, value));
                 }
