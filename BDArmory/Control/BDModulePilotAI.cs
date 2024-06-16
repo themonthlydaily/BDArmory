@@ -4461,7 +4461,7 @@ namespace BDArmory.Control
                     ReleaseCommand(false);
                     return;
                 }
-                else if (weaponManager.underAttack || weaponManager.underFire)
+                else if (weaponManager == null || weaponManager.underAttack || weaponManager.underFire)
                 {
                     ReleaseCommand(false);
                     return;
