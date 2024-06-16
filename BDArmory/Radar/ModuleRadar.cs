@@ -1055,7 +1055,7 @@ namespace BDArmory.Radar
                 if (vrd.Current == null) continue;
                 if (vrd.Current.canReceiveRadarData && vrd.Current.vessel != contactData.vessel)
                 {
-                    vrd.Current.AddRadarContact(this, contactData, _locked);
+                    vrd.Current.AddRadarContact(this, contactData, _locked, true);
                 }
             }
             vrd.Dispose();
