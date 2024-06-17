@@ -11,6 +11,7 @@ IMPROVEMENTS / FIXES
 - Weapons
 	- Missiles:
 		- Change missile drop time increment from 0.5s to 0.1s
+		- Modular Missiles will be selected to intercept missiles if they have Engage Missiles enabled
 		- Fix off-by-one frame issue for Modular Missile Orbital Guidance
 		- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space)
 
