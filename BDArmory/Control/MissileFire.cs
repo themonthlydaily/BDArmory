@@ -8188,7 +8188,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 ml.TargetingMode switch
                 {
                     MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
-                    MissileBase.TargetingModes.Radar => (torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
+                    MissileBase.TargetingModes.Radar => !(torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))), // FIXME so it works with HEKVs and 
                     MissileBase.TargetingModes.Inertial => !((torpedo ? _sonarsEnabled : _radarsEnabled) || _irstsEnabled),
                     MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled,
                     _ => false
