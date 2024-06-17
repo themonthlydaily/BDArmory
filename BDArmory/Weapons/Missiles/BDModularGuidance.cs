@@ -833,7 +833,7 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
-                Vector3 targetPosition = TargetPosition + TargetVelocity * TimeWarp.fixedDeltaTime; // Fix for TargetPosition being off by one frame relative to targetVessel.Vessel.CoM
+                Vector3 targetPosition = TargetPosition + TimeWarp.fixedDeltaTime * TargetVelocity; // Fix for TargetPosition being off by one frame relative to targetVessel.Vessel.CoM, this works better than including acceleration term
                 Vector3 targetVelocity = TargetVelocity;
                 Vector3 targetVector = targetPosition - vessel.CoM;
                 Vector3 relVel = vessel.GetObtVelocity() - targetVelocity;
@@ -858,9 +858,9 @@ namespace BDArmory.Weapons.Missiles
                 else
                 {
                     Vector3 acceleration = forwardDir * maxAcceleration;
-
+                    relVel = TargetVelocity - vessel.GetObtVelocity();
                     timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
-                    interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - acceleration * 0.5f, timeToImpact);
+                    interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
 
                     if (Vector3.Dot(interceptVector, targetVector) < 0)
                         interceptVector = targetVector;
