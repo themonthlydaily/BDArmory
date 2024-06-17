@@ -389,7 +389,7 @@ namespace BDArmory.Evolution
             List<Variant> variants = new List<Variant>();
             foreach (var mutation in mutations)
             {
-                ConfigNode newVariant = mutation.Apply(craft, engine);
+                ConfigNode newVariant = mutation.Apply(craft.CreateCopy(), engine);
                 var id = nextVariantId;
                 var name = GetNextVariantName();
                 variants.Add(mutation.GetVariant(id.ToString(), name));
@@ -606,8 +606,6 @@ namespace BDArmory.Evolution
             var referenceScore = scores[activeGroup.referenceName];
             if (maxScore > 0 && maxScore > referenceScore)
             {
-                ConfigNode newCraft = craft.CreateCopy();
-
                 // compute weighted contributions
                 // map of part/module/param => delta
                 Dictionary<string, Dictionary<string, Dictionary<string, float>>> agg = new Dictionary<string, Dictionary<string, Dictionary<string, float>>>();
@@ -616,11 +614,26 @@ namespace BDArmory.Evolution
                 // feedback is based on the scores for each axis
                 Dictionary<string, Dictionary<int, float>> axisScores = new Dictionary<string, Dictionary<int, float>>();
 
+                // Outcome mutation map: key, new value
+                Dictionary<string, Dictionary<string, float>> outcomeMutations = new Dictionary<string, Dictionary<string, float>>();
+
                 foreach (var variant in activeGroup.variants)
                 {
                     // normalize scores for weighted contribution
                     // TODO: this is probably a bug. basis should likely be referenceScore.
                     var score = scores[variant.name] / maxScore;
+
+                    // Apply feedback for the first part representing this variant
+                    // since we don't want to double/triple-count scores based on part symmetry within a single variant
+                    // (if this is run per-part, the outcome offset will increase linearly with the number of parts on the variant)
+                    // The first part is also the reference part for offset calculations in the mutator
+                    if (!outcomeMutations.ContainsKey(variant.key))
+                    {
+                        outcomeMutations[variant.key] = new Dictionary<string, float>();
+                        outcomeMutations[variant.key]["referenceValue"] = variant.mutatedParts[0].referenceValue;
+                        outcomeMutations[variant.key]["newOffset"] = 0f;
+                    }
+                    outcomeMutations[variant.key]["newOffset"] += (variant.mutatedParts[0].value - variant.mutatedParts[0].referenceValue) * score;
 
                     // track feedback score
                     if (!axisScores.ContainsKey(variant.key))
@@ -634,6 +647,8 @@ namespace BDArmory.Evolution
                         var partContribution = part.value - part.referenceValue;
                         var weightedContribution = partContribution * score;
                         Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
+
+                        // This should eventually be unnecessary. Replaced with outcomeMutations
                         if (agg.ContainsKey(part.partName))
                         {
                             if (agg[part.partName].ContainsKey(part.moduleName))
@@ -697,6 +712,9 @@ namespace BDArmory.Evolution
                 }
 
                 Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution synthesizing new generation from {0} parts", agg.Keys.Count));
+
+                // Should not be referencing underlying functions here. Should be using top-level Apply class to allow for mutations to be more generically applied
+                ConfigNode newCraft = craft.CreateCopy();
                 foreach (var part in agg.Keys)
                 {
                     foreach (var module in agg[part].Keys)
@@ -710,8 +728,8 @@ namespace BDArmory.Evolution
                                 List<ConfigNode> moduleNodes = engine.FindModuleNodes(partNodes[0], module);
                                 if (moduleNodes.Count > 0)
                                 {
-                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution mutated part: {0}, module: {1}, key: {2}, value: {3}", part, module, param, newValue));
-                                    engine.MutateNode(moduleNodes[0], param, newValue);
+                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Old evolution would have mutated part: {0}, module: {1}, key: {2}, value: {3}", part, module, param, newValue));
+                                    //engine.MutateNode(moduleNodes[0], param, newValue);
                                 }
                                 else
                                 {
@@ -724,6 +742,16 @@ namespace BDArmory.Evolution
                             }
                         }
                     }
+                }
+
+                foreach(var mutationKey in outcomeMutations.Keys)
+                {
+                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: New mutator applied key: {0} from: {1} to: {2}", mutationKey, outcomeMutations[mutationKey]["referenceValue"], outcomeMutations[mutationKey]["referenceValue"] + outcomeMutations[mutationKey]["newOffset"]));
+
+                    // Get and apply a mutator for this specific key.
+                    // Note that KeyToMutations returns a list of positive and negative pole; we only need one to apply a specified new value
+                    VariantMutation finalMutator = engine.KeyToMutations(mutationKey)[0];
+                    newCraft = finalMutator.Apply(newCraft, engine, outcomeMutations[mutationKey]["referenceValue"] + outcomeMutations[mutationKey]["newOffset"]);
                 }
 
                 Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution save result for {0}", activeGroup.id));

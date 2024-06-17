@@ -369,7 +369,7 @@ namespace BDArmory.Evolution
             return mutations;
         }
 
-        private List<VariantMutation> KeyToMutations(string key)
+        public List<VariantMutation> KeyToMutations(string key)
         {
             string part;
             string module;

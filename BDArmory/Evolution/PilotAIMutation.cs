@@ -19,8 +19,7 @@ namespace BDArmory.Evolution
 
         public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
-            ConfigNode mutatedCraft = craft.CreateCopy();
-            List<ConfigNode> matchingNodes = engine.FindModuleNodes(mutatedCraft, moduleName);
+            List<ConfigNode> matchingNodes = engine.FindModuleNodes(craft, moduleName);
             if( matchingNodes.Count == 1 )
             {
                 var node = matchingNodes[0];
@@ -34,7 +33,7 @@ namespace BDArmory.Evolution
 
                 if ( engine.MutateNode(node, paramName, newValue) )
                 {
-                    ConfigNode partNode = engine.FindParentPart(mutatedCraft, node);
+                    ConfigNode partNode = engine.FindParentPart(craft, node);
                     string partName = partNode.GetValue("part");
                     mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, newValue));
                 }
@@ -43,7 +42,7 @@ namespace BDArmory.Evolution
             {
                 Debug.Log("[BDArmory.PilotAIMutation]: Evolution PilotAIMutation wrong number of pilot modules");
             }
-            return mutatedCraft;
+            return craft;
         }
 
         public Variant GetVariant(string id, string name)

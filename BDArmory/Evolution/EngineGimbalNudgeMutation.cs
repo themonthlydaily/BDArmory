@@ -26,10 +26,8 @@ namespace BDArmory.Evolution
 
         public ConfigNode Apply(ConfigNode craft, VariantEngine engine, float newValue = float.NaN)
         {
-            ConfigNode mutatedCraft = craft.CreateCopy();
-
             // Build node map of copy
-            Dictionary<string, ConfigNode> mutationNodeMap = engine.BuildNodeMap(mutatedCraft);
+            Dictionary<string, ConfigNode> mutationNodeMap = engine.BuildNodeMap(craft);
 
             // Apply mutation to all symmetric parts
             Debug.Log("[BDArmory.EngineGimbalNudgeMutation]: Evolution EngineGimbalNudgeMutation applying");
@@ -38,9 +36,9 @@ namespace BDArmory.Evolution
             {
                 matchingNodeMap[partName] = engine.GetNode(partName, mutationNodeMap);
             }
-            MutateMap(matchingNodeMap, mutatedCraft, engine, newValue);
+            MutateMap(matchingNodeMap, craft, engine, newValue);
 
-            return mutatedCraft;
+            return craft;
         }
 
         public Variant GetVariant(string id, string name)
