@@ -2376,12 +2376,14 @@ namespace BDArmory.Weapons.Missiles
                     while (emitter.MoveNext())
                     {
                         if (emitter.Current == null) continue;
+                        /*
                         if (!hasRCS)
                         {
-                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
+                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime); //uh, why? this turns reasonbale missileFX into giant doom plumes
                         }
-
-                        //emitter.Current.maxSize = Mathf.Clamp01(Throttle / Mathf.Clamp((float)vessel.atmDensity, 0.2f, 1f)); //uh, why? this turns reasonbale missileFX into giant doom plumes
+                        
+                        emitter.Current.maxSize = Mathf.Clamp01(Throttle / Mathf.Clamp((float)vessel.atmDensity, 0.2f, 1f)); 
+                        */
                         if (weaponClass != WeaponClasses.SLW || (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) < 0)) //#710
                         {
                             if (Throttle == 0 || thrust == 0)
