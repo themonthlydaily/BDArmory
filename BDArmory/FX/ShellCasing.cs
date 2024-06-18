@@ -9,6 +9,7 @@ namespace BDArmory.FX
     {
         public float startTime;
         public Vector3 initialV;
+        public Vector3 configV;
 
         Vector3 velocity;
         Vector3 angularVelocity;
@@ -21,8 +22,7 @@ namespace BDArmory.FX
             startTime = Time.time;
             velocity = initialV;
             velocity += transform.rotation *
-                        new Vector3(Random.Range(-.1f, .1f), Random.Range(-.1f, .1f),
-                            Random.Range(6f, 8f));
+                        (new Vector3(Random.Range(-.1f, .1f), Random.Range(-.1f, .1f),  Random.Range(-.1f, .1f)) + configV);
             angularVelocity =
                 new Vector3(Random.Range(-10f, 10f), Random.Range(-10f, 10f),
                     Random.Range(-10f, 10f)) * 10;
