@@ -1,4 +1,14 @@
-﻿1.6.12.0
+﻿IMPROVEMENTS / FIXES
+- Detectors:
+	-Fix non-seaborne craft not being able to receive sonar data from seacraft via datalink.
+- AI
+	- AI Point Defense logic now knows how to use modular Missiles set to engageMissiles as anti-missile missiles.
+- Weapons:
+	- Can now set shellcasing ejection speed for guns featuring shell ejection via the shellEjectVelocity field in the weapon.cfg.
+	- Missiles:
+		- Fix Missiles with boost/cruise thrust = 0, but with boostTime/cruiseTime > 0 displaying exhaustFX.
+		- Fix missile cruiseFX being huge, regardless of selected exhaustPrefab.
+1.6.12.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix Pwing HP scaling for large pwings being used as fuselages.
