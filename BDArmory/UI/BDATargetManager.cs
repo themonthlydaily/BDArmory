@@ -566,9 +566,9 @@ namespace BDArmory.UI
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
-                    //if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) 
-                    if (score > 0f && priorHeatScore > 0) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
-                    { //finalScore will always be 0? only thing that modifies it is below this?
+                    if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) 
+                    // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
+                    {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
                         {
                             finalScore = score;
@@ -926,6 +926,8 @@ namespace BDArmory.UI
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, top).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, bottom).Item1.ToString("0"));
             var radarSig = RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel);
+            if ((radarSig.radarBaseSignature == radarSig.radarMassAtUpdate) && (!VesselModuleRegistry.ignoredVesselTypes.Contains(FlightGlobals.ActiveVessel.vesselType) && FlightGlobals.ActiveVessel.IsControllable))
+                RadarUtils.ForceUpdateRadarCrossSections();
             string aspectedText = "";
             if (BDArmorySettings.ASPECTED_RCS)
             {

@@ -331,7 +331,10 @@ namespace BDArmory.Radar
             if (mf != null)
             {
                 if (mf.guardMode) vesselRadarData.LinkAllRadars();
-                mf._radarsEnabled = true;
+                if (sonarMode == SonarModes.None)
+                    mf._radarsEnabled = true;
+                else if (sonarMode == SonarModes.Active)
+                    mf._sonarsEnabled = true;
             }
         }
 
@@ -367,19 +370,33 @@ namespace BDArmory.Radar
             {
                 if (mf.radars.Count > 1)
                 {
+                    bool detectorsEnabled = false;
                     using (List<ModuleRadar>.Enumerator rd = mf.radars.GetEnumerator())
                         while (rd.MoveNext())
                         {
-                            if (rd.Current == null) continue;
-                            mf._radarsEnabled = false;
+                            if (rd.Current == null || rd.Current.sonarMode != sonarMode) continue;
+                            //mf._radarsEnabled = false;
+                            detectorsEnabled = false;
                             if (rd.Current != this && rd.Current.radarEnabled)
                             {
-                                mf._radarsEnabled = true;
+                                //mf._radarsEnabled = true;
+                                detectorsEnabled = true;
                                 break;
                             }
                         }
+
+                    if (sonarMode == SonarModes.None)
+                        mf._radarsEnabled = detectorsEnabled;
+                    else if (sonarMode == SonarModes.Active)
+                        mf._sonarsEnabled = detectorsEnabled;
                 }
-                else mf._radarsEnabled = false;
+                else
+                {
+                    if (sonarMode == SonarModes.None)
+                        mf._radarsEnabled = false;
+                    else if (sonarMode == SonarModes.Active)
+                        mf._sonarsEnabled = false;
+                }
             }
         }
 
