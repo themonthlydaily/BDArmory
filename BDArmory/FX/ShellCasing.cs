@@ -12,7 +12,7 @@ namespace BDArmory.FX
 
         Vector3 velocity;
         Vector3 angularVelocity;
-
+        public float ejectSpeed = 6;
         float atmDensity;
         const int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19?
 
@@ -22,7 +22,7 @@ namespace BDArmory.FX
             velocity = initialV;
             velocity += transform.rotation *
                         new Vector3(Random.Range(-.1f, .1f), Random.Range(-.1f, .1f),
-                            Random.Range(6f, 8f));
+                            Random.Range(ejectSpeed, ejectSpeed + 2));
             angularVelocity =
                 new Vector3(Random.Range(-10f, 10f), Random.Range(-10f, 10f),
                     Random.Range(-10f, 10f)) * 10;
