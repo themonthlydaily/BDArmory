@@ -669,7 +669,7 @@ namespace BDArmory.Weapons.Missiles
 
                         if (!pe.Current.gameObject.name.Contains("rcs") && !pe.Current.useWorldSpace)
                         {
-                            pe.Current.sizeGrow = 99999;
+                            //pe.Current.sizeGrow = 99999;
                         }
                     }
 
@@ -2206,10 +2206,10 @@ namespace BDArmory.Weapons.Missiles
                     while (emitter.MoveNext())
                     {
                         if (emitter.Current == null) continue;
-                        if (!hasRCS)
-                        {
-                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
-                        }
+                        //if (!hasRCS)
+                        //{
+                        //    emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
+                        //}
                         if (Throttle == 0 || thrust == 0)
                             emitter.Current.emit = false;
                         else
