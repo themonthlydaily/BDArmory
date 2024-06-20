@@ -526,6 +526,7 @@ namespace BDArmory.Weapons.Missiles
                     if (craftPart.Current.engageRangeMax != engageRangeMax) continue;
                     missilecount += craftPart.Current.AmmoCount;
                 }
+            if (hasAmmo) missilecount += (int)reloadableRail.magazineAmmo;
         }
 
         public string GetSubLabel()
