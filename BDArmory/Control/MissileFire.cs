@@ -7937,7 +7937,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     {
                         if (weapon.Current == null) continue;
                         MissileBase currMissile = weapon.Current as MissileBase;
-                        MissileLauncher missile = currMissile as MissileLauncher;
+                        MissileLauncher launcher = currMissile as MissileLauncher;
                         if (currMissile == null) continue;
                         if (!currMissile.engageMissile) continue;
                         if (currMissile.HasFired || currMissile.launched) continue;
@@ -7985,15 +7985,15 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 }
                             }
                             if (!CheckEngagementEnvelope(currMissile, targetDist, PDMslTgts[MissileID].Vessel)) continue;
-                            bool torpedo = missile && missile.torpedo; //TODO - work out MMG torpedo support?
+                            bool torpedo = launcher && launcher.torpedo; //TODO - work out MMG torpedo support?
                             if (PDMslTgts[MissileID].Vessel.Splashed && !torpedo) viableTarget = false;
                             //need to see if missile is turreted (and is a unique turret we haven't seen yet); if so, check if target is within traverse, else see if target is within boresight
                             bool turreted = false;
                             if (currMissile.TargetingMode == MissileBase.TargetingModes.Radar && (torpedo ? _sonarsEnabled : _radarsEnabled) && !currMissile.radarLOAL && MaxradarLocks < vesselRadarData.GetLockedTargets().Count) continue; //don't have available radar lock, move to next missile                           
                             MissileTurret mT = null;
-                            if (missile && (missile.missileTurret || missile.multiLauncher && missile.multiLauncher.turret))
+                            if (launcher && (launcher.missileTurret || launcher.multiLauncher && launcher.multiLauncher.turret))
                             {
-                                mT = missile.missileTurret ? missile.missileTurret : missile.multiLauncher.turret;
+                                mT = launcher.missileTurret ? launcher.missileTurret : launcher.multiLauncher.turret;
                                 if (!MslTurrets.Contains(mT))
                                 {
                                     turreted = true;

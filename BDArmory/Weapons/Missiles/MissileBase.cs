@@ -1372,7 +1372,7 @@ namespace BDArmory.Weapons.Missiles
                             dotTol = 0.98f;
                             if (!isMMG)
                             {
-                                if (Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)))
+                                if (Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Wheels)))
                                 {
                                     Part p = hit.collider.gameObject.GetComponentInParent<Part>();
                                     if (p != null && hit.distance > 10f)

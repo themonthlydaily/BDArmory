@@ -10,7 +10,6 @@ using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Extensions;
-using UnityEngine.Rendering;
 
 namespace BDArmory.UI
 {
