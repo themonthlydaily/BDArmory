@@ -1582,8 +1582,6 @@ namespace BDArmory.Control
 
             SetAutoTuneFields();
             MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
-            //doesn't work for FS helicopter engines, reverting to older method for inf. fuel.
-            //CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
             OtherUtils.SetTimeOverride(autoTune);
         }
         void SetAutoTuneFields()
@@ -2209,7 +2207,7 @@ namespace BDArmory.Control
             if (timeToCPA > 1f && targetAI != null && targetAI.ramming)
             {
                 var targetWM = VesselModuleRegistry.GetMissileFire(v);
-                if (targetWM.currentTarget != null && targetWM.currentTarget.Vessel == vessel && Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) < -0.866f) // They're trying to ram us and are mostly head-on! Two can play at that game!
+                if (targetWM != null && targetWM.currentTarget != null && targetWM.currentTarget.Vessel == vessel && Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) < -0.866f) // They're trying to ram us and are mostly head-on! Two can play at that game!
                 {
                     FlyToPosition(s, AIUtils.PredictPosition(v.transform.position, v.Velocity(), v.acceleration, TimeWarp.fixedDeltaTime)); // Ultimate Chicken!!!
                     AdjustThrottle(maxSpeed, false, true);
@@ -2264,7 +2262,7 @@ namespace BDArmory.Control
                         }
                         //Vector3 leadOffset = (missile.MissileReferenceTransform.position + (missile.MissileReferenceTransform.forward * distanceToTarget)) - (vesselTransform.position + (vesselTransform.up * distanceToTarget));
                         //target -= leadOffset; //correctly account for missiles mounted at an angle (important if heater to keep them pointed at heatsource and/or keep target within boresight)
-                        target = Quaternion.FromToRotation(missile.MissileReferenceTransform.forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
+                        if (!missile.isMMG) target = Quaternion.FromToRotation(missile.MissileReferenceTransform.forward, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position;
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (angleToTarget < 20f)
                         {
@@ -2327,18 +2325,18 @@ namespace BDArmory.Control
                     {
                         Vector3 leadOffset = weapon.GetLeadOffset();
                         target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
-                                                // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                                               // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
                         Vector3 weaponPosition = weapon.fireTransforms[0].position;
                         Vector3 weaponDirection = weapon.fireTransforms[0].forward;
                         if (weapon.part.symmetryCounterparts.Count > 0)
                         {
-                        foreach (var part in weapon.part.symmetryCounterparts)
-                        {
+                            foreach (var part in weapon.part.symmetryCounterparts)
+                            {
                                 weaponPosition += part.transform.position;
                                 weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
-                        }
-                        weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
-                        weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
+                            }
+                            weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
+                            weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
                         }
                         target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
                         var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
@@ -2534,7 +2532,7 @@ namespace BDArmory.Control
             {
                 isPSM = false;
             }
-            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;                        
+            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
             if (AutoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
             {
                 steerMode = SteerModes.Aiming; // Pretend to aim when on target.
@@ -4463,7 +4461,7 @@ namespace BDArmory.Control
                     ReleaseCommand(false);
                     return;
                 }
-                else if (weaponManager.underAttack || weaponManager.underFire)
+                else if (weaponManager == null || weaponManager.underAttack || weaponManager.underFire)
                 {
                     ReleaseCommand(false);
                     return;
