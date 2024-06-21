@@ -2095,9 +2095,9 @@ namespace BDArmory.Weapons.Missiles
 
         bool checkCruiseRangeTrigger()
         {
-            float sqrRange = (this.TargetPosition - this.part.rb.position).sqrMagnitude;
+            float sqrRange = (TargetPosition - part.rb.position).sqrMagnitude;
 
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Check cruise range trigger range: {Mathf.Sqrt(sqrRange)}");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Check cruise range trigger range: {BDAMath.Sqrt(sqrRange)}");
 
             if (sqrRange < cruiseRangeTrigger * cruiseRangeTrigger)
             {
@@ -2113,8 +2113,6 @@ namespace BDArmory.Weapons.Missiles
 
             cruiseTerminationFrames = 0;
             return false;
-
-            //return ((this.TargetPosition - this.part.rb.position).sqrMagnitude < cruiseRangeTrigger * cruiseRangeTrigger);
         }
 
         IEnumerator DeployAnimRoutine()
