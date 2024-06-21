@@ -568,6 +568,11 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.gMargin = MLConfig.gMargin;
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
+            missileLauncher.liftArea = MLConfig.liftArea;
+            missileLauncher.useSimpleDrag = MLConfig.useSimpleDrag;
+            missileLauncher.simpleCoD = MLConfig.simpleCoD;
+            missileLauncher.maxTorque = MLConfig.maxTorque;
+            missileLauncher.simpleStableTorque = MLConfig.simpleStableTorque;
 
             if (configurableSettings)
             {
