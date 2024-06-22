@@ -79,18 +79,34 @@ namespace BDArmory.Evolution
             // Get the corresponding vector components
             origAttPos = KSPUtil.ParseVector3(partNode.GetValue("attPos"));
             origPos = KSPUtil.ParseVector3(partNode.GetValue("pos"));
+            Quaternion attRot = KSPUtil.ParseQuaternion(partNode.GetValue("attRot"));
+            Quaternion attRot0 = KSPUtil.ParseQuaternion(partNode.GetValue("attRot0"));
+            Quaternion rot = KSPUtil.ParseQuaternion(partNode.GetValue("rot"));
+            // Based on OnOffsetGizmoUpdate method, this is how the offsetGizmo update is applied/aligned to part rotation
+            //selectedPart.attRotation * childToParent.position
+            Vector3 localAttPos = Quaternion.Inverse(attRot) * origAttPos;
+            Vector3 localAttPos0 = Quaternion.Inverse(attRot0) * origAttPos;
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position attRot {0}", KSPUtil.WriteVector(localAttPos)));
+            // attRot0 appears to store part rotation on attachment relative to parent
+            // If rotation gizmo applied to part, it will modify rot property
+            // Not sure what (if anything) modifies 
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position attRot0 {0}", KSPUtil.WriteVector(localAttPos0)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position rot {0}", KSPUtil.WriteVector(Quaternion.Inverse(rot) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position attRot * attRot0 {0}", KSPUtil.WriteVector(Quaternion.Inverse(attRot * attRot0) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position attRot0 * attRot {0}", KSPUtil.WriteVector(Quaternion.Inverse(attRot0 * attRot) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation detransformed position rot * attRot0 * attRot {0}", KSPUtil.WriteVector(Quaternion.Inverse(rot * attRot0 * attRot) * origAttPos)));
 
             if (paramName.EndsWith("X"))
             {
-                existingValue = origAttPos.x;
+                existingValue = localAttPos0.x;
             }
             else if (paramName.EndsWith("Y"))
             {
-                existingValue = origAttPos.y;
+                existingValue = localAttPos0.y;
             }
             else if (paramName.EndsWith("Z"))
             {
-                existingValue = origAttPos.z;
+                existingValue = localAttPos0.z;
             }
             else
             {
@@ -108,25 +124,34 @@ namespace BDArmory.Evolution
 
             // Recalculate final offset_distance value
             float offsetDist = value - existingValue;
+            Vector3 localNudgeVector = Vector3.zero;
 
             if (paramName.EndsWith("X"))
             {
-                origAttPos.x += offsetDist;
-                origPos.x += offsetDist;
+                localNudgeVector.x += offsetDist;
             }
             else if (paramName.EndsWith("Y"))
             {
-                origAttPos.y += offsetDist;
-                origPos.y += offsetDist;
+                localNudgeVector.y += offsetDist;
             }
             else if (paramName.EndsWith("Z"))
             {
-                origAttPos.z += offsetDist;
-                origPos.z += offsetDist;
+                localNudgeVector.z += offsetDist;
             }
 
+            // This is correct for how to translate the offset back to the pos property (this actually affects the part placement on the craft)
+            origPos += rot * localNudgeVector;
+
+            // Appears to be correct for attPos modification. Still need to validate that attRot is not needed as well here. Final testing required
+            origAttPos += attRot0 * localNudgeVector;
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation post mutate detransformed attRot0 * origAttPos update {0}", KSPUtil.WriteVector(Quaternion.Inverse(attRot0) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation post mutate detransformed rot * origAttPos update {0}", KSPUtil.WriteVector(Quaternion.Inverse(rot) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation post mutate detransformed position attRot * attRot0 {0}", KSPUtil.WriteVector(Quaternion.Inverse(attRot * attRot0) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation post mutate detransformed position attRot0 * attRot {0}", KSPUtil.WriteVector(Quaternion.Inverse(attRot0 * attRot) * origAttPos)));
+            Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutationpost post mutate detransformed position rot * attRot0 * attRot {0}", KSPUtil.WriteVector(Quaternion.Inverse(rot * attRot0 * attRot) * origAttPos)));
+
             // Apply mutation and log if successful
-            if(engine.MutateStringNode(partNode, "pos", KSPUtil.WriteVector(origPos)) && engine.MutateStringNode(partNode, "attPos", KSPUtil.WriteVector(origAttPos))) 
+            if (engine.MutateStringNode(partNode, "pos", KSPUtil.WriteVector(origPos)) && engine.MutateStringNode(partNode, "attPos", KSPUtil.WriteVector(origAttPos))) 
             {
                 Debug.Log(string.Format("Evolution ControlSurfaceOffsetMutation mutated part {0}, module {1}, param {2}, existing: {3}, value: {4}", partName, moduleName, paramName, existingValue, value));
                 mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, value));
