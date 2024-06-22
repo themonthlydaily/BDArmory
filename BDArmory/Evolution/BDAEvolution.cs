@@ -607,10 +607,6 @@ namespace BDArmory.Evolution
             if (maxScore > 0 && maxScore > referenceScore)
             {
                 // compute weighted contributions
-                // map of part/module/param => delta
-                Dictionary<string, Dictionary<string, Dictionary<string, float>>> agg = new Dictionary<string, Dictionary<string, Dictionary<string, float>>>();
-                Dictionary<string, Dictionary<string, Dictionary<string, float>>> rvals = new Dictionary<string, Dictionary<string, Dictionary<string, float>>>();
-
                 // feedback is based on the scores for each axis
                 Dictionary<string, Dictionary<int, float>> axisScores = new Dictionary<string, Dictionary<int, float>>();
 
@@ -635,56 +631,15 @@ namespace BDArmory.Evolution
                     }
                     outcomeMutations[variant.key]["newOffset"] += (variant.mutatedParts[0].value - variant.mutatedParts[0].referenceValue) * score;
 
+                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, variant.mutatedParts[0].partName, variant.mutatedParts[0].moduleName, variant.mutatedParts[0].paramName, variant.mutatedParts[0].value, variant.mutatedParts[0].referenceValue));
+
                     // track feedback score
                     if (!axisScores.ContainsKey(variant.key))
                     {
                         axisScores[variant.key] = new Dictionary<int, float>();
                     }
                     axisScores[variant.key][variant.direction] = scores[variant.name] - referenceScore;
-
-                    foreach (var part in variant.mutatedParts)
-                    {
-                        var partContribution = part.value - part.referenceValue;
-                        var weightedContribution = partContribution * score;
-                        Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
-
-                        // This should eventually be unnecessary. Replaced with outcomeMutations
-                        if (agg.ContainsKey(part.partName))
-                        {
-                            if (agg[part.partName].ContainsKey(part.moduleName))
-                            {
-                                if (agg[part.partName][part.moduleName].ContainsKey(part.paramName))
-                                {
-                                    agg[part.partName][part.moduleName][part.paramName] += weightedContribution;
                                 }
-                                else
-                                {
-                                    agg[part.partName][part.moduleName][part.paramName] = weightedContribution;
-
-                                    rvals[part.partName][part.moduleName][part.paramName] = part.referenceValue;
-                                }
-                            }
-                            else
-                            {
-                                agg[part.partName][part.moduleName] = new Dictionary<string, float>();
-                                agg[part.partName][part.moduleName][part.paramName] = weightedContribution;
-
-                                rvals[part.partName][part.moduleName] = new Dictionary<string, float>();
-                                rvals[part.partName][part.moduleName][part.paramName] = part.referenceValue;
-                            }
-                        }
-                        else
-                        {
-                            agg[part.partName] = new Dictionary<string, Dictionary<string, float>>();
-                            agg[part.partName][part.moduleName] = new Dictionary<string, float>();
-                            agg[part.partName][part.moduleName][part.paramName] = weightedContribution;
-
-                            rvals[part.partName] = new Dictionary<string, Dictionary<string, float>>();
-                            rvals[part.partName][part.moduleName] = new Dictionary<string, float>();
-                            rvals[part.partName][part.moduleName][part.paramName] = part.referenceValue;
-                        }
-                    }
-                }
 
                 // compute feedback for each axis
                 foreach (var key in axisScores.Keys)
@@ -711,38 +666,10 @@ namespace BDArmory.Evolution
                     }
                 }
 
-                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution synthesizing new generation from {0} parts", agg.Keys.Count));
+                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution synthesizing new generation from {0} parts", outcomeMutations.Keys.Count));
 
                 // Should not be referencing underlying functions here. Should be using top-level Apply class to allow for mutations to be more generically applied
                 ConfigNode newCraft = craft.CreateCopy();
-                foreach (var part in agg.Keys)
-                {
-                    foreach (var module in agg[part].Keys)
-                    {
-                        foreach (var param in agg[part][module].Keys)
-                        {
-                            var newValue = agg[part][module][param] + rvals[part][module][param];
-                            List<ConfigNode> partNodes = engine.FindPartNodes(newCraft, part);
-                            if (partNodes.Count > 0)
-                            {
-                                List<ConfigNode> moduleNodes = engine.FindModuleNodes(partNodes[0], module);
-                                if (moduleNodes.Count > 0)
-                                {
-                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Old evolution would have mutated part: {0}, module: {1}, key: {2}, value: {3}", part, module, param, newValue));
-                                    //engine.MutateNode(moduleNodes[0], param, newValue);
-                                }
-                                else
-                                {
-                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution failed to find module {0}", module));
-                                }
-                            }
-                            else
-                            {
-                                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution failed to find part {0}", part));
-                            }
-                        }
-                    }
-                }
 
                 foreach(var mutationKey in outcomeMutations.Keys)
                 {
