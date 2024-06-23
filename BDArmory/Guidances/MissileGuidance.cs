@@ -758,7 +758,7 @@ namespace BDArmory.Guidances
             return targetPosition;
         }
         /// <summary>
-        /// Air-2-Air lead offset calcualtion used for guided missiles
+        /// Air-2-Air lead offset calcualtion used for aiming missile turrets
         /// </summary>
         /// <param name="missile"></param>
         /// <param name="targetPosition"></param>
@@ -768,30 +768,33 @@ namespace BDArmory.Guidances
         {
             MissileLauncher launcher = missile as MissileLauncher;
             BDModularGuidance modLauncher = missile as BDModularGuidance;
+            bool inSpace = missile.vessel.InNearVacuum() && missile.vessel.InOrbit();
             float leadTime = 0;
+            float maxSimTime = 8f;
             Vector3 leadPosition = targetPosition;
             Vector3 vel = missile.vessel.Velocity();
             Vector3 leadDirection, velOpt;
-            float accel = launcher != null ? launcher.thrust / missile.part.mass : modLauncher.thrust / modLauncher.mass;
+            float accel = launcher != null ? ((Mathf.Clamp01(launcher.boostTime / maxSimTime)) * launcher.thrust + Mathf.Clamp01((maxSimTime - launcher.cruiseDelay - launcher.boostTime) / maxSimTime) * launcher.cruiseThrust) / missile.part.mass
+                : modLauncher.thrust / modLauncher.mass;
             float leadTimeError = 1f;
-            int count = 0;
-            do
-            {
-                leadDirection = leadPosition - missile.vessel.CoM;
-                float targetDistance = leadDirection.magnitude;
-                leadDirection.Normalize();
-                velOpt = leadDirection * (launcher != null ? launcher.optimumAirspeed : 1500);
-                float deltaVel = Vector3.Dot(targetVelocity - vel, leadDirection);
-                float deltaVelOpt = Vector3.Dot(targetVelocity - velOpt, leadDirection);
-                float T = Mathf.Clamp((velOpt - vel).magnitude / accel, 0, 8); //time to optimal airspeed, clamped to at most 8s
-                float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance covered accelerating to optimum airspeed
-                leadTimeError = -leadTime;
-                if (targetDistance > D) leadTime = (targetDistance - D) / deltaVelOpt + T;
-                else leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * targetDistance)) / accel;
-                leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-                leadTimeError += leadTime;
-                leadPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime);
-            } while (++count < 5 && Mathf.Abs(leadTimeError) > 1e-3f);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
+                int count = 0;
+                do
+                {
+                    leadDirection = leadPosition - missile.vessel.CoM;
+                    float targetDistance = leadDirection.magnitude;
+                    leadDirection.Normalize();
+                    velOpt = (inSpace ? BDAMath.Sqrt(2 * accel * targetDistance) * leadDirection + vel : (launcher != null ? launcher.optimumAirspeed : 1500) * leadDirection);
+                    float deltaVel = Vector3.Dot(targetVelocity - vel, leadDirection);
+                    float deltaVelOpt = Vector3.Dot(targetVelocity - velOpt, leadDirection);
+                    float T = Mathf.Clamp((velOpt - vel).magnitude / accel, 0, maxSimTime); //time to optimal airspeed, clamped to at most 8s
+                    float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance covered accelerating to optimum airspeed
+                    leadTimeError = -leadTime;
+                    if (targetDistance > D) leadTime = (targetDistance - D) / deltaVelOpt + T;
+                    else leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * targetDistance)) / accel;
+                    leadTime = Mathf.Clamp(leadTime, 0f, maxSimTime);
+                    leadTimeError += leadTime;
+                    leadPosition = AIUtils.PredictPosition(targetPosition, targetVelocity - (inSpace ? vel : Vector3.zero), Vector3.zero, leadTime);
+                } while (++count < 5 && Mathf.Abs(leadTimeError) > 1e-3f);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
             return leadPosition;
         }
 

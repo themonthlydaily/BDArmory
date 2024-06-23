@@ -2027,6 +2027,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 bool dumbfiring = false;
                 guardFiringMissile = true;
                 var wait = new WaitForFixedUpdate();
+                float tryLockTime = targetVessel.IsMissile() ? 0.05f : 0.25f; // More urgency for incoming missiles
                 switch (ml.TargetingMode)
                 {
                     case MissileBase.TargetingModes.Radar:
@@ -2065,7 +2066,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     else
                                         vesselRadarData.TryLockTarget(targetVessel);
 
-                                    yield return new WaitForSecondsFixed(0.25f);
+                                    yield return new WaitForSecondsFixed(tryLockTime);
                                 }
                                 // if (ml && AIMightDirectFire() && vesselRadarData.locked)
                                 // {
@@ -2180,13 +2181,13 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {
                                         //vesselRadarData.TryLockTarget(guardTarget.transform.position);
                                         vesselRadarData.TryLockTarget(targetVessel);
-                                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * tryLockTime)));
                                     }
                                 }
                                 if (targetVessel && !heatTarget.exists && vesselRadarData && _irstsEnabled)
                                 {
                                     heatTarget = vesselRadarData.activeIRTarget(targetVessel, this);
-                                    yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                                    yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * tryLockTime)));
                                 }
                             }
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s heatTarget locked");
@@ -2305,7 +2306,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         {
                                             vesselRadarData.TryLockTarget(targetVessel);
                                         }
-                                        yield return new WaitForSecondsFixed(0.25f);
+                                        yield return new WaitForSecondsFixed(tryLockTime);
                                     }
                                     if (vesselRadarData && vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == targetVessel) //no GPS coords, missile is now expensive rocket
                                     {
@@ -2527,7 +2528,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {
                                         vesselRadarData.TryLockTarget(targetVessel);
                                     }
-                                    yield return new WaitForSecondsFixed(0.25f);
+                                    yield return new WaitForSecondsFixed(tryLockTime);
                                 }
                                 if (vessel && INSTarget.exists && INSTarget.vessel == targetVessel)
                                 {

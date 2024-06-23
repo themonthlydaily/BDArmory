@@ -1076,6 +1076,7 @@ namespace BDArmory.Control
                     {
                         var weapon = weaponManager.weaponArray[i];
                         if (weapon == null) continue;
+                        if (!((EngageableWeapon)weapon).engageAir) continue;
                         float maxEngageRange = ((EngageableWeapon)weapon).GetEngagementRangeMax();
                         if (weapon.GetWeaponClass() != WeaponClasses.Missile)
                             maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
