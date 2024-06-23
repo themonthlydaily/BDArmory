@@ -2088,7 +2088,7 @@ namespace BDArmory.Weapons.Missiles
             if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
             if (cruiseRangeTrigger > 0)
-                yield return new WaitUntilFixed(this.checkCruiseRangeTrigger);
+                yield return new WaitUntilFixed(checkCruiseRangeTrigger);
                 
             yield return StartCoroutine(CruiseRoutine());
         }
