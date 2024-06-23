@@ -15,6 +15,7 @@ IMPROVEMENTS / FIXES
 		- Modular Missiles will be selected to intercept missiles if they have Engage Missiles enabled
 		- Fix Modular Missiles with Orbital Guidance not hitting vessel and missile targets
 		- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space)
+		- Fix point defense missile interceptors not firing
 
 1.6.12.0
 IMPROVEMENTS / FIXES

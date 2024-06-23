@@ -2044,14 +2044,27 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     if (vesselRadarData.locked)
                                     {
-                                        vesselRadarData.SwitchActiveLockedTarget(targetVessel); //FIXME - this will cause issues if reviously fired a SARH with a single lock radar, then trying to fire another radar missile when MMPT > 1; wait until SARH hits?
-                                        yield return wait; //see about weighting SARH missiles lower when maxMissilesPerTgt > 1 and max supported radar locks is < than MMPT?
+                                        List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
+                                        bool existingLock = false;
+                                        for (int i = 0; i < possibleTargets.Count; i++)
+                                        {
+                                            if (possibleTargets[i].vessel == targetVessel)
+                                            {
+                                                existingLock = true;
+                                                break;
+                                            }
+                                        }
+                                        if (existingLock)
+                                        {
+                                            vesselRadarData.SwitchActiveLockedTarget(targetVessel);
+                                            yield return wait;
+                                        }
+                                        else
+                                            vesselRadarData.TryLockTarget(targetVessel);
                                     }
-                                    //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
                                     else
-                                    {
                                         vesselRadarData.TryLockTarget(targetVessel);
-                                    }
+
                                     yield return new WaitForSecondsFixed(0.25f);
                                 }
                                 // if (ml && AIMightDirectFire() && vesselRadarData.locked)
