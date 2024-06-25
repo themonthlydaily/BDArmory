@@ -2798,6 +2798,13 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                     orbitalTarget = TargetPosition;
+
+                // Clamp target position to max off boresight
+                float angleToTarget = Vector3.Angle(TargetPosition - transform.position, orbitalTarget - transform.position);
+                if (angleToTarget > maxOffBoresight)
+                {
+                    orbitalTarget = transform.position + Vector3.RotateTowards(TargetPosition - transform.position, orbitalTarget - part.transform.position, maxOffBoresight * Mathf.Deg2Rad, 0f);
+                }
             }
             else
                 orbitalTarget = transform.position + (2000 * vessel.Velocity().normalized);
