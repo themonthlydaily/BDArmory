@@ -1401,7 +1401,8 @@ namespace BDArmory.Weapons.Missiles
                 MissileState = MissileStates.Drop;
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
-                vacuumClearanceState = (GuidanceMode == GuidanceModes.Orbital && vacuumSteerable && (vessel.InVacuum()) ? VacuumClearanceStates.Clearing : VacuumClearanceStates.Cleared); // Set up clearance check if missile is vacuumSteerable, and is in space
+                vacuumClearanceState = (GuidanceMode == GuidanceModes.Orbital && vacuumSteerable && vessel.InVacuum() && missileTurret == null) ? 
+                    VacuumClearanceStates.Clearing : VacuumClearanceStates.Cleared; // Set up clearance check if missile is vacuumSteerable, and is in space, and was not launched from a turret
 
                 StartCoroutine(MissileRoutine());
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
@@ -1764,9 +1765,9 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                     //decrease turn rate after thrust cuts out
-                    if (TimeIndex > dropTime + boostTime + cruiseTime)
+                    if (TimeIndex > dropTime + boostTime + cruiseDelay + cruiseTime)
                     {
-                        var clampedTurnRate = Mathf.Clamp(maxTurnRateDPS - ((TimeIndex - dropTime - boostTime - cruiseTime) * 0.45f),
+                        var clampedTurnRate = Mathf.Clamp(maxTurnRateDPS - ((TimeIndex - dropTime - boostTime - cruiseDelay - cruiseTime) * 0.45f),
                             1, maxTurnRateDPS);
                         turnRateDPS = clampedTurnRate;
 
@@ -2782,20 +2783,24 @@ namespace BDArmory.Weapons.Missiles
             Vector3 orbitalTarget;
             if (TargetAcquired)
             {
-                DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
                 // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
                 // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
-                /*(Vector3 targetVector = TargetPosition - vessel.CoM;
-                Vector3 relVel = vessel.Velocity() - TargetVelocity;
-                Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
-                float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
-                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
-                orbitalTarget = TargetPosition;
+                if (!hasRCS)
+                {
+                    float guidance_thrust = currentThrust;
+                    if (currentThrust == 0 && TimeIndex < dropTime + boostTime + cruiseDelay) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
+                        guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
+                    Vector3 targetVector = TargetPosition - vessel.CoM;
+                    Vector3 acceleration = guidance_thrust / part.mass * GetForwardTransform();
+                    Vector3 relVel = TargetVelocity - vessel.Velocity();
+                    float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
+                    orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
+                }
+                else
+                    orbitalTarget = TargetPosition;
             }
             else
-            {
                 orbitalTarget = transform.position + (2000 * vessel.Velocity().normalized);
-            }
 
             // In vacuum, with RCS, point towards target shortly after launch to minimize wasted delta-V
             // During this maneuver, check that we have cleared any obstacles before throttling up
@@ -2806,6 +2811,8 @@ namespace BDArmory.Weapons.Missiles
             part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, TargetVelocity), turnRateDPS * Time.fixedDeltaTime);
             if (TimeIndex > dropTime + 0.25f)
                 CheckMiss();
+
+            DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), orbitalTarget);
         }
 
         public override void Detonate()

@@ -913,8 +913,8 @@ namespace BDArmory.Weapons.Missiles
             engines = VesselModuleRegistry.GetModuleEngines(vessel);
             rcsThrusters = VesselModuleRegistry.GetModules<ModuleRCS>(vessel);
 
-            // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
-            vacuumClearanceState = (GuidanceMode == GuidanceModes.Orbital && rcsThrusters.Any() && engines.Any() && (vessel.InVacuum()) ? VacuumClearanceStates.Clearing : VacuumClearanceStates.Cleared); 
+            // Set up clearance maneuver
+            vacuumClearanceState = (engines.Any() && vessel.InVacuum()) ? VacuumClearanceStates.Clearing : VacuumClearanceStates.Cleared; 
 
             // Get a probe core and align its reference transform with the propulsion vector.
             ModuleCommand commander = VesselModuleRegistry.GetModuleCommand(vessel);

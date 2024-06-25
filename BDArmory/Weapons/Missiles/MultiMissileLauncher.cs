@@ -801,6 +801,7 @@ namespace BDArmory.Weapons.Missiles
                 if (BDArmorySettings.DEBUG_MISSILES) ml.shortName = $"{ml.SourceVessel.GetName()}'s {missileLauncher.GetShortName()} Missile";
                 ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
+                if (turret) ml.missileTurret = turret;
                 if (!isClusterMissile) ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
                 ml.decoupleForward = missileLauncher.decoupleForward;

@@ -509,7 +509,7 @@ namespace BDArmory.Weapons.Missiles
         {
             base.OnAwake();
             var MMG = GetPart().FindModuleImplementing<BDModularGuidance>();
-            if (MMG == null)
+            if (MMG != null)
             {
                 hasAmmo = false;
                 isMMG = true;
@@ -1378,27 +1378,38 @@ namespace BDArmory.Weapons.Missiles
                                     if (p != null && hit.distance > 10f)
                                         vacuumClearanceState = VacuumClearanceStates.Turning;
                                 }
-                                else
-                                    vacuumClearanceState = VacuumClearanceStates.Turning;
+                                else // No obstacles in the way
+                                {
+                                    vacuumClearanceState = VacuumClearanceStates.Cleared;
+                                    Throttle = 1f;
+                                    dotTol = 0.7f;
+                                }
                             }
                             else
                             {
-                                if (VectorUtils.SphereRayIntersect(toTarget, SourceVessel.CoM, sourceRadius, out double distance))
+                                if (!VectorUtils.CheckClearOfSphere(toTarget, SourceVessel.CoM, sourceRadius))
                                 {
-                                    if ((Mathf.Abs((float)distance) + 10f) >= (sourceRadius + 10f))
+                                    if ((toSource.sqrMagnitude) >= (sourceRadius + 10f)* (sourceRadius + 10f))
                                         vacuumClearanceState = VacuumClearanceStates.Turning;
                                 }
-                                else
-                                    vacuumClearanceState = VacuumClearanceStates.Turning;
+                                else // No obstacles in the way
+                                {
+                                    vacuumClearanceState = VacuumClearanceStates.Cleared;
+                                    Throttle = 1f;
+                                    dotTol = 0.7f;
+                                }
                             }
-                            orbitalTarget = CoM + 100f * GetForwardTransform();
-                            if (isMMG || !hasRCS)
+                            if (vacuumClearanceState == VacuumClearanceStates.Clearing) // Adjust throttle if still clearing
                             {
-                                float t = toSource.sqrMagnitude / ((sourceRadius + 5) * (sourceRadius + 5));
-                                Throttle = Mathf.Lerp(0.5f, 0f, t); // Use throttle kick for MMG or missiles without RCS
+                                orbitalTarget = CoM + 100f * GetForwardTransform();
+                                if (isMMG || !hasRCS)
+                                {
+                                    float t = toSource.sqrMagnitude / ((sourceRadius + 5) * (sourceRadius + 5));
+                                    Throttle = Mathf.Lerp(0.5f, 0f, t); // Use throttle kick for MMG or missiles without RCS
+                                }
+                                else
+                                    Throttle = 0f;
                             }
-                            else
-                                Throttle = 0f;
                         }
                         break;
                     case VacuumClearanceStates.Turning: // It is now safe to turn towards target and burn to maneuver away from SourceVessel
@@ -1409,7 +1420,7 @@ namespace BDArmory.Weapons.Missiles
                                 Throttle = 0.5f;
                                 dotTol = 0.5f;
                             }
-                            bool cleared = isMMG ? (!VectorUtils.SphereRayIntersect(toTarget, SourceVessel.CoM, sourceRadius, out double distance)) : !Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels));
+                            bool cleared = isMMG ? (VectorUtils.CheckClearOfSphere(toTarget, SourceVessel.CoM, sourceRadius)) : !Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Wheels));
                             if ((Vector3.Dot((orbitalTarget - CoM).normalized, GetForwardTransform()) >= dotTol) && cleared)
                             {
                                 vacuumClearanceState = VacuumClearanceStates.Cleared;

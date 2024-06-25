@@ -12,9 +12,10 @@ IMPROVEMENTS / FIXES
 - Weapons
 	- Missiles:
 		- Change missile drop time increment from 0.5s to 0.1s.
-		- Modular Missiles will be selected to intercept missiles if they have Engage Missiles enabled.
+		- Modular Missiles can be selected to intercept missiles if they have Engage Missiles enabled.
 		- Fix Modular Missiles with Orbital Guidance not hitting vessel and missile targets.
 		- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space).
+		- Regular missiles can use homingType = orbital without RCS
 		- Fix point defense missile interceptors not firing.
 		- Missile turrets now track targets properly in space.
 
