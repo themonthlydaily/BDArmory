@@ -498,6 +498,7 @@ namespace BDArmory.UI
                             nameof(AI.turnRadiusTwiddleFactorMax),
                             nameof(AI.terrainAvoidanceCriticalAngle),
                             nameof(AI.controlSurfaceDeploymentTime),
+                            nameof(AI.postTerrainAvoidanceCoolDownDuration),
                             nameof(AI.waypointTerrainAvoidance),
 
                             nameof(AI.controlSurfaceLag),
@@ -1274,6 +1275,7 @@ namespace BDArmory.UI
                                     if (AI.terrainAvoidanceCriticalAngle != oldTerrainAvoidanceCriticalAngle) { AI.OnTerrainAvoidanceCriticalAngleChanged(); }
 
                                     gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.controlSurfaceDeploymentTime, nameof(AI.controlSurfaceDeploymentTime), "TerrainAvoidanceVesselReactionTime", $"{AI.controlSurfaceDeploymentTime:0.0}s");
+                                    gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.postTerrainAvoidanceCoolDownDuration, nameof(AI.postTerrainAvoidanceCoolDownDuration), "TerrainAvoidancePostAvoidanceCoolDown", $"{AI.postTerrainAvoidanceCoolDownDuration:0.00}s");
                                     gndLines = ContentEntry(ContentType.FloatSlider, gndLines, contentWidth, ref AI.waypointTerrainAvoidance, nameof(AI.waypointTerrainAvoidance), "WaypointTerrainAvoidance", $"{AI.waypointTerrainAvoidance:0.00}");
 
                                     GUI.EndGroup();
@@ -1395,7 +1397,7 @@ namespace BDArmory.UI
                                     }
                                     if (showSection[Section.Control])
                                     {
-                                        GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlLimits"), BoldLabel, Width(ColumnWidth - (contentMargin * 4) - 20)); //conrrol header
+                                        GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_Control"), BoldLabel, Width(ColumnWidth - (contentMargin * 4) - 20)); //conrrol header
                                         GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_infolink_Pilot_ControlHelp"), infoLinkStyle, Width(ColumnWidth - (contentMargin * 4) - 20)); //control desc
                                         GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_infolink_Pilot_ControlHelp_limiters"), infoLinkStyle, Width(ColumnWidth - (contentMargin * 4) - 20)); //low + high speed limiters
                                         GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_infolink_Pilot_ControlHelp_bank"), infoLinkStyle, Width(ColumnWidth - (contentMargin * 4) - 20)); //max bank desc

@@ -1213,7 +1213,7 @@ namespace BDArmory.Guidances
             float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
 
             //lift
-            float AoA = Mathf.Clamp(Vector3.Angle(ml.transform.forward, velocity.normalized), 0, 90);
+            float AoA = Mathf.Clamp(Vector3.Angle(ml.transform.forward, velocity), 0, 90);
             ml.smoothedAoA.Update(AoA);
             if (AoA > 0)
             {
