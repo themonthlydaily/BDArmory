@@ -1481,7 +1481,11 @@ namespace BDArmory.UI
             var wait = new WaitForFixedUpdate();
             while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
             while (vessel != null && vessel.loaded && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
-            if (distance > 0) FlightCamera.fetch.SetDistance(distance);
+            if (vessel != null && vessel.loaded && !vessel.packed)
+            {
+                var flightCam = FlightCamera.fetch;
+                if (flightCam != null && distance > 0) flightCam.SetDistance(distance);
+            }
         }
 
         public void TriggerSwitchVessel(float delay = 0)

@@ -335,6 +335,8 @@ namespace BDArmory.Weapons.Missiles
         private float burnRate = 0;
         private float burnedFuelMass = 0;
 
+        private int cruiseTerminationFrames = 0;
+
         public bool SetupComplete => StartSetupComplete;
         public float initMaxAoA = 0;
         public SmoothingF smoothedAoA;
@@ -2091,7 +2093,24 @@ namespace BDArmory.Weapons.Missiles
 
         bool checkCruiseRangeTrigger()
         {
-            return ((TargetPosition - vessel.CoM).sqrMagnitude < cruiseRangeTrigger * cruiseRangeTrigger);
+            float sqrRange = (TargetPosition - part.rb.position).sqrMagnitude;
+
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Check cruise range trigger range: {BDAMath.Sqrt(sqrRange)}");
+
+            if (sqrRange < cruiseRangeTrigger * cruiseRangeTrigger)
+            {
+                if (cruiseTerminationFrames < 5)
+                {
+                    cruiseTerminationFrames++;
+                    return false;
+                }
+
+                cruiseTerminationFrames = 0;
+                return true;
+            }
+
+            cruiseTerminationFrames = 0;
+            return false;
         }
 
         IEnumerator DeployAnimRoutine()
@@ -2283,7 +2302,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (!(thrust > 0)) return;
             sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
-            RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward, TargetingMode == TargetingModes.Radar);
+            RadarWarningReceiver.WarnMissileLaunch(vessel.CoM, transform.forward, TargetingMode == TargetingModes.Radar);
         }
 
         void EndBoost()

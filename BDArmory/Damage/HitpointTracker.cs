@@ -336,13 +336,17 @@ namespace BDArmory.Damage
             {
                 HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
             }
+            if (HullTypeNum < 1 || HullTypeNum > HullInfo.materialNames.Count)
+            {
+                Debug.LogWarning($"[BDArmory.HitpointTracker]: Invalid HullTypeNum found on {part.partInfo.name} on {part.vessel.vesselName}. Resetting to Aluminium.");
+                HullTypeNum = 2; // Invalid hull type number, revert to default Aluminium
+            }
             if (SelectedArmorType == "Legacy Armor")
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None");
             else
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
-
             if (part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
             {
                 skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;

@@ -294,7 +294,7 @@ namespace BDArmory.Utils
         public static Vector3 GetUpDirection(Vector3 position)
         {
             if (FlightGlobals.currentMainBody == null) return Vector3.up;
-            return (position - FlightGlobals.currentMainBody.transform.position).normalized;
+            return (position - FlightGlobals.currentMainBody.position).normalized;
         }
 
         public static bool SphereRayIntersect(Ray ray, Vector3 sphereCenter, double sphereRadius, out double distance)
