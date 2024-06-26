@@ -2802,12 +2802,10 @@ namespace BDArmory.Weapons.Missiles
             Vector3 orbitalTarget;
             if (TargetAcquired)
             {
-                // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
-                // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
-                if (!hasRCS)
+                if (!hasRCS) // Use thrust to kill relative velocity
                 {
                     float guidance_thrust = currentThrust;
-                    if (currentThrust == 0 && TimeIndex < dropTime + boostTime + cruiseDelay) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
+                    if (currentThrust == 0 && cruiseDelay > 0 && (TimeIndex > dropTime + boostTime) && (TimeIndex < dropTime + boostTime + cruiseDelay)) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
                         guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
                     Vector3 targetVector = TargetPosition - vessel.CoM;
                     Vector3 acceleration = guidance_thrust / part.mass * GetForwardTransform();
@@ -2815,7 +2813,7 @@ namespace BDArmory.Weapons.Missiles
                     float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
                     orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
                 }
-                else
+                else // Use RCS (in DoRCS()) to kill relative velocity
                     orbitalTarget = TargetPosition;
 
                 // Clamp target position to max off boresight
