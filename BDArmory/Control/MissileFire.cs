@@ -7982,7 +7982,22 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                                 vesselRadarData.TryLockTarget(PDMslTgts[MissileID].Vessel);
                                             }
                                             else
-                                                vesselRadarData.SwitchActiveLockedTarget(PDMslTgts[MissileID].Vessel);
+                                            {
+                                                List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
+                                                bool existingLock = false;
+                                                for (int i = 0; i < possibleTargets.Count; i++)
+                                                {
+                                                    if (possibleTargets[i].vessel == PDMslTgts[MissileID].Vessel)
+                                                    {
+                                                        existingLock = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (existingLock)
+                                                {
+                                                    vesselRadarData.SwitchActiveLockedTarget(PDMslTgts[MissileID].Vessel);
+                                                }
+                                            }
                                         }
                                         else
                                         {

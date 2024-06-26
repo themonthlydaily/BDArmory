@@ -728,6 +728,7 @@ namespace BDArmory.Weapons.Missiles
                     if (wpm.currentTarget != null) targetsAssigned.Add(wpm.currentTarget);
             }
             //else Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: weaponmanager null!");
+            missileLauncher.launched = true;
             if (deployState != null)
             {
                 deployState.enabled = true;
@@ -1098,7 +1099,6 @@ namespace BDArmory.Weapons.Missiles
                 ml.MissileLaunch();
                 if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
             }
-            missileLauncher.launched = true;
             if (wpm != null)
             {
                 using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
