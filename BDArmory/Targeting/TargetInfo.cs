@@ -598,6 +598,19 @@ namespace BDArmory.Targeting
             return thisSqrDist < otherSqrDist;
         }
 
+        public bool SafeOrbitalIntercept(MissileFire myMf)
+        {
+            if (!vessel) return true;
+            var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(myMf.vessel);
+            if (orbitalAI == null)
+                return true;
+
+            Orbit o = vessel.orbit;
+            var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
+
+            return !(descending && vessel.situation == Vessel.Situations.SUB_ORBITAL);
+        }
+
         public void VesselModified(Vessel v)
         {
             if (v && v == this.vessel && isActiveAndEnabled)

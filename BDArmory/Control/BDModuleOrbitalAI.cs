@@ -485,7 +485,8 @@ namespace BDArmory.Control
                     {
                         Orbit o = vessel.orbit;
                         double UT = Planetarium.GetUniversalTime();
-                        if (!ongoingOrbitCorrection && (o.ApA < 0 && o.timeToPe < -60))
+                        var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
+                        if ((!ongoingOrbitCorrection && (o.ApA < 0 && o.timeToPe < -60)) || (ongoingOrbitCorrection && (o.ApA / o.PeA > 10f)))
                         {
                             // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
                             SetStatus("Correcting Orbit (On escape trajectory)");
@@ -493,7 +494,7 @@ namespace BDArmory.Control
                             fc.attitude = -o.Prograde(UT);
                             fc.throttle = 1;
                         }
-                        else if (!ongoingOrbitCorrection && (o.ApA >= minSafeAltitude) && (o.altitude >= minSafeAltitude))
+                        else if ((!ongoingOrbitCorrection && (o.ApA >= minSafeAltitude) && (o.altitude >= minSafeAltitude)) || (ongoingOrbitCorrection && descending && o.altitude > minSafeAltitude * 1.1f && o.PeA < minSafeAltitude))
                         {
                             // We are outside the atmosphere but our periapsis is inside the atmosphere.
                             // Execute a burn to circularize our orbit at the current altitude.
@@ -502,14 +503,14 @@ namespace BDArmory.Control
                             Vector3d fvel = Math.Sqrt(o.referenceBody.gravParameter / o.GetRadiusAtUT(UT)) * o.Horizontal(UT);
                             Vector3d deltaV = fvel - vessel.GetObtVelocity();
 
+                            ongoingOrbitCorrection = true;
                             fc.attitude = deltaV.normalized;
                             fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                         }
                         else
                         {
                             ongoingOrbitCorrection = true;
-                            var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
-                            if (o.ApA < minSafeAltitude * 1.1)
+                            if (o.ApA < minSafeAltitude * 1.1f)
                             {
                                 // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
 
@@ -535,7 +536,7 @@ namespace BDArmory.Control
                                 fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                                 fc.throttle = 1;
                             }
-                            else if (o.altitude < minSafeAltitude * 1.1 && descending)
+                            else if (o.altitude < minSafeAltitude * 1.1f && descending)
                             {
                                 // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
                                 // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
@@ -753,7 +754,8 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Time to CPA: {timeToCPA:G3}");
                     debugString.AppendLine($"Distance to CPA: {distToCPA:G3}");
                     debugString.AppendLine($"Stopping Distance: {stoppingDist:G3}");
-                    debugString.AppendLine($"Dynamic Angular Acceleration Estimate: {maxAngularAccelerationMag}/{dynAngAccel}");
+                    debugString.AppendLine($"Apoapsis: {vessel.orbit.ApA/1000}km / {vessel.orbit.timeToAp}s");
+                    debugString.AppendLine($"Periapsis: {vessel.orbit.PeA/1000}km / {vessel.orbit.timeToPe}s");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
                 if (weaponManager) debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
@@ -999,8 +1001,13 @@ namespace BDArmory.Control
 
         public float BurnTime(float deltaV, float totalConsumption)
         {
-            float isp = GetMaxThrust(vessel) / totalConsumption;
-            return ((float)vessel.totalMass * (1.0f - 1.0f / Mathf.Exp(deltaV / isp)) / totalConsumption);
+            if (totalConsumption == 0f)
+                return ((float)vessel.totalMass * deltaV / GetMaxThrust(vessel));
+            else
+            {
+                float isp = GetMaxThrust(vessel) / totalConsumption;
+                return ((float)vessel.totalMass * (1.0f - 1.0f / Mathf.Exp(deltaV / isp)) / totalConsumption);
+            }
         }
 
         public float StoppingDistance(float speed)
@@ -1364,6 +1371,7 @@ namespace BDArmory.Control
 
         private static float GetConsumptionRate(Vessel v)
         {
+            if (BDArmorySettings.INFINITE_FUEL || CheatOptions.InfinitePropellant) return 0f;
             float consumptionRate = 0.0f;
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(v))
                 consumptionRate += Mathf.Lerp(engine.minFuelFlow, engine.maxFuelFlow, 0.01f * engine.thrustPercentage) * engine.flowMultiplier;
