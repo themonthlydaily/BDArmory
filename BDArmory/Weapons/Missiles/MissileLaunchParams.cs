@@ -50,7 +50,6 @@ namespace BDArmory.Weapons.Missiles
             if (maxAngleOffTarget >= 0) { launcherVelocity = Vector3.RotateTowards(vectorToTarget, launcherVelocity, maxAngleOffTarget, 0); }
 
             bool surfaceLaunch = missile.vessel.LandedOrSplashed;
-            bool inAtmo = !missile.vessel.InNearVacuum();
             float minLaunchRange = Mathf.Max(missile.minStaticLaunchRange, missile.GetEngagementRangeMin());
             float maxLaunchRange = missile.GetEngagementRangeMax();
             if (unguidedGuidedMissile) maxLaunchRange /= 10;

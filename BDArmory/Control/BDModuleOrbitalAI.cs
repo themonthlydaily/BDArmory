@@ -40,7 +40,9 @@ namespace BDArmory.Control
         private float maneuverTime;
         private float minManeuverTime;
         private bool maneuverStateChanged = false;
-        private bool ongoingOrbitCorrection = false;
+        enum OrbitCorrectionReason { None, FallingInsideAtmosphere, ApoapsisLow, PeriapsisLow, Escaping };
+        private OrbitCorrectionReason ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.None;
+        private float missileTryLaunchTime = 0f;
         private bool wasDescendingUnsafe = false;
         private bool hasPropulsion;
         private bool hasRCS;
@@ -53,8 +55,9 @@ namespace BDArmory.Control
         private Vector3 availableTorque;
         private double minSafeAltitude;
         private CelestialBody safeAltBody = null;
-        private Vector3 interceptRanges;
+        public Vector3 interceptRanges = Vector3.one;
         private Vector3 lastFiringSolution;
+        const float interceptMargin = 0.25f;
 
         // Evading
         bool evadingGunfire = false;
@@ -207,6 +210,7 @@ namespace BDArmory.Control
         // Debugging
         internal float distToCPA;
         internal float timeToCPA;
+        internal string timeToCPAString;
         internal float stoppingDist;
         internal Vector3 debugTargetPosition;
         internal Vector3 debugTargetDirection;
@@ -434,9 +438,10 @@ namespace BDArmory.Control
         void InitialFrameUpdates()
         {
             upDir = vessel.up;
+            UpdateBody();
             CalculateAngularAcceleration();
             maxAcceleration = GetMaxAcceleration(vessel);
-            fc.alignmentToleranceforBurn = 5;
+            fc.alignmentToleranceforBurn = 7.5f;
             if (fc.throttle > 0)
                 lastFiringSolution = Vector3.zero; // Forget prior firing solution if we recently used engines
             fc.throttle = 0;
@@ -485,36 +490,40 @@ namespace BDArmory.Control
                     {
                         Orbit o = vessel.orbit;
                         double UT = Planetarium.GetUniversalTime();
+                        fc.alignmentToleranceforBurn = 15f;
                         var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
-                        if ((!ongoingOrbitCorrection && (o.ApA < 0 && o.timeToPe < -60)) || (ongoingOrbitCorrection && (o.ApA / o.PeA > 10f)))
+                        if (o.altitude > minSafeAltitude && (
+                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.None && EscapingOrbit()) ||
+                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.Escaping && (EscapingOrbit() || (o.ApA / o.PeA > 10f)))))
                         {
                             // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
                             SetStatus("Correcting Orbit (On escape trajectory)");
-                            ongoingOrbitCorrection = o.ApA / o.PeA > 10f;
+                            ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.Escaping;
+
                             fc.attitude = -o.Prograde(UT);
                             fc.throttle = 1;
                         }
-                        else if ((!ongoingOrbitCorrection && (o.ApA >= minSafeAltitude) && (o.altitude >= minSafeAltitude)) || (ongoingOrbitCorrection && descending && o.altitude > minSafeAltitude * 1.1f && o.PeA < minSafeAltitude))
+                        else if (descending && o.PeA < minSafeAltitude && (
+                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.None && o.ApA >= minSafeAltitude && o.altitude >= minSafeAltitude) ||
+                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.PeriapsisLow && o.altitude > minSafeAltitude * 1.1f)))
                         {
                             // We are outside the atmosphere but our periapsis is inside the atmosphere.
                             // Execute a burn to circularize our orbit at the current altitude.
                             SetStatus("Correcting Orbit (Circularizing)");
+                            ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.PeriapsisLow;
 
                             Vector3d fvel = Math.Sqrt(o.referenceBody.gravParameter / o.GetRadiusAtUT(UT)) * o.Horizontal(UT);
                             Vector3d deltaV = fvel - vessel.GetObtVelocity();
-
-                            ongoingOrbitCorrection = true;
                             fc.attitude = deltaV.normalized;
                             fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                         }
                         else
                         {
-                            ongoingOrbitCorrection = true;
                             if (o.ApA < minSafeAltitude * 1.1f)
                             {
                                 // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
-
                                 SetStatus("Correcting Orbit (Apoapsis too low)");
+                                ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.ApoapsisLow;
 
                                 double gravTurnAlt = 0.1;
                                 float turn;
@@ -536,13 +545,13 @@ namespace BDArmory.Control
                                 fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                                 fc.throttle = 1;
                             }
-                            else if (o.altitude < minSafeAltitude * 1.1f && descending)
+                            else if (descending && o.altitude < minSafeAltitude * 1.1f)
                             {
                                 // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
                                 // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
-
                                 SetStatus("Correcting Orbit (Falling inside atmo)");
-
+                                ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.FallingInsideAtmosphere;
+                                
                                 fc.attitude = o.Radial(UT);
                                 fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise.
                                 fc.throttle = 1;
@@ -550,7 +559,7 @@ namespace BDArmory.Control
                             else
                             {
                                 SetStatus("Correcting Orbit (Drifting)");
-                                ongoingOrbitCorrection = false;
+                                ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.None;
                             }
                         }
                     }
@@ -619,8 +628,13 @@ namespace BDArmory.Control
                 case StatusMode.Maneuvering:
                     {
                         Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
+                        
+                        TimeSpan t = TimeSpan.FromSeconds(timeToCPA);
+                        timeToCPAString = string.Format((t.Hours > 0 ? "{0:D2}h:" : "") + (t.Minutes > 0 ? "{1:D2}m:" : "") + "{2:D2}s",t.Hours,t.Minutes,t.Seconds);
+
                         float minRange = interceptRanges.x;
                         float maxRange = interceptRanges.y;
+                        float interceptRange = interceptRanges.z;
 
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
@@ -640,10 +654,10 @@ namespace BDArmory.Control
                             fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         }
                         else if (hasPropulsion && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f) || killVelOngoing)) // Approaching intercept point, kill velocity
-                            KillVelocity();
-                        else if (hasPropulsion && interceptOngoing || (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : 0.25f))) // Too far away, intercept target
+                            KillVelocity(true);
+                        else if (hasPropulsion && interceptOngoing || (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : interceptMargin))) // Too far away, intercept target
                             InterceptTarget();
-                        else if (currentRange > maxRange)
+                        else if (currentRange > interceptRange && OnIntercept(0.25f))
                         {
                             fc.throttle = 0;
                             
@@ -651,7 +665,7 @@ namespace BDArmory.Control
                                 fc.attitude = -toTarget;
                             else
                                 fc.attitude = toTarget;
-                            SetStatus("Maneuvering (Drift)");
+                            SetStatus($"Maneuvering (On Intercept), {timeToCPAString}");
                         }
                         else // Within weapons range, adjust velocity and attitude for targeting
                         {
@@ -663,7 +677,7 @@ namespace BDArmory.Control
                             else if (hasPropulsion && targetVessel != null && (AngularVelocity(vessel, targetVessel, 5f) > firingAngularVelocityLimit || killAngOngoing))
                             {
                                 SetStatus("Maneuvering (Kill Angular Velocity)");
-                                fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), vessel.PredictPosition(vessel.TimeToCPA(targetVessel))).normalized;
+                                fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), vessel.PredictPosition(timeToCPA)).normalized;
                                 fc.throttle = 1;
                                 fc.alignmentToleranceforBurn = 45f;
                             }
@@ -707,18 +721,35 @@ namespace BDArmory.Control
             UpdateBurnAlignmentTolerance();
         }
 
-        void KillVelocity()
+        void KillVelocity(bool onIntercept = false)
         {
-            float timeToCPA = vessel.TimeToCPA(targetVessel);
-            Vector3 cpa = vessel.PredictPosition(timeToCPA);
-            float cpaDist = (cpa - vessel.CoM).magnitude;
             Vector3 relPos = targetVessel.CoM - vessel.CoM;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-            Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
             float targetSpeed = KillVelocityTargetSpeed();
-            bool maintainThrottle = ((relVel + timeToCPA * relAccel).sqrMagnitude > targetSpeed * targetSpeed) || (cpa.sqrMagnitude == relPos.sqrMagnitude);
+            bool maintainThrottle = (relVel.sqrMagnitude > targetSpeed * targetSpeed);
+            if (onIntercept)
+            {
+                Vector3 cpa = vessel.PredictPosition(timeToCPA);
+                Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
+                Vector3 toIntercept = Intercept(relPos, relVel);
+                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.Velocity(), targetVessel.perturbation);
+                float distanceToIntercept = toIntercept.magnitude;
 
-            SetStatus($"Maneuvering (Kill Velocity), {timeToCPA:G2}s, {cpaDist:N0}m");
+                if (interceptRanges.z < weaponManager.gunRange) // Gun range intercept, balance between throttle actions and intercept accuracy
+                    maintainThrottle = relPos.sqrMagnitude < ((1f + interceptMargin) * (1f + interceptMargin) * interceptRanges.z * interceptRanges.z) || (Vector3.Dot(relVel, relPos.normalized) > targetSpeed) || ApproachingIntercept();
+                else // Missile range intercept, emphasis on single throttle action over intercept accuracy
+                {
+                    maintainThrottle = ((relVel + timeToIntercept * relAccel).sqrMagnitude > targetSpeed * targetSpeed) ||
+                    (cpa.sqrMagnitude == relPos.sqrMagnitude) || // We are moving further away from target
+                    (cpa.sqrMagnitude >= weaponManager.gunRange * weaponManager.gunRange); // Intercept point is outside gun range, exact intercept position matters less
+                }
+
+                SetStatus($"Maneuvering (Kill Velocity), {timeToCPAString}, {distanceToIntercept:N0}m");
+            }
+            else
+            {
+                SetStatus($"Maneuvering (Kill Velocity)");
+            }
 
             fc.attitude = (relVel + targetVessel.perturbation).normalized;
             fc.throttle = maintainThrottle ? 1f : 0f;
@@ -727,7 +758,7 @@ namespace BDArmory.Control
 
         void InterceptTarget()
         {
-            SetStatus($"Maneuvering (Intercept Target), {timeToCPA:G2}s, {distToCPA:N0}m");
+            SetStatus($"Maneuvering (Intercept Target), {timeToCPAString}, {distToCPA:N0}m");
             Vector3 relPos = targetVessel.CoM - vessel.CoM;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
 
@@ -748,14 +779,15 @@ namespace BDArmory.Control
                 if (targetVessel)
                 {
                     debugString.AppendLine($"Target Vessel: {targetVessel.GetDisplayName()}");
-                    debugString.AppendLine($"Can Intercept: {CanInterceptShip(targetVessel)}");
+                    debugString.AppendLine($"Can Intercept: {CanInterceptShip(targetVessel)}, On Intercept: {OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : 0.25f)}");
                     debugString.AppendLine($"Target Range: {VesselDistance(vessel, targetVessel):G3}");
                     debugString.AppendLine($"Min/Max/Intercept Range: {interceptRanges.x}/{interceptRanges.y}/{interceptRanges.z}");
                     debugString.AppendLine($"Time to CPA: {timeToCPA:G3}");
                     debugString.AppendLine($"Distance to CPA: {distToCPA:G3}");
                     debugString.AppendLine($"Stopping Distance: {stoppingDist:G3}");
-                    debugString.AppendLine($"Apoapsis: {vessel.orbit.ApA/1000}km / {vessel.orbit.timeToAp}s");
-                    debugString.AppendLine($"Periapsis: {vessel.orbit.PeA/1000}km / {vessel.orbit.timeToPe}s");
+                    debugString.AppendLine($"Apoapsis: {vessel.orbit.ApA/1000:G2}km / {vessel.orbit.timeToAp:G2}s");
+                    debugString.AppendLine($"Periapsis: {vessel.orbit.PeA/1000:G2}km / {vessel.orbit.timeToPe:G2}s");
+                    debugString.AppendLine($"Missile Launch Fail Timer: {missileTryLaunchTime:G2}s");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
                 if (weaponManager) debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
@@ -774,17 +806,18 @@ namespace BDArmory.Control
             // Check on command status
             UpdateCommand();
 
-            // Update intercept ranges
-            interceptRanges = InterceptionRanges();
+            // Update intercept ranges and time to CPA
+            interceptRanges = InterceptionRanges(); //.x = minRange, .y = maxRange, .z = interceptRange
+            if (targetVessel != null) timeToCPA = vessel.TimeToCPA(targetVessel);
 
             // Prioritize safe orbits over combat outside of weapon range
-            bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrection);
+            bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrectionDueTo != OrbitCorrectionReason.None);
             bool fixOrbitLater = false;
             if (hasPropulsion && !fixOrbitNow && CheckOrbitUnsafe())
             {
                 fixOrbitLater = true;
                 if (weaponManager && targetVessel != null)
-                    fixOrbitNow = ((vessel.CoM - targetVessel.CoM).sqrMagnitude > interceptRanges.y * interceptRanges.y) && (vessel.TimeToCPA(targetVessel) > 10f);
+                    fixOrbitNow = ((vessel.CoM - targetVessel.CoM).sqrMagnitude > interceptRanges.y * interceptRanges.y) && (timeToCPA > 10f);
             }
 
             // FIXME Josue There seems to be a fair bit of oscillation between circularising, intercept velocity and kill velocity in my tests, with the craft repeatedly rotating 180° to perform burns in opposite directions.
@@ -959,24 +992,34 @@ namespace BDArmory.Control
         private bool CheckOrbitDangerous()
         {
             Orbit o = vessel.orbit;
-            if (o.referenceBody != safeAltBody) // Body has been updated, update min safe alt
-            {
-                minSafeAltitude = o.referenceBody.MinSafeAltitude();
-                safeAltBody = o.referenceBody;
-            }
-            return (o.altitude < minSafeAltitude) || (o.PeA < 0.8f * minSafeAltitude && o.timeToPe < o.timeToAp);
+            bool descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
+            bool fallingInsideAtmo = descending && o.altitude < minSafeAltitude; // Descending inside atmo, OrbitCorrectionReason.FallingInsideAtmosphere
+            bool dangerousPeriapsis = descending && o.PeA < 0.8f * minSafeAltitude; // Descending & periapsis suggests we are close to falling inside atmosphere, OrbitCorrectionReason.PeriapsisLow
+            bool entirelyInsideAtmo = o.ApA < minSafeAltitude && o.ApA >= 0; // Entirety of orbit is inside atmosphere, OrbitCorrectionReason.ApoapsisLow
+            return (fallingInsideAtmo || dangerousPeriapsis || entirelyInsideAtmo);
         }
 
         private bool CheckOrbitUnsafe()
         {
             Orbit o = vessel.orbit;
-            if (o.referenceBody != safeAltBody) // Body has been updated, update min safe alt
-            {
-                minSafeAltitude = o.referenceBody.MinSafeAltitude();
-                safeAltBody = o.referenceBody;
-            }
+            bool descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
+            bool escaping = EscapingOrbit(); // Vessel is on an escape orbit and has passed the periapsis by over 60s, OrbitCorrectionReason.Escaping
+            bool periapsisLow = descending && o.PeA < minSafeAltitude && o.ApA >= minSafeAltitude && o.altitude >= minSafeAltitude; // We are outside the atmosphere but our periapsis is inside the atmosphere, OrbitCorrectionReason.PeriapsisLow
+            return (escaping || periapsisLow); // Match conditions in PilotLogic
+        }
 
-            return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
+        private void UpdateBody()
+        {
+            if (vessel.orbit.referenceBody != safeAltBody) // Body has been updated, update min safe alt
+            {
+                minSafeAltitude = vessel.orbit.referenceBody.MinSafeAltitude();
+                safeAltBody = vessel.orbit.referenceBody;
+            }
+        }
+
+        private bool EscapingOrbit()
+        {
+            return (vessel.orbit.ApA < 0 && vessel.orbit.timeToPe < -60);
         }
 
         private bool CanInterceptShip(Vessel target)
@@ -1022,7 +1065,7 @@ namespace BDArmory.Control
         {
             Vector3 relPos = targetVessel.CoM - vessel.CoM;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-            if (Vector3.Dot(relVel, relPos) > -0.01f * relPos.sqrMagnitude)
+            if (Vector3.Dot(relVel, relPos.normalized) > -10f)
                 return false;
             float angleToRotate = Vector3.Angle(vessel.ReferenceTransform.up, relVel) * Mathf.Deg2Rad * 0.75f;
             float timeToRotate = BDAMath.SolveTime(angleToRotate, maxAngularAccelerationMag) / 0.75f;
@@ -1031,7 +1074,6 @@ namespace BDArmory.Control
             Vector3 toIntercept = Intercept(relPos, relVel);
             float distanceToIntercept = toIntercept.magnitude;
             distToCPA = distanceToIntercept;
-            timeToCPA = vessel.TimeToCPA(targetVessel);
             stoppingDist = interceptStoppingDistance;
 
             return distanceToIntercept < interceptStoppingDistance;
@@ -1045,8 +1087,7 @@ namespace BDArmory.Control
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             if (Vector3.Dot(relPos, relVel) >= 0f)
                 return false;
-            timeToCPA = vessel.TimeToCPA(targetVessel);
-            Vector3 cpa = AIUtils.PredictPosition(relPos, relVel, Vector3.zero, timeToCPA);
+            Vector3 cpa = vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA) - targetVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA);
             float interceptRange = interceptRanges.z;
             float interceptRangeTolSqr = (interceptRange * (tolerance + 1f)) * (interceptRange * (tolerance + 1f));
             return cpa.sqrMagnitude < interceptRangeTolSqr && Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
@@ -1067,7 +1108,6 @@ namespace BDArmory.Control
             bool usingProjectile = true;
             if (weaponManager != null)
             {
-                
                 if (weaponManager.selectedWeapon != null)
                 {
                     currentWeapon = weaponManager.selectedWeapon;
@@ -1075,10 +1115,26 @@ namespace BDArmory.Control
                     minRange = Mathf.Max(engageableWeapon.GetEngagementRangeMin(), minRange);
                     maxRange = engageableWeapon.GetEngagementRangeMax();
                     usingProjectile = weaponManager.selectedWeapon.GetWeaponClass() != WeaponClasses.Missile;
-                    if (usingProjectile) { maxRange = Mathf.Min(maxRange, weaponManager.gunRange); }
+                    if (usingProjectile)
+                    {
+                        missileTryLaunchTime = 0f;
+                        maxRange = Mathf.Min(maxRange, weaponManager.gunRange);
+                    }
+                    else
+                    {
+                        MissileBase ml = currentWeapon as MissileBase;
+                        missileTryLaunchTime = weaponManager.missilesAway.Any() ? 0f : missileTryLaunchTime;
+                        maxRange = weaponManager.MaxMissileRange(ml, weaponManager.UnguidedMissile(ml, maxRange));
+                        maxRange = Mathf.Max(maxRange * (1 - 0.15f * Mathf.Floor(missileTryLaunchTime / 20f)),
+                                    Mathf.Min(weaponManager.gunRange, minRange * 1.2f));
+                        // If trying to fire a missile and within range, gradually decrease max range by 15% every 20s outside of range and unable to fire
+                        if (targetVessel != null && (targetVessel.CoM - vessel.CoM).sqrMagnitude < maxRange * maxRange)
+                            missileTryLaunchTime += Time.fixedDeltaTime;
+                    }
                 }
                 else
                 {
+                    missileTryLaunchTime = 0f;
                     for (int i = 0; i < weaponManager.weaponArray.Length; i++)
                     {
                         var weapon = weaponManager.weaponArray[i];
@@ -1089,7 +1145,8 @@ namespace BDArmory.Control
                             maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
                         else
                         {
-                            maxRange = Mathf.Max(maxEngageRange * (weaponManager.UnguidedMissile(weapon as MissileBase, maxEngageRange) ? 0.1f : 1f), maxRange);
+                            MissileBase ml = weapon as MissileBase;
+                            maxRange = Mathf.Max(weaponManager.MaxMissileRange(ml, weaponManager.UnguidedMissile(ml, maxRange)), maxRange);
                             usingProjectile = false;
                         }
                     }

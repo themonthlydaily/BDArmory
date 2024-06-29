@@ -8206,18 +8206,68 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             MissileLauncher mlauncher = ml as MissileLauncher;
             bool torpedo = mlauncher != null ? mlauncher.torpedo : false; //TODO - work out MMG torpedo support?
 
-
             bool unguidedWeapon = 
                 ml.TargetingMode switch
                 {
                     MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
-                    MissileBase.TargetingModes.Radar => !(torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))), // FIXME so it works with HEKVs and 
+                    MissileBase.TargetingModes.Radar => !(torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
                     MissileBase.TargetingModes.Inertial => !((torpedo ? _sonarsEnabled : _radarsEnabled) || _irstsEnabled),
                     MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled,
                     _ => false
                 }; //unify unguidedWeapon conditions
 
             return unguidedWeapon;
+        }
+
+        /// <summary>
+        /// Clamps max missile engage range to max range of radar/laser/visual range
+        /// </summary>
+        /// <returns>max missile range clamped to targeting method range</returns>
+        public float MaxMissileRange(MissileBase ml, bool unguidedGuidedMissile = false)
+        {
+            // Clamp missile range to targeting method range
+            float maxEngageRange = ml.engageRangeMax;
+            if (unguidedGuidedMissile)
+                return 0.1f * maxEngageRange;
+
+            switch (ml.TargetingMode)
+            {
+                case MissileBase.TargetingModes.Radar:
+                    {
+                        float radarRange = 0.1f * maxEngageRange;
+                        VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
+                        if (vrd)
+                            radarRange = Mathf.Max(vrd.MaxRadarRange(), ml.radarLOAL ? ml.activeRadarRange : 0f);
+                        return Mathf.Min(maxEngageRange, radarRange);
+                    }
+                case MissileBase.TargetingModes.Heat:
+                    {
+                        float irstRange = 0.1f * maxEngageRange;
+                        VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
+                        if (vrd)
+                            irstRange = vrd.MaxIRSTRange();
+                        irstRange = Mathf.Max(guardRange, irstRange);
+                        return Mathf.Min(maxEngageRange, irstRange);
+                    }
+                case MissileBase.TargetingModes.Laser:
+                    {
+                        if (targetingPods.Count > 0)
+                        {
+                            float maxPodRange = 0.1f * maxEngageRange;
+                            using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
+                                while (tgp.MoveNext())
+                                {
+                                    if (tgp.Current == null) continue;
+                                    maxPodRange = Mathf.Max(tgp.Current.maxRayDistance, maxPodRange);
+                                }
+                            return Mathf.Min(maxPodRange, maxEngageRange);
+                        }
+                        else
+                            return 0.1f * maxEngageRange;
+                    }
+                default:
+                    return Mathf.Min(maxEngageRange, guardRange);
+            }
         }
 
         /// <summary>
