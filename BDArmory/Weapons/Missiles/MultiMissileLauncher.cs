@@ -859,6 +859,8 @@ namespace BDArmory.Weapons.Missiles
                     ml.kappaAngle = missileLauncher.kappaAngle;
                     ml.LoftAngle = missileLauncher.LoftAngle;
                     ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                    ml.LoftRangeFac = missileLauncher.LoftRangeFac;
+                    ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                     ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
                     ml.loftState = LoftStates.Boost;
                     ml.LoftTermAngle = missileLauncher.LoftTermAngle;
@@ -904,6 +906,8 @@ namespace BDArmory.Weapons.Missiles
                         ml.kappaAngle = missileLauncher.kappaAngle;
                         ml.LoftAngle = missileLauncher.LoftAngle;
                         ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                        ml.LoftRangeFac = missileLauncher.LoftRangeFac;
+                        ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                         ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
                         ml.loftState = LoftStates.Boost;
                         ml.LoftTermAngle = missileLauncher.LoftTermAngle;

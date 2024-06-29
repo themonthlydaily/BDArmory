@@ -1004,6 +1004,8 @@ namespace BDArmory.UI
                     {
                         if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetName() + " to team " + SpawnUtils.originalTeams[weaponManager.vessel.vesselName]);
                         weaponManager.SetTeam(BDTeam.Get(SpawnUtils.originalTeams[weaponManager.vessel.vesselName]));
+                        if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                            BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                     }
                 }
                 return;
@@ -1029,6 +1031,8 @@ namespace BDArmory.UI
                     Debug.Log("[BDArmory.LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
                     weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString())); // Assign anyone who wasn't specified to a separate team.
                     weaponManagersByName[craftName].Team.Neutral = false;
+                    if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(craftName))
+                        BDACompetitionMode.Instance.Scores.ScoreData[craftName].team = weaponManagersByName[craftName].Team.Name;
                 }
                 return;
             }
@@ -1046,6 +1050,8 @@ namespace BDArmory.UI
                     }
                     weaponManager.SetTeam(BDTeam.Get(T.ToString())); // Otherwise, assign them to team T.
                     weaponManager.Team.Neutral = false;
+                    if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                        BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                     ++count;
                 }
                 return;
@@ -1056,6 +1062,8 @@ namespace BDArmory.UI
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetName() + " to team " + T.ToString());
                 weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                 weaponManager.Team.Neutral = false;
+                if (BDACompetitionMode.Instance.Scores != null && BDACompetitionMode.Instance.Scores.Players.Contains(weaponManager.vessel.vesselName))
+                    BDACompetitionMode.Instance.Scores.ScoreData[weaponManager.vessel.vesselName].team = weaponManager.Team.Name;
                 if (separateTeams) T++;
             }
         }
