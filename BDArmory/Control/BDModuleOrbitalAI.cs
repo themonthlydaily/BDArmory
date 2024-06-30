@@ -723,26 +723,23 @@ namespace BDArmory.Control
 
         void KillVelocity(bool onIntercept = false)
         {
-            Vector3 relPos = targetVessel.CoM - vessel.CoM;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             float targetSpeed = KillVelocityTargetSpeed();
             bool maintainThrottle = (relVel.sqrMagnitude > targetSpeed * targetSpeed);
             if (onIntercept)
             {
-                Vector3 cpa = vessel.PredictPosition(timeToCPA);
+                Vector3 relPos = targetVessel.CoM - vessel.CoM;
                 Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
                 Vector3 toIntercept = Intercept(relPos, relVel);
-                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.Velocity(), targetVessel.perturbation);
                 float distanceToIntercept = toIntercept.magnitude;
+                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.Velocity(), targetVessel.perturbation);
+                float cpaDistSqr = AIUtils.PredictPosition(relPos, relVel, relAccel, timeToIntercept).sqrMagnitude;
 
-                if (interceptRanges.z < weaponManager.gunRange) // Gun range intercept, balance between throttle actions and intercept accuracy
-                    maintainThrottle = relPos.sqrMagnitude < ((1f + interceptMargin) * (1f + interceptMargin) * interceptRanges.z * interceptRanges.z) || (Vector3.Dot(relVel, relPos.normalized) > targetSpeed) || ApproachingIntercept();
-                else // Missile range intercept, emphasis on single throttle action over intercept accuracy
-                {
-                    maintainThrottle = ((relVel + timeToIntercept * relAccel).sqrMagnitude > targetSpeed * targetSpeed) ||
-                    (cpa.sqrMagnitude == relPos.sqrMagnitude) || // We are moving further away from target
-                    (cpa.sqrMagnitude >= weaponManager.gunRange * weaponManager.gunRange); // Intercept point is outside gun range, exact intercept position matters less
-                }
+                if (cpaDistSqr < weaponManager.gunRange * weaponManager.gunRange) // Gun range intercept, balance between throttle actions and intercept accuracy
+                    maintainThrottle = relPos.sqrMagnitude < ((1f + interceptMargin) * (1f + interceptMargin) * interceptRanges.z * interceptRanges.z) || // Within intercept range margin
+                        (timeToIntercept == 0f) || // Moving away from target
+                        ApproachingIntercept(); // Stopping distance > distance to target
+                //else missile range intercept, exact positioning matters less
 
                 SetStatus($"Maneuvering (Kill Velocity), {timeToCPAString}, {distanceToIntercept:N0}m");
             }
