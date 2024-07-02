@@ -417,7 +417,7 @@ namespace BDArmory.Damage
                 }
 
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
+                if (part.IsMissile() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
                 {
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     HTrangeEditor.minValue = HullTypeNum;
@@ -1546,7 +1546,7 @@ namespace BDArmory.Damage
             part.breakingForce = maxForce;
             maxTorque = part.partInfo.partPrefab.breakingTorque * hullInfo.ImpactMod;
             part.breakingTorque = maxTorque;
-            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
+            maxG = isAI ? 50 : part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
             part.gTolerance = maxG;
             hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;

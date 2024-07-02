@@ -2119,6 +2119,7 @@ namespace BDArmory.Competition
                     kerbal.isBadass = true; // Make them badass.
                     KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                    kerbal.courage = 0.5f;
                 }
             }
             else
