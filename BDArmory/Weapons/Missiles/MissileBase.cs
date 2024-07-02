@@ -151,6 +151,9 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField]
         public bool uncagedLock = false;                             //if true it simulates a modern IR missile with "uncaged lock" ability. Even if the target is not within boresight fov, it can be radar locked and the target information transfered to the missile. It will then try to lock on with the heat seeker. If false, it is an older missile which requires a direct "in boresight" lock.
+        
+        [KSPField]
+        public bool targetCoM = false;                             //if true, IR missile targets the center of a craft, false IR missile targets hottest part
 
         [KSPField]
         public bool isTimed = false;
@@ -307,9 +310,9 @@ namespace BDArmory.Weapons.Missiles
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke }
+        public enum WarheadTypes { Kinetic, Standard, ContinuousRod, EMP, Nuke }
 
-        public WarheadTypes warheadType;
+        public WarheadTypes warheadType = WarheadTypes.Kinetic;
         public bool HasFired { get; set; } = false;
 
         public bool launched = false;
@@ -744,7 +747,7 @@ namespace BDArmory.Weapons.Missiles
                     heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, lockedSensorFOVBias, lockedSensorVelocityBias,
                         (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
                 else
-                    heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
+                    heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
 
                 if (heatTarget.exists)
                 {
@@ -1509,8 +1512,8 @@ namespace BDArmory.Weapons.Missiles
         {
             //Guard clauses
             //if (!TargetAcquired) return;
-            var targetDistancePerFrame = TargetVelocity * Time.fixedDeltaTime;
-            var missileDistancePerFrame = vessel.Velocity() * Time.fixedDeltaTime;
+            var targetDistancePerFrame = (TargetVelocity - BDKrakensbane.FrameVelocityV3f) * Time.fixedDeltaTime;
+            var missileDistancePerFrame = (vessel.Velocity() - BDKrakensbane.FrameVelocityV3f) * Time.fixedDeltaTime ;
 
             var futureTargetPosition = (TargetPosition + targetDistancePerFrame);
             var futureMissilePosition = (vessel.CoM + missileDistancePerFrame);

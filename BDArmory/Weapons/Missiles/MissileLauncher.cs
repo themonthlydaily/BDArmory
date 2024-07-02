@@ -138,7 +138,7 @@ namespace BDArmory.Weapons.Missiles
         public float blastRadius = -1;
 
         [KSPField]
-        public float blastPower = 25;
+        public float blastPower = 0; // Depreciated, support for legacy missiles only
 
         [KSPField]
         public float blastHeat = -1;
@@ -717,7 +717,13 @@ namespace BDArmory.Weapons.Missiles
                     {
                         warheadType = WarheadTypes.ContinuousRod;
                     }
-                    else warheadType = WarheadTypes.Standard;
+                    else
+                    {
+                        if (((BDExplosivePart)partModules.Current).tntMass > 0)
+                            warheadType = WarheadTypes.Standard;
+                        else
+                            warheadType = WarheadTypes.Kinetic;
+                    }
                 }
                 if (partModules.Current.moduleName == "ClusterBomb")
                 {
@@ -1065,7 +1071,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetBlastRadius()
         {
-            if (blastRadius > 0) { return blastRadius; }
+            if (blastRadius >= 0) { return blastRadius; }
             else
             {
                 if (warheadType == WarheadTypes.EMP)
@@ -1093,6 +1099,11 @@ namespace BDArmory.Weapons.Missiles
                         blastRadius = 150;
                         return 150;
                     }
+                }
+                else if (warheadType == WarheadTypes.Kinetic)
+                {
+                    blastRadius = 0f;
+                    return 0f;
                 }
                 else
                 {
@@ -1905,7 +1916,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DEBUG_MISSILES)
@@ -2892,11 +2903,19 @@ namespace BDArmory.Weapons.Missiles
                     var U235 = part.FindModuleImplementing<BDModuleNuke>();
                     U235.Detonate();
                 }
-                else // EMP/really ond legacy missiles using BlastPower
+                else if (warheadType == WarheadTypes.EMP || blastPower > 0) // EMP/really old legacy missiles using BlastPower
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
-
                     ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, Team.Name, GetShortName(), default(Vector3), -1, warheadType == WarheadTypes.EMP, part.mass * 1000);
+                }
+                else if (warheadType == WarheadTypes.Kinetic) // Missile will usually just phase through target at high speeds (even with ContinuousCollisions mod), so fake effects using an explosion
+                {
+                    Vector3 vel = vessel.Velocity()-BDKrakensbane.FrameVelocityV3f;
+                    if (Physics.Raycast(new Ray(transform.position, vel), out RaycastHit hit, 500f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
+                    {
+                        Vector3 relVel = TargetVelocity != Vector3.zero ? vessel.Velocity() - TargetVelocity : vel;
+                        ExplosionFx.CreateExplosion(hit.point, 0.5f * (1000f * part.mass) * relVel.sqrMagnitude / 4184000f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 1000f * vessel.GetRadius(), part, SourceVesselName, Team.Name, GetShortName(), vel, -1, false, part.mass, -1, 1, "kinetic", null, 1.2f);
+                    }
                 }
                 if (part != null && !FuseFailed)
                 {
