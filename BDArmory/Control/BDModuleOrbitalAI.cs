@@ -494,7 +494,7 @@ namespace BDArmory.Control
                         var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
                         if (o.altitude > minSafeAltitude && (
                             (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.None && EscapingOrbit()) ||
-                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.Escaping && (EscapingOrbit() || (o.ApA / o.PeA > 10f)))))
+                            (ongoingOrbitCorrectionDueTo == OrbitCorrectionReason.Escaping && (EscapingOrbit() || (o.ApA > 0.1f * safeAltBody.sphereOfInfluence)))))
                         {
                             // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
                             SetStatus("Correcting Orbit (On escape trajectory)");
