@@ -2126,7 +2126,7 @@ namespace BDArmory.Competition
             {
                 GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame);
             }
-            // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
+            // Update the game state and save it to the persistent save (since that's what eventually ends up getting loaded when we call Start()).
             HighLogic.CurrentGame.Updated();
             GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
             HighLogic.CurrentGame.Start();

@@ -217,6 +217,7 @@ namespace BDArmory.UI
         string HoSString = "";
         public string HoSTag = "";
         bool enteredHoS = false;
+        static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
         string compDistGui;
@@ -644,7 +645,7 @@ namespace BDArmory.UI
         void ToggleToolbarButton()
         {
             if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
-            else { windowSettingsEnabled = !windowSettingsEnabled; }
+            else { ToggleWindowSettings(); }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -708,6 +709,7 @@ namespace BDArmory.UI
             if (windowSettingsEnabled)
             {
                 // LoadConfig(); // Don't reload settings, since they're already loaded and mess with other settings windows.
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
             }
             else
             {
@@ -3467,18 +3469,20 @@ namespace BDArmory.UI
                 {
                     CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
                 }
-                if (!BDArmorySettings.G_LIMITS && (HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GPartLimits || HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GKerbalLimits))
-                    BDArmorySettings.G_LIMITS = true; 
-                BDArmorySettings.PART_GLIMIT = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GPartLimits; // Sync with the Game Difficulty window if the checkbox was toggled there.
-                BDArmorySettings.KERB_GLIMIT = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GKerbalLimits;
-                BDArmorySettings.G_TOLERANCE = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().KerbalGToleranceMult * 20.5f;
+                bool advParamsChanged = false;
+                if (!BDArmorySettings.G_LIMITS && (advancedParams.GPartLimits || advancedParams.GKerbalLimits)) 
+                    BDArmorySettings.G_LIMITS = true;
+                BDArmorySettings.PART_GLIMIT = advancedParams.GPartLimits; // Sync with the Game Difficulty window if the checkbox was toggled there.
+                BDArmorySettings.KERB_GLIMIT = advancedParams.GKerbalLimits;
+                BDArmorySettings.G_TOLERANCE = advancedParams.KerbalGToleranceMult * 20.5f;
                 if (BDArmorySettings.G_LIMITS != (BDArmorySettings.G_LIMITS = GUI.Toggle(SLeftRect(line), BDArmorySettings.G_LIMITS, StringUtils.Localize("#LOC_BDArmory_Settings_GLimitsMode"))))//G-Force Limits
                 {
                     if (!BDArmorySettings.G_LIMITS)
                     {
-                        HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GPartLimits = false;
-                        HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GKerbalLimits = false;
-                        HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().KerbalGToleranceMult = 1f;
+                        advancedParams.GPartLimits = false;
+                        advancedParams.GKerbalLimits = false;
+                        advancedParams.KerbalGToleranceMult = 1f;
+                        advParamsChanged = true;
                         BDArmorySettings.KERB_GLIMIT = false;
                         BDArmorySettings.PART_GLIMIT = false;
                     }
@@ -3487,21 +3491,28 @@ namespace BDArmory.UI
                 {
                     if (BDArmorySettings.PART_GLIMIT != (BDArmorySettings.PART_GLIMIT = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.PART_GLIMIT, StringUtils.Localize("#autoLOC_140950"))))//Part G-Force Limits
                     {
-                        HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GPartLimits = BDArmorySettings.PART_GLIMIT;
+                        advancedParams.GPartLimits = BDArmorySettings.PART_GLIMIT;
+                        advParamsChanged = true;
                     }
                     if (BDArmorySettings.KERB_GLIMIT != (BDArmorySettings.KERB_GLIMIT = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.KERB_GLIMIT, StringUtils.Localize("#autoLOC_140953"))))//Kerbal G-Force Limits
                     {
-                        HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().GKerbalLimits = BDArmorySettings.KERB_GLIMIT;
+                        advancedParams.GKerbalLimits = BDArmorySettings.KERB_GLIMIT;
+                        advParamsChanged = true;
                     }
                     if (BDArmorySettings.KERB_GLIMIT)
                     {
-                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#autoLOC_140956")}:  ({BDArmorySettings.G_TOLERANCE})", leftLabel);//Kerbal G-Force Tolerance
-                        if (BDArmorySettings.G_TOLERANCE != (BDArmorySettings.G_TOLERANCE = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.G_TOLERANCE, 1f, 40f) * 10f) / 10f))
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#autoLOC_140956")}:  ({BDArmorySettings.G_TOLERANCE:0.0}g)", leftLabel);//Kerbal G-Force Tolerance
+                        if (BDArmorySettings.G_TOLERANCE != (BDArmorySettings.G_TOLERANCE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.G_TOLERANCE, 1f, 40f), 0.5f)))
                         {
-                            HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>().KerbalGToleranceMult = BDArmorySettings.G_TOLERANCE / 20.5f; //Default 0.5 Courage BadS Pilot kerb has a GLimit of 20.5
+                            advancedParams.KerbalGToleranceMult = BDArmorySettings.G_TOLERANCE / 20.5f; //Default 0.5 Courage BadS Pilot kerb has a GLimit of 20.5
+                            advParamsChanged = true;
                         } //G-Limit is point at which Kerbs begin to fill the G-meter; e.g. a G_TOLERANCE of 0.4 (g-Limit of 8.16) would result in Kerbs indefiniately tolerating a 8G turn, but a 9 G sustained turn would *very* slowly fill the meter,
                           //a 13G sustained turn would KO them after 5-6 seconds, a 20G turn would KO them instantly, etc.
                     }
+                }
+                if (advParamsChanged)
+                {
+                    GamePersistence.SaveGame("persistent", HighLogic.SaveFolder, SaveMode.OVERWRITE); // Update the persistent save.
                 }
                 // Resource steal
                 BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
