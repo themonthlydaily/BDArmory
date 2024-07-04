@@ -2843,6 +2843,24 @@ namespace BDArmory.Weapons.Missiles
             if (Throttle == 0)
                 turnRateDPS *= 15f;
 
+            // If in atmosphere, apply drag
+            if (!vessel.InVacuum() && vessel.srfSpeed > 0f)
+            {
+                FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
+                Rigidbody rb = part.rb;
+                if (!(rb == null || rb.mass == 0))
+                {
+                    double airDensity = vessel.atmDensity;
+                    double airSpeed = vessel.srfSpeed;
+                    Vector3d velocity = vessel.Velocity();
+                    Vector3 CoL = new Vector3(0, 0, -1f);
+                    float AoA = Mathf.Clamp(Vector3.Angle(part.transform.forward, velocity), 0, 90);
+                    double dragForce = 0.5 * airDensity * airSpeed * airSpeed * dragArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * Mathf.Max(dragCurve.Evaluate(AoA), 0f);
+                    rb.AddForceAtPosition((float)dragForce * -velocity.normalized,
+                        part.transform.TransformPoint(part.CoMOffset + CoL));
+                }
+            }
+
             part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, TargetVelocity), turnRateDPS * Time.fixedDeltaTime);
             if (TimeIndex > dropTime + 0.25f)
                 CheckMiss();
