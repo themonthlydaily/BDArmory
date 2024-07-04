@@ -494,7 +494,7 @@ namespace BDArmory.UI
 
         public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, float frontAspectHeatModifier, bool uncagedLock, bool targetCoM, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
         {
-            float minMass = 0;//0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
+            float minMass = missileVessel.InNearVacuum() ? 0f : 0.05f;  // FIXME, RAMs need min mass of 0.05, but orbital KKVs mass < 0.05
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
             float priorHeatScore = priorHeatTarget.signalStrength;
