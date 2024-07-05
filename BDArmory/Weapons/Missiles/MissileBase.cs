@@ -151,7 +151,7 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField]
         public bool uncagedLock = false;                             //if true it simulates a modern IR missile with "uncaged lock" ability. Even if the target is not within boresight fov, it can be radar locked and the target information transfered to the missile. It will then try to lock on with the heat seeker. If false, it is an older missile which requires a direct "in boresight" lock.
-        
+
         [KSPField]
         public bool targetCoM = false;                             //if true, IR missile targets the center of a craft, false IR missile targets hottest part
 
@@ -507,7 +507,7 @@ namespace BDArmory.Weapons.Missiles
             }
         }
         public bool isMMG = false;
-        
+
         public override void OnAwake()
         {
             base.OnAwake();
@@ -755,6 +755,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetPosition = heatTarget.position;
                     TargetVelocity = heatTarget.velocity;
                     TargetAcceleration = heatTarget.acceleration;
+                    targetVessel = heatTarget.targetInfo;
                     lockFailTimer = 0;
 
                     // Update target information
@@ -1094,7 +1095,7 @@ namespace BDArmory.Weapons.Missiles
                                 if (currAngle > (smallestAngle + 5f)) continue; // Look for the smallest angle, give 5 degrees of wiggle room.
                                 smallestAngle = currAngle;
                             }
-                            
+
                             // Look for closest target, either to the previous target location if available, or to the missile if not
                             currDist = (targetVessel != null ? scannedTargets[i].predictedPosition : vessel.CoM - soughtTarget).sqrMagnitude;
 
@@ -1423,7 +1424,8 @@ namespace BDArmory.Weapons.Missiles
                                 Throttle = 0.5f;
                                 dotTol = 0.5f;
                             }
-                            bool cleared = isMMG ? (VectorUtils.CheckClearOfSphere(toTarget, SourceVessel.CoM, sourceRadius)) : !Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Wheels));
+                            bool cleared = VectorUtils.CheckClearOfSphere(toTarget, SourceVessel.CoM, sourceRadius);
+                            cleared = isMMG ? cleared : cleared && !Physics.Raycast(toTarget, out RaycastHit hit, toSource.sqrMagnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Wheels));
                             if ((Vector3.Dot((orbitalTarget - CoM).normalized, GetForwardTransform()) >= dotTol) && cleared)
                             {
                                 vacuumClearanceState = VacuumClearanceStates.Cleared;
@@ -1512,8 +1514,8 @@ namespace BDArmory.Weapons.Missiles
         {
             //Guard clauses
             //if (!TargetAcquired) return;
-            var targetDistancePerFrame = (TargetVelocity - BDKrakensbane.FrameVelocityV3f) * Time.fixedDeltaTime;
-            var missileDistancePerFrame = (vessel.Velocity() - BDKrakensbane.FrameVelocityV3f) * Time.fixedDeltaTime ;
+            var targetDistancePerFrame = Time.fixedDeltaTime * (TargetVelocity - BDKrakensbane.FrameVelocityV3f) + 0.5f * Time.fixedDeltaTime * Time.fixedDeltaTime * TargetAcceleration;
+            var missileDistancePerFrame = Time.fixedDeltaTime * (vessel.Velocity() - BDKrakensbane.FrameVelocityV3f) + 0.5f * Time.fixedDeltaTime * Time.fixedDeltaTime * vessel.acceleration_immediate;
 
             var futureTargetPosition = (TargetPosition + targetDistancePerFrame);
             var futureMissilePosition = (vessel.CoM + missileDistancePerFrame);
@@ -1597,7 +1599,7 @@ namespace BDArmory.Weapons.Missiles
                             if (TimeIndex > 1f)
                             {
                                 Ray rayFuturePosition = new Ray(vessel.CoM, missileDistancePerFrame);
-                                var dist = (float)missileDistancePerFrame.magnitude;
+                                float dist = Time.fixedDeltaTime * (float)vessel.Velocity().magnitude;
                                 var hitCount = Physics.RaycastNonAlloc(rayFuturePosition, proximityHits, dist, layerMask);
                                 if (hitCount == proximityHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                                 {
@@ -1622,8 +1624,10 @@ namespace BDArmory.Weapons.Missiles
 
                                                 if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                                 {
-                                                    //We found a hit to other vessel
-                                                    vessel.SetPosition(hit.point - 0.5f * rayFuturePosition.direction);
+                                                    //We found a hit to other vessel, set transform.position to hit point (moves immediately),
+                                                    //set vessel to move on next fixed update (unlikely to happen as missile is detonating)
+                                                    transform.position = hit.point - 0.5f * rayFuturePosition.direction;
+                                                    vessel.SetPosition(transform.position);
                                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                                     Detonate();
                                                     return;
@@ -1632,8 +1636,51 @@ namespace BDArmory.Weapons.Missiles
                                             catch (Exception e)
                                             {
                                                 // ignored
-                                                Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
+                                                Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonationState: " + e.Message + "\n" + e.StackTrace);
                                             }
+                                        }
+                                    }
+                                }
+                                else if (TargetAcquired && targetVessel != null && targetVessel.Vessel != null)
+                                {
+                                    // For very high speed intercepts when missiles may phase through small vessels/missiles within a frame
+                                    Vector3 relPos = TargetPosition - vessel.CoM;
+                                    Vector3 relVel = TargetVelocity - vessel.Velocity();
+                                    bool approaching = Vector3.Dot(relPos, relVel) < 0f;
+                                    float targetRad = targetVessel.Vessel.GetRadius();
+                                    float selfRad = vessel.GetRadius();
+                                    float sepRad = (targetRad + selfRad);
+
+                                    if (approaching && relVel.sqrMagnitude * Time.fixedDeltaTime * Time.fixedDeltaTime > sepRad * sepRad)
+                                    {
+                                        try
+                                        {
+                                            Vector3 relAccel = TargetAcceleration - vessel.acceleration_immediate;
+                                            float cpaTime = AIUtils.TimeToCPA(relPos, relVel, relAccel, Time.fixedDeltaTime);
+
+                                            if (cpaTime < Time.fixedDeltaTime && cpaTime > 0f)
+                                            {
+                                                float sqrSep = AIUtils.PredictPosition(relPos, relVel, relAccel, cpaTime).sqrMagnitude;
+                                                if (sepRad * sepRad > sqrSep)
+                                                {
+                                                    // Valid hit, determine hit point and set transform.position (moves immediately) to hit point
+                                                    Vector3 missileToTarget = AIUtils.PredictPosition(TargetPosition, TargetVelocity, TargetAcceleration, cpaTime) - vessel.PredictPosition(cpaTime);
+                                                    if (Physics.Raycast(new Ray(TargetPosition - sepRad * missileToTarget, missileToTarget), out RaycastHit hit, sepRad * sepRad, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
+                                                        transform.position = hit.point;
+                                                    else // Just set position at CPA point
+                                                        transform.position = TargetPosition - missileToTarget;
+                                                    vessel.SetPosition(transform.position);
+                                                    Detonate();
+                                                    if (targetVessel.isMissile && targetVessel.MissileBaseModule)
+                                                        targetVessel.MissileBaseModule.Detonate(); // The above approach is only about ~50% effective against missiles, so just tell the other missile to detonate just in case
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            // ignored
+                                            Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonationState: " + e.Message + "\n" + e.StackTrace);
                                         }
                                     }
                                 }

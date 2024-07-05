@@ -1515,8 +1515,6 @@ namespace BDArmory.Weapons.Missiles
 
                 if (HasFired && !HasExploded && part != null)
                 {
-                    CheckDetonationState();
-                    CheckDetonationDistance();
                     part.rb.isKinematic = false;
                     AntiSpin();
                     //simpleDrag
@@ -1550,7 +1548,8 @@ namespace BDArmory.Weapons.Missiles
 
                     UpdateThrustForces();
                     UpdateGuidance();
-
+                    CheckDetonationState(); // this needs to be after UpdateGuidance()
+                    CheckDetonationDistance();
                     //RaycastCollisions();
 
                     //Timed detonation
@@ -1924,9 +1923,10 @@ namespace BDArmory.Weapons.Missiles
                                 Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Heat target acquired! Position: {heatTarget.position}, heatscore: {heatTarget.signalStrength}");
                             }
                             TargetAcquired = true;
-                            TargetPosition = heatTarget.position + (2 * heatTarget.velocity * Time.fixedDeltaTime); // Not sure why this is 2*
+                            TargetPosition = heatTarget.position;
                             TargetVelocity = heatTarget.velocity;
                             TargetAcceleration = heatTarget.acceleration;
+                            targetVessel = heatTarget.targetInfo;
                             lockFailTimer = -1; // ensures proper entry into UpdateHeatTarget()
 
                             // Disable terminal guidance and switch to regular heat guidance for next update
@@ -2813,19 +2813,28 @@ namespace BDArmory.Weapons.Missiles
             Vector3 orbitalTarget;
             if (TargetAcquired)
             {
+                float guidance_thrust = currentThrust;
+                if (currentThrust == 0 && cruiseDelay > 0 && (TimeIndex > dropTime + boostTime) && (TimeIndex < dropTime + boostTime + cruiseDelay)) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
+                    guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
+
                 if (!hasRCS) // Use thrust to kill relative velocity
                 {
-                    float guidance_thrust = currentThrust;
-                    if (currentThrust == 0 && cruiseDelay > 0 && (TimeIndex > dropTime + boostTime) && (TimeIndex < dropTime + boostTime + cruiseDelay)) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
-                        guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
                     Vector3 targetVector = TargetPosition - vessel.CoM;
                     Vector3 acceleration = guidance_thrust / part.mass * GetForwardTransform();
                     Vector3 relVel = TargetVelocity - vessel.Velocity();
                     float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
                     orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
                 }
-                else // Use RCS (in DoRCS()) to kill relative velocity
-                    orbitalTarget = TargetPosition;
+                else // Use thrust to kill relative velocity early, with RCS for later adjustments
+                {
+                    Vector3 targetVector = TargetPosition - vessel.CoM;
+                    Vector3 relVel = vessel.GetObtVelocity() - TargetVelocity;
+                    Vector3 tvNorm = targetVector.normalized;
+                    float timeToImpact = BDAMath.SolveTime(targetVector.magnitude, guidance_thrust / part.mass, Vector3.Dot(relVel, tvNorm));
+                    Vector3 lead = -timeToImpact * relVel;
+                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : Vector3.Dot(relVel, tvNorm) / relVel.magnitude;
+                    orbitalTarget = Vector3.Slerp(TargetPosition + lead, TargetPosition, t);
+                }
 
                 // Clamp target position to max off boresight
                 float angleToTarget = Vector3.Angle(TargetPosition - transform.position, orbitalTarget - transform.position);
@@ -2846,16 +2855,15 @@ namespace BDArmory.Weapons.Missiles
             // If in atmosphere, apply drag
             if (!vessel.InVacuum() && vessel.srfSpeed > 0f)
             {
-                FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
                 Rigidbody rb = part.rb;
-                if (!(rb == null || rb.mass == 0))
+                if (rb != null && rb.mass > 0)
                 {
                     double airDensity = vessel.atmDensity;
                     double airSpeed = vessel.srfSpeed;
                     Vector3d velocity = vessel.Velocity();
                     Vector3 CoL = new Vector3(0, 0, -1f);
                     float AoA = Mathf.Clamp(Vector3.Angle(part.transform.forward, velocity), 0, 90);
-                    double dragForce = 0.5 * airDensity * airSpeed * airSpeed * dragArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * Mathf.Max(dragCurve.Evaluate(AoA), 0f);
+                    double dragForce = 0.5 * airDensity * airSpeed * airSpeed * dragArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * Mathf.Max(MissileGuidance.DefaultDragCurve.Evaluate(AoA), 0f);
                     rb.AddForceAtPosition((float)dragForce * -velocity.normalized,
                         part.transform.TransformPoint(part.CoMOffset + CoL));
                 }
@@ -2926,7 +2934,7 @@ namespace BDArmory.Weapons.Missiles
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
                     ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, Team.Name, GetShortName(), default(Vector3), -1, warheadType == WarheadTypes.EMP, part.mass * 1000);
                 }
-                else if (warheadType == WarheadTypes.Kinetic) // Missile will usually just phase through target at high speeds (even with ContinuousCollisions mod), so fake effects using an explosion
+                else if (warheadType == WarheadTypes.Kinetic) // Missile will usually just phase through target at high speeds (even with ContinuousCollisions mod), so fake effects using an explosion originating at point of impact
                 {
                     Vector3 vel = vessel.Velocity()-BDKrakensbane.FrameVelocityV3f;
                     if (Physics.Raycast(new Ray(transform.position, vel), out RaycastHit hit, 500f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
