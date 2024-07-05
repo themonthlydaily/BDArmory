@@ -1506,6 +1506,7 @@ namespace BDArmory.Damage
             if (isAI || ArmorPanel || ProjectileUtils.isMaterialBlackListpart(this.part))
             {
                 _hullConfigured = true;
+                part.gTolerance = !ArmorPanel ? 999 : 50; //50 for now, armor panels should probably either be determined by armor material, or arbitrary 'weld/mounting bracket' strength
                 return;
                 //HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
             }
@@ -1546,7 +1547,7 @@ namespace BDArmory.Damage
             part.breakingForce = maxForce;
             maxTorque = part.partInfo.partPrefab.breakingTorque * hullInfo.ImpactMod;
             part.breakingTorque = maxTorque;
-            maxG = isAI ? 50 : part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
+            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
             part.gTolerance = maxG;
             hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;
