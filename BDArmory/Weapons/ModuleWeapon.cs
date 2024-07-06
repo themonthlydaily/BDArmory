@@ -2036,7 +2036,7 @@ private float S6R5dynamicRecoil;
                 }
             }
 
-            if (HighLogic.LoadedSceneIsEditor && BDArmorySetup.showWeaponAlignment && !isAPS)
+            if (HighLogic.LoadedSceneIsEditor && BDArmorySetup.showWeaponAlignment && !(isAPS && !dualModeAPS))
             {
                 DrawAlignmentIndicator();
             }

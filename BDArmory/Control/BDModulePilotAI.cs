@@ -1582,8 +1582,6 @@ namespace BDArmory.Control
 
             SetAutoTuneFields();
             MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
-            //doesn't work for FS helicopter engines, reverting to older method for inf. fuel.
-            //CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
             OtherUtils.SetTimeOverride(autoTune);
         }
         void SetAutoTuneFields()
@@ -4463,7 +4461,7 @@ namespace BDArmory.Control
                     ReleaseCommand(false);
                     return;
                 }
-                else if (weaponManager.underAttack || weaponManager.underFire)
+                else if (weaponManager == null || weaponManager.underAttack || weaponManager.underFire)
                 {
                     ReleaseCommand(false);
                     return;
