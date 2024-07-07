@@ -1510,7 +1510,7 @@ namespace BDArmory.Damage
             if (isAI || ArmorPanel || ProjectileUtils.isMaterialBlackListpart(this.part))
             {
                 _hullConfigured = true;
-                part.gTolerance = !ArmorPanel ? 999 : 50; //50 for now, armor panels should probably either be determined by armor material, or arbitrary 'weld/mounting bracket' strength
+                part.gTolerance = isAI ? 999 : ArmorPanel ? 50 : part.partInfo.partPrefab.gTolerance; //50 for now, armor panels should probably either be determined by armor material, or arbitrary 'weld/mounting bracket' strength
                 return;
                 //HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
             }
