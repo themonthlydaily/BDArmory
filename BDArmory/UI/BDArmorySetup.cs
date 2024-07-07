@@ -498,6 +498,7 @@ namespace BDArmory.UI
             compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
             compIntraTeamSeparationPerMember = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER.ToString();
             HoSTag = BDArmorySettings.HOS_BADGE;
+            RWPSettings.SyncToGameSettings(); // Re-sync BDA settings to game settings in Start since they get overwritten during scene initialisation.
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }
@@ -834,7 +835,6 @@ namespace BDArmory.UI
                 TournamentScores.LoadWeights();
                 SanitiseSettings();
                 RWPSettings.Load();
-                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Set RWP overrides if RWP is enabled. Note: this won't preserve custom RWP settings between restarts, but will set RWP defaults.
                 BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
@@ -3470,49 +3470,38 @@ namespace BDArmory.UI
                     CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
                 }
                 bool advParamsChanged = false;
-                if (!BDArmorySettings.G_LIMITS && (advancedParams.GPartLimits || advancedParams.GKerbalLimits)) 
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
+                if (!BDArmorySettings.G_LIMITS && (advancedParams.GPartLimits || advancedParams.GKerbalLimits))
                     BDArmorySettings.G_LIMITS = true;
                 BDArmorySettings.PART_GLIMIT = advancedParams.GPartLimits; // Sync with the Game Difficulty window if the checkbox was toggled there.
                 BDArmorySettings.KERB_GLIMIT = advancedParams.GKerbalLimits;
-                BDArmorySettings.G_TOLERANCE = advancedParams.KerbalGToleranceMult * 20.5f;
+                BDArmorySettings.G_TOLERANCE = BDAMath.RoundToUnit(advancedParams.KerbalGToleranceMult * 20.5f, 0.5f);
                 if (BDArmorySettings.G_LIMITS != (BDArmorySettings.G_LIMITS = GUI.Toggle(SLeftRect(line), BDArmorySettings.G_LIMITS, StringUtils.Localize("#LOC_BDArmory_Settings_GLimitsMode"))))//G-Force Limits
                 {
                     if (!BDArmorySettings.G_LIMITS)
                     {
-                        advancedParams.GPartLimits = false;
-                        advancedParams.GKerbalLimits = false;
-                        advancedParams.KerbalGToleranceMult = 1f;
-                        advParamsChanged = true;
                         BDArmorySettings.KERB_GLIMIT = false;
                         BDArmorySettings.PART_GLIMIT = false;
+                        advParamsChanged = true;
                     }
                 }
                 if (BDArmorySettings.G_LIMITS)
                 {
                     if (BDArmorySettings.PART_GLIMIT != (BDArmorySettings.PART_GLIMIT = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.PART_GLIMIT, StringUtils.Localize("#autoLOC_140950"))))//Part G-Force Limits
-                    {
-                        advancedParams.GPartLimits = BDArmorySettings.PART_GLIMIT;
                         advParamsChanged = true;
-                    }
                     if (BDArmorySettings.KERB_GLIMIT != (BDArmorySettings.KERB_GLIMIT = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.KERB_GLIMIT, StringUtils.Localize("#autoLOC_140953"))))//Kerbal G-Force Limits
-                    {
-                        advancedParams.GKerbalLimits = BDArmorySettings.KERB_GLIMIT;
                         advParamsChanged = true;
-                    }
                     if (BDArmorySettings.KERB_GLIMIT)
                     {
+                        //G-Limit is point at which Kerbs begin to fill the G-meter; e.g. a G_TOLERANCE of 8 would result in Kerbs indefinately tolerating a 8g turn, but a 9g sustained turn would *very* slowly fill the meter, a 13g sustained turn would KO them after 5-6 seconds, a 20g turn would KO them instantly, etc.
                         GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#autoLOC_140956")}:  ({BDArmorySettings.G_TOLERANCE:0.0}g)", leftLabel);//Kerbal G-Force Tolerance
                         if (BDArmorySettings.G_TOLERANCE != (BDArmorySettings.G_TOLERANCE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.G_TOLERANCE, 1f, 40f), 0.5f)))
-                        {
-                            advancedParams.KerbalGToleranceMult = BDArmorySettings.G_TOLERANCE / 20.5f; //Default 0.5 Courage BadS Pilot kerb has a GLimit of 20.5
                             advParamsChanged = true;
-                        } //G-Limit is point at which Kerbs begin to fill the G-meter; e.g. a G_TOLERANCE of 0.4 (g-Limit of 8.16) would result in Kerbs indefiniately tolerating a 8G turn, but a 9 G sustained turn would *very* slowly fill the meter,
-                          //a 13G sustained turn would KO them after 5-6 seconds, a 20G turn would KO them instantly, etc.
                     }
                 }
                 if (advParamsChanged)
                 {
-                    GamePersistence.SaveGame("persistent", HighLogic.SaveFolder, SaveMode.OVERWRITE); // Update the persistent save.
+                    RWPSettings.SyncToGameSettings();
                 }
                 // Resource steal
                 BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
