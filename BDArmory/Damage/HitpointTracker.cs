@@ -336,13 +336,17 @@ namespace BDArmory.Damage
             {
                 HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
             }
+            if (HullTypeNum < 1 || HullTypeNum > HullInfo.materialNames.Count)
+            {
+                Debug.LogWarning($"[BDArmory.HitpointTracker]: Invalid HullTypeNum found on {part.partInfo.name} on {part.vessel.vesselName}. Resetting to Aluminium.");
+                HullTypeNum = 2; // Invalid hull type number, revert to default Aluminium
+            }
             if (SelectedArmorType == "Legacy Armor")
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None");
             else
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
-
             if (part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
             {
                 skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
@@ -417,7 +421,7 @@ namespace BDArmory.Damage
                 }
 
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
+                if (part.IsMissile() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
                 {
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     HTrangeEditor.minValue = HullTypeNum;
@@ -1506,6 +1510,7 @@ namespace BDArmory.Damage
             if (isAI || ArmorPanel || ProjectileUtils.isMaterialBlackListpart(this.part))
             {
                 _hullConfigured = true;
+                part.gTolerance = isAI ? 999 : ArmorPanel ? 50 : part.partInfo.partPrefab.gTolerance; //50 for now, armor panels should probably either be determined by armor material, or arbitrary 'weld/mounting bracket' strength
                 return;
                 //HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
             }
@@ -1546,7 +1551,7 @@ namespace BDArmory.Damage
             part.breakingForce = maxForce;
             maxTorque = part.partInfo.partPrefab.breakingTorque * hullInfo.ImpactMod;
             part.breakingTorque = maxTorque;
-            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
+            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
             part.gTolerance = maxG;
             hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;

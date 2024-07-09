@@ -217,6 +217,7 @@ namespace BDArmory.UI
         string HoSString = "";
         public string HoSTag = "";
         bool enteredHoS = false;
+        static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
         string compDistGui;
@@ -497,6 +498,7 @@ namespace BDArmory.UI
             compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
             compIntraTeamSeparationPerMember = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER.ToString();
             HoSTag = BDArmorySettings.HOS_BADGE;
+            RWPSettings.SyncToGameSettings(); // Re-sync BDA settings to game settings in Start since they get overwritten during scene initialisation.
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }
@@ -644,7 +646,7 @@ namespace BDArmory.UI
         void ToggleToolbarButton()
         {
             if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
-            else { windowSettingsEnabled = !windowSettingsEnabled; }
+            else { ToggleWindowSettings(); }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -708,6 +710,7 @@ namespace BDArmory.UI
             if (windowSettingsEnabled)
             {
                 // LoadConfig(); // Don't reload settings, since they're already loaded and mess with other settings windows.
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
             }
             else
             {
@@ -832,7 +835,6 @@ namespace BDArmory.UI
                 TournamentScores.LoadWeights();
                 SanitiseSettings();
                 RWPSettings.Load();
-                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Set RWP overrides if RWP is enabled. Note: this won't preserve custom RWP settings between restarts, but will set RWP defaults.
                 BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
@@ -3467,8 +3469,42 @@ namespace BDArmory.UI
                 {
                     CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
                 }
+                bool advParamsChanged = false;
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
+                if (!BDArmorySettings.G_LIMITS && (advancedParams.GPartLimits || advancedParams.GKerbalLimits))
+                    BDArmorySettings.G_LIMITS = true;
+                BDArmorySettings.PART_GLIMIT = advancedParams.GPartLimits; // Sync with the Game Difficulty window if the checkbox was toggled there.
+                BDArmorySettings.KERB_GLIMIT = advancedParams.GKerbalLimits;
+                BDArmorySettings.G_TOLERANCE = BDAMath.RoundToUnit(advancedParams.KerbalGToleranceMult * 20.5f, 0.5f);
+                if (BDArmorySettings.G_LIMITS != (BDArmorySettings.G_LIMITS = GUI.Toggle(SLeftRect(line), BDArmorySettings.G_LIMITS, StringUtils.Localize("#LOC_BDArmory_Settings_GLimitsMode"))))//G-Force Limits
+                {
+                    if (!BDArmorySettings.G_LIMITS)
+                    {
+                        BDArmorySettings.KERB_GLIMIT = false;
+                        BDArmorySettings.PART_GLIMIT = false;
+                        advParamsChanged = true;
+                    }
+                }
+                if (BDArmorySettings.G_LIMITS)
+                {
+                    if (BDArmorySettings.PART_GLIMIT != (BDArmorySettings.PART_GLIMIT = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.PART_GLIMIT, StringUtils.Localize("#autoLOC_140950"))))//Part G-Force Limits
+                        advParamsChanged = true;
+                    if (BDArmorySettings.KERB_GLIMIT != (BDArmorySettings.KERB_GLIMIT = GUI.Toggle(SRightRect(line, 1), BDArmorySettings.KERB_GLIMIT, StringUtils.Localize("#autoLOC_140953"))))//Kerbal G-Force Limits
+                        advParamsChanged = true;
+                    if (BDArmorySettings.KERB_GLIMIT)
+                    {
+                        //G-Limit is point at which Kerbs begin to fill the G-meter; e.g. a G_TOLERANCE of 8 would result in Kerbs indefinately tolerating a 8g turn, but a 9g sustained turn would *very* slowly fill the meter, a 13g sustained turn would KO them after 5-6 seconds, a 20g turn would KO them instantly, etc.
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#autoLOC_140956")}:  ({BDArmorySettings.G_TOLERANCE:0.0}g)", leftLabel);//Kerbal G-Force Tolerance
+                        if (BDArmorySettings.G_TOLERANCE != (BDArmorySettings.G_TOLERANCE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.G_TOLERANCE, 1f, 40f), 0.5f)))
+                            advParamsChanged = true;
+                    }
+                }
+                if (advParamsChanged)
+                {
+                    RWPSettings.SyncToGameSettings();
+                }
                 // Resource steal
-                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
+                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                 {
                     BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal_RespectFlowStateIn"));//Respect Flow State In
