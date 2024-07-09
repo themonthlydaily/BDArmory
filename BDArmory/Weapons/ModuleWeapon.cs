@@ -398,6 +398,12 @@ namespace BDArmory.Weapons
         public Transform[] shellEjectTransforms;
 
         [KSPField]
+        public Vector3 shellEjectVelocity = new(0,0,7);
+
+        [KSPField]
+        public float shellEjectDeviation = 0.1f;
+
+        [KSPField]
         public bool hasDeployAnim = false;
 
         [KSPField]
@@ -2036,7 +2042,7 @@ private float S6R5dynamicRecoil;
                 }
             }
 
-            if (HighLogic.LoadedSceneIsEditor && BDArmorySetup.showWeaponAlignment && !isAPS)
+            if (HighLogic.LoadedSceneIsEditor && BDArmorySetup.showWeaponAlignment && !(isAPS && !dualModeAPS))
             {
                 DrawAlignmentIndicator();
             }
@@ -3322,6 +3328,8 @@ private float S6R5dynamicRecoil;
                         ejectedShell.transform.localScale = Vector3.one * shellScale;
                         ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
                         shellComponent.initialV = part.rb.velocity;
+                        shellComponent.configV = shellEjectVelocity;
+                        shellComponent.configD = shellEjectDeviation;
                         ejectedShell.SetActive(true);
                     }
                 }
@@ -4459,56 +4467,26 @@ private float S6R5dynamicRecoil;
             }
 
             //disable autofire after burst length
-            if (BurstOverride)
+            if (autoFire && (!BurstOverride && Time.time - autoFireTimer > autoFireLength) || (BurstOverride && autofireShotCount >= fireBurstLength))
             {
-                if (autoFire && autofireShotCount >= fireBurstLength)
+                autoFire = false;
+                //visualTargetVessel = null;
+                //visualTargetPart = null;
+                //tgtShell = null;
+                //tgtRocket = null;
+                if (SpoolUpTime > 0)
                 {
-                    if (Time.time - autoFireTimer > autoFireLength) autofireShotCount = 0;
-                    autoFire = false;
-                    //visualTargetVessel = null; //if there's no target, these get nulled in MissileFire. Nulling them here would cause Ai to stop engaging target with longer TargetScanIntervals as 
-                    //visualTargetPart = null; //there's no longer a targetVessel/part to do leadOffset aim calcs for.
-                    tgtShell = null;
-                    tgtRocket = null;
-
-                    if (SpoolUpTime > 0)
-                    {
-                        roundsPerMinute = baseRPM / 10;
-                        spooltime = 0;
-                    }
-                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
-                    {
-                        projectileColorC = GUIUtils.ParseColor255(projectileColor);
-                        startColorS = startColor.Split(","[0]);
-                        laserDamage = baseLaserdamage;
-                        tracerStartWidth = tracerBaseSWidth;
-                        tracerEndWidth = tracerBaseEWidth;
-                        Offset = 0;
-                    }
+                    roundsPerMinute = baseRPM / 10;
+                    spooltime = 0;
                 }
-            }
-            else
-            {
-                if (autoFire && Time.time - autoFireTimer > autoFireLength)
+                if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
                 {
-                    autoFire = false;
-                    //visualTargetVessel = null;
-                    //visualTargetPart = null;
-                    //tgtShell = null;
-                    //tgtRocket = null;
-                    if (SpoolUpTime > 0)
-                    {
-                        roundsPerMinute = baseRPM / 10;
-                        spooltime = 0;
-                    }
-                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
-                    {
-                        projectileColorC = GUIUtils.ParseColor255(projectileColor);
-                        startColorS = startColor.Split(","[0]);
-                        laserDamage = baseLaserdamage;
-                        tracerStartWidth = tracerBaseSWidth;
-                        tracerEndWidth = tracerBaseEWidth;
-                        Offset = 0;
-                    }
+                    projectileColorC = GUIUtils.ParseColor255(projectileColor);
+                    startColorS = startColor.Split(","[0]);
+                    laserDamage = baseLaserdamage;
+                    tracerStartWidth = tracerBaseSWidth;
+                    tracerEndWidth = tracerBaseEWidth;
+                    Offset = 0;
                 }
             }
             if (isAPS)
