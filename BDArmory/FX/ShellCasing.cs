@@ -16,19 +16,19 @@ namespace BDArmory.FX
         Vector3 angularVelocity;
 
         float atmDensity;
-        const int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19?
+        const int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Wheels);
 
         void OnEnable()
         {
             startTime = Time.time;
-            Vector3 randV = Random.insideUnitSphere * configD;
-            velocity = initialV + transform.rotation *
-                        (new Vector3(configV.x * randV.x, configV.y  * randV.y, configV.z * randV.z) + configV);
+            Vector3 randV = Random.insideUnitSphere;
+            velocity = initialV + transform.rotation * new Vector3(
+                configV.x + configD * (1f + Mathf.Abs(configV.x)) * randV.x,
+                configV.y + configD * (1f + Mathf.Abs(configV.y)) * randV.y,
+                configV.z + configD * (1f + Mathf.Abs(configV.z)) * randV.z
+            );
             angularVelocity = 100f * Random.insideUnitSphere;
-
-            atmDensity =
-                (float)
-                FlightGlobals.getAtmDensity(
+            atmDensity = (float)FlightGlobals.getAtmDensity(
                     FlightGlobals.getStaticPressure(transform.position, FlightGlobals.currentMainBody),
                     FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody);
         }

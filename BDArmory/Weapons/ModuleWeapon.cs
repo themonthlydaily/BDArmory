@@ -398,7 +398,7 @@ namespace BDArmory.Weapons
         public Transform[] shellEjectTransforms;
 
         [KSPField]
-        public Vector3 shellEjectVelocity = new Vector3(0,0,7);
+        public Vector3 shellEjectVelocity = new(0,0,7);
 
         [KSPField]
         public float shellEjectDeviation = 0.1f;
