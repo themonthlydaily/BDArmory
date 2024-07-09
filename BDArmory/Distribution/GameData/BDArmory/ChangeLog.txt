@@ -26,14 +26,20 @@ IMPROVEMENTS / FIXES
 	- Added g-force limits game mode for part failure and Kerbal GLOC (note: the pilot AI's g-limiter still doesn't work well).
 - Weapons:
 	- Missiles:
+		- Add new Kinetic Kill Vehicle (KKV) missile. The KKV is an orbital missile with 6 km/s delta-V.
+		- Re-balanced the HE-KV-1 missile to complement the KKV. The HE-KV-1 now has 3 km/s delta-V and is better at shorter ranges, whereas the KKV shines at longer ranges. At very short ranges, the HE-KV-1 will perform very similarly to the prior balance.
+		- Missile parts can be configured without a warhead and will be considered kinetic energy weapons. Upon impact, they will apply their kinetic energy as damage to the target.
 		- Change missile drop time increment from 0.5s to 0.1s.
+		- Missiles are now capable of intercepting each other at orbital speeds and will not phase through each other, even without the ContinousCollisions mod.
 		- Modular Missiles can be selected to intercept missiles if they have Engage Missiles enabled.
 		- Fix Modular Missiles with Orbital Guidance not hitting vessel and missile targets.
 		- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space).
-		- Regular missiles can use homingType = orbital without RCS.
+		- Improvements to regular missile orbital guidance, including missiles can use homingType = orbital without RCS
 		- Fix point defense missile interceptors not firing.
 		- Missile turrets now track targets properly in space.
-		- Fix weapon types with no targeting type (i.e. AIR-2) not firing within engage range.
+		- Orbital guidance missiles now have drag applied to them in atmosphere.
+		- Add targetCoM configuration option for IR missiles. If set to true, the missile will target the center of mass instead of the hottest part.
+		- Fix missiles with no targeting type (i.e. AIR-2) not firing within engage range.
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
 - RWP:
