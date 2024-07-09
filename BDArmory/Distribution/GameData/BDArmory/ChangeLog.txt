@@ -1,11 +1,4 @@
-IMPROVEMENTS / FIXES
-- General:
-	- Fixes for post-build event instructions on Windows to allow for different 7zip executables.
-	- Downgrade using defaults for missing bulletinfo fields from an error to a warning.
-- UI:
-	- Updated Chinese localisation thanks to user Marv1n-M.
-	- Propagate new localisation strings to non-English localisation files. Seach for commented out entries with value "???".
-	- Fix the alignment indicator not showing for dual-mode APS turrets.
+﻿IMPROVEMENTS / FIXES
 - AI / WM:
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
@@ -16,15 +9,9 @@ IMPROVEMENTS / FIXES
 		- AI now capable of avoiding collisions with other vessels, debris, and asteroids.
 		- AI now properly aims and fires unguided missiles in orbit.
 		- AI will automatically move to closer intercept ranges if it is unable to lock missiles after 20s.
-- Armor / Hull:
-	- Revert invalid HullTypeNum values to that of Aluminium and log a warning.
-- Competition:
-	- Fix GM culling based on HP remaining to use percentage remaining instead of the raw part count.
-	- Add an option to average duplicates in the tournament parser.
-	- Fix incorrect parsing of unicode chars in the tournament parser for "wins".
-- Game Modes:
-	- Added g-force limits game mode for part failure and Kerbal GLOC (note: the pilot AI's g-limiter still doesn't work well).
-- Weapons:
+- UI:
+	- Updated Chinese localization thanks to user Marv1n-M.
+- Weapons
 	- Missiles:
 		- Add new Kinetic Kill Vehicle (KKV) missile. The KKV is an orbital missile with 6 km/s delta-V.
 		- Re-balanced the HE-KV-1 missile to complement the KKV. The HE-KV-1 now has 3 km/s delta-V and is better at shorter ranges, whereas the KKV shines at longer ranges. At very short ranges, the HE-KV-1 will perform very similarly to the prior balance.

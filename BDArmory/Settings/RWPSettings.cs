@@ -115,7 +115,21 @@ namespace BDArmory.Settings
 			{66, new(){
 				{"OUT_OF_AMMO_KILL_TIME", 0},
 			}},
-			{67, new(){}},
+			{67, new(){
+				{"VESSEL_SPAWN_ALTITUDE", 3},
+				{"VESSEL_SPAWN_DISTANCE", 300},
+				{"VESSEL_SPAWN_DISTANCE_TOGGLE", true},
+				{"PINATA_NAME", "DeadlySpacePotato"},
+				{"MAX_ACTIVE_RADAR_RANGE", 700000},
+				{"TOURNAMENT_VESSELS_PER_HEAT", 6},
+				{"TOURNAMENT_NPCS_PER_HEAT", 1},
+			}},
+			{68, new(){
+				{"G_TOLERANCE", 8},
+				{"G_LIMITS", true},
+				{"KERB_GLIMIT", true},
+				{"PART_GLIMIT", true},
+			}},
 		};
 		public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
 		static readonly HashSet<string> currentFilter = [];
