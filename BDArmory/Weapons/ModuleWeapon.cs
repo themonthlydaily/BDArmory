@@ -1679,14 +1679,14 @@ namespace BDArmory.Weapons
 
                             if (mme && engines.Current.engineID == "Dry") continue;
                             float engineThrust = engines.Current.maxThrust * (mme != null ? 2 : 1); //AB velCurves tend to be around 2x at ~300m/s, will add extra thrust after initial jousts, but AB engines also capable of faster accel/energy recovery
-                            S6R5dynamicRecoil += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f)); 
+                            S6R5dynamicRecoil += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f));
                             Debug.Log("[BDArmory.ModuleWeapon]: S6R5 DynamicRecoil set to : " + Mathf.CeilToInt(S6R5dynamicRecoil * 2));
                         }
                 }
             }
         }
 
-private float S6R5dynamicRecoil;
+        private float S6R5dynamicRecoil;
 
         void OnDestroy()
         {
@@ -2092,13 +2092,13 @@ private float S6R5dynamicRecoil;
                                 if (hasRecoil)
                                 {
                                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 65)
-                                        part.rb.AddForceAtPosition(-fireTransform.forward * ((S6R5dynamicRecoil * 2) / (roundsPerMinute/60)),
+                                        part.rb.AddForceAtPosition(-fireTransform.forward * ((S6R5dynamicRecoil * 2) / (roundsPerMinute / 60)),
                                         fireTransform.position, ForceMode.Impulse);
                                     else
-                                    //doesn't take propellant gass mass into account; GAU-8 should be 44kN, yields 29.9; Vulc should be 14.2, yields ~10.4; GAU-22 16.5, yields 11.9
-                                    //Adding a mult of 1.4 brings the GAU8 to 41.8, Vulc to 14.5, GAU-22 to 16.6; not exact, but a reasonably close approximation that looks to scale consistantly across ammos
-                                    part.rb.AddForceAtPosition((-fireTransform.forward * (bulletVelocity * (bulletMass * ProjectileCount) / 1000) * 1.4f * BDArmorySettings.RECOIL_FACTOR * recoilReduction),
-                                        fireTransform.position, ForceMode.Impulse);
+                                        //doesn't take propellant gass mass into account; GAU-8 should be 44kN, yields 29.9; Vulc should be 14.2, yields ~10.4; GAU-22 16.5, yields 11.9
+                                        //Adding a mult of 1.4 brings the GAU8 to 41.8, Vulc to 14.5, GAU-22 to 16.6; not exact, but a reasonably close approximation that looks to scale consistantly across ammos
+                                        part.rb.AddForceAtPosition((-fireTransform.forward * (bulletVelocity * (bulletMass * ProjectileCount) / 1000) * 1.4f * BDArmorySettings.RECOIL_FACTOR * recoilReduction),
+                                            fireTransform.position, ForceMode.Impulse);
                                 }
 
                                 if (!effectsShot)
@@ -2599,7 +2599,7 @@ private float S6R5dynamicRecoil;
                                                             if (hitPart != null && hitPart == hitP)
                                                             {
                                                                 p.skinTemperature += (damage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)); //add modifier to adjust damage by armor diffusivity value
-                                                                
+
                                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to {p.name}");
                                                             }
                                                         }
@@ -2828,7 +2828,7 @@ private float S6R5dynamicRecoil;
 
             float timeGap = GetTimeGap();
             if (timeSinceFired > timeGap
-                && !isReloading 
+                && !isReloading
                 && !pointingAtSelf
                 && (aiControlled || !GUIUtils.CheckMouseIsOnGui())
                 && WMgrAuthorized())
@@ -3184,7 +3184,7 @@ private float S6R5dynamicRecoil;
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
-            vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); 
+            vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
             ammoCount = ammoCurrent;
             if (ammoCount >= AmmoPerShot)
             {
@@ -4459,7 +4459,7 @@ private float S6R5dynamicRecoil;
             }
 
             //disable autofire after burst length
-            if (autoFire && (!BurstOverride && Time.time - autoFireTimer > autoFireLength) || (BurstOverride && autofireShotCount >= fireBurstLength))
+            if (autoFire && (Time.time - autoFireTimer > autoFireLength) || (BurstOverride && autofireShotCount >= fireBurstLength))
             {
                 autoFire = false;
                 //visualTargetVessel = null;

@@ -534,7 +534,7 @@ namespace BDArmory.UI
                         continue;
                 }
                 // Abort if target is friendly.
-                if (mf != null)
+                if (mf != null) //add a IR_DUMB_SEEKERS check to allow early heaters to home in on friendlies if they're the brightest heat source?
                 {
                     if (mf.Team.IsFriendly(tInfo.Team))
                         continue;
