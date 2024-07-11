@@ -23,7 +23,7 @@ namespace BDArmory.FX
             startTime = Time.time;
             Vector3 randV = Random.insideUnitSphere * configD;
             velocity = initialV + transform.rotation *
-                        (new Vector3(configV.x * randV.x, configV.y  * randV.y, configV.z * randV.z) + configV);
+                        ((configV.magnitude * randV) + configV);
             angularVelocity = 100f * Random.insideUnitSphere;
 
             atmDensity =

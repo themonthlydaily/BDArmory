@@ -401,7 +401,7 @@ namespace BDArmory.Weapons
         public Vector3 shellEjectVelocity = new Vector3(0,0,7);
 
         [KSPField]
-        public float shellEjectDeviation = 0.1f;
+        public float shellEjectDeviation = 0.3f;
 
         [KSPField]
         public bool hasDeployAnim = false;
