@@ -1667,7 +1667,7 @@ namespace BDArmory.Weapons.Missiles
                                                     Vector3 missileToTarget = AIUtils.PredictPosition(TargetPosition, TargetVelocity, TargetAcceleration, cpaTime) - vessel.PredictPosition(cpaTime);
                                                     if (Physics.Raycast(new Ray(TargetPosition - sepRad * missileToTarget, missileToTarget), out RaycastHit hit, sepRad * sepRad, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
                                                         transform.position = hit.point;
-                                                    else // Just set position at CPA point
+                                                    else // Otherwise set relative position the same as at CPA point, but relative to the target's current position. This avoids having to move the target and wait an additional frame.
                                                         transform.position = TargetPosition - missileToTarget;
                                                     vessel.SetPosition(transform.position);
                                                     Detonate();
