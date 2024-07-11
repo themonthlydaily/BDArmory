@@ -464,7 +464,7 @@ namespace BDArmory.Competition
                 return this;
             }
         }
-        
+
         public static void SaveWeights()
         {
             ConfigNode fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
@@ -476,7 +476,7 @@ namespace BDArmory.Competition
 
             ConfigNode settings = fileNode.GetNode("ScoreWeights");
 
-            foreach(var kvp in weights)
+            foreach (var kvp in weights)
             {
                 settings.SetValue(kvp.Key, kvp.Value.ToString(), true);
             }
@@ -490,7 +490,7 @@ namespace BDArmory.Competition
 
             ConfigNode settings = fileNode.GetNode("ScoreWeights");
 
-            foreach(var key in weights.Keys.ToList())
+            foreach (var key in weights.Keys.ToList())
             {
                 if (!settings.HasValue(key)) continue;
 
@@ -1934,7 +1934,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(0.5f);
             var tic = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 30); // Wait until the settings are ready or timed out.
-            Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-load to KSC: {BDArmorySettings.AUTO_LOAD_TO_KSC}, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume continuous spawn: {BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}.");
+            Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-load to KSC: {BDArmorySettings.AUTO_LOAD_TO_KSC}, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume continuous spawn: {BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}, generate clean save: {BDArmorySettings.GENERATE_CLEAN_SAVE}.");
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN || BDArmorySettings.AUTO_RESUME_EVOLUTION || BDArmorySettings.AUTO_LOAD_TO_KSC)
             { yield return StartCoroutine(AutoResumeTournament()); }
         }
@@ -2119,13 +2119,14 @@ namespace BDArmory.Competition
                     kerbal.isBadass = true; // Make them badass.
                     KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                    kerbal.courage = 0.5f;
                 }
             }
             else
             {
                 GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame);
             }
-            // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
+            // Update the game state and save it to the persistent save (since that's what eventually ends up getting loaded when we call Start()).
             HighLogic.CurrentGame.Updated();
             GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
             HighLogic.CurrentGame.Start();
