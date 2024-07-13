@@ -6913,7 +6913,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             }
         }
 
-        void SearchForHeatTarget(MissileBase currMissile)
+        void SearchForHeatTarget(MissileBase currMissile, TargetInfo targetMissile = null)
         {
             if (currMissile != null)
             {
@@ -6921,7 +6921,6 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 {
                     return;
                 }
-
                 float scanRadius = currMissile.lockedSensorFOV * 0.5f;
                 float maxOffBoresight = currMissile.maxOffBoresight * 0.85f;
 
@@ -6931,12 +6930,30 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     {
                         if (_irstsEnabled)
                         {
-                            heatTarget = vesselRadarData.activeIRTarget(guardTarget, this); //point seeker at active target's IR return
+                            if (targetMissile == null)
+                                heatTarget = vesselRadarData.activeIRTarget(guardTarget, this); //point seeker at active target's IR return
+                            else
+                                heatTarget = vesselRadarData.activeIRTarget(targetMissile.Vessel, this);
                         }
                         else
                         {
-                            if (vesselRadarData.locked) //uncaged radar lock
-                                heatTarget = vesselRadarData.lockedTargetData.targetData;
+                            if (vesselRadarData.locked)
+                            {
+                                if (targetMissile == null) //uncaged radar lock
+                                    heatTarget = vesselRadarData.lockedTargetData.targetData;
+                                else //since it's probable that the Wm is locked to the current guardTarget, but not that incoming missile we're trying to acquire for intercept
+                                {
+                                    List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
+                                    for (int i = 0; i < possibleTargets.Count; i++)
+                                    {
+                                        if (possibleTargets[i].vessel == targetMissile.Vessel)
+                                        {
+                                            heatTarget = possibleTargets[i];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     else //active sonar torps
@@ -6950,8 +6967,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     : currMissile.GetForwardTransform();
                 // remove AI target check/move to a missile .cfg option to allow older gen heaters?
                 if (currMissile.GuidanceMode != MissileBase.GuidanceModes.SLW || currMissile.GuidanceMode == MissileBase.GuidanceModes.SLW && currMissile.activeRadarRange > 0)
-                    heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(currMissile.MissileReferenceTransform.position + (50 * currMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.frontAspectHeatModifier, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
-                else heatTarget = BDATargetManager.GetAcousticTarget(vessel, vessel, new Ray(currMissile.MissileReferenceTransform.position + (50 * currMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
+                    heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(currMissile.MissileReferenceTransform.position + (50 * currMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, currMissile.heatThreshold, currMissile.frontAspectHeatModifier, currMissile.uncagedLock, currMissile.lockedSensorFOVBias, currMissile.lockedSensorVelocityBias, this, targetMissile != null ? targetMissile : guardMode ? currentTarget : null);
+                else heatTarget = BDATargetManager.GetAcousticTarget(vessel, vessel, new Ray(currMissile.MissileReferenceTransform.position + (50 * currMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, currMissile.heatThreshold, currMissile.lockedSensorFOVBias, currMissile.lockedSensorVelocityBias, this, targetMissile != null ? targetMissile : guardMode ? currentTarget : null);
             }
         }
 
@@ -7976,7 +7993,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (currMissile.HasFired || currMissile.launched) continue;
                         if (MissileID >= PDMslTgts.Count) MissileID = 0;
 
-                        float targetDist = Vector3.Distance(currMissile.MissileReferenceTransform.position, PDMslTgts[MissileID].Vessel.CoM); //rootPart.transform.position for Josue's orbital missile interception stuff?
+                        float targetDist = Vector3.Distance(currMissile.MissileReferenceTransform.position, PDMslTgts[MissileID].Vessel.CoM);
                         if (PDMslTgts[MissileID].Vessel != null && targetDist > currMissile.engageRangeMax) MissileID = 0;
                         if (PDMslTgts[MissileID].Vessel != null)
                         {
@@ -8028,7 +8045,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             if (currMissile.TargetingMode == MissileBase.TargetingModes.Heat)
                             {
-                                SearchForHeatTarget(currMissile);
+                                SearchForHeatTarget(currMissile, PDMslTgts[MissileID]);
                             }
                             if (!CheckEngagementEnvelope(currMissile, targetDist, PDMslTgts[MissileID].Vessel)) continue;
                             bool torpedo = missile && missile.torpedo; //TODO - work out MMG torpedo support?
@@ -8054,15 +8071,15 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             {
                                 missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
                                 interceptorsAway = missiles;
-                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against target {MissileID}: {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
+                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
                             }
                             if (interceptorsAway < maxMissilesOnTarget)
                             {
-                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}]viable: {viableTarget}; turreted: {turreted}; inRange: {(turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))}");
+                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}]viable: {viableTarget}; turreted: {turreted}; inRange: {(turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))}");
                                 if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
                                 {
                                     missileTarget = PDMslTgts[MissileID].Vessel;
-                                    Debug.Log($"[BDArmory.MissileFire] firing interceptor missile at {MissileID}: {PDMslTgts[MissileID].Vessel.name}");
+                                    //Debug.Log($"[BDArmory.MissileFire] firing interceptor missile at {PDMslTgts[MissileID].Vessel.name}");
                                     StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
                                     break;
                                 }
@@ -8079,7 +8096,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         {
                                             missilesAway.TryGetValue(item.Current, out int missiles);
                                             interceptorsAway = missiles;
-                                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
+                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
                                         }
                                         if (item.Current.Vessel.Splashed && !torpedo) viableTarget = false;
                                         if (interceptorsAway < maxMissilesOnTarget)
@@ -8087,7 +8104,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
                                             {
                                                 missileTarget = item.Current.Vessel;
-                                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
+                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
                                                 StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
                                                 break;
                                             }

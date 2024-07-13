@@ -704,6 +704,7 @@ namespace BDArmory.Weapons.Missiles
                 TargetAcquired = false;
                 predictedHeatTarget.exists = false;
                 predictedHeatTarget.signalStrength = 0; //have this instead set to originalHeatTarget missile had on initial lock?
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[MissileBase] IR missile lockFailtimer exceeded!");
                 return;
             }
 
@@ -734,8 +735,8 @@ namespace BDArmory.Weapons.Missiles
                 if (offBoresightAngle > maxOffBoresight)
                     lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
-                DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
-                //Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}");
+                DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, offBoresightAngle > maxOffBoresight ? Color.blue : Color.magenta);
+                Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedHeatTarget? {predictedHeatTarget.exists}");
                 // Update heat target
                 if (activeRadarRange < 0)
                     heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, lockedSensorFOVBias, lockedSensorVelocityBias,
