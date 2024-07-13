@@ -1356,7 +1356,7 @@ namespace BDArmory.Weapons.Missiles
         {
             // In vacuum, gradually turn towards target shortly after launch to minimize wasted delta-V
             // During this maneuver, check that we have cleared any obstacles before throttling up
-            if (SourceVessel == null || !vacuumSteerable)
+            if (SourceVessel == null || !vacuumSteerable || !vessel.InVacuum())
             {
                 vacuumClearanceState = VacuumClearanceStates.Cleared;
                 Throttle = 1f;
@@ -1433,7 +1433,7 @@ namespace BDArmory.Weapons.Missiles
                             }
                         }
                         break;
-                    default: // We are engaging target
+                    default: // VacuumClearanceStates.Cleared, We are engaging target
                         {
                             dotTol = 0.7f;
                             Throttle = 1f;
