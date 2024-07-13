@@ -759,6 +759,7 @@ namespace BDArmory.Weapons.Missiles
                     lockFailTimer = 0;
 
                     // Update target information
+                    // if (heatTarget.vessel != predictedHeatTarget.vessel) Debug.LogError($"[IR DEBUG] Switching targets from {predictedHeatTarget.vessel.vesselName} to {heatTarget.vessel.vesselName}");
                     predictedHeatTarget = heatTarget;
                 }
                 else
