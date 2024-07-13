@@ -1520,7 +1520,7 @@ namespace BDArmory.Weapons.Missiles
             var futureTargetPosition = (TargetPosition + targetDistancePerFrame);
             var futureMissilePosition = (vessel.CoM + missileDistancePerFrame);
 
-            var relativeSpeed = (TargetVelocity - vessel.Velocity()).magnitude * Time.fixedDeltaTime;
+            float relativeSpeed = (float)(TargetVelocity - vessel.Velocity()).magnitude * Time.fixedDeltaTime; // relativeSpeed is actually a distance!
 
             switch (DetonationDistanceState)
             {
@@ -1624,11 +1624,10 @@ namespace BDArmory.Weapons.Missiles
 
                                                 if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                                 {
-                                                    //We found a hit to other vessel, set transform.position to hit point (moves immediately),
-                                                    //set vessel to move on next fixed update (unlikely to happen as missile is detonating)
-                                                    transform.position = hit.point - 0.5f * rayFuturePosition.direction;
-                                                    vessel.SetPosition(transform.position);
+                                                    //We found a hit to other vessel, set transform.position to hit point (moves immediately, but doesn't update .CoM fields, etc)
+                                                    vessel.SetPosition(hit.point - 0.5f * rayFuturePosition.direction);
                                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
+                                                    //Debug.Log($"DEBUG {vessel.vesselName} is hitting {hitPart.vessel.vesselName} at {hit.point}, detonating");
                                                     Detonate();
                                                     return;
                                                 }
@@ -1649,38 +1648,43 @@ namespace BDArmory.Weapons.Missiles
                                     bool approaching = Vector3.Dot(relPos, relVel) < 0f;
                                     float targetRad = targetVessel.Vessel.GetRadius();
                                     float selfRad = vessel.GetRadius();
-                                    float sepRad = (targetRad + selfRad);
+                                    float sepRad = 1.7321f * (targetRad + selfRad);
 
                                     if (approaching && relVel.sqrMagnitude * Time.fixedDeltaTime * Time.fixedDeltaTime > sepRad * sepRad)
                                     {
-                                        try
+                                        bool shouldDetonate = false;
+                                        Ray ray = new(vessel.CoM, -relVel);
+                                        ray.origin += selfRad * ray.direction; // Start at the tip of the missile (assuming it's pointing roughly prograde in the relVel direction and is longest on that axis).
+                                        //var debug = $"DEBUG {vessel.vesselName} ({selfRad}m) is approaching {targetVessel.Vessel.vesselName} ({targetRad}m) at {relVel.magnitude} ({relativeSpeed / Time.fixedDeltaTime}) m/s ({relativeSpeed} m/frame), sepRad: {sepRad}m, distance: {relPos.magnitude}m, ray: {ray}";
+                                        //DrawDebugLine(ray.origin, ray.origin + ray.direction * relativeSpeed, Color.yellow);
+                                        if (Physics.Raycast(ray, out RaycastHit hit, relativeSpeed, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels))) // Hit!
+                                        {
+                                            vessel.SetPosition(hit.point - 0.5f * ray.direction); // Slightly back so that shaped charge explosives hit properly.
+                                            shouldDetonate = true;
+                                            //debug += $", hit at {hit.point}, sep: {(TargetPosition - hit.point).magnitude}m, detonating";
+                                        }
+                                        else // Not hitting, just getting close — check for reaching CPA.
                                         {
                                             Vector3 relAccel = TargetAcceleration - vessel.acceleration_immediate;
                                             float cpaTime = AIUtils.TimeToCPA(relPos, relVel, relAccel, Time.fixedDeltaTime);
 
-                                            if (cpaTime < Time.fixedDeltaTime && cpaTime > 0f)
+                                            //debug += $", miss, cpaTime: {cpaTime}";
+                                            if (cpaTime > 0f && cpaTime < Time.fixedDeltaTime)
                                             {
-                                                float sqrSep = AIUtils.PredictPosition(relPos, relVel, relAccel, cpaTime).sqrMagnitude;
-                                                if (sepRad * sepRad > sqrSep)
-                                                {
-                                                    // Valid hit, determine hit point and set transform.position (moves immediately) to hit point
-                                                    Vector3 missileToTarget = AIUtils.PredictPosition(TargetPosition, TargetVelocity, TargetAcceleration, cpaTime) - vessel.PredictPosition(cpaTime);
-                                                    if (Physics.Raycast(new Ray(TargetPosition - sepRad * missileToTarget, missileToTarget), out RaycastHit hit, sepRad * sepRad, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
-                                                        transform.position = hit.point;
-                                                    else // Otherwise set relative position the same as at CPA point, but relative to the target's current position. This avoids having to move the target and wait an additional frame.
-                                                        transform.position = TargetPosition - missileToTarget;
-                                                    vessel.SetPosition(transform.position);
-                                                    Detonate();
-                                                    if (targetVessel.isMissile && targetVessel.MissileBaseModule)
-                                                        targetVessel.MissileBaseModule.Detonate(); // The above approach is only about ~50% effective against missiles, so just tell the other missile to detonate just in case
-                                                    return;
-                                                }
+                                                // Set relative position to the same as at CPA point, but relative to the target's current position. This avoids having to move the target and wait an additional frame.
+                                                vessel.SetPosition(TargetPosition - AIUtils.PredictPosition(relPos, relVel, relAccel, cpaTime));
+                                                shouldDetonate = true;
+                                                //debug += $", relCPA: {vessel.transform.position}, sep: {(TargetPosition - vessel.transform.position).magnitude}m, detonating";
                                             }
+                                            //else debug += $", not reaching CPA";
                                         }
-                                        catch (Exception e)
+                                        //Debug.Log(debug);
+                                        if (shouldDetonate)
                                         {
-                                            // ignored
-                                            Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonationState: " + e.Message + "\n" + e.StackTrace);
+                                            Detonate();
+                                            if (targetVessel.isMissile && targetVessel.MissileBaseModule)
+                                                targetVessel.MissileBaseModule.Detonate(); // The above approach is only about ~50% effective against missiles, so just tell the other missile to detonate just in case
+                                            return;
                                         }
                                     }
                                 }

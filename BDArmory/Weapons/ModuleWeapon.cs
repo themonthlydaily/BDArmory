@@ -1176,12 +1176,19 @@ namespace BDArmory.Weapons
             }
             else
             {
-                UI_FloatRange RPMEditor = (UI_FloatRange)Fields["roundsPerMinute"].uiControlEditor;
-                if (isChaingun)
+                try
                 {
-                    RPMEditor.maxValue = baseRPM;
-                    RPMEditor.minValue = baseRPM / 2;
-                    RPMEditor.onFieldChanged = AccAdjust;
+                    UI_FloatRange RPMEditor = (UI_FloatRange)Fields["roundsPerMinute"].uiControlEditor; // FIXME this is throwing an invalid cast for rocket pods sometimes
+                    if (isChaingun)
+                    {
+                        RPMEditor.maxValue = baseRPM;
+                        RPMEditor.minValue = baseRPM / 2;
+                        RPMEditor.onFieldChanged = AccAdjust;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.DEBUG]: {e.Message}\n{e.StackTrace}");
                 }
             }
 

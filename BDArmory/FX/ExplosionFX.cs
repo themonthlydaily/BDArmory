@@ -1199,7 +1199,7 @@ namespace BDArmory.FX
                     break;
                 case "kinetic":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
-                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 70f); // cos(70 degrees)
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 45f); // cos(45 degrees)
                     eFx.Caliber = caliber;
                     eFx.apMod = apMod;
                     eFx.travelDistance = distancetravelled;
