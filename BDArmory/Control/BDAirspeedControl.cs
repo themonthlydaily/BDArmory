@@ -414,6 +414,14 @@ namespace BDArmory.Control
             {
                 axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
             }
+            using (var engines = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator()) //allow VTOL AI to have standard horizontal engines for thrust, using engiens set to independent throttle so normal engines usable for altitude
+                while (engines.MoveNext())
+                {
+                    if (engines.Current == null) continue;
+                    if (!engines.Current.EngineIgnited) continue;
+                    if (!engines.Current.independentThrottle) continue;
+                    engines.Current.independentThrottlePercentage = value * 100;
+                }
         }
     }
 

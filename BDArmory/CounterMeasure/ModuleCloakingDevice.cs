@@ -15,7 +15,7 @@ namespace BDArmory.CounterMeasure
         [KSPField] public bool ThermalCloaking = false;
 
         [KSPField] public float opticalReductionFactor = 0.05f; //for Optic camo to reduce enemy view range
-
+        //change to a flat viewdistance value?
         [KSPField] public float thermalReductionFactor = 1f; //for thermoptic camo to reduce apparent thermal sig
 
         [KSPField] public double resourceDrain = 5;
@@ -124,7 +124,7 @@ namespace BDArmory.CounterMeasure
             if (enabling || cloakEnabled) return;
             if (cooldownTimer > 0) return;
             EnsureVesselCloak();
-
+            vesselCloak.cloakedParts = vessel.parts;
             StopCloakDecloakRoutines();
             cloakTimer = 0;
             cloakRoutine = StartCoroutine(CloakRoutine());
@@ -186,7 +186,7 @@ namespace BDArmory.CounterMeasure
                 }
             }
 
-            vesselCloak.DelayedCleanCloakList();
+            vesselCloak.DelayedCleanCloakList(); //why is this (and the same for the ECMJammer) firing this off every fixedUpdate tick?
         }
 
         void DrainElectricity()

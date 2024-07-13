@@ -4,6 +4,7 @@ using UnityEngine;
 
 using BDArmory.Modules;
 using BDArmory.Utils;
+using System.Linq;
 
 namespace BDArmory.CounterMeasure
 {
@@ -11,6 +12,7 @@ namespace BDArmory.CounterMeasure
     {
         List<ModuleCloakingDevice> cloaks;
         public Vessel vessel;
+        public List<Part> cloakedParts;
 
         bool cEnabled;
 
@@ -83,7 +85,6 @@ namespace BDArmory.CounterMeasure
                 StartCoroutine(DelayedCleanCloakListRoutine());
             }
         }
-
         public void AddCloak(ModuleCloakingDevice cloak)
         {
             if (!cloaks.Contains(cloak))
@@ -133,6 +134,18 @@ namespace BDArmory.CounterMeasure
             var wait = new WaitForFixedUpdate();
             yield return wait;
             yield return wait;
+            using (List<Part>.Enumerator cloaked = cloakedParts.GetEnumerator())
+                while (cloaked.MoveNext())
+                {
+                    if (cloaked.Current == null) continue;
+                    if (cloaked.Current.vessel != vessel) //if part has been detached from the main vessel
+                    {
+                        foreach (var cD in cloaks.Where(j => j.vessel == cloaked.Current.vessel)) //check if the new debris vessel didn't also have a device (if for whatever reson the vessel had multiple)
+                        {
+                            if (!cD.OpticalCloaking || !cD.enabled) cloaked.Current.SetOpacity(1); //and if it doesn't/isn't on/isn't an optical cloak, decloak the debris
+                        }
+                    }                        
+                }
             CleanCloakList();
         }
 

@@ -1026,12 +1026,13 @@ namespace BDArmory.Weapons.Missiles
                                             firedTargets.Add(targetsAssigned[t]);
                                             if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {targetsAssigned[t].Vessel.GetName()}");
+                                            break;
                                         }
                                     }
-                                    if (BDArmorySettings.DEBUG_MISSILES)
-                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                     if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
                                     {
+                                        if (BDArmorySettings.DEBUG_MISSILES)
+                                            Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                         using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
