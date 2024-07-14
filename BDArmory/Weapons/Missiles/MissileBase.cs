@@ -759,6 +759,7 @@ namespace BDArmory.Weapons.Missiles
                     lockFailTimer = 0;
 
                     // Update target information
+                    // if (heatTarget.vessel != predictedHeatTarget.vessel) Debug.LogError($"[IR DEBUG] Switching targets from {predictedHeatTarget.vessel.vesselName} to {heatTarget.vessel.vesselName}");
                     predictedHeatTarget = heatTarget;
                 }
                 else
@@ -1627,7 +1628,6 @@ namespace BDArmory.Weapons.Missiles
                                                     //We found a hit to other vessel, set transform.position to hit point (moves immediately, but doesn't update .CoM fields, etc)
                                                     vessel.SetPosition(hit.point - 0.5f * rayFuturePosition.direction);
                                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
-                                                    //Debug.Log($"DEBUG {vessel.vesselName} is hitting {hitPart.vessel.vesselName} at {hit.point}, detonating");
                                                     Detonate();
                                                     return;
                                                 }
@@ -1655,30 +1655,23 @@ namespace BDArmory.Weapons.Missiles
                                         bool shouldDetonate = false;
                                         Ray ray = new(vessel.CoM, -relVel);
                                         ray.origin += selfRad * ray.direction; // Start at the tip of the missile (assuming it's pointing roughly prograde in the relVel direction and is longest on that axis).
-                                        //var debug = $"DEBUG {vessel.vesselName} ({selfRad}m) is approaching {targetVessel.Vessel.vesselName} ({targetRad}m) at {relVel.magnitude} ({relativeSpeed / Time.fixedDeltaTime}) m/s ({relativeSpeed} m/frame), sepRad: {sepRad}m, distance: {relPos.magnitude}m, ray: {ray}";
-                                        //DrawDebugLine(ray.origin, ray.origin + ray.direction * relativeSpeed, Color.yellow);
                                         if (Physics.Raycast(ray, out RaycastHit hit, relativeSpeed, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels))) // Hit!
                                         {
                                             vessel.SetPosition(hit.point - 0.5f * ray.direction); // Slightly back so that shaped charge explosives hit properly.
                                             shouldDetonate = true;
-                                            //debug += $", hit at {hit.point}, sep: {(TargetPosition - hit.point).magnitude}m, detonating";
                                         }
-                                        else // Not hitting, just getting close — check for reaching CPA.
+                                        else // Not hitting, just getting close, check for reaching CPA.
                                         {
                                             Vector3 relAccel = TargetAcceleration - vessel.acceleration_immediate;
                                             float cpaTime = AIUtils.TimeToCPA(relPos, relVel, relAccel, Time.fixedDeltaTime);
 
-                                            //debug += $", miss, cpaTime: {cpaTime}";
                                             if (cpaTime > 0f && cpaTime < Time.fixedDeltaTime)
                                             {
                                                 // Set relative position to the same as at CPA point, but relative to the target's current position. This avoids having to move the target and wait an additional frame.
                                                 vessel.SetPosition(TargetPosition - AIUtils.PredictPosition(relPos, relVel, relAccel, cpaTime));
                                                 shouldDetonate = true;
-                                                //debug += $", relCPA: {vessel.transform.position}, sep: {(TargetPosition - vessel.transform.position).magnitude}m, detonating";
                                             }
-                                            //else debug += $", not reaching CPA";
                                         }
-                                        //Debug.Log(debug);
                                         if (shouldDetonate)
                                         {
                                             Detonate();

@@ -2941,9 +2941,7 @@ namespace BDArmory.Weapons.Missiles
                     if (Physics.Raycast(ray, out RaycastHit hit, 500f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
                     {
                         ExplosionFx.CreateExplosion(hit.point, 0.5f * (1000f * part.mass) * relVel.sqrMagnitude / 4184000f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 1000f * vessel.GetRadius(), part, SourceVesselName, Team.Name, GetShortName(), ray.direction, -1, false, part.mass, -1, 1, "kinetic", null, 1.2f);
-                        //Debug.Log($"DEBUG Kinetic kill at {hit.point}");
                     }
-                    //else Debug.Log($"DEBUG Kinetic detonated but missed with ray {ray}");
                 }
                 if (part != null && !FuseFailed)
                 {

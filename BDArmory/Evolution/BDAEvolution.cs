@@ -202,7 +202,8 @@ namespace BDArmory.Evolution
                     workingDirectory
                 ),
                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                BDArmorySettings.VESSEL_SPAWN_REF_HEADING
             );
             evolutionState = new EvolutionState(evolutionId, status, new List<VariantGroup>());
 
