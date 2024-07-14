@@ -14,6 +14,11 @@
 	- Auto-Tuning
 
 - Requests from discord:
+	- Apply vessel-relative bullet checks to rockets.
+	- Formation Flying https://discord.com/channels/720416076571082863/720423078533791854/1260742190418624633
+		- More options for formations
+		- Altitude stagger
+	- Add an initial heading slider for circular spawning.
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 	- Artillery aiming support
 	- Lift stacking improvements with logical wing segments
@@ -102,7 +107,6 @@
 - Completely disable ramming logic and scores when "disable ramming" is globally enabled
 - using the clamp/unclamp option from the AI tab UI resets unclamped values to clamped maximum when re-clamping (check: is this still an issue?)
 - Add a tournament option for having one "boss" team that each other team fights each round
-- Do the same vessel-relative checks for rockets
 - Once the final target has been acquired in aiming, do a simulation with raycasts to check for obstacles in the way. If the target is blocked, then give it a modifier for target selection in the future that slowly recovers.
 - Kerbal Safety: if a NaN orbit is detected, try setting the orbit of the kerbal based on the orbit of the part it left.
 
