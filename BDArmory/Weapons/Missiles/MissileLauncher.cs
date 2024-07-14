@@ -138,7 +138,7 @@ namespace BDArmory.Weapons.Missiles
         public float blastRadius = -1;
 
         [KSPField]
-        public float blastPower = 25;
+        public float blastPower = 0; // Depreciated, support for legacy missiles only
 
         [KSPField]
         public float blastHeat = -1;
@@ -717,7 +717,13 @@ namespace BDArmory.Weapons.Missiles
                     {
                         warheadType = WarheadTypes.ContinuousRod;
                     }
-                    else warheadType = WarheadTypes.Standard;
+                    else
+                    {
+                        if (((BDExplosivePart)partModules.Current).tntMass > 0)
+                            warheadType = WarheadTypes.Standard;
+                        else
+                            warheadType = WarheadTypes.Kinetic;
+                    }
                 }
                 if (partModules.Current.moduleName == "ClusterBomb")
                 {
@@ -1065,7 +1071,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetBlastRadius()
         {
-            if (blastRadius > 0) { return blastRadius; }
+            if (blastRadius >= 0) { return blastRadius; }
             else
             {
                 if (warheadType == WarheadTypes.EMP)
@@ -1093,6 +1099,11 @@ namespace BDArmory.Weapons.Missiles
                         blastRadius = 150;
                         return 150;
                     }
+                }
+                else if (warheadType == WarheadTypes.Kinetic)
+                {
+                    blastRadius = 0f;
+                    return 0f;
                 }
                 else
                 {
@@ -1403,7 +1414,7 @@ namespace BDArmory.Weapons.Missiles
                 MissileState = MissileStates.Drop;
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
-                vacuumClearanceState = (GuidanceMode == GuidanceModes.Orbital && vacuumSteerable && vessel.InVacuum() && missileTurret == null) ? 
+                vacuumClearanceState = (GuidanceMode == GuidanceModes.Orbital && vacuumSteerable && part.atmDensity <= 0.001f && missileTurret == null) ? // vessel.InVacuum() not updated, will return 0, so use part.atmDensity check
                     VacuumClearanceStates.Clearing : VacuumClearanceStates.Cleared; // Set up clearance check if missile is vacuumSteerable, and is in space, and was not launched from a turret
 
                 StartCoroutine(MissileRoutine());
@@ -1504,8 +1515,6 @@ namespace BDArmory.Weapons.Missiles
 
                 if (HasFired && !HasExploded && part != null)
                 {
-                    CheckDetonationState();
-                    CheckDetonationDistance();
                     part.rb.isKinematic = false;
                     AntiSpin();
                     //simpleDrag
@@ -1539,7 +1548,8 @@ namespace BDArmory.Weapons.Missiles
 
                     UpdateThrustForces();
                     UpdateGuidance();
-
+                    CheckDetonationState(); // this needs to be after UpdateGuidance()
+                    CheckDetonationDistance();
                     //RaycastCollisions();
 
                     //Timed detonation
@@ -1905,7 +1915,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DEBUG_MISSILES)
@@ -1913,9 +1923,10 @@ namespace BDArmory.Weapons.Missiles
                                 Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Heat target acquired! Position: {heatTarget.position}, heatscore: {heatTarget.signalStrength}");
                             }
                             TargetAcquired = true;
-                            TargetPosition = heatTarget.position + (2 * heatTarget.velocity * Time.fixedDeltaTime); // Not sure why this is 2*
+                            TargetPosition = heatTarget.position;
                             TargetVelocity = heatTarget.velocity;
                             TargetAcceleration = heatTarget.acceleration;
+                            targetVessel = heatTarget.targetInfo;
                             lockFailTimer = -1; // ensures proper entry into UpdateHeatTarget()
 
                             // Disable terminal guidance and switch to regular heat guidance for next update
@@ -2802,19 +2813,28 @@ namespace BDArmory.Weapons.Missiles
             Vector3 orbitalTarget;
             if (TargetAcquired)
             {
+                float guidance_thrust = currentThrust;
+                if (currentThrust == 0 && cruiseDelay > 0 && (TimeIndex > dropTime + boostTime) && (TimeIndex < dropTime + boostTime + cruiseDelay)) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
+                    guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
+
                 if (!hasRCS) // Use thrust to kill relative velocity
                 {
-                    float guidance_thrust = currentThrust;
-                    if (currentThrust == 0 && cruiseDelay > 0 && (TimeIndex > dropTime + boostTime) && (TimeIndex < dropTime + boostTime + cruiseDelay)) // If in the cruiseDelay, fake thrust to avoid discontinuities in the guidance
-                        guidance_thrust = Mathf.Lerp(thrust, cruiseThrust, (TimeIndex - (dropTime + boostTime)) / cruiseDelay);
                     Vector3 targetVector = TargetPosition - vessel.CoM;
                     Vector3 acceleration = guidance_thrust / part.mass * GetForwardTransform();
                     Vector3 relVel = TargetVelocity - vessel.Velocity();
                     float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
                     orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
                 }
-                else // Use RCS (in DoRCS()) to kill relative velocity
-                    orbitalTarget = TargetPosition;
+                else // Use thrust to kill relative velocity early, with RCS for later adjustments
+                {
+                    Vector3 targetVector = TargetPosition - vessel.CoM;
+                    Vector3 relVel = vessel.GetObtVelocity() - TargetVelocity;
+                    Vector3 tvNorm = targetVector.normalized;
+                    float timeToImpact = BDAMath.SolveTime(targetVector.magnitude, guidance_thrust / part.mass, Vector3.Dot(relVel, tvNorm));
+                    Vector3 lead = -timeToImpact * relVel;
+                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : Vector3.Dot(relVel, tvNorm) / relVel.magnitude;
+                    orbitalTarget = Vector3.Slerp(TargetPosition + lead, TargetPosition, t);
+                }
 
                 // Clamp target position to max off boresight
                 float angleToTarget = Vector3.Angle(TargetPosition - transform.position, orbitalTarget - transform.position);
@@ -2831,6 +2851,23 @@ namespace BDArmory.Weapons.Missiles
             orbitalTarget = VacuumClearanceManeuver(orbitalTarget, part.transform.position, hasRCS, vacuumSteerable);
             if (Throttle == 0)
                 turnRateDPS *= 15f;
+
+            // If in atmosphere, apply drag
+            if (!vessel.InVacuum() && vessel.srfSpeed > 0f)
+            {
+                Rigidbody rb = part.rb;
+                if (rb != null && rb.mass > 0)
+                {
+                    double airDensity = vessel.atmDensity;
+                    double airSpeed = vessel.srfSpeed;
+                    Vector3d velocity = vessel.Velocity();
+                    Vector3 CoL = new Vector3(0, 0, -1f);
+                    float AoA = Mathf.Clamp(Vector3.Angle(part.transform.forward, velocity), 0, 90);
+                    double dragForce = 0.5 * airDensity * airSpeed * airSpeed * dragArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * Mathf.Max(MissileGuidance.DefaultDragCurve.Evaluate(AoA), 0f);
+                    rb.AddForceAtPosition((float)dragForce * -velocity.normalized,
+                        part.transform.TransformPoint(part.CoMOffset + CoL));
+                }
+            }
 
             part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, TargetVelocity), turnRateDPS * Time.fixedDeltaTime);
             if (TimeIndex > dropTime + 0.25f)
@@ -2892,11 +2929,19 @@ namespace BDArmory.Weapons.Missiles
                     var U235 = part.FindModuleImplementing<BDModuleNuke>();
                     U235.Detonate();
                 }
-                else // EMP/really ond legacy missiles using BlastPower
+                else if (warheadType == WarheadTypes.EMP || blastPower > 0) // EMP/really old legacy missiles using BlastPower
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
-
                     ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, Team.Name, GetShortName(), default(Vector3), -1, warheadType == WarheadTypes.EMP, part.mass * 1000);
+                }
+                else if (warheadType == WarheadTypes.Kinetic) // Missile will usually just phase through target at high speeds (even with ContinuousCollisions mod), so fake effects using an explosion originating at point of impact
+                {
+                    Vector3 relVel = TargetVelocity != Vector3.zero ? vessel.Velocity() - TargetVelocity : vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
+                    Ray ray = new(transform.position, relVel);
+                    if (Physics.Raycast(ray, out RaycastHit hit, 500f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
+                    {
+                        ExplosionFx.CreateExplosion(hit.point, 0.5f * (1000f * part.mass) * relVel.sqrMagnitude / 4184000f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 1000f * vessel.GetRadius(), part, SourceVesselName, Team.Name, GetShortName(), ray.direction, -1, false, part.mass, -1, 1, "kinetic", null, 1.2f);
+                    }
                 }
                 if (part != null && !FuseFailed)
                 {

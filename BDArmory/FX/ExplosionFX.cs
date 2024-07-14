@@ -1197,6 +1197,13 @@ namespace BDArmory.FX
                     eFx.apMod = apMod;
                     eFx.travelDistance = distancetravelled;
                     break;
+                case "kinetic":
+                    eFx.warheadType = WarheadTypes.ShapedCharge;
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 45f); // cos(45 degrees)
+                    eFx.Caliber = caliber;
+                    eFx.apMod = apMod;
+                    eFx.travelDistance = distancetravelled;
+                    break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;
                     eFx.cosAngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
@@ -1217,6 +1224,10 @@ namespace BDArmory.FX
                 // of the liner is far overestimated here, however this is accounted for in the
                 // estimate of the liner mass and the simple fit for liner mass of modern warheads
                 // is surprisingly good using the above formula.
+            }
+            else if (type == "kinetic")
+            {
+                eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, sourceVelocity.magnitude, eFx.ProjMass, apMod);
             }
             else
             {
