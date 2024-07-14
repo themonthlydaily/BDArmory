@@ -44,9 +44,11 @@ namespace BDArmory.CounterMeasure
             }
             cloaks = new List<ModuleCloakingDevice>();
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
+            cloakedParts = new List<Part>();
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             GameEvents.onPartJointBreak.Add(OnPartJointBreak);
             GameEvents.onPartDie.Add(OnPartDie);
+            GameEvents.onVesselPartCountChanged.Add(updateCloakState);
         }
 
         void OnDestroy()
@@ -55,6 +57,7 @@ namespace BDArmory.CounterMeasure
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
+            GameEvents.onVesselPartCountChanged.Remove(updateCloakState);
         }
 
         void AboutToBeDestroyed()
@@ -83,6 +86,35 @@ namespace BDArmory.CounterMeasure
             if (gameObject.activeInHierarchy)
             {
                 StartCoroutine(DelayedCleanCloakListRoutine());
+            }
+        }
+        void updateCloakState(Vessel v)
+        {
+            Debug.Log("[BDArmory.VesselCloakInfo]: vessel part count changed!");
+            if (gameObject.activeInHierarchy)
+            {
+                Debug.Log($"[BDArmory.VesselCloakInfo]: Cloaked parts count: {cloakedParts.Count}");
+                if (cEnabled && cloakedParts.Count > 0)
+                {
+                    using (List<Part>.Enumerator cloaked = cloakedParts.GetEnumerator())
+                        while (cloaked.MoveNext())
+                        {
+                            if (cloaked.Current == null) continue;
+                            if (cloaked.Current.vessel != vessel) //if part has been detached from the main vessel
+                            {
+                                Debug.Log($"[BDArmory.VesselCloakInfo]: Debris found! {cloaked.Current.name}");
+                                cloaked.Current.SetOpacity(1);
+                                foreach (var cD in cloaks.Where(j => j.vessel == cloaked.Current.vessel)) //check if the new debris vessel didn't also have a device (if for whatever reson the vessel had multiple)
+                                {
+                                    if (cD.OpticalCloaking && cD.enabled)
+                                    {
+                                        cD.cloakEnabled = false; //and if it does and is on, blip the cloak to set it to the proper value
+                                        cD.EnableCloak();
+                                    }
+                                }
+                            }
+                        }
+                }
             }
         }
         public void AddCloak(ModuleCloakingDevice cloak)
@@ -134,18 +166,6 @@ namespace BDArmory.CounterMeasure
             var wait = new WaitForFixedUpdate();
             yield return wait;
             yield return wait;
-            using (List<Part>.Enumerator cloaked = cloakedParts.GetEnumerator())
-                while (cloaked.MoveNext())
-                {
-                    if (cloaked.Current == null) continue;
-                    if (cloaked.Current.vessel != vessel) //if part has been detached from the main vessel
-                    {
-                        foreach (var cD in cloaks.Where(j => j.vessel == cloaked.Current.vessel)) //check if the new debris vessel didn't also have a device (if for whatever reson the vessel had multiple)
-                        {
-                            if (!cD.OpticalCloaking || !cD.enabled) cloaked.Current.SetOpacity(1); //and if it doesn't/isn't on/isn't an optical cloak, decloak the debris
-                        }
-                    }                        
-                }
             CleanCloakList();
         }
 

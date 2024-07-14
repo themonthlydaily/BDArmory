@@ -124,7 +124,6 @@ namespace BDArmory.CounterMeasure
             if (enabling || cloakEnabled) return;
             if (cooldownTimer > 0) return;
             EnsureVesselCloak();
-            vesselCloak.cloakedParts = vessel.parts;
             StopCloakDecloakRoutines();
             cloakTimer = 0;
             cloakRoutine = StartCoroutine(CloakRoutine());
@@ -215,6 +214,7 @@ namespace BDArmory.CounterMeasure
             }
             enabling = false;
             vesselCloak.AddCloak(this);
+            vesselCloak.cloakedParts = vessel.parts; //this is the only place this gets updated... why is it dynamically modifying itself whenever a part is lost?
             cloakEnabled = true;
         }
 
@@ -244,6 +244,9 @@ namespace BDArmory.CounterMeasure
                         {
                             if (Part.Current == null) continue;
                             Part.Current.SetOpacity(Mathf.Lerp(1, opticalReductionFactor, (cloakTimer / CloakTime)));
+                            //SetOpacity results in things turning a shiny black when viewed from above, and transparent when viewed from the side/below
+                            //it also doesn't work with DeferedRendering
+                            // see about ungrading this to use something simialr to the RCS shader implementation and temporarily swap out part shaders for a transaprent one
                         }
                     if (enabling)
                     {
