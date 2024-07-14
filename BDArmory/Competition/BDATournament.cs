@@ -635,6 +635,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     0, // Number of teams.
@@ -667,6 +668,7 @@ namespace BDArmory.Competition
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                 true, // Kill everything first.
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                 0, // Number of teams.
@@ -827,6 +829,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     numberOfTeams, // Number of teams indicator.
@@ -865,6 +868,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     numberOfTeams, // Number of teams indicator.
@@ -948,6 +952,7 @@ namespace BDArmory.Competition
                                         BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                        BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                         true, // Kill everything first.
                                         BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                         numberOfTeams, // Number of teams indicator. (Should be -1 for gauntlets for now.)
@@ -1224,6 +1229,7 @@ namespace BDArmory.Competition
                                 roundConfig.altitude,
                                 roundConfig.distance,
                                 roundConfig.absDistanceOrFactor,
+                                roundConfig.refHeading,
                                 roundConfig.killEverythingFirst,
                                 roundConfig.assignTeams,
                                 roundConfig.numberOfTeams,
@@ -2034,7 +2040,8 @@ namespace BDArmory.Competition
                             BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
                         ),
                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                        BDArmorySettings.VESSEL_SPAWN_REF_HEADING
                     )
                 );
             }

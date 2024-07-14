@@ -1,4 +1,4 @@
-IMPROVEMENTS / FIXES
+﻿IMPROVEMENTS / FIXES
 - General:
 	- Fixes for post-build event instructions on Windows to allow for different 7zip executables.
 	- Downgrade using defaults for missing bulletinfo fields from an error to a warning.
@@ -40,6 +40,8 @@ IMPROVEMENTS / FIXES
 		- Fix missiles with no targeting type (i.e. AIR-2) not firing within engage range.
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
+- Spawning:
+	- Allow specifying the reference heading for the first craft for circular spawning (loses precision within 1° of the poles).
 - RWP:
 	- Add S6R6, S6R7 and S6R8 defaults and custom logic.
 - Evolution:
