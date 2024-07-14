@@ -398,9 +398,6 @@ namespace BDArmory.Weapons
         public Transform[] shellEjectTransforms;
 
         [KSPField]
-        public float shellEjectVelocity = 6;
-
-        [KSPField]
         public bool hasDeployAnim = false;
 
         [KSPField]
@@ -3325,7 +3322,6 @@ namespace BDArmory.Weapons
                         ejectedShell.transform.localScale = Vector3.one * shellScale;
                         ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
                         shellComponent.initialV = part.rb.velocity;
-                        shellComponent.ejectSpeed = shellEjectVelocity;
                         ejectedShell.SetActive(true);
                     }
                 }
