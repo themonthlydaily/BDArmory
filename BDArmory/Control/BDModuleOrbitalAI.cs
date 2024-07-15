@@ -115,6 +115,10 @@ namespace BDArmory.Control
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float MinEngagementRange = 100;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_BroadsideAttack"),//Attack vector
+            UI_Toggle(enabledText = "#LOC_BDArmory_AI_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_AI_BroadsideAttack_disabledText")]//Broadside--Bow
+        public bool BroadsideAttack = false;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_RollMode"),// Preferred roll direction of ship towards target
             UI_ChooseOption(options = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" })]
         public string rollTowards = "Port_Starboard";
@@ -603,10 +607,10 @@ namespace BDArmory.Control
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
                         fc.lerpAttitude = false;
-                        Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
+                        Vector3 firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
                         rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
-                        if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
+                        if (!BroadsideAttack && weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
                             SetStatus("Firing Guns");
                             firingSolution = weaponManager.currentGun.FiringSolutionVector ?? Vector3.zero;
@@ -685,7 +689,9 @@ namespace BDArmory.Control
                             {
                                 fc.throttle = 0;
                                 fc.attitude = toTarget;
-                                if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
+                                if (BroadsideAttack)
+                                    fc.attitude = BroadsideAttitude(vessel, targetVessel);
+                                else if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
                                     fc.attitude = weaponManager.previousGun.FiringSolutionVector ?? fc.attitude;
                                 else if (lastFiringSolution != Vector3.zero)
                                     fc.attitude = lastFiringSolution;
@@ -701,7 +707,7 @@ namespace BDArmory.Control
                     {
                         SetStatus("Stranded");
 
-                        fc.attitude = FromTo(vessel, targetVessel).normalized;
+                        fc.attitude = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
                         fc.throttle = 0;
                     }
                     break;
@@ -1101,10 +1107,11 @@ namespace BDArmory.Control
         {
             Vector3 interceptRanges = Vector3.zero;
             float minRange = MinEngagementRange;
-            float maxRange = Mathf.Max(weaponManager.gunRange, minRange * 1.2f);
+            float maxRange = minRange * 1.2f;
             bool usingProjectile = true;
             if (weaponManager != null)
             {
+                bool checkAllWeapons = false;
                 if (weaponManager.selectedWeapon != null)
                 {
                     currentWeapon = weaponManager.selectedWeapon;
@@ -1115,7 +1122,10 @@ namespace BDArmory.Control
                     if (usingProjectile)
                     {
                         missileTryLaunchTime = 0f;
-                        maxRange = Mathf.Min(maxRange, weaponManager.gunRange);
+                        if (weaponManager.CheckAmmo(currentWeapon as ModuleWeapon))
+                            maxRange = Mathf.Min(maxRange, weaponManager.gunRange);
+                        else
+                            checkAllWeapons = true;
                     }
                     else
                     {
@@ -1130,22 +1140,25 @@ namespace BDArmory.Control
                     }
                 }
                 else
+                    checkAllWeapons = true;
+                
+                if (checkAllWeapons)
                 {
                     missileTryLaunchTime = 0f;
-                    for (int i = 0; i < weaponManager.weaponArray.Length; i++)
+
+                    foreach (var weapon in VesselModuleRegistry.GetModules<IBDWeapon>(vessel))
                     {
-                        var weapon = weaponManager.weaponArray[i];
                         if (weapon == null) continue;
                         if (!((EngageableWeapon)weapon).engageAir) continue;
                         float maxEngageRange = ((EngageableWeapon)weapon).GetEngagementRangeMax();
-                        if (weapon.GetWeaponClass() != WeaponClasses.Missile)
-                            maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
-                        else
+                        if (weapon.GetWeaponClass() == WeaponClasses.Missile)
                         {
                             MissileBase ml = weapon as MissileBase;
                             maxRange = Mathf.Max(weaponManager.MaxMissileRange(ml, weaponManager.UnguidedMissile(ml, maxRange)), maxRange);
                             usingProjectile = false;
                         }
+                        else if (weaponManager.CheckAmmo(weapon as ModuleWeapon))
+                            maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
                     }
                 }
                 if (targetVessel != null)
@@ -1354,6 +1367,12 @@ namespace BDArmory.Control
             return v2.transform.position - v1.transform.position;
         }
 
+        public static Vector3 BroadsideAttitude(Vessel self, Vessel target)
+        {
+            Vector3 toTarget = FromTo(self, target).normalized;
+            return self.vesselTransform.up.ProjectOnPlanePreNormalized(toTarget);
+        }
+
         public static Vector3 RelVel(Vessel v1, Vessel v2)
         {
             return v1.GetObtVelocity() - v2.GetObtVelocity();
@@ -1446,36 +1465,39 @@ namespace BDArmory.Control
             if (targetVessel != null) // If we have a target, adjust roll orientation relative to target based on rollMode setting
             {
                 Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
-                switch (rollMode)
+                if (Vector3.Dot(vesselTransform.up, toTarget) < 0.999) // Only roll if we are not directly facing target
                 {
-                    case RollModeTypes.Port_Starboard:
-                        {
-                            if (Vector3.Dot(toTarget, vesselTransform.right) > 0f)
-                                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                            else
-                                rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        }
-                        break;
-                    case RollModeTypes.Dorsal_Ventral:
-                        {
-                            if (Vector3.Dot(toTarget, vesselTransform.forward) > 0f)
-                                rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                            else
-                                rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        }
-                        break;
-                    case RollModeTypes.Port:
-                        rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Starboard:
-                        rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Dorsal:
-                        rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Ventral:
-                        rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
+                    switch (rollMode)
+                    {
+                        case RollModeTypes.Port_Starboard:
+                            {
+                                if (Vector3.Dot(toTarget, vesselTransform.right) > 0f)
+                                    rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                                else
+                                    rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            }
+                            break;
+                        case RollModeTypes.Dorsal_Ventral:
+                            {
+                                if (Vector3.Dot(toTarget, vesselTransform.forward) < 0f)
+                                    rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                                else
+                                    rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            }
+                            break;
+                        case RollModeTypes.Port:
+                            rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Starboard:
+                            rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Dorsal:
+                            rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Ventral:
+                            rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                    }
                 }
                 debugRollTarget = rollTarget * 100f; ;
             }
