@@ -1367,6 +1367,7 @@ namespace BDArmory.Weapons.Missiles
             if (vacuumSteerable && (vessel.InVacuum()))
             {
                 float dotTol;
+                float clearedDotTol = hasRCS ? 0.98f : 0.7f;
                 Vector3 toSource = CoM - SourceVessel.CoM;
                 Ray toTarget = new Ray(CoM, orbitalTarget);
                 float sourceRadius = SourceVessel.GetRadius();
@@ -1387,7 +1388,7 @@ namespace BDArmory.Weapons.Missiles
                                 {
                                     vacuumClearanceState = VacuumClearanceStates.Cleared;
                                     Throttle = 1f;
-                                    dotTol = 0.7f;
+                                    dotTol = clearedDotTol;
                                 }
                             }
                             else
@@ -1401,7 +1402,7 @@ namespace BDArmory.Weapons.Missiles
                                 {
                                     vacuumClearanceState = VacuumClearanceStates.Cleared;
                                     Throttle = 1f;
-                                    dotTol = 0.7f;
+                                    dotTol = clearedDotTol;
                                 }
                             }
                             if (vacuumClearanceState == VacuumClearanceStates.Clearing) // Adjust throttle if still clearing
@@ -1430,13 +1431,14 @@ namespace BDArmory.Weapons.Missiles
                             if ((Vector3.Dot((orbitalTarget - CoM).normalized, GetForwardTransform()) >= dotTol) && cleared)
                             {
                                 vacuumClearanceState = VacuumClearanceStates.Cleared;
+                                dotTol = clearedDotTol;
                                 Throttle = 1f;
                             }
                         }
                         break;
                     default: // VacuumClearanceStates.Cleared, We are engaging target
                         {
-                            dotTol = 0.7f;
+                            dotTol = clearedDotTol;
                             Throttle = 1f;
                         }
                         break;
