@@ -993,7 +993,14 @@ namespace BDArmory.FX
                                 if (penetrationFactor > 0)
                                 {
                                     BulletHitFX.CreateBulletHit(part, eventToExecute.HitPoint, eventToExecute.Hit, eventToExecute.Hit.normal, true, Caliber, penetrationFactor > 0 ? penetrationFactor : 0f, null);
-                                    damage = part.AddBallisticDamage(warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, Caliber, 1f, penetrationFactor, dmgMult, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, ExplosionSourceType.Missile);
+                                    damage = part.AddBallisticDamage(warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, Caliber, 1f, penetrationFactor, dmgMult,
+                                        warheadType switch
+                                        {
+                                            WarheadTypes.ShapedCharge => 5000f,
+                                            WarheadTypes.Kinetic => ImpactSpeed,
+                                            _ => ExplosionVelocity
+                                        },
+                                        ExplosionSourceType.Missile);
                                 }
 
                                 if (penetrationFactor > 1)
