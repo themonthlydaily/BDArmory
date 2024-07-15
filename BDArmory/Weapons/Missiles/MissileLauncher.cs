@@ -745,7 +745,7 @@ namespace BDArmory.Weapons.Missiles
                 break; // Break if a valid module is found.
             }
             if (warheadType == WarheadTypes.Kinetic && blastPower > 0) warheadType = WarheadTypes.Legacy;
-            Debug.Log($"DEBUG {part.partInfo.name} has warhead type {warheadType}");
+            Debug.Log($"DEBUG {part.partInfo.name} has warhead type {warheadType}"); // FIXME To be removed before merging into dev.
             smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
