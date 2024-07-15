@@ -3565,7 +3565,6 @@ namespace BDArmory.Weapons.Missiles
             }
 
             output.AppendLine($"Warhead:");
-            bool warheadTypeFound = false;
             foreach (var partModule in part.Modules)
             {
                 if (partModule == null) continue;
@@ -3573,7 +3572,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case "MultiMissileLauncher":
                         {
-                            warheadTypeFound = true;
+                            warheadType = WarheadTypes.Launcher;
                             if (((MultiMissileLauncher)partModule).isClusterMissile)
                             {
                                 output.AppendLine($"Cluster Missile:");
@@ -3587,7 +3586,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                     case "BDExplosivePart":
                         {
-                            warheadTypeFound = true;
+                            warheadType = WarheadTypes.Standard; // Also, cts rod.
                             ((BDExplosivePart)partModule).ParseWarheadType();
                             if (clusterbomb > 1)
                             {
@@ -3604,14 +3603,14 @@ namespace BDArmory.Weapons.Missiles
                         }
                     case "ModuleEMP":
                         {
-                            warheadTypeFound = true;
+                            warheadType = WarheadTypes.EMP;
                             float proximity = ((ModuleEMP)partModule).proximity;
                             output.AppendLine($"- EMP Blast Radius: {proximity} m");
                             break;
                         }
                     case "BDModuleNuke":
                         {
-                            warheadTypeFound = true;
+                            warheadType = WarheadTypes.Nuke;
                             float yield = ((BDModuleNuke)partModule).yield;
                             float radius = ((BDModuleNuke)partModule).thermalRadius;
                             float EMPRadius = ((BDModuleNuke)partModule).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
@@ -3622,12 +3621,13 @@ namespace BDArmory.Weapons.Missiles
                         }
                     default: continue;
                 }
-                break;
+                // Don't break, as some missiles contain multiple warhead types (e.g., Standard + EMP).
             }
-            if (!warheadTypeFound)
+            if (warheadType == WarheadTypes.Kinetic)
             {
                 if (blastPower > 0)
                 {
+                    warheadType = WarheadTypes.Legacy;
                     output.AppendLine($"- Legacy Missile");
                     output.AppendLine($"- Blast Power: {blastPower}");
                 }
