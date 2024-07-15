@@ -2939,7 +2939,7 @@ namespace BDArmory.Weapons.Missiles
                     Ray ray = new(transform.position, relVel);
                     if (Physics.Raycast(ray, out RaycastHit hit, 500f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)))
                     {
-                        ExplosionFx.CreateExplosion(hit.point, 0.5f * (1000f * part.mass) * relVel.sqrMagnitude / 4184000f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 1000f * vessel.GetRadius(), part, SourceVesselName, Team.Name, GetShortName(), ray.direction, -1, false, part.mass, -1, 1, "kinetic", null, 1.2f);
+                        ExplosionFx.CreateExplosion(hit.point, 0.5f * (1000f * part.mass) * relVel.sqrMagnitude / 4184000f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 1000f * vessel.GetRadius(), part, SourceVesselName, Team.Name, GetShortName(), ray.direction, -1, false, part.mass, -1, 1, ExplosionFx.WarheadTypes.Kinetic, null, 1.2f, sourceVelocity: vessel.Velocity());
                     }
                 }
                 if (part != null && !FuseFailed)
@@ -3597,7 +3597,7 @@ namespace BDArmory.Weapons.Missiles
                             output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                             output.AppendLine($"- tnt Mass: {tntMass} kg");
                             output.AppendLine($"- {((BDExplosivePart)partModule).warheadReportingName} warhead");
-                            if (((BDExplosivePart)partModule).warheadType == "shapedcharge")
+                            if (((BDExplosivePart)partModule)._warheadType == ExplosionFx.WarheadTypes.ShapedCharge)
                                 output.AppendLine($"- Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModule).caliber > 0 ? ((BDExplosivePart)partModule).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModule).tntMass * 0.0555f, ((BDExplosivePart)partModule).apMod):F2} mm");
                             break;
                         }
