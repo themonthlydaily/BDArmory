@@ -718,19 +718,54 @@ namespace BDArmory.Weapons.Missiles
                             warheadType = WarheadTypes.ContinuousRod;
                         else
                             warheadType = WarheadTypes.Standard;
-                        break;
+                        continue; //EMPs sometimes have BDExplosivePart modules for FX, so keep going
                     case "ClusterBomb":
                         clusterbomb = ((ClusterBomb)partModule).submunitions.Count;
-                        break;
+                        break; //CBs destroy the part on deployment, doesn't support other modules, break
                     case "MultiMissileLauncher":
-                        if (weaponClass == WeaponClasses.Bomb)
-                            clusterbomb *= (int)((MultiMissileLauncher)partModule).salvoSize;
+                        if (!String.IsNullOrEmpty(((MultiMissileLauncher)partModule).subMunitionName))
+                        {
+                            //shouldn't have both MML and ClusterBomb/BDExplosivepart/ModuleEMP/BDModuleNuke on the same part; explosive would be on the submunition .cfg
+                            //so instead need a check if the MML comes with a default ordinance, and see what it is to inherit stats.
+                            using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
+                                while (parts.MoveNext())
+                                {
+                                    if (parts.Current == null) continue;
+                                    if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
+                                    if (parts.Current.partPrefab.partInfo.name != ((MultiMissileLauncher)partModule).subMunitionName) continue;
+                                    foreach (var subModule in parts.Current.partPrefab.Modules)
+                                    {
+                                        if (subModule == null) continue;
+                                        switch (subModule.moduleName)
+                                        {
+                                            case "BDExplosivePart":
+                                                ((BDExplosivePart)subModule).ParseWarheadType();
+                                                if (((BDExplosivePart)subModule).warheadReportingName == "Continuous Rod")
+                                                    warheadType = WarheadTypes.ContinuousRod;
+                                                else
+                                                    warheadType = WarheadTypes.Standard;
+                                                break;
+                                            case "ClusterBomb":
+                                                clusterbomb = ((ClusterBomb)subModule).submunitions.Count; //No bomb check, since I guess you could have a missile with a clusterbomb module, for some reason...?
+                                                if (clusterbomb > 1) clusterbomb *= (int)((MultiMissileLauncher)partModule).salvoSize;
+                                                break;
+                                            case "ModuleEMP":
+                                                warheadType = WarheadTypes.EMP;
+                                                StandOffDistance = ((ModuleEMP)subModule).proximity;
+                                                break;
+                                            case "BDModuleNuke":
+                                                warheadType = WarheadTypes.Nuke;
+                                                StandOffDistance = BDAMath.Sqrt(((BDModuleNuke)subModule).yield) * 500;
+                                                break;
+                                        }
+                                    }
+                                }
+                        }
                         else
                         {
-                            if (warheadType == WarheadTypes.Kinetic) warheadType = WarheadTypes.Launcher;
-                            continue; // Set the warhead type as launcher if not otherwise set, but continue looking for other types.
+                            if (warheadType == WarheadTypes.Kinetic) warheadType = WarheadTypes.Launcher; //empty MultiMissile Launcher                            
                         }
-                        break;
+                        break; //MMLs don't support other modules, break
                     case "ModuleEMP":
                         warheadType = WarheadTypes.EMP;
                         StandOffDistance = ((ModuleEMP)partModule).proximity;
@@ -3412,7 +3447,7 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: parsing guidance and homing complete on {GetPartName()}");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: parsing guidance and homing complete on {part.name}");
         }
 
         private string GetBrevityCode()
@@ -3444,7 +3479,10 @@ namespace BDArmory.Weapons.Missiles
                 if ((TargetingMode == TargetingModes.None))
                     return "Unguided";
             }
-
+            if (missileType.ToLower() == "launcher")
+            {
+                return "Requires Ordinance";
+            }
             //else: missiles:
 
             if (TargetingMode == TargetingModes.Radar)
@@ -3490,6 +3528,8 @@ namespace BDArmory.Weapons.Missiles
 
             StringBuilder output = new StringBuilder();
             output.AppendLine($"{missileType.ToUpper()} - {GetBrevityCode()}");
+            if (missileType.ToLower() == "launcher") return output.ToString(); //Launcher is empty rail, doesn't have relevant missile stats to display
+
             output.Append(Environment.NewLine);
             output.AppendLine($"Targeting Type: {targetingType.ToLower()}");
             output.AppendLine($"Guidance Mode: {homingType.ToLower()}");
@@ -3572,52 +3612,57 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case "MultiMissileLauncher":
                         {
-                            warheadType = WarheadTypes.Launcher;
+                            warheadType = WarheadTypes.Launcher; //Why is this getting set here? warHeadType is already set in onStart()
+
                             if (((MultiMissileLauncher)partModule).isClusterMissile)
                             {
                                 output.AppendLine($"Cluster Missile:");
                                 output.AppendLine($"- SubMunition Count: {((MultiMissileLauncher)partModule).salvoSize} ");
-                                float tntMass = ((MultiMissileLauncher)partModule).tntMass;
-                                output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
-                                output.AppendLine($"- tnt Mass: {tntMass} kg");
                             }
-                            if (((MultiMissileLauncher)partModule).isMultiLauncher) continue;
-                            break;
-                        }
-                    case "BDExplosivePart":
-                        {
-                            warheadType = WarheadTypes.Standard; // Also, cts rod.
-                            ((BDExplosivePart)partModule).ParseWarheadType();
-                            if (clusterbomb > 1)
-                            {
-                                output.AppendLine($"Cluster Bomb:");
-                                output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
-                            }
-                            float tntMass = ((BDExplosivePart)partModule).tntMass;
+                            float tntMass = ((MultiMissileLauncher)partModule).tntMass;
                             output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                             output.AppendLine($"- tnt Mass: {tntMass} kg");
-                            output.AppendLine($"- {((BDExplosivePart)partModule).warheadReportingName} warhead");
-                            if (((BDExplosivePart)partModule)._warheadType == ExplosionFx.WarheadTypes.ShapedCharge)
-                                output.AppendLine($"- Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModule).caliber > 0 ? ((BDExplosivePart)partModule).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModule).tntMass * 0.0555f, ((BDExplosivePart)partModule).apMod):F2} mm");
-                            break;
-                        }
-                    case "ModuleEMP":
-                        {
-                            warheadType = WarheadTypes.EMP;
-                            float proximity = ((ModuleEMP)partModule).proximity;
-                            output.AppendLine($"- EMP Blast Radius: {proximity} m");
-                            break;
+                            break; //shouldn't have any other module, so break
                         }
                     case "BDModuleNuke":
                         {
                             warheadType = WarheadTypes.Nuke;
+                            output.AppendLine($"- Nuclear");
                             float yield = ((BDModuleNuke)partModule).yield;
                             float radius = ((BDModuleNuke)partModule).thermalRadius;
                             float EMPRadius = ((BDModuleNuke)partModule).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
-                            output.AppendLine($"- Yield: {yield} kT");
-                            output.AppendLine($"- Max radius: {radius} m");
-                            if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
-                            break;
+                            output.AppendLine($" - Yield: {yield} kT");
+                            output.AppendLine($" - Max radius: {radius} m");
+                            if (EMPRadius > 0) output.AppendLine($" - EMP Blast Radius: {Math.Round(EMPRadius)} m");
+                            break; //shouldn't have any other module, so break
+                        }
+                    case "ClusterBomb":
+                        {
+                            warheadType = WarheadTypes.Standard;
+                            //clusterbomb = ((ClusterBomb)partModule).submunitions.Count; //Submunitions list is populated in OnStart(), which runs after getInfo()
+                            output.AppendLine($"Cluster Bomb");
+                            //output.AppendLine($" - Sub-Munition Count: {clusterbomb} "); //would need adding a submunitions count int to Clusterbomb, and updating relevant .cfgs accordingly
+                            continue; // to grab BDExplosivepart tnt stats
+                        }
+                    case "BDExplosivePart":
+                        {
+                            warheadType = WarheadTypes.Standard; // Also, cts rod. 
+                            ((BDExplosivePart)partModule).ParseWarheadType();
+                            output.AppendLine($"- {((BDExplosivePart)partModule).warheadReportingName} warhead");
+                            float tntMass = ((BDExplosivePart)partModule).tntMass;
+                            output.AppendLine($" - Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                            output.AppendLine($" - TNT Mass: {tntMass} kg");
+                            if (((BDExplosivePart)partModule)._warheadType == ExplosionFx.WarheadTypes.ShapedCharge)
+                                output.AppendLine($" - Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModule).caliber > 0 ? ((BDExplosivePart)partModule).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModule).tntMass * 0.0555f, ((BDExplosivePart)partModule).apMod):F2} mm");
+                            continue; //in case there's also an EMP module
+                        }
+                    case "ModuleEMP":
+                        {
+                            warheadType = WarheadTypes.EMP;
+                            output.AppendLine($"- Electro-Magnetic Pulse");
+                            float proximity = ((ModuleEMP)partModule).proximity;
+                            output.AppendLine($" - EMP Blast Radius: {proximity} m");
+                            continue; //in case a BDExplosivepart is also present
                         }
                     default: continue;
                 }
