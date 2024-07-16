@@ -1332,6 +1332,20 @@ namespace BDArmory.Control
             return false;
         }
 
+        Vector3 broadsideAttitudeLerp;
+        private Vector3 BroadsideAttitude(Vessel self, Vessel target)
+        {
+            // Return lerped attitude for broadside attack. Lerp attitude to reduce oscillation.
+            Vector3 toTarget = FromTo(self, target).normalized;
+            Vector3 up = self.vesselTransform.up;
+            Vector3 broadsideAttitude = up.ProjectOnPlanePreNormalized(toTarget);
+            float error = Vector3.Angle(up, broadsideAttitude);
+            float angleLerp = Mathf.InverseLerp(0, 10, error);
+            float lerpRate = Mathf.Lerp(1, 10, angleLerp);
+            broadsideAttitudeLerp = Vector3.Lerp(broadsideAttitudeLerp, broadsideAttitude, lerpRate * Time.deltaTime); //Lerp has reduced oscillation compared to Slerp
+            return broadsideAttitudeLerp;
+        }
+
         private void UpdateRCSVector(Vector3 inputVec = default(Vector3))
         {
             if (currentStatusMode == StatusMode.AvoidingCollision)
@@ -1365,12 +1379,6 @@ namespace BDArmory.Control
         public static Vector3 FromTo(Vessel v1, Vessel v2)
         {
             return v2.transform.position - v1.transform.position;
-        }
-
-        public static Vector3 BroadsideAttitude(Vessel self, Vessel target)
-        {
-            Vector3 toTarget = FromTo(self, target).normalized;
-            return self.vesselTransform.up.ProjectOnPlanePreNormalized(toTarget);
         }
 
         public static Vector3 RelVel(Vessel v1, Vessel v2)
