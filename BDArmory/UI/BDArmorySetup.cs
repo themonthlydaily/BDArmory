@@ -2359,6 +2359,7 @@ namespace BDArmory.UI
             WindowRectSettings = new Rect(settingsLeft, settingsTop, settingsWidth, settingsHeight);
         }
 
+        (float, float)[] asteroidFieldAltitude;
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.
@@ -3573,7 +3574,7 @@ namespace BDArmory.UI
                     BDArmorySettings.ASTEROID_FIELD_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), Mathf.Round(BDArmorySettings.ASTEROID_FIELD_NUMBER / 10f), 1f, 200f) * 10f); // Asteroid Field Number
                     var altitudeString = BDArmorySettings.ASTEROID_FIELD_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE * 100f:F0}m" : $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE / 10f:F1}km";
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_AsteroidFieldAltitude")}:  ({altitudeString})", leftLabel);
-                    BDArmorySettings.ASTEROID_FIELD_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ASTEROID_FIELD_ALTITUDE, 1f, 200f)); // Asteroid Field Altitude
+                    BDArmorySettings.ASTEROID_FIELD_ALTITUDE = Mathf.Round(GUIUtils.HorizontalSemiLogSlider(SRightSliderRect(line), BDArmorySettings.ASTEROID_FIELD_ALTITUDE, 1f, Mathf.Max(200f, BDArmorySettings.VESSEL_SPAWN_ALTITUDE / 100f), 1.5f, false, ref asteroidFieldAltitude)); // Asteroid Field Altitude
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_AsteroidFieldRadius")}:  ({BDArmorySettings.ASTEROID_FIELD_RADIUS}km)", leftLabel);
                     BDArmorySettings.ASTEROID_FIELD_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ASTEROID_FIELD_RADIUS, 1f, 10f)); // Asteroid Field Radius
                     line -= 0.25f;
