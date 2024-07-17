@@ -692,10 +692,10 @@ namespace BDArmory.GameModes
         {
             Reset();
 
-            altitude *= 100f; // Convert to m.
             radius *= 1000f; // Convert to m.
-            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with {numberOfAsteroids} asteroids with height {altitude}m and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
-            BDACompetitionMode.Instance.competitionStatus.Add($"Spawning Asteroid Field with {numberOfAsteroids} asteroids with height {altitude}m and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}), please be patient.");
+            var message = $"Spawning asteroid field with {numberOfAsteroids} asteroids with height {(altitude < 1000 ? $"{altitude}m" : $"{altitude / 1000}km")} and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4})";
+            Debug.Log($"[BDArmory.Asteroids]: {message}.");
+            BDACompetitionMode.Instance.competitionStatus.Add($"{message}, please be patient.");
 
             var minSafeAltitude = FlightGlobals.currentMainBody.MinSafeAltitude();
             inOrbit = altitude >= minSafeAltitude;
@@ -721,7 +721,7 @@ namespace BDArmory.GameModes
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             if (spawnPoint.magnitude > PhysicsRangeExtender.GetPRERange())
             {
-                var message = $"Asteroid field location is beyond the PRE range, unable to spawn asteroids.";
+                message = $"Asteroid field location is beyond the PRE range, unable to spawn asteroids.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogError($"[BDArmory.Asteroids]: {message}");
                 return;
@@ -813,7 +813,7 @@ namespace BDArmory.GameModes
                     }
                     var force = nudge + anomalousAttraction + anomalousAttractionHOS;
                     if (inOrbit)
-                        force -= 0.1f * (asteroids[i].Velocity() - averageOrbitalVelocity); // Orbiting asteroids don't need anti-grav forces. Reduce motion to common orbital velocity.
+                        force -= 0.05f * (asteroids[i].Velocity() - averageOrbitalVelocity); // Orbiting asteroids don't need anti-grav forces. Reduce motion to common orbital velocity.
                     else
                         force -= FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) + 0.1f * asteroids[i].srf_velocity; // Float and reduce motion.
                     asteroids[i].rootPart.Rigidbody.AddForce(force * TimeWarp.CurrentRate, ForceMode.Acceleration);
@@ -843,7 +843,8 @@ namespace BDArmory.GameModes
                             // Attract to vessel centroid if outside asteroid field radius
                             if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > radius * radius)
                             {
-                                float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - radius * radius) / 1e6f;
+                                float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - radius * radius) / 1e7f;
+                                if (Vector3.Dot(asteroids[i].transform.position - averagePosition, asteroids[i].Velocity() - averageOrbitalVelocity) < 0) centroidFactor *= 0.5f; // Less of a push when heading towards the centroid to avoid pinballing.
                                 Vector3 attraction = centroidFactor * (averagePosition - asteroids[i].transform.position);
                                 asteroids[i].rootPart.Rigidbody.AddForce(attraction, ForceMode.Acceleration);
                             }
