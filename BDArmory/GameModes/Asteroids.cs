@@ -844,7 +844,7 @@ namespace BDArmory.GameModes
                             if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > radius * radius)
                             {
                                 float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - radius * radius) / 1e7f;
-                                if (Vector3.Dot(asteroids[i].transform.position - averagePosition, asteroids[i].Velocity() - averageOrbitalVelocity) < 0) centroidFactor *= 0.5f; // Less of a push when heading towards the centroid to avoid pinballing.
+                                if (Vector3.Dot(asteroids[i].transform.position - averagePosition, asteroids[i].Velocity() - averageOrbitalVelocity) < 0) centroidFactor *= 0.1f; // Less of a push when heading towards the centroid to avoid pinballing.
                                 Vector3 attraction = centroidFactor * (averagePosition - asteroids[i].transform.position);
                                 asteroids[i].rootPart.Rigidbody.AddForce(attraction, ForceMode.Acceleration);
                             }
