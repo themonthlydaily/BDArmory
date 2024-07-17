@@ -580,7 +580,7 @@ namespace BDArmory.FX
                     }
                     //part.skinTemperature += fluence * 3370000000 / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
                     part.skinTemperature += (fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance))); // everything gets heated via atmosphere
-                    if (isEMP)
+                    if (isEMP && !VesselModuleRegistry.ignoredVesselTypes.Contains(part.vesselType))
                     {
                         if (part == part.vessel.rootPart) //don't apply EMP buildup per part
                         {
