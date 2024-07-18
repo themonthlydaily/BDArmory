@@ -247,6 +247,8 @@ namespace BDArmory.Control
         public virtual string Name { get; } = "AI Control";
         public bool Enabled => pilotEnabled;
 
+        public bool TakingOff = true;
+
         public void Toggle() => TogglePilot();
 
         #endregion Pilot on/off
@@ -301,7 +303,7 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                GUI.Label(new Rect(200, Screen.height - 700, 600, 700), $"{vessel.name}\n{debugString.ToString()}");
+                GUI.Label(new Rect(200, Screen.height - 350, 600, 350), $"{vessel.name}\n{debugString.ToString()}");
             }
         }
 
@@ -666,12 +668,14 @@ namespace BDArmory.Control
         #endregion
         /// <summary>
         /// Prevent fuel drain (control function).
+        /// Note: CheatOptions.InfinitePropellant doesn't work for FS helicopter engines, so we need to maintain fuel manually.
         /// </summary>
         /// <param name="active">Activate or deactive fuel preservation.</param>
         public void MaintainFuelLevels(bool active)
         {
             if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
             if (active) maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsCoroutine());
+            CheatOptions.InfinitePropellant = active || BDArmorySettings.INFINITE_FUEL; // Also set the cheat so that it syncs with the cheat options.
         }
         /// <summary>
         /// Prevent fuel drain (coroutine).

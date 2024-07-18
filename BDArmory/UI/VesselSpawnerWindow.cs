@@ -37,10 +37,11 @@ namespace BDArmory.UI
         private bool planetslist = false;
         int selected_index = 1;
         int WaygateCount = -1;
+        public int gateModelsCount => WaygateCount;
         public float SelectedGate = 0;
         public static string Gatepath;
         public string SelectedModel;
-        string[] gateFiles;
+        public string[] gateFiles;
         #endregion
         #region GUI strings
         string tournamentStyle = $"{(TournamentStyle)0}";
@@ -306,6 +307,8 @@ namespace BDArmory.UI
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR})", leftLabel);//Spawn Distance Factor
                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR / 10f, 1f, 10f) * 10f);
                 }
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnRefHeading")}:  ({BDArmorySettings.VESSEL_SPAWN_REF_HEADING:000}°)", leftLabel); // Reference Heading
+                BDArmorySettings.VESSEL_SPAWN_REF_HEADING = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_REF_HEADING, 0, 359));
 
                 GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnEaseInSpeed")}:  ({BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED})", leftLabel);//Spawn Ease-In Speed (actually the VM min lower speed)
                 BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED, 0.1f, 1f), 0.1f);
@@ -609,9 +612,9 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_BDAWaypointBuilder_Title"), BDArmorySetup.showWPBuilderGUI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide waypoints section
                         {
-                                CourseBuilderGUI.Instance.SetVisible(!BDArmorySetup.showWPBuilderGUI);
-                                if (!BDArmorySetup.showWPBuilderGUI)
-                                    BDArmorySetup.SaveConfig();
+                            CourseBuilderGUI.Instance.SetVisible(!BDArmorySetup.showWPBuilderGUI);
+                            if (!BDArmorySetup.showWPBuilderGUI)
+                                BDArmorySetup.SaveConfig();
                         }
                     }
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, StringUtils.Localize("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
@@ -853,7 +856,8 @@ namespace BDArmory.UI
                                     BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
                                 ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE)
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING)
                             ),
                             new WaypointFollowingStrategy(course),
                             CircularSpawning.Instance
@@ -881,7 +885,8 @@ namespace BDArmory.UI
                                     new List<string>() { craftFile }
                                 ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING
                             ))).ToList();
                         TournamentCoordinator.Instance.RunForEach(strategies,
                             new WaypointFollowingStrategy(course),
@@ -936,6 +941,7 @@ namespace BDArmory.UI
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                 true,
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
                                 BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
@@ -953,6 +959,7 @@ namespace BDArmory.UI
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                                 true,
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
                                 BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
@@ -974,6 +981,7 @@ namespace BDArmory.UI
                             BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                             BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                             BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                            BDArmorySettings.VESSEL_SPAWN_REF_HEADING,
                             false,
                             false,
                             0,
@@ -998,7 +1006,8 @@ namespace BDArmory.UI
                                     BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
                                 ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_REF_HEADING
                             )
                             ); // Spawn vessels continuously at 1km above terrain.
                     }

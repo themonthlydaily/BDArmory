@@ -223,7 +223,10 @@ namespace BDArmory.Control
             altitudeControl.Activate();
 
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
+            {
                 initialTakeOff = false;
+                TakingOff = false;
+            }
 
             if (BroadsideAttack && sideSlipDirection == 0)
             {
@@ -712,7 +715,10 @@ namespace BDArmory.Control
                 vessel.Splashed = vessel.altitude < 0; // Radar altitude could be > 1, while the craft is still underwater due to the way radarAlt works...
             }
             if (!belowMinAltitude)
+            {
                 initialTakeOff = false;
+                TakingOff = false;
+            }
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
