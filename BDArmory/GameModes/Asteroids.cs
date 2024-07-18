@@ -689,55 +689,32 @@ namespace BDArmory.GameModes
         /// <param name="_altitude">The maximum altitude AGL of the field, minimum altitude AGL is 50m.</param>
         /// <param name="_radius">The radius of the field from the spawn point.</param>
         /// <param name="_geoCoords">The spawn point (centre) of the field.</param>
-        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector3d geoCoords)
+        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector2d geoCoords)
         {
             Reset();
 
             radius *= 1000f; // Convert to m.
-            var minSafeAltitude = FlightGlobals.currentMainBody.MinSafeAltitude();
-            inOrbit = altitude >= minSafeAltitude;
-            if (inOrbit) // If we're in orbit, use the centroid of existing craft for the spawn point instead of the asked for one, as that very quickly goes out of range.
-            {
-                var averagePosition = Vector3.zero;
-                averageVelocity = Vector3.zero;
-                vesselCount = 0;
-                LoadedVesselSwitcher.Instance.UpdateList();
-                foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
-                {
-                    averagePosition += vessel.transform.position;
-                    averageVelocity += vessel.Velocity();
-                    ++vesselCount;
-                }
-                if (vesselCount > 0)
-                {
-                    averagePosition /= vesselCount;
-                    averageVelocity /= vesselCount;
-                    geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(averagePosition);
-                    altitude = (float)FlightGlobals.currentMainBody.GetAltitude(averagePosition);
-                    Debug.Log($"DEBUG vesselCount: {vesselCount}");
-                }
-                else
-                {
-                    averageVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(averagePosition, FlightGlobals.currentMainBody).magnitude * (FlightGlobals.currentMainBody.Radius + altitude)) * FlightGlobals.currentMainBody.getRFrmVel(averagePosition).normalized;
-                }
-            }
-            var message = $"Spawning asteroid field with {numberOfAsteroids} asteroids with height {(altitude < 1000 ? $"{altitude}m" : $"{altitude / 1000}km")} and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4})";
-            Debug.Log($"[BDArmory.Asteroids]: {message}.");
-            BDACompetitionMode.Instance.competitionStatus.Add($"{message}, please be patient.");
-
             this.altitude = altitude;
             this.radius = radius;
-            this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
-            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            this.geoCoords = geoCoords;
+            UpdateSpawnPoint(); // Adjust spawn point if we're in orbit.
             if (spawnPoint.magnitude > PhysicsRangeExtender.GetPRERange())
             {
-                message = $"Asteroid field location is beyond the PRE range, unable to spawn asteroids.";
+                var message = $"Asteroid field location is beyond the PRE range, unable to spawn asteroids.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogError($"[BDArmory.Asteroids]: {message}");
                 return;
             }
+            if (vesselCount == 0) averageVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(spawnPoint, FlightGlobals.currentMainBody).magnitude * (FlightGlobals.currentMainBody.Radius + altitude)) * FlightGlobals.currentMainBody.getRFrmVel(spawnPoint).normalized;
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+
+            { // Logging
+                var message = $"Spawning asteroid field with {numberOfAsteroids} asteroids with height {(altitude < 1000 ? $"{altitude}m" : $"{altitude / 1000}km")} and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4})";
+                Debug.Log($"[BDArmory.Asteroids]: {message}.");
+                BDACompetitionMode.Instance.competitionStatus.Add($"{message}, please be patient.");
+            }
+
             StartCoroutine(SpawnField(numberOfAsteroids));
         }
 
@@ -749,6 +726,7 @@ namespace BDArmory.GameModes
             SetupAsteroidPool(numberOfAsteroids);
             while (cleaningInProgress > 0) // Wait until the asteroid pool is finished being set up.
             { yield return wait; }
+            UpdateSpawnPoint(); // Refresh the spawn point as it could have drifted significantly in orbit while we were waiting.
             asteroids = new Vessel[numberOfAsteroids];
             for (int i = 0; i < asteroids.Length; ++i)
             {
@@ -903,6 +881,33 @@ namespace BDArmory.GameModes
             }
         }
 
+        void UpdateSpawnPoint()
+        {
+            var minSafeAltitude = FlightGlobals.currentMainBody.MinSafeAltitude();
+            inOrbit = altitude >= minSafeAltitude;
+            if (inOrbit) // If we're in orbit, use the centroid of existing craft for the spawn point instead of the asked for one, as that very quickly goes out of range.
+            {
+                var averagePosition = Vector3.zero;
+                averageVelocity = Vector3.zero;
+                vesselCount = 0;
+                LoadedVesselSwitcher.Instance.UpdateList();
+                foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
+                {
+                    averagePosition += vessel.transform.position;
+                    averageVelocity += vessel.Velocity();
+                    ++vesselCount;
+                }
+                if (vesselCount > 0)
+                {
+                    averagePosition /= vesselCount;
+                    averageVelocity /= vesselCount;
+                    geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(averagePosition);
+                    altitude = (float)FlightGlobals.currentMainBody.GetAltitude(averagePosition);
+                }
+            }
+            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+        }
+
         #region Pooling
         /// <summary>
         /// Wait until the collider bounds have been generated, then remove various modules from the asteroid for performance reasons.
@@ -932,13 +937,17 @@ namespace BDArmory.GameModes
         /// <param name="count">The minimum number of asteroids in the pool.</param>
         void SetupAsteroidPool(int count)
         {
-            var preRange = PhysicsRangeExtender.GetPRERange();
-            asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < preRange).ToList();
+            // First lay out the existing asteroids in "safe" positions.
+            asteroidPool = asteroidPool.Where(a => a != null).ToList();
+            foreach (var asteroid in asteroidPool) asteroid.gameObject.SetActive(false);
+            LayoutAsteroids();
+            // Then make sure they're cleaned out.
             foreach (var asteroid in asteroidPool)
             {
                 if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
                 { StartCoroutine(CleanAsteroid(asteroid)); }
             }
+            // Finally, add more if needed.
             if (count > asteroidPool.Count) { AddAsteroidsToPool(count - asteroidPool.Count); }
         }
 
@@ -963,14 +972,15 @@ namespace BDArmory.GameModes
         /// <param name="count"></param>
         void AddAsteroidsToPool(int count)
         {
-            Debug.Log($"[BDArmory.Asteroids]: Increasing asteroid pool size to {asteroidPool.Count + count}.");
+            Debug.Log($"[BDArmory.Asteroids]: Increasing asteroid pool size to {asteroidPool.Count + count} from {asteroidPool.Count}.");
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             var refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
             for (int i = 0; i < count; ++i)
             {
-                var direction = (Quaternion.AngleAxis(i / 60f * 360f, upDirection) * refDirection).ProjectOnPlanePreNormalized(upDirection).normalized; // 60 asteroids per layer of the spiral (approx. 100m apart).
-                var position = spawnPoint + (1e4f + 1e2f * i / 60) * upDirection + 1e3f * direction; // 100m altitude difference per layer of the spiral.
+                int j = asteroidPool.Count + 1;
+                var direction = (Quaternion.AngleAxis(j / 60f * 360f, upDirection) * refDirection).ProjectOnPlanePreNormalized(upDirection).normalized; // 60 asteroids per layer of the spiral (approx. 100m apart).
+                var position = spawnPoint + (1e4f + 1e2f * j / 60) * upDirection + 1e3f * direction; // 100m altitude difference per layer of the spiral.
                 var asteroid = AsteroidUtils.SpawnAsteroid(position);
                 if (asteroid != null)
                 {
@@ -979,6 +989,20 @@ namespace BDArmory.GameModes
                 }
             }
             UpdatePooledAsteroidNames();
+        }
+
+        void LayoutAsteroids()
+        {
+            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
+            var refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            for (int i = 0; i < asteroidPool.Count; ++i)
+            {
+                if (asteroidPool[i] == null) continue;
+                var direction = (Quaternion.AngleAxis(i / 60f * 360f, upDirection) * refDirection).ProjectOnPlanePreNormalized(upDirection).normalized; // 60 asteroids per layer of the spiral (approx. 100m apart).
+                var position = spawnPoint + (1e4f + 1e2f * i / 60) * upDirection + 1e3f * direction; // 100m altitude difference per layer of the spiral.
+                asteroidPool[i].SetPosition(position);
+            }
         }
 
         /// <summary>
