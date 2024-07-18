@@ -631,7 +631,8 @@ namespace BDArmory.GameModes
         bool inOrbit;
         Coroutine floatingCoroutine;
         public Vector3d anomalousAttraction = Vector3d.zero;
-        Vector3d averageOrbitalVelocity = default;
+        int vesselCount = 0;
+        Vector3d averageVelocity = default;
         System.Random RNG;
 
         // Pooling of asteroids
@@ -693,28 +694,37 @@ namespace BDArmory.GameModes
             Reset();
 
             radius *= 1000f; // Convert to m.
-            var message = $"Spawning asteroid field with {numberOfAsteroids} asteroids with height {(altitude < 1000 ? $"{altitude}m" : $"{altitude / 1000}km")} and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4})";
-            Debug.Log($"[BDArmory.Asteroids]: {message}.");
-            BDACompetitionMode.Instance.competitionStatus.Add($"{message}, please be patient.");
-
             var minSafeAltitude = FlightGlobals.currentMainBody.MinSafeAltitude();
             inOrbit = altitude >= minSafeAltitude;
             if (inOrbit) // If we're in orbit, use the centroid of existing craft for the spawn point instead of the asked for one, as that very quickly goes out of range.
             {
                 var averagePosition = Vector3.zero;
-                int vesselCount = 0;
+                averageVelocity = Vector3.zero;
+                vesselCount = 0;
+                LoadedVesselSwitcher.Instance.UpdateList();
                 foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
                 {
                     averagePosition += vessel.transform.position;
+                    averageVelocity += vessel.Velocity();
                     ++vesselCount;
                 }
                 if (vesselCount > 0)
                 {
                     averagePosition /= vesselCount;
+                    averageVelocity /= vesselCount;
                     geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(averagePosition);
-                    averageOrbitalVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(averagePosition, FlightGlobals.currentMainBody).magnitude * (FlightGlobals.currentMainBody.Radius + altitude)) * FlightGlobals.currentMainBody.getRFrmVel(averagePosition).normalized;
+                    altitude = (float)FlightGlobals.currentMainBody.GetAltitude(averagePosition);
+                    Debug.Log($"DEBUG vesselCount: {vesselCount}");
+                }
+                else
+                {
+                    averageVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(averagePosition, FlightGlobals.currentMainBody).magnitude * (FlightGlobals.currentMainBody.Radius + altitude)) * FlightGlobals.currentMainBody.getRFrmVel(averagePosition).normalized;
                 }
             }
+            var message = $"Spawning asteroid field with {numberOfAsteroids} asteroids with height {(altitude < 1000 ? $"{altitude}m" : $"{altitude / 1000}km")} and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4})";
+            Debug.Log($"[BDArmory.Asteroids]: {message}.");
+            BDACompetitionMode.Instance.competitionStatus.Add($"{message}, please be patient.");
+
             this.altitude = altitude;
             this.radius = radius;
             this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
@@ -756,9 +766,7 @@ namespace BDArmory.GameModes
                 {
                     asteroid.gameObject.SetActive(true);
                     asteroid.SetPosition(position);
-                    Vector3d worldVelocity = inOrbit ?
-                        Math.Sqrt(FlightGlobals.getGeeForceAtPosition(position, asteroid.mainBody).magnitude * (asteroid.mainBody.Radius + height)) * FlightGlobals.currentMainBody.getRFrmVel(position).normalized :
-                        Vector3d.zero;
+                    Vector3d worldVelocity = inOrbit ? averageVelocity : Vector3d.zero;
                     if (BDKrakensbane.IsActive) worldVelocity -= BDKrakensbane.FrameVelocityV3f; // SetWorldVelocity does not take Krakensbane into account.
                     asteroid.SetWorldVelocity(worldVelocity);
                     StartCoroutine(SetInitialRotation(asteroid));
@@ -784,7 +792,7 @@ namespace BDArmory.GameModes
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
-                    var nudge = new Vector3d(RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5) * (inOrbit ? 1000 : 100); // Distances are larger in space.
+                    var nudge = (inOrbit ? 200f : 100f) * UnityEngine.Random.insideUnitSphere;
                     Vector3d anomalousAttractionHOS = Vector3d.zero;
                     if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
                     {
@@ -793,7 +801,7 @@ namespace BDArmory.GameModes
                         {
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                            factor = (1f - (float)offset.sqrMagnitude / 1e6f); // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
+                            factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
                             if (factor > 0) anomalousAttraction += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
                         }
                         anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH;
@@ -806,32 +814,38 @@ namespace BDArmory.GameModes
                             if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(weaponManager.vessel.GetName()))
                             {
                                 offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                                factor = (Vector3.Dot(asteroids[i].Velocity(), weaponManager.vessel.Velocity()) < 0 ? (float)(asteroids[i].srf_velocity - weaponManager.vessel.srf_velocity).magnitude : 1);
+                                factor = Vector3.Dot(asteroids[i].Velocity(), weaponManager.vessel.Velocity()) < 0 ? (float)(asteroids[i].Velocity() - weaponManager.vessel.Velocity()).magnitude : 1;
                                 if (offset.sqrMagnitude < 6250000) anomalousAttractionHOS += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
                             }
                         }
                     }
                     var force = nudge + anomalousAttraction + anomalousAttractionHOS;
                     if (inOrbit)
-                        force -= 0.05f * (asteroids[i].Velocity() - averageOrbitalVelocity); // Orbiting asteroids don't need anti-grav forces. Reduce motion to common orbital velocity.
+                    {
+                        if (vesselCount > 0)
+                            force -= 0.1f * (asteroids[i].Velocity() - averageVelocity); // Orbiting asteroids don't need anti-grav forces. Reduce motion to average velocity of vessels.
+                    }
                     else
-                        force -= FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) + 0.1f * asteroids[i].srf_velocity; // Float and reduce motion.
+                        force -= FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) + 0.1f * asteroids[i].Velocity(); // Float and reduce motion.
                     asteroids[i].rootPart.Rigidbody.AddForce(force * TimeWarp.CurrentRate, ForceMode.Acceleration);
                 }
                 if (Time.time - repulseTimer > 1) // Once per second repulse nearby asteroids from each other to avoid them sticking, and attract them to vessel centroid if outside of radius. Not too often since it's O(N^2). This might be more performant using an OverlapSphere.
                 {
                     averagePosition = Vector3.zero;
-                    int vesselCount = 0;
+                    averageVelocity = Vector3.zero;
+                    vesselCount = 0;
                     foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
                     {
                         averagePosition += vessel.transform.position;
+                        averageVelocity += vessel.Velocity();
                         ++vesselCount;
                     }
                     if (vesselCount > 0)
                     {
                         averagePosition /= vesselCount;
+                        averageVelocity /= vesselCount;
                         geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(averagePosition);
-                        averageOrbitalVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(averagePosition, FlightGlobals.currentMainBody).magnitude * (FlightGlobals.currentMainBody.Radius + altitude)) * FlightGlobals.currentMainBody.getRFrmVel(averagePosition).normalized;
+                        altitude = (float)FlightGlobals.currentMainBody.GetAltitude(averagePosition);
                     }
 
                     for (int i = 0; i < asteroids.Length - 1; ++i)
@@ -840,12 +854,14 @@ namespace BDArmory.GameModes
 
                         if (vesselCount > 0)
                         {
-                            // Attract to vessel centroid if outside asteroid field radius
-                            if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > radius * radius)
+                            // Attract to vessel centroid if in the outer region (90%) of the asteroid field.
+                            if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > 0.81f * radius * radius)
                             {
-                                float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - radius * radius) / 1e7f;
-                                if (Vector3.Dot(asteroids[i].transform.position - averagePosition, asteroids[i].Velocity() - averageOrbitalVelocity) < 0) centroidFactor *= 0.1f; // Less of a push when heading towards the centroid to avoid pinballing.
-                                Vector3 attraction = centroidFactor * (averagePosition - asteroids[i].transform.position);
+                                float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - 0.81f * radius * radius) * 5e-7f;
+                                Vector3 radialDir = asteroids[i].transform.position - averagePosition;
+                                Vector3 radialVel = asteroids[i].Velocity() - averageVelocity;
+                                if (Vector3.Dot(radialDir, radialVel) < 0) centroidFactor *= 0.25f; // Less of a push when heading towards the centroid to avoid pinballing.
+                                Vector3 attraction = -centroidFactor * radialDir;
                                 asteroids[i].rootPart.Rigidbody.AddForce(attraction, ForceMode.Acceleration);
                             }
                         }
@@ -857,7 +873,7 @@ namespace BDArmory.GameModes
                             var separation = asteroids[i].transform.position - asteroids[j].transform.position;
                             var sepSqr = separation.sqrMagnitude;
                             var proximityFactor = asteroids[i].GetRadius() + asteroids[j].GetRadius();
-                            proximityFactor *= (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION ? 100 : 4) * proximityFactor; // Without anomalous attraction, they don't get stirred up much, so they don't need as much repulsion.
+                            proximityFactor *= (inOrbit ? 10 : BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION ? 100 : 4) * proximityFactor; // Without anomalous attraction, they don't get stirred up much, so they don't need as much repulsion. In space they don't need much repulsion either.
                             if (sepSqr < proximityFactor)
                             {
                                 var repulseAmount = TimeWarp.CurrentRate * BDAMath.Sqrt(proximityFactor - sepSqr) * separation.normalized;
