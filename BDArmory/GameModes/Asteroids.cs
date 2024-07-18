@@ -799,9 +799,12 @@ namespace BDArmory.GameModes
                     }
                     var force = nudge + anomalousAttraction + anomalousAttractionHOS;
                     if (inOrbit)
-                    {
+                    { // Orbiting asteroids don't need anti-grav forces.
                         if (vesselCount > 0)
-                            force -= 0.1f * (asteroids[i].Velocity() - averageVelocity); // Orbiting asteroids don't need anti-grav forces. Reduce motion to average velocity of vessels.
+                        {
+                            var relVel = asteroids[i].Velocity() - averageVelocity;
+                            force -= (0.1f + 4e-7f * relVel.sqrMagnitude) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
+                        }
                     }
                     else
                         force -= FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) + 0.1f * asteroids[i].Velocity(); // Float and reduce motion.
