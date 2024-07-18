@@ -723,6 +723,7 @@ namespace BDArmory.GameModes
             var wait = new WaitForFixedUpdate();
             yield return new WaitForEndOfFrame(); // Give the message a chance to show.
             yield return wait;
+            FloatingOrigin.SetOffset(spawnPoint);
             SetupAsteroidPool(numberOfAsteroids);
             while (cleaningInProgress > 0) // Wait until the asteroid pool is finished being set up.
             { yield return wait; }
@@ -742,11 +743,11 @@ namespace BDArmory.GameModes
                 var asteroid = GetAsteroid();
                 if (asteroid != null)
                 {
-                    asteroid.gameObject.SetActive(true);
                     asteroid.SetPosition(position);
                     Vector3d worldVelocity = inOrbit ? averageVelocity : Vector3d.zero;
                     if (BDKrakensbane.IsActive) worldVelocity -= BDKrakensbane.FrameVelocityV3f; // SetWorldVelocity does not take Krakensbane into account.
                     asteroid.SetWorldVelocity(worldVelocity);
+                    asteroid.gameObject.SetActive(true);
                     StartCoroutine(SetInitialRotation(asteroid));
                     asteroids[i] = asteroid;
                 }
@@ -1090,6 +1091,7 @@ namespace BDArmory.GameModes
 
         /// <summary>
         /// Run some debugging checks on the pooled asteroids.
+        /// Middle click the "Spawn Field Now" button to trigger this.
         /// </summary>
         public void CheckPooledAsteroids()
         {
@@ -1100,10 +1102,11 @@ namespace BDArmory.GameModes
             double maxMass = 0d;
             double minRadius = double.MaxValue;
             double maxRadius = 0d;
+            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
-                Debug.Log($"{asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()}");
+                Debug.Log($"DEBUG {asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()} and is {(asteroidPool[i].gameObject.activeInHierarchy?"active":"inactive")} at distance {(asteroidPool[i].transform.position - spawnPoint).magnitude}m from the spawn point.");
                 if (asteroidPool[i].gameObject != null)
                 {
                     if (asteroidPool[i].gameObject.activeInHierarchy)
