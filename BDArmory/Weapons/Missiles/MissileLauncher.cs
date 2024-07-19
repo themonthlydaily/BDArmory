@@ -620,7 +620,7 @@ namespace BDArmory.Weapons.Missiles
                         if (existingGE || boostEmitters.Contains(pEmitter.Current))
                         {
                             if (existingGE) existingGE.emit = false;
-                                continue;
+                            continue;
                         }
 
                         if (pEmitter.Current.useWorldSpace)
@@ -863,7 +863,7 @@ namespace BDArmory.Weapons.Missiles
                 Fields["LoftMaxAltitude"].guiActiveEditor = true;
                 Fields["LoftRangeOverride"].guiActive = true;
                 Fields["LoftRangeOverride"].guiActiveEditor = true;
-                
+
 
                 if (!GameSettings.ADVANCED_TWEAKABLES)
                 {
@@ -2098,7 +2098,7 @@ namespace BDArmory.Weapons.Missiles
             yield return new WaitForSecondsFixed(cruiseDelay);
             if (cruiseRangeTrigger > 0)
                 yield return new WaitUntilFixed(checkCruiseRangeTrigger);
-                
+
             yield return StartCoroutine(CruiseRoutine());
         }
 
@@ -2223,7 +2223,7 @@ namespace BDArmory.Weapons.Missiles
                     //}
                     //else
                     //{
-                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, boosterFuelMass); // Impulse conservation code was showing issues
+                    burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, boosterFuelMass); // Impulse conservation code was showing issues
                     //}
                 }
 
@@ -2387,7 +2387,7 @@ namespace BDArmory.Weapons.Missiles
                     //}
                     //else
                     //{
-                        burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, massToBurn); // Other code was causing issues
+                    burnedFuelMass = Mathf.Min(burnedFuelMass + Throttle * burnRate, massToBurn); // Other code was causing issues
                     //}
                 }
 
@@ -2832,7 +2832,7 @@ namespace BDArmory.Weapons.Missiles
                     Vector3 tvNorm = targetVector.normalized;
                     float timeToImpact = BDAMath.SolveTime(targetVector.magnitude, guidance_thrust / part.mass, Vector3.Dot(relVel, tvNorm));
                     Vector3 lead = -timeToImpact * relVel;
-                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : Vector3.Dot(relVel, tvNorm) / relVel.magnitude;
+                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : relVel.sqrMagnitude > 0 ? Vector3.Dot(relVel, tvNorm) / relVel.magnitude : 1;
                     orbitalTarget = Vector3.Slerp(TargetPosition + lead, TargetPosition, t);
                 }
 
