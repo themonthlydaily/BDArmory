@@ -154,7 +154,6 @@ namespace BDArmory.Bullets
         static RaycastHit[] hits;
         static RaycastHit[] reverseHits;
         static Collider[] overlapSphereColliders;
-        static Collider[] proximityOverlapSphereColliders;
         static List<RaycastHit> allHits;
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
@@ -175,7 +174,6 @@ namespace BDArmory.Bullets
             if (hits == null) { hits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
             if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[1000]; }
-            if (proximityOverlapSphereColliders == null) { proximityOverlapSphereColliders = new Collider[100]; }
             if (allHits == null) { allHits = new List<RaycastHit>(); }
             if (rayLength == null) { rayLength = new Dictionary<Vessel, float>(); }
         }
@@ -392,7 +390,7 @@ namespace BDArmory.Bullets
                 bulletTrail[1].material.SetTextureOffset("_MainTex", new Vector2(-timeAlive / 3, 0));
                 if (fade <= 0.05f) bulletTrail[1].enabled = false;
             }
-            timeAlive += Time.fixedDeltaTime;
+            timeAlive += TimeWarp.fixedDeltaTime;
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
             {
@@ -434,7 +432,7 @@ namespace BDArmory.Bullets
 
             if (CheckBulletCollisions(TimeWarp.fixedDeltaTime)) return;
 
-            if (!hasRicocheted) MoveBullet(Time.fixedDeltaTime); // Ricochets perform movement internally.
+            if (!hasRicocheted) MoveBullet(TimeWarp.fixedDeltaTime); // Ricochets perform movement internally.
 
             if (BDArmorySettings.BULLET_WATER_DRAG)
             {
@@ -503,7 +501,7 @@ namespace BDArmory.Bullets
         /// This is now done using the second order symplectic leapfrog method.
         /// Note: water drag on bullets breaks the symplectic nature of the integrator (since it's modifying the Hamiltonian), which isn't accounted for during aiming.
         /// </summary>
-        /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
+        /// <param name="period">Period to consider, typically TimeWarp.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
             // Initial half-timestep velocity change (leapfrog integrator)
@@ -575,15 +573,15 @@ namespace BDArmory.Bullets
             hasRicocheted = false;
             CurrentPart = null;
             //penTicker = 0;
-            allHits.Clear();
-            rayLength.Clear();
 
             if (BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS)
             {
+                allHits.Clear();
+                rayLength.Clear();
                 CheckBulletCollisionWithVessels(period);
                 CheckBulletCollisionWithScenery(period);
-                using (var hitsEnu = allHits.OrderBy(x => x.distance).GetEnumerator()) // Check all hits in order of distance.
-                    while (hitsEnu.MoveNext()) if (BulletHitAnalysis(hitsEnu.Current, period)) return true;
+                using var hitsEnu = allHits.OrderBy(x => x.distance).GetEnumerator(); // Check all hits in order of distance.
+                while (hitsEnu.MoveNext()) if (BulletHitAnalysis(hitsEnu.Current, period)) return true;
                 return false;
             }
             else
@@ -694,7 +692,7 @@ namespace BDArmory.Bullets
                         hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
                         if (hitPart == null) continue;
                         if (hitPart.vessel == vessel) allHits.Add(hit.Current);
-                        if (!hitFound) hitFound = true;
+                        hitFound = true;
                     }
                 using (var hit = reverseHits.Take(reverseHitCount).AsEnumerable().GetEnumerator())
                     while (hit.MoveNext())
@@ -702,7 +700,7 @@ namespace BDArmory.Bullets
                         hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
                         if (hitPart == null) continue;
                         if (hitPart.vessel == vessel) allHits.Add(hit.Current);
-                        if (!hitFound) hitFound = true;
+                        hitFound = true;
                     }
                 if (hitFound) rayLength[vessel] = dist;
             }
@@ -712,7 +710,7 @@ namespace BDArmory.Bullets
         {
             float dist = period * currentVelocity.magnitude;
             bulletRay = new Ray(currentPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(currentPosition));
-            var layerMask = (int)(LayerMasks.Scenery);
+            var layerMask = (int)LayerMasks.Scenery;
 
             var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
             if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
@@ -741,7 +739,7 @@ namespace BDArmory.Bullets
         /// Check for bullet collision in the upcoming period. 
         /// This also performs a raycast in reverse to detect collisions from rays starting within an object.
         /// </summary>
-        /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
+        /// <param name="period">Period to consider, typically TimeWarp.fixedDeltaTime</param>
         /// <returns>true if a collision is detected, false otherwise.</returns>
         public bool CheckBulletCollision(float period)
         {
@@ -1279,9 +1277,7 @@ namespace BDArmory.Bullets
                             //impactVelocity = impactVelocity * adjustedPenRatio;
                             //currentVelocity = hitPartVelocity + impactVelocity;
                         }
-                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber,
-                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, "standard", null, 1f,
-                            -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
+                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, "standard", null, 1f, -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
                     }
                     else
                     {
@@ -1809,7 +1805,7 @@ namespace BDArmory.Bullets
             var tracerDirection = currentVelocity - ViewerVelocity;
             if (tracerLength == 0)
             {
-                linePositions[0] = currentPosition + tracerDeltaFactor * 0.45f * Time.fixedDeltaTime * tracerDirection;
+                linePositions[0] = currentPosition + tracerDeltaFactor * 0.45f * TimeWarp.fixedDeltaTime * tracerDirection;
             }
             else
             {
