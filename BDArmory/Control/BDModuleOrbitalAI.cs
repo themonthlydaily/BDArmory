@@ -602,18 +602,17 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Firing:
                     {
-                        // Aim at appropriate point to launch missiles that aren't able to launch now
-                        SetStatus("Firing Missiles");
+                        // Aim at appropriate point to fire guns/launch missiles
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
                         fc.lerpAttitude = false;
                         Vector3 firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
                         rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
-                        if (!BroadsideAttack && weaponManager.currentGun && GunReady(weaponManager.currentGun))
+                        if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
                             SetStatus("Firing Guns");
-                            firingSolution = weaponManager.currentGun.FiringSolutionVector ?? Vector3.zero;
+                            firingSolution = GunFiringSolution(weaponManager.currentGun);
                         }
                         else if (weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                         {
@@ -689,12 +688,12 @@ namespace BDArmory.Control
                             {
                                 fc.throttle = 0;
                                 fc.attitude = toTarget;
-                                if (BroadsideAttack)
+                                
+                                if (RecentFiringSolution(out Vector3 recentSolution)) // If we had a valid firing solution recently, use it to continue pointing toward target
+                                    fc.attitude = recentSolution;
+                                else if (BroadsideAttack)
                                     fc.attitude = BroadsideAttitude(vessel, targetVessel);
-                                else if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
-                                    fc.attitude = weaponManager.previousGun.FiringSolutionVector ?? fc.attitude;
-                                else if (lastFiringSolution != Vector3.zero)
-                                    fc.attitude = lastFiringSolution;
+
                                 if (currentRange < minRange)
                                     SetStatus("Maneuvering (Drift Away)");
                                 else
@@ -707,7 +706,7 @@ namespace BDArmory.Control
                     {
                         SetStatus("Stranded");
 
-                        fc.attitude = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
+                        fc.attitude = GunFiringSolution(weaponManager.previousGun);
                         fc.throttle = 0;
                     }
                     break;
@@ -1195,6 +1194,67 @@ namespace BDArmory.Control
                 return relVelSqrMag < firingSpeed * firingSpeed;
         }
 
+        private Vector3 GunFiringSolution(ModuleWeapon weapon)
+        {
+            // For fixed weapons, returns attitude that puts fixed weapon on target, even if not aligned with vesselTransform.up
+            // For turreted weapons, returns attitude toward target or broadside attitude depending on BroadsideAttack setting
+            
+            Vector3 firingSolution;
+            if (weapon != null && !weapon.turret)
+            {
+                Vector3 leadOffset = weapon.GetLeadOffset();
+                Vector3 target = targetVessel.CoM;
+                target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
+                                       // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                Vector3 weaponPosition = weapon.fireTransforms[0].position;
+                Vector3 weaponDirection = weapon.fireTransforms[0].forward;
+                if (weapon.part.symmetryCounterparts.Count > 0)
+                {
+                    foreach (var part in weapon.part.symmetryCounterparts)
+                    {
+                        weaponPosition += part.transform.position;
+                        weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                    }
+                    weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
+                    weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
+                }
+                target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
+                var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
+
+                debugString.AppendLine($"WeaponOffset ({targetVessel.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                firingSolution = (target - vessel.CoM).normalized;
+            }
+            else // Null weapon or firing turrets, just point in general direction
+            {
+                firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
+            }
+            return firingSolution;
+        }
+
+        private bool RecentFiringSolution(out Vector3 recentFiringSolution)
+        {
+            // Return true if a valid recent firing solution exists, if the solution exists, also return that value
+            bool validRecentSolution = false;
+
+            if (lastFiringSolution == Vector3.zero) // Throttle was used recently, no valid firing solution exists, even if previousGun != null
+            {
+                recentFiringSolution = Vector3.zero;
+            }
+            else if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
+            {
+                recentFiringSolution = GunFiringSolution(weaponManager.previousGun);
+                validRecentSolution = true;
+            }
+            else // (lastFiringSolution != Vector3.zero)
+            {
+                recentFiringSolution = lastFiringSolution;
+                validRecentSolution = true;
+            }
+
+            return validRecentSolution;
+        }
+
         private float KillVelocityTargetSpeed()
         {
             return Mathf.Clamp(maxAcceleration * 0.15f, firingSpeed / 5f, firingSpeed);
@@ -1471,10 +1531,21 @@ namespace BDArmory.Control
             Vector3 targetDirection = fc.attitude;
             Vector3 currentRoll = -vesselTransform.forward;
             Vector3 rollTarget = currentRoll;
+            debugRollTarget = Vector3.zero;
             if (targetVessel != null) // If we have a target, adjust roll orientation relative to target based on rollMode setting
             {
-                Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
-                if (Vector3.Dot(vesselTransform.up, toTarget) < 0.999) // Only roll if we are not directly facing target
+                // Determine toTarget direction for roll command
+                Vector3 toTarget;
+                if (currentStatusMode == StatusMode.Firing)
+                    toTarget = targetDirection;
+                else if (RecentFiringSolution(out Vector3 recentSolution)) // If we valid firing solution recently, use it to continue pointing toward target
+                    toTarget = recentSolution;
+                else
+                    toTarget = FromTo(vessel, targetVessel);
+                toTarget = toTarget.normalized;
+
+                // Determine roll target
+                if (Vector3.Dot(vesselTransform.up, toTarget) < 0.999) // Only roll if we are not aligned with target/firing solution
                 {
                     switch (rollMode)
                     {
@@ -1507,14 +1578,12 @@ namespace BDArmory.Control
                             rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
                             break;
                     }
-                }
-                debugRollTarget = rollTarget * 100f; ;
+                    debugRollTarget = rollTarget * 100f;
+                } 
             }
-            else
-                debugRollTarget = Vector3.zero;
 
             Vector3 localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
-            float rotationPerFrame = currentStatusMode == StatusMode.Firing ? 25f : 45f;
+            float rotationPerFrame = (currentStatusMode == StatusMode.Firing && Vector3.Dot(vesselTransform.up, targetDirection) > 0.94) ? 25f : 45f; // Reduce rotation rate if firing and within ~20 deg of target
             localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, rotationPerFrame * Mathf.Deg2Rad, 0);
 
             float pitchError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
