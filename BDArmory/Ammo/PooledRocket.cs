@@ -107,7 +107,6 @@ namespace BDArmory.Bullets
         public AudioSource audioSource;
 
         static RaycastHit[] hits = new RaycastHit[10];
-        static Collider[] proximityOverlapSphereColliders = new Collider[10];
         static Collider[] detonateOverlapSphereColliders = new Collider[10];
         static List<RaycastHit> allHits;
         static Collider[] overlapSphereColliders;
@@ -310,6 +309,11 @@ namespace BDArmory.Bullets
                 }
             }
 
+            if (ProximityAirDetonation()) // Proximity detection should happen before collision detection.
+            {
+                Detonate(currentPosition, false, airDetonation: true);
+                return;
+            }
             if (CheckCollisions()) return; // Collided and detonated.
 
             if (BDArmorySettings.BULLET_WATER_DRAG)
@@ -332,12 +336,9 @@ namespace BDArmory.Bullets
             if (Time.time - startTime > lifeTime)
             {
                 Detonate(currentPosition, true, airDetonation: true);
+                return;
             }
             if (beehive && Time.time - startTime >= timeToDetonation - 1)
-            {
-                Detonate(currentPosition, false, airDetonation: true);
-            }
-            if (ProximityAirDetonation())
             {
                 Detonate(currentPosition, false, airDetonation: true);
                 return;
@@ -392,7 +393,7 @@ namespace BDArmory.Bullets
                 //rb.AddRelativeForce(dragVector);
                 //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
             }
-            currentVelocity = rb.velocity + 0.5f * TimeWarp.fixedDeltaTime * currentAcceleration; // The rb.velocity is w/o offloading here, since rockets aren't vessels. Approximation to the velocity throughout the coming physics.
+            currentVelocity = rb.velocity + 0.5f * TimeWarp.fixedDeltaTime * currentAcceleration; // The rb.velocity is w/o offloading here, since rockets aren't vessels. Approximation to the average velocity throughout the coming physics.
         }
 
         /// <summary>
@@ -483,7 +484,7 @@ namespace BDArmory.Bullets
                     Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in CheckCollisionWithVessels: " + e.Message + "\n" + e.StackTrace);
                 }
             }
-            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - currentPosition).sqrMagnitude))
+            foreach (var vessel in nearbyVessels.OrderBy(v => (v.CoM - currentPosition).sqrMagnitude))
             {
                 CheckCollisionWithVessel(vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
             }
@@ -503,7 +504,7 @@ namespace BDArmory.Bullets
             {
                 if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
                 relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
-                if (Vector3.Dot(relativeVelocity, v.Current.transform.position - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                if (Vector3.Dot(relativeVelocity, v.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
                 relVelSqr = relativeVelocity.sqrMagnitude;
                 if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
             }
@@ -828,40 +829,47 @@ namespace BDArmory.Bullets
             }
 
             if (Time.time - startTime < armingTime) return false;
-
             if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
+            if (!flak) return false; // Invalid type.
 
-            if (flak)
+            using var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator();
+            while (loadedVessels.MoveNext())
             {
-                var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, detonationRange, proximityOverlapSphereColliders, layerMask);
-                if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
+                if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
+                if (loadedVessels.Current == sourceVessel) continue;
+                Vector3 relativeVelocity = loadedVessels.Current.Velocity() - currentVelocity;
+                float relativeSpeed = relativeVelocity.magnitude;
+                if (Vector3.Dot(relativeVelocity, loadedVessels.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(); // Detonate when the outermost part of the vessel is within the detonateRange.
+                float detRangeTime = TimeWarp.fixedDeltaTime + 2 * localDetonationRange / Mathf.Max(1f, relativeSpeed); // Time for this frame's movement plus the relative separation to change by twice the detonation range + the vessel's radius (within reason). This is more than the worst-case time needed for the rocket to reach the CPA (ignoring relative acceleration, technically we should be solving x=v*t+1/2*a*t^2 for t).
+                var timeToCPA = loadedVessels.Current.TimeToCPA(currentPosition, currentVelocity, currentAcceleration, detRangeTime);
+                if (timeToCPA > 0 && timeToCPA < detRangeTime) // Going to reach the CPA within the detRangeTime
                 {
-                    proximityOverlapSphereColliders = Physics.OverlapSphere(currentPosition, detonationRange, layerMask);
-                    overlapSphereColliderCount = proximityOverlapSphereColliders.Length;
-                }
-                using (var hitsEnu = proximityOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
-                {
-                    while (hitsEnu.MoveNext())
+                    Vector3 adjustedTgtPos = loadedVessels.Current.PredictPosition(timeToCPA);
+                    Vector3 CPA = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA);
+                    float minSepSqr = (CPA - adjustedTgtPos).sqrMagnitude;
+                    float localDetonationRangeSqr = localDetonationRange * localDetonationRange;
+                    if (minSepSqr < localDetonationRangeSqr)
                     {
-                        if (hitsEnu.Current == null) continue;
-                        try
+                        // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
+                        float correctionDistance = BDAMath.Sqrt(localDetonationRangeSqr - minSepSqr);
+                        if (Time.time - startTime > thrustTime)
                         {
-                            Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit == null || partHit.vessel == null) continue;
-                            if (partHit.vessel == sourceVessel) continue;
-                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                            var aName = sourceVesselName; //proxi detonated rocket scoring
-                            var tName = partHit.vessel.GetName();
-
-                            BDACompetitionMode.Instance.Scores.RegisterRocketHit(aName, tName, 1);
-
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                                Debug.Log($"[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = {detonationRange} | Part name = {partHit.name} on {partHit.vessel.vesselName}");
-                            return true;
+                            timeToCPA = Mathf.Max(0, timeToCPA - correctionDistance / relativeSpeed);
                         }
-                        catch (Exception e)
+                        else
                         {
-                            Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
+                            float acceleration = currentAcceleration.magnitude;
+                            relativeSpeed += timeToCPA * acceleration; // Get the relative speed at the CPA for the correction.
+                            float determinant = relativeSpeed * relativeSpeed - 2 * acceleration * correctionDistance;
+                            timeToCPA = determinant > 0 ? Mathf.Max(0, timeToCPA - (relativeSpeed - BDAMath.Sqrt(determinant)) / acceleration) : 0;
+                        }
+                        if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
+                        {
+                            currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledRocket]: Detonating proxy rocket with detonation range {detonationRange}m ({localDetonationRange}m) at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m ({timeToCPA}s) from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
+                            currentPosition -= timeToCPA * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
+                            return true;
                         }
                     }
                 }
