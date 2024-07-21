@@ -12,11 +12,12 @@
 		- If a fixed weapon is selected, AI will orient itself to fire the weapon, even if the weapon is not aligned with the forward direction of the craft.
 		- Add option to engage head-on or broadside (for use with turreted weapons).
 		- Add option to select broadside direction (only active when PID is enabled).
+		- AI is now able to use reverse engines for maneuvers provided the "Reverse Engines" option is enabled (enabled by default).
 		- Improved maneuvering behavior, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections when within combat range.
 		- AI will not engage vessels if doing so will put the AI in risk of de-orbiting.
 		- Fixed AI repeatedly jumping back and forth between orbit correction and other modes.
-		- AI now capable of avoiding collisions with other vessels, debris, and asteroids.
-		- AI now properly aims and fires unguided missiles in orbit.
+		- AI is now capable of avoiding collisions with other vessels, debris, and asteroids.
+		- AI is now properly aims and fires unguided missiles in orbit.
 		- AI will automatically move to closer intercept ranges if it is unable to lock missiles after 20s.
 - Armor / Hull:
 	- Revert invalid HullTypeNum values to that of Aluminium and log a warning.
