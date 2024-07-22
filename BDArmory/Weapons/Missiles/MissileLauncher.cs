@@ -2866,7 +2866,7 @@ namespace BDArmory.Weapons.Missiles
                     Vector3 tvNorm = targetVector.normalized;
                     float timeToImpact = BDAMath.SolveTime(targetVector.magnitude, guidance_thrust / part.mass, Vector3.Dot(relVel, tvNorm));
                     Vector3 lead = -timeToImpact * relVel;
-                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : Vector3.Dot(relVel, tvNorm) / relVel.magnitude;
+                    float t = (targetVessel && targetVessel.isMissile) ? Vector3.Dot(targetVector + lead, tvNorm) / (targetVector + lead).magnitude : relVel.sqrMagnitude > 0 ? Vector3.Dot(relVel, tvNorm) / relVel.magnitude : 1;
                     orbitalTarget = Vector3.Slerp(TargetPosition + lead, TargetPosition, t);
                 }
 
