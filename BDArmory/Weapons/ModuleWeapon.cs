@@ -398,6 +398,9 @@ namespace BDArmory.Weapons
         public Transform[] shellEjectTransforms;
 
         [KSPField]
+        public float shellEjectDelay = 0;
+
+        [KSPField]
         public Vector3 shellEjectVelocity = new(0, 0, 7);
 
         [KSPField]
@@ -3328,22 +3331,29 @@ namespace BDArmory.Weapons
             //shell ejection
             if (BDArmorySettings.EJECT_SHELLS)
             {
-                for (int i = 0; i < shellEjectTransforms.Length; i++)
+                for (int i = 0; i < shellEjectTransforms.Length; ++i)
                 {
                     if ((!useRippleFire || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
-                    {
-                        GameObject ejectedShell = shellPool.GetPooledObject();
-                        ejectedShell.transform.position = shellEjectTransforms[i].position;
-                        ejectedShell.transform.rotation = shellEjectTransforms[i].rotation;
-                        ejectedShell.transform.localScale = Vector3.one * shellScale;
-                        ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
-                        shellComponent.initialV = part.rb.velocity;
-                        shellComponent.configV = shellEjectVelocity;
-                        shellComponent.configD = shellEjectDeviation;
-                        ejectedShell.SetActive(true);
-                    }
+                        StartCoroutine(EjectShell(shellEjectDelay, i));
                 }
             }
+        }
+
+        IEnumerator EjectShell(float delay, int ejectTransformIndex)
+        {
+            if (delay > 0) yield return new WaitForSecondsFixed(delay);
+            if (part == null || part.rb == null) yield break;
+
+            GameObject ejectedShell = shellPool.GetPooledObject();
+            ejectedShell.transform.position = shellEjectTransforms[ejectTransformIndex].position;
+            ejectedShell.transform.rotation = shellEjectTransforms[ejectTransformIndex].rotation;
+            ejectedShell.transform.localScale = Vector3.one * shellScale;
+            ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
+            shellComponent.initialV = part.rb.velocity;
+            shellComponent.configV = shellEjectVelocity;
+            shellComponent.configD = shellEjectDeviation;
+            ejectedShell.SetActive(true);
+
         }
 
         private void CheckLoadedAmmo()
