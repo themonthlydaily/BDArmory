@@ -92,7 +92,8 @@ namespace BDArmory.FX
 
         public WarheadTypes warheadType;
 
-        static List<ValueTuple<float, float, float>> LoSIntermediateParts = new List<ValueTuple<float, float, float>>(); // Worker list for LoS checks to avoid reallocations.
+        static List<ValueTuple<float, float, float>> LoSIntermediateParts = []; // Worker list for LoS checks to avoid reallocations.
+        static HashSet<Part> _LoSIntermediateParts = []; // Hashset of unique parts in LoS.
 
         void Awake()
         {
@@ -552,6 +553,7 @@ namespace BDArmory.FX
             }
 
             LoSIntermediateParts.Clear();
+            _LoSIntermediateParts.Clear();
             var totalHitCount = CollateHits(ref lineOfSightHits, hitCount, ref reverseHits, reverseHitCount); // This is the most expensive part of this method and the cause of most of the slow-downs with explosions.
             float factor = 1.0f;
             for (int i = 0; i < totalHitCount; ++i)
@@ -625,8 +627,11 @@ namespace BDArmory.FX
                                 }
                             }
                         }
-                        if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
-                            LoSIntermediateParts.Add(new ValueTuple<float, float, float>(hit.distance, partHP, partArmour));
+                        if (partHP > 0 && !_LoSIntermediateParts.Contains(partHit)) // Ignore parts that are already dead but not yet removed from the game or have already been added.
+                        {
+                            LoSIntermediateParts.Add((hit.distance, partHP, partArmour));
+                            _LoSIntermediateParts.Add(partHit);
+                        }
                     }
                 }
             }
@@ -851,8 +856,8 @@ namespace BDArmory.FX
                     var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
                     var cumulativeArmorOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
                     var damageWithoutIntermediateParts = blastInfo.Damage;
-
-                    blastInfo.Damage = Mathf.Max(0f, blastInfo.Damage - 0.5f * cumulativeHPOfIntermediateParts - cumulativeArmorOfIntermediateParts);
+                    var dmgModifier = PartExtensions.ExplosiveDamageModifier(ExplosionSource, dmgMult); // Scale the HP and Armour by the appropriate modifier for how the damage will be applied.
+                    blastInfo.Damage = dmgModifier > 0f ? Mathf.Max(0f, blastInfo.Damage - (0.5f * cumulativeHPOfIntermediateParts + cumulativeArmorOfIntermediateParts) / dmgModifier) : 0f;
 
                     if (CASEClamp > 0)
                     {
@@ -870,11 +875,7 @@ namespace BDArmory.FX
                     {
                         if (BDArmorySettings.DEBUG_DAMAGE)
                         {
-                            Debug.Log(
-                            $"[BDArmory.ExplosionFX]: Executing blast event Part: [{part.name}], VelocityChange: [{blastInfo.VelocityChange}], Distance: [{realDistance}]," +
-                            $" TotalPressure: [{blastInfo.TotalPressure}], Damage: [{blastInfo.Damage}] (reduced from {damageWithoutIntermediateParts} by {eventToExecute.IntermediateParts.Count} parts)," +
-                            $" EffectiveArea: [{blastInfo.EffectivePartArea}], Positive Phase duration: [{blastInfo.PositivePhaseDuration}]," +
-                            $" Vessel mass: [{Math.Round(vesselMass * 1000f)}], TimeIndex: [{TimeIndex}], TimePlanned: [{eventToExecute.TimeToImpact}], NegativePressure: [{eventToExecute.IsNegativePressure}]");
+                            Debug.Log($"[BDArmory.ExplosionFX]: Executing blast event Part: [{part.name}], VelocityChange: [{blastInfo.VelocityChange}], Distance: [{realDistance}], TotalPressure: [{blastInfo.TotalPressure}], Damage: [{blastInfo.Damage * dmgModifier}] (reduced from {damageWithoutIntermediateParts * dmgModifier} by {eventToExecute.IntermediateParts.Count} parts) (modifier: {dmgModifier}), EffectiveArea: [{blastInfo.EffectivePartArea}], Positive Phase duration: [{blastInfo.PositivePhaseDuration}], Vessel mass: [{Math.Round(vesselMass * 1000f)}], TimeIndex: [{TimeIndex}], TimePlanned: [{eventToExecute.TimeToImpact}], NegativePressure: [{eventToExecute.IsNegativePressure}]");
                         }
 
                         // Add Reverse Negative Event
@@ -1301,7 +1302,7 @@ namespace BDArmory.FX
                 else // It's a blank or null pool entry, set things up.
                 {
                     _intermediateParts = intermediatePartsPool.GetPooledObject();
-                    if (_intermediateParts.value is null) _intermediateParts.value = new List<(float, float, float)>();
+                    if (_intermediateParts.value is null) _intermediateParts.value = [];
                     _intermediateParts.value.Clear();
                     return _intermediateParts.value;
                 }
@@ -1323,7 +1324,7 @@ namespace BDArmory.FX
             if (_intermediateParts.value is null) return;
             _intermediateParts.value.Clear();
         }
-        static ObjectPoolNonUnity<List<(float, float, float)>> intermediatePartsPool = new ObjectPoolNonUnity<System.Collections.Generic.List<(float, float, float)>>(); // Pool the IntermediateParts lists to avoid GC alloc.
+        static ObjectPoolNonUnity<List<(float, float, float)>> intermediatePartsPool = new(); // Pool the IntermediateParts lists to avoid GC alloc.
     }
 
 
