@@ -11,6 +11,7 @@ namespace BDArmory.FX
         public Vector3 initialV;
         public Vector3 configV;
         public float configD;
+        public float lifeTime = 2;
 
         Vector3 velocity;
         Vector3 angularVelocity;
@@ -36,7 +37,7 @@ namespace BDArmory.FX
         void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy) return;
-            if (Time.time - startTime > 2)
+            if (Time.time - startTime > lifeTime)
             {
                 gameObject.SetActive(false);
                 return;

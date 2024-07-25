@@ -38,7 +38,7 @@
 		- Orbital guidance missiles now have drag applied to them in atmosphere.
 		- Add targetCoM configuration option for IR missiles. If set to true, the missile will target the center of mass instead of the hottest part.
 		- Fix missiles with no targeting type (i.e. AIR-2) not firing within engage range.
-	- Shell ejection direction, variability (deviation) and delay now customisable in the weapon config.
+	- Shell ejection direction, variability (deviation), delay and life-time now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
 - Spawning:
 	- Allow specifying the reference heading for the first craft for circular spawning (loses precision within 1° of the poles).

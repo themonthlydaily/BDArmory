@@ -401,6 +401,9 @@ namespace BDArmory.Weapons
         public float shellEjectDelay = 0;
 
         [KSPField]
+        public float shellEjectLifeTime = 2;
+
+        [KSPField]
         public Vector3 shellEjectVelocity = new(0, 0, 7);
 
         [KSPField]
@@ -3352,6 +3355,7 @@ namespace BDArmory.Weapons
             shellComponent.initialV = part.rb.velocity;
             shellComponent.configV = shellEjectVelocity;
             shellComponent.configD = shellEjectDeviation;
+            shellComponent.lifeTime = shellEjectLifeTime;
             ejectedShell.SetActive(true);
 
         }
