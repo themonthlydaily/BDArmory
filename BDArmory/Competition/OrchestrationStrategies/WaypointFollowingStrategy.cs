@@ -254,7 +254,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
             GameObject newWayPoint = WaypointPools[ModelPath].GetPooledObject();
             Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(position, FlightGlobals.currentMainBody);
-            Quaternion rotation = Quaternion.LookRotation(newWayPoint.transform.up, VectorUtils.GetUpDirection(WorldCoords)); //this needed, so the model is aligned to the ground normal, not the body transform orientation
+            Quaternion rotation = Quaternion.LookRotation(direction, VectorUtils.GetUpDirection(WorldCoords)); //this needed, so the model is aligned to the ground normal, not the body transform orientation
 
 
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
