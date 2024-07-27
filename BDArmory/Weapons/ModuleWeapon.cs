@@ -504,9 +504,6 @@ namespace BDArmory.Weapons
         [KSPField]
         public float baseBulletVelocity = -1; //vel of primary ammo type for mixed belts
 
-        [KSPField]
-        public float ECPerShot = 0; //EC to use per shot for weapons like railguns
-
         public int ProjectileCount = 1;
 
         public bool SabotRound = false;
@@ -563,6 +560,15 @@ namespace BDArmory.Weapons
 
         [KSPField]
         public float requestResourceAmount = 1; //amount of resource/ammo to deplete per shot
+
+        [KSPField]
+        public string secondaryAmmoName = "ElectricCharge"; //resource usage
+
+        [KSPField]
+        public float ECPerShot = 0; //EC to use per shot for weapons like railguns - DEPRECATED
+
+        [KSPField]
+        public float secondaryAmmoPerShot = 0; //EC to use per shot for weapons like railguns
 
         [KSPField]
         public float shellScale = 0.66f; //scale of shell to eject
@@ -1426,7 +1432,19 @@ namespace BDArmory.Weapons
                     AmmoID = AmmoDef.id;
                 else
                     Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {ammoName} not found!");
-                ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id; // This should always be found.
+
+                var SecAmmoDef = PartResourceLibrary.Instance.GetDefinition(secondaryAmmoName);
+                if (SecAmmoDef != null)
+                    ECID = SecAmmoDef.id;
+                else               
+                    Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {secondaryAmmoName} not found!");
+
+                if (ECPerShot != 0)
+                {
+                    Debug.LogWarning($"[BDArmory.ModuleWeapon]: Weapon part {part.name} is using deprecated 'ecPerShot' attribute. Please update the config to use 'secondaryAmmoPerShot' instead.");
+                    secondaryAmmoPerShot = ECPerShot;
+                }
+
                 //laser setup
                 if (eWeaponType == WeaponTypes.Laser)
                 {
@@ -2572,17 +2590,19 @@ private float S6R5dynamicRecoil;
                                             float EMPDamage = 0;
                                             if (!pulseLaser)
                                             {
-                                                EMPDamage = ECPerShot / 500;
+                                                //EMPDamage = secondaryAmmoPerShot / 500;
+                                                EMPDamage = laserDamage * TimeWarp.fixedDeltaTime;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             else
                                             {
-                                                EMPDamage = ECPerShot / 10;
+                                                //EMPDamage = secondaryAmmoPerShot / 10;
+                                                EMPDamage = laserDamage;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             emp.softEMP = true;
                                             damage = EMPDamage;
-                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {(pulseLaser ? (ECPerShot / 20) : (ECPerShot / 1000))}");
+                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                         }
                                         else
                                         {
@@ -3178,21 +3198,21 @@ private float S6R5dynamicRecoil;
         {
             if (!hasGunner)
             {
-                ScreenMessages.PostScreenMessage("Weapon Requires Gunner", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(StringUtils.Localize("#autoLOC_211097"), 5.0f, ScreenMessageStyle.UPPER_CENTER); // #autoLOC_211097 = No crew on part!
                 return false;
             }
             if (BDArmorySettings.INFINITE_AMMO) return true;
-            if (ECPerShot != 0)
+            if (secondaryAmmoPerShot != 0)
             {
                 vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
-                if (EcCurrent > ECPerShot * 0.95f || CheatOptions.InfiniteElectricity)
+                if (EcCurrent > secondaryAmmoPerShot * 0.95f || CheatOptions.InfiniteElectricity)
                 {
-                    part.RequestResource(ECID, ECPerShot, ResourceFlowMode.ALL_VESSEL);
-                    if (requestResourceAmount == 0) return true; //weapon only uses ECperShot (electrolasers, mainly)
+                    part.RequestResource(ECID, secondaryAmmoPerShot, ResourceFlowMode.ALL_VESSEL);
+                    if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
                 }
                 else
                 {
-                    if (part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    if (part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(secondaryAmmoName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     return false;
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
@@ -6030,13 +6050,13 @@ private float S6R5dynamicRecoil;
                 {
                     if (pulseLaser)
                     {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 10), 2)}/shot");
+                        output.AppendLine($"Electrolaser EMP damage: {laserDamage}/shot");
                     }
                     else
                     {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 500), 2)}/s");
+                        output.AppendLine($"Electrolaser EMP damage: {laserDamage}/s");
                     }
-                    output.AppendLine($"Power Required: {ECPerShot * (pulseLaser ? roundsPerMinute / 60 : 50)}/s");
+                    output.AppendLine($"Power Required: {secondaryAmmoPerShot * (pulseLaser ? roundsPerMinute / 60 : 50)}/s");
                 }
                 else
                 {
@@ -6046,15 +6066,15 @@ private float S6R5dynamicRecoil;
                         output.AppendLine($"-Laser takes: {LaserGrowTime} seconds to reach max power");
                         output.AppendLine($"-Maximum output: {laserMaxDamage} damage");
                     }
-                    if (ECPerShot > 0)
+                    if (secondaryAmmoPerShot > 0)
                     {
                         if (pulseLaser)
                         {
-                            output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
+                            output.AppendLine($"{secondaryAmmoName} required per shot: {secondaryAmmoPerShot}");
                         }
                         else
                         {
-                            output.AppendLine($"Electric Charge: {ECPerShot}/s");
+                            output.AppendLine($"{secondaryAmmoName}: {secondaryAmmoPerShot}/s");
                         }
                     }
                     if (requestResourceAmount > 0)
@@ -6088,9 +6108,9 @@ private float S6R5dynamicRecoil;
                 if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} second" + (SpoolUpTime > 1 ? "s" : "") + " to come to max RPM");
                 output.AppendLine();
                 output.AppendLine($"Ammunition: {ammoName}");
-                if (ECPerShot > 0)
+                if (secondaryAmmoPerShot > 0)
                 {
-                    output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
+                    output.AppendLine($"{secondaryAmmoName} required per shot: {secondaryAmmoPerShot}");
                 }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
                 if (minSafeDistance > 0)
