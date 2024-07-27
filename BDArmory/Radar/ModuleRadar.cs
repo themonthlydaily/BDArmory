@@ -46,6 +46,11 @@ namespace BDArmory.Radar
         [KSPField]
         public double resourceDrain = 0.825;        //resource (EC/sec) usage of active radar
 
+        [KSPField] 
+        public string resourceName = "ElectricCharge";
+
+        private int resourceID;
+
         [KSPField]
         public bool omnidirectional = true;			//false=boresight only
 
@@ -302,6 +307,11 @@ namespace BDArmory.Radar
         void UpdateToggleGuiName()
         {
             Events["Toggle"].guiName = radarEnabled ? StringUtils.Localize("#autoLOC_bda_1000000") : StringUtils.Localize("#autoLOC_bda_1000001");		// #autoLOC_bda_1000000 = Disable Radar		// #autoLOC_bda_1000001 = Enable Radar
+        }
+
+        void Start()
+        {
+            resourceID = PartResourceLibrary.Instance.GetDefinition(resourceName).id;
         }
 
         public void EnsureVesselRadarData()
@@ -1206,12 +1216,13 @@ namespace BDArmory.Radar
             }
 
             double drainAmount = resourceDrain * TimeWarp.fixedDeltaTime;
-            double chargeAvailable = part.RequestResource("ElectricCharge", drainAmount, ResourceFlowMode.ALL_VESSEL);
+            double chargeAvailable = part.RequestResource(resourceID, drainAmount, ResourceFlowMode.ALL_VESSEL);
             if (chargeAvailable < drainAmount * 0.95f)
             {
-                ScreenMessages.PostScreenMessage(StringUtils.Localize("#autoLOC_bda_1000016"), 5.0f, ScreenMessageStyle.UPPER_CENTER);		// #autoLOC_bda_1000016 = Radar Requires EC
+                ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(resourceName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);		// [part Title] Requires [localized resource name]
                 DisableRadar();
             }
         }
-    }
+    }// = Requires:
+
 }
