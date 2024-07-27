@@ -6,6 +6,7 @@
 	- Updated Chinese localisation thanks to user Marv1n-M.
 	- Propagate new localisation strings to non-English localisation files. Seach for commented out entries with value "???".
 	- Fix the alignment indicator not showing for dual-mode APS turrets.
+	- Waypoints / Waypoint Course builder can now set gate models on a per-gate basis, using models stored in /BDArmory/Models/WayPoint/
 - AI / WM:
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
@@ -16,15 +17,29 @@
 		- AI now capable of avoiding collisions with other vessels, debris, and asteroids.
 		- AI now properly aims and fires unguided missiles in orbit.
 		- AI will automatically move to closer intercept ranges if it is unable to lock missiles after 20s.
+	- Improvements to VTOL AI:
+		- VTOL AI given secondary speed controller; VTOL AI will now throttle engines set to 'independent thrust' for horizontal speed control independently of primary engines being used for lift/powered hover.
+	- AI will no longer ignore max missiles per target when using multimissile launchers for missile interception.
 - Armor / Hull:
 	- Revert invalid HullTypeNum values to that of Aluminium and log a warning.
 - Competition:
 	- Fix GM culling based on HP remaining to use percentage remaining instead of the raw part count.
 	- Add an option to average duplicates in the tournament parser.
 	- Fix incorrect parsing of unicode chars in the tournament parser for "wins".
+	- Fix GM_KILL_HP culling low partcount craft that are below the partcount threshold, but not the HP remaining percent.
+- Detectors:
+	- Radars/IRSTs now have a 'resourceName' field to set what resource they use.
+	- Fixes datalink from allied craft with sonar not displaying sonar contacts on non-splashed receiving craft.
+	- FLIR ball/Camera pod now have different niches; Camera pod is now longer ranged, FLIR ball has faster camera traverse.
 - Game Modes:
 	- Added g-force limits game mode for part failure and Kerbal GLOC (note: the pilot AI's g-limiter still doesn't work well).
+	- Subsystem Battle Daamge to turrets/generators above 50% HP now reduces performance instead of disabling them.
+	- Waypoints mode now works with ground spawned caft.
 - Weapons:
+	- 'ecPerShot' deprecated, weapons now use 'secondaryAmmoPerShot' for controlling EC/secondary resource usage for things like railguns, etc.
+	- Adds new 'secondaryAmmoName' field (default ElectricCharge), weapons that used ammo + ElectricCharge (railguns, etc) no longer required to use EC as the secondary ammo.
+	- Electrolaser EMP damage per shot/sec now set by 'laserDamage' isntead of ecPerShot amount.
+	- Fix Burst Length Override softlocking the weapon after the first burst.
 	- Missiles:
 		- Missile parts can be configured without a warhead and will be considered kinetic energy weapons. Upon impact, they will apply their kinetic energy as damage to the target.
 		- Change missile drop time increment from 0.5s to 0.1s.
@@ -38,6 +53,11 @@
 		- Orbital guidance missiles now have drag applied to them in atmosphere.
 		- Add targetCoM configuration option for IR missiles. If set to true, the missile will target the center of mass instead of the hottest part.
 		- Fix missiles with no targeting type (i.e. AIR-2) not firing within engage range.
+		- Fix IR missiles occasionally suddenly switching lock to allied craft behind them.
+		- Adds new ModuleMissileMagazine, MultiMissileLauncher reloadable rails and missile pods can now resupply from external missile magazine parts.
+		- Fix edge-case issue where firing radar missiles would get soft-locked if trying to switch to a radar lock that didn't exist.
+		- Fix missile exhaust plume FX scaling.
+		- Fix missile softlock issue if AI tries to fire a GPS missile at a target further than the targeting camera's max range.
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
 - Spawning:
