@@ -2113,6 +2113,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             yield return wait;
                                         }
                                     }
+                                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                                 }
                                 yield return wait;
 
@@ -2230,6 +2232,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
 
                             yield return wait;
@@ -2273,6 +2277,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         while (tgp.MoveNext())
                                         {
                                             if (tgp.Current == null) continue;
+                                            if (tgp.Current.maxRayDistance * tgp.Current.maxRayDistance < (tgp.Current.cameraParentTransform.position - targetVessel.CoM).sqrMagnitude) continue; //target further than max camera range (def ~15.5km)
                                             tgp.Current.EnableCamera();
                                             tgp.Current.CoMLock = true;
                                             yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM, targetVessel));
@@ -2350,6 +2355,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
                             yield return wait;
                             if (vessel && targetVessel)
@@ -2410,6 +2417,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
 
                             yield return wait;
@@ -2483,6 +2492,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
                             yield return wait;
                             //Debug.Log($"[GMR_Debug] waiting... laspoint: {laserPointDetected}; foundCam: {foundCam != null}; targetVessel: {targetVessel != null}");
@@ -2567,6 +2578,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             yield return wait;
                                         }
                                     }
+                                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                                 }
                                 yield return wait;
 
@@ -2690,6 +2703,9 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 {
                     if (SetCargoBays())
                         yield return new WaitForSecondsFixed(2f);
+                    MissileLauncher mlauncher = CurrentMissile as MissileLauncher;
+                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                 }
                 if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > targetToleranceSqr) //Was blastRadius, but these are precision guided munitions. Let's use a little precision here
                || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > targetToleranceSqr))))
@@ -7114,7 +7130,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
-                Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");
+                Debug.Log($"[BDArmory.MissileData]: firing missile at {(targetVessel != null ? currentTarget.Vessel.GetName() : "null target")}");
         }
 
         #endregion Targeting
@@ -7777,18 +7793,35 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 {
                     if (missile.Current == null) continue;
                     if (!missile.Current.engageMissile) continue;
-                    if (missile.Current.HasFired || missile.Current.launched) continue;
                     MissileLauncher ml = missile.Current as MissileLauncher;
-                    if (ml && ml.multiLauncher && ml.multiLauncher.turret)
-                    {
-                        if (ml.multiLauncher.missileSpawner.ammoCount == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
-                        if (!ml.multiLauncher.turret.turretEnabled)
-                        ml.multiLauncher.turret.EnableTurret(missile.Current);
-                        missileCount += Mathf.CeilToInt(ml.multiLauncher.missileSpawner.ammoCount / ml.multiLauncher.salvoSize);
-                    }
+                    if (missile.Current.HasFired || missile.Current.launched) continue;
+                    if (ml && ml.multiLauncher)
+                        {
+                            if (ml.multiLauncher.missileSpawner.railAmmo == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
+                            if (ml.reloadRoutine != null) continue;
+                            if (ml.multiLauncher.turret && !ml.multiLauncher.turret.turretEnabled)
+                                ml.multiLauncher.turret.EnableTurret(missile.Current);
+                            missileCount += Mathf.CeilToInt(BDArmorySettings.INFINITE_ORDINANCE ? ml.multiLauncher.salvoSize : ml.multiLauncher.missileSpawner.railAmmo / ml.multiLauncher.salvoSize);
+                        }
                     else missileCount++;
-                    interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
-                    if (interceptiontarget != null && !PDMslTgts.Contains(interceptiontarget)) PDMslTgts.Add(interceptiontarget);
+                }
+                if (missileCount > 0)
+                {
+                    missileCount = (int)Mathf.Min(missileCount, maxMissilesOnTarget * multiMissileTgtNum);
+                    for(int m = 0; m < missileCount; m++)
+                    {
+                        interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
+                        if (interceptiontarget != null)
+                        { 
+                            if (missilesAway.ContainsKey(interceptiontarget))
+                            {
+                                missilesAway.TryGetValue(interceptiontarget, out int mslsAway);
+                                if (mslsAway < maxMissilesOnTarget)
+                                    PDMslTgts.Add(interceptiontarget);
+                            }
+                            else PDMslTgts.Add(interceptiontarget);
+                        }
+                    }
                 }
             }
 
@@ -7936,9 +7969,9 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             weapon.Current.autofireShotCount = 0;
                         }
                     }
-            if (guardMode && missileCount > 0 && PDMslTgts.Count > 0 && !guardFiringMissile)
+            if (guardMode && missileCount > 0 && PDMslTgts.Count > 0 && !guardFiringMissile) //have this stop the moment PDMslTgts.Count missiles are fired if missileCount > MstTgts.count?
             {
-                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] PDMslTgt size: {PDMslTgts.Count}; missile count: {missileCount}");
+                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] PDMslTgt size: {PDMslTgts.Count}; missile count: {missileCount}, current MissileID: {MissileID}");
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
                     {
@@ -7948,10 +7981,16 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (currMissile == null) continue;
                         if (!currMissile.engageMissile) continue;
                         if (currMissile.HasFired || currMissile.launched) continue;
-                        if (MissileID >= PDMslTgts.Count) MissileID = 0;
+                        if (MissileID >= PDMslTgts.Count)
+                        {
+                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] fired on all incoming missiles, but has remaining interceptors");
+                            //if (maxMissilesOnTarget == 1) break; //if every missile has been fired on, hold fire
+                            //else 
+                                MissileID = 0; //else loop list around for firing additional missiles against already fired on targets, up to MaxMissilesperTarget setting.
+                        }
 
                         float targetDist = Vector3.Distance(currMissile.MissileReferenceTransform.position, PDMslTgts[MissileID].Vessel.CoM);
-                        if (PDMslTgts[MissileID].Vessel != null && targetDist > currMissile.engageRangeMax) MissileID = 0;
+                        if (PDMslTgts[MissileID].Vessel != null && targetDist > currMissile.engageRangeMax) MissileID = 0; //targeted missile out of range? try closest target missile
                         if (PDMslTgts[MissileID].Vessel != null)
                         {
                             if (targetDist < currMissile.engageRangeMin) continue;
@@ -8030,7 +8069,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             {
                                 missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
                                 interceptorsAway = missiles;
-                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
+                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
                             }
                             if (interceptorsAway < maxMissilesOnTarget)
                             {
@@ -8039,6 +8078,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 {
                                     missileTarget = PDMslTgts[MissileID].Vessel;
                                     StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
+                                    Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Firing missile at {PDMslTgts[MissileID].Vessel.GetName()}: MissileID{MissileID}");
+                                    MissileID++;
                                     break;
                                     //GuardMissileRoutine only runs a single instance, so no point having this continue iterating through subsequent missiles, if available,
                                     //unless GMR changed to permit multiple simultanenous copies of the coroutine running near simultaneously.
@@ -8046,31 +8087,28 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             else //else try remaining targets
                             {
-                                using (List<TargetInfo>.Enumerator item = PDMslTgts.GetEnumerator())
-                                    while (item.MoveNext())
+                                for(int TgtMsl = MissileID; TgtMsl < PDMslTgts.Count - 1; TgtMsl++)
+                                {
+                                    interceptorsAway = 0;
+                                    if (missilesAway.ContainsKey(PDMslTgts[TgtMsl]))
                                     {
-                                        if (item.Current.Vessel == null) continue;
-                                        if (item.Current == PDMslTgts[MissileID]) continue;
-                                        interceptorsAway = 0;
-                                        if (missilesAway.ContainsKey(item.Current))
+                                        missilesAway.TryGetValue(PDMslTgts[TgtMsl], out int missiles);
+                                        interceptorsAway = missiles;
+                                        Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against secondary target {PDMslTgts[TgtMsl].Vessel.GetName()}: {interceptorsAway}");
+                                    }
+                                    if (interceptorsAway < maxMissilesOnTarget)      
+                                    {
+                                        if (PDMslTgts[TgtMsl].Vessel.Splashed && !torpedo) viableTarget = false;
+                                        if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[TgtMsl].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[TgtMsl].Vessel, this, currMissile))
                                         {
-                                            missilesAway.TryGetValue(item.Current, out int missiles);
-                                            interceptorsAway = missiles;
-                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
-                                        }
-                                        if (item.Current.Vessel.Splashed && !torpedo) viableTarget = false;
-                                        if (interceptorsAway < maxMissilesOnTarget)
-                                        {
-                                            if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
-                                            {
-                                                missileTarget = item.Current.Vessel;
-                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
-                                                StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
-                                                break;
-                                            }
+                                            missileTarget = PDMslTgts[TgtMsl].Vessel;
+                                            StartCoroutine(GuardMissileRoutine(PDMslTgts[TgtMsl].Vessel, currMissile));
+                                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Firing missile at secondary Target {PDMslTgts[TgtMsl].Vessel.GetName()}: MissileID{TgtMsl}");
+                                            MissileID++;
+                                            break;
                                         }
                                     }
-                                if (missileTarget != null) break;
+                                }
                             }
                             MissileID++;
                         }
