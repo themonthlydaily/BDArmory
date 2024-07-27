@@ -772,7 +772,7 @@ namespace BDArmory.Control
                 Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
                 Vector3 toIntercept = Intercept(relPos, relVel);
                 float distanceToIntercept = toIntercept.magnitude;
-                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.Velocity(), targetVessel.perturbation);
+                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.GetObtVelocity(), targetVessel.perturbation, (float)vessel.orbit.period / 4f); // Avoid checking too far ahead (in case of multiple intercepts)
                 float cpaDistSqr = AIUtils.PredictPosition(relPos, relVel, relAccel, timeToIntercept).sqrMagnitude;
                 float interceptRangeMargin = Mathf.Min(interceptRanges.z * (1f + interceptMargin + (useReverseThrust ? 0.25f : 0f)), interceptRanges.y); // Extra margin when reverse thrusting since still facing target
                 if (cpaDistSqr < weaponManager.gunRange * weaponManager.gunRange) // Gun range intercept, balance between throttle actions and intercept accuracy
@@ -1004,7 +1004,7 @@ namespace BDArmory.Control
             {
                 if (evasiveTimer < minEvasionTime)
                 {
-                    threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
+                    threatRelativePosition = vessel.GetObtVelocity().normalized + vesselTransform.right;
                     if (weaponManager)
                     {
                         if (weaponManager.underFire)
