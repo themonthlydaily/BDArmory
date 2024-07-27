@@ -2326,18 +2326,9 @@ namespace BDArmory.Control
                         Vector3 leadOffset = weapon.GetLeadOffset();
                         target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
                                                // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
-                        Vector3 weaponPosition = weapon.fireTransforms[0].position;
-                        Vector3 weaponDirection = weapon.fireTransforms[0].forward;
-                        if (weapon.part.symmetryCounterparts.Count > 0)
-                        {
-                            foreach (var part in weapon.part.symmetryCounterparts)
-                            {
-                                weaponPosition += part.transform.position;
-                                weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
-                            }
-                            weaponPosition /= 1 + weapon.part.symmetryCounterparts.Count;
-                            weaponDirection /= 1 + weapon.part.symmetryCounterparts.Count;
-                        }
+                        Vector3 weaponPosition = weapon.offsetWeaponPosition + vessel.ReferenceTransform.position;
+                        Vector3 weaponDirection = vessel.ReferenceTransform.TransformDirection(weapon.offsetWeaponDirection);
+
                         target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
                         var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
 
