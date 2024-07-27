@@ -1179,6 +1179,7 @@ namespace BDArmory.Weapons.Missiles
                     //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
                     multiLauncher.Team = Team;
                     if (reloadableRail && reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
+                    launched = true;
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
                 }
                 else //isClusterMissile
@@ -1386,7 +1387,7 @@ namespace BDArmory.Weapons.Missiles
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
             GetMissileCount();
-            if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
+            if (reloadableRail.railAmmo < 0 && reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
             {
                 if (!(reloadRoutine != null))
                 {
@@ -1476,6 +1477,7 @@ namespace BDArmory.Weapons.Missiles
 
         public IEnumerator MissileReload()
         {
+            reloadableRail.loadOrdinance(multiLauncher ? multiLauncher.launchTubes : 1);
             yield return new WaitForSecondsFixed(reloadableRail.reloadTime);
             launched = false;
             part.partTransform.localScale = origScale;
@@ -1630,7 +1632,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 if (OldInfAmmo != BDArmorySettings.INFINITE_ORDINANCE)
                 {
-                    if (reloadableRail.ammoCount < 1 && BDArmorySettings.INFINITE_ORDINANCE)
+                    if (reloadableRail.railAmmo < 1 && BDArmorySettings.INFINITE_ORDINANCE)
                     {
                         if (!(reloadRoutine != null))
                         {
