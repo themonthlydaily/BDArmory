@@ -248,6 +248,9 @@ namespace BDArmory.Settings
 					GameModes.MutatorInfo.SetupGunGame();
 					break;
 			}
+
+			// Update NumericInputFields for spawn values.
+			if (VesselSpawnerWindow.Instance != null && (overrides.ContainsKey("VESSEL_SPAWN_ALTITUDE") || overrides.ContainsKey("VESSEL_SPAWN_GEOCOORDS"))) VesselSpawnerWindow.Instance.RefreshSpawnFieldsFromSettings();
 		}
 
 		/// <summary>
