@@ -7,6 +7,8 @@
 	- Propagate new localisation strings to non-English localisation files. Seach for commented out entries with value "???".
 	- Fix the alignment indicator not showing for dual-mode APS turrets.
 	- Waypoints / Waypoint Course builder can now set gate models on a per-gate basis, using models stored in /BDArmory/Models/WayPoint/
+	- BDA Utilities Tool Lift to Weight readout split into Dry and Wet mass LTW scores.
+		- Can set what resources are considered part of drymass for Dry LtW calculations via new Drymass Resources button.
 - AI / WM:
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
@@ -31,6 +33,7 @@
 	- Radars/IRSTs now have a 'resourceName' field to set what resource they use.
 	- Fixes datalink from allied craft with sonar not displaying sonar contacts on non-splashed receiving craft.
 	- FLIR ball/Camera pod now have different niches; Camera pod is now longer ranged, FLIR ball has faster camera traverse.
+	- Added radarChaffClutterFactor (default 1) field to radars, to permit setting how effective chaff is against the radar, see TWS radar .cfg for more details.
 - Game Modes:
 	- Added g-force limits game mode for part failure and Kerbal GLOC (note: the pilot AI's g-limiter still doesn't work well).
 	- Subsystem Battle Daamge to turrets/generators above 50% HP now reduces performance instead of disabling them.

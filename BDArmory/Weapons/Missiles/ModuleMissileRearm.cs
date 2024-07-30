@@ -118,6 +118,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                                 mmr.Current.magazineAmmo--; //syncronize magazine count across all launchers using that ammo
                             }
                     }
+                    //if we need to implement using a Resource (Aircraft Carrier Accessories resupply of landed craft...?) have an invisible resource with a density of 1kg/unit,
+                    //and assign a transfer value = current missile's partmass, and resource maxAmount = missilemagazine max munition quantity?
                 }
             }
         }
