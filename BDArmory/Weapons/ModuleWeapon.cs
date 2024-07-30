@@ -3205,7 +3205,7 @@ private float S6R5dynamicRecoil;
             if (secondaryAmmoPerShot != 0)
             {
                 vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
-                if (EcCurrent > secondaryAmmoPerShot * 0.95f || CheatOptions.InfiniteElectricity)
+                if (EcCurrent > 0) //secondaryAmmoPerShot * 0.95f || CheatOptions.InfiniteElectricity)
                 {
                     part.RequestResource(ECID, secondaryAmmoPerShot, ResourceFlowMode.ALL_VESSEL);
                     if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
@@ -3223,7 +3223,7 @@ private float S6R5dynamicRecoil;
             {
                 if (externalAmmo)
                 {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
+                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STACK_PRIORITY_SEARCH) > 0)
                     {
                         return true;
                     }
@@ -5192,7 +5192,7 @@ private float S6R5dynamicRecoil;
                 {
                     TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData;
                     targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
-                    targetPosition = targetData.predictedPosition;
+                    targetPosition = targetData.predictedPositionWithChaffFactor(weaponManager.vesselRadarData.lockedTargetData.detectedByRadar.radarChaffClutterFactor);
                     targetRadius = 35f;
                     targetAcceleration = targetData.acceleration;
                     targetIsLandedOrSplashed = false;
