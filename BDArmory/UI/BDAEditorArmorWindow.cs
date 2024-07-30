@@ -41,14 +41,19 @@ namespace BDArmory.UI
         private float totalLift;
         private float totalLiftArea;
         private float totalLiftStackRatio;
-        private float wingLoading;
-        private float WLRatio;
+        private float wingLoadingWet;
+        private float wingLoadingDry;
+        private float WLRatioWet;
+        private float WLRatioDry;
+        private List<PartResourceDefinition> vesselResources;
+        private List<int> vesselResourceIDs;
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
         private bool SetThickness = false;
         private string selectedArmor = "None";
         private bool ArmorStats = false;
+        private bool resourcePick = false;
         private float ArmorDensity = 0;
         private float ArmorStrength = 200;
         private float ArmorHardness = 300;
@@ -102,6 +107,8 @@ namespace BDArmory.UI
             {
                 {"Thickness", gameObject.AddComponent<NumericInputField>().Initialise(0, 10, 0, 1500) }, // FIXME should use maxThickness instead of 1500 here.
             };
+            vesselResourceIDs = new List<int>();
+            vesselResources = new List<PartResourceDefinition>();
             GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
             /*
             var modifiedCaliber = (15) + (15) * (2f * 0.15f * 0.15f);
@@ -143,12 +150,25 @@ namespace BDArmory.UI
             hullBoxText = new GUIContent();
             hullBoxText.text = StringUtils.Localize("#LOC_BDArmory_Armor_HullType");
         }
+
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
             if (data is null) return;
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
+            vesselResources.Clear();
+                using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        foreach (PartResource res in part.Current.Resources)
+                        {
+                            if (!vesselResources.Contains(res.info))
+                            {
+                                vesselResources.Add(res.info);
+                            }
+                        }
+                    }
         }
 
         private bool delayedRefreshVisuals = false;
@@ -427,7 +447,11 @@ namespace BDArmory.UI
             {
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift")}: {totalLift:0.00} ({totalLiftArea:F3} m2)", style);
                 line++;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}: {wingLoading:0.0} ({WLRatio:F3} kg/m2)", style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}:", style);
+                line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"   - {StringUtils.Localize("#autoLOC_6001895")}: {wingLoadingWet:0.0} ({WLRatioWet:F2} kg/m2)", style);
+                line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"   - {StringUtils.Localize("#autoLOC_6001896")}: {wingLoadingDry:0.0} ({WLRatioDry:F2} kg/m2)", style);
                 line++;
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorLiftStacking")}: {totalLiftStackRatio:0%}", style);
                 line++;
@@ -489,6 +513,35 @@ namespace BDArmory.UI
                     CalculateArmorMass();
                 }
                 line += 0.5f;
+                resourcePick = GUI.Toggle(new Rect(10, (line++ + armorLines) * lineHeight, 280, lineHeight), resourcePick, StringUtils.Localize("Drymass Resources"), resourcePick ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                if (resourcePick)
+                {
+                    int pos = 0;
+                    line++;
+                    using (var res = vesselResources.GetEnumerator())
+                        while (res.MoveNext())
+                        {
+                            if (res.Current.density == 0) continue; //don't show massless resouces for drymass blacklist
+                            if (res.Current.name.Contains("Intake")) continue; //don't include intake air, since that will always be present                            
+                            int resID = PartResourceLibrary.Instance.GetDefinition(res.Current.name).id;
+                            if (GUI.Button(new Rect(10 + (pos % 2) * (280) / 2f, (line + (int)(pos / 2)) * lineHeight, (280) / 2f, lineHeight), $"{res.Current.displayName}", vesselResourceIDs.Contains(resID) ? BDArmorySetup.BDGuiSkin.button :BDArmorySetup.BDGuiSkin.box))
+                            {
+                                if (!vesselResourceIDs.Contains(resID))
+                                {
+                                    vesselResourceIDs.Add(resID);
+                                }
+                                else
+                                {
+                                    vesselResourceIDs.Remove(resID);
+                                }
+                                CalculateTotalLift();
+                            }
+                            pos++;
+                        }
+                    line += (int)pos/2;
+                }
+                line += 0.5f;
+
                 if (GameSettings.ADVANCED_TWEAKABLES)
                 {
                     ArmorStats = GUI.Toggle(new Rect(10, (line + armorLines) * lineHeight, 280, lineHeight), ArmorStats, StringUtils.Localize("#LOC_BDArmory_ArmorStats"), ArmorStats ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
@@ -681,10 +734,19 @@ namespace BDArmory.UI
                         totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
+            wingLoadingWet = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
             totalLiftArea = totalLift * 3.52f;
-            WLRatio = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
-
+            WLRatioWet = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
+            float dMass = 0;
+            dMass = EditorLogic.fetch.ship.GetTotalMass();
+            using (var res = vesselResourceIDs.GetEnumerator())
+                while (res.MoveNext())
+                {
+                    EditorLogic.fetch.ship.GetConnectedResourceTotals(res.Current, true, out double fuelCurrent, out double fuelmax);
+                    dMass -= ((float)fuelCurrent * PartResourceLibrary.Instance.GetDefinition(res.Current).density); 
+                }
+            wingLoadingDry = totalLift / dMass;
+            WLRatioDry = (dMass * 1000) / totalLiftArea;
             CalculateTotalLiftStacking();
         }
 
