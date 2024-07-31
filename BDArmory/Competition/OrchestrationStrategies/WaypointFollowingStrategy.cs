@@ -71,6 +71,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Stop any currently active competition.
             BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset a bunch of stuff related to competitions so they don't interfere.
             BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES, "", CompetitionType.WAYPOINTS);
+            if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
+            { foreach (var pilot in pilots) pilot.MaintainFuelLevelsUntilWaypoint(); }
             yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionStarting);
             yield return new WaitWhile(() => BDACompetitionMode.Instance.pinataAlive);
             PrepareCompetition();
@@ -91,9 +93,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     kerbal.part.ShieldedFromAirstream = true;
                 }
             }
-
-            if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
-            { foreach (var pilot in pilots) pilot.MaintainFuelLevelsUntilWaypoint(); }
 
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();

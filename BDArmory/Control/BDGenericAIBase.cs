@@ -675,7 +675,8 @@ namespace BDArmory.Control
         {
             if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
             if (active) maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsCoroutine());
-            CheatOptions.InfinitePropellant = active || BDArmorySettings.INFINITE_FUEL; // Also set the cheat so that it syncs with the cheat options.
+            //CheatOptions.InfinitePropellant = active;
+            //BDArmorySettings.INFINITE_FUEL = active; // Also set the cheat so that it syncs with the cheat options.
         }
         /// <summary>
         /// Prevent fuel drain (coroutine).
