@@ -122,6 +122,7 @@ namespace BDArmory.Bullets
         public float bulletMass;
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
+        public float guidanceDPS = 0;
         public bool sabot = false;
         private float HERatio = 0.06f;
         public float ballisticCoefficient;
@@ -145,6 +146,8 @@ namespace BDArmory.Bullets
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
+        public Vessel targetVessel;
+        float atmosphereDensity;
         public int penTicker = 0;
 
         Ray bulletRay;
@@ -506,8 +509,20 @@ namespace BDArmory.Bullets
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
+            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); //moving this here so it's not getting called 2x a tick in LeapFrogVelocityHalfStep
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
+
+            if (targetVessel != null && atmosphereDensity > 0.05f)
+            {
+                if (penTicker == 0) // && Vector3.Dot((targetVessel.CoM - currentPosition).normalized, currentVelocity.normalized) < 0) //don't circle around if it misses, or after it hits something
+                {
+                    if (Vector3.Angle(currentVelocity, targetVessel.CoM) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient);
+                    //apply some drag to projectile if it's turning. Will mess up initial CPA aim calculations, true; on the other hand, its a guided homing bullet.                                                                                                                                                                                                                
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, ((targetVessel.CoM + targetVessel.Velocity() * (Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity)) - currentPosition).normalized, guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
+                }
+                //still doing tailchase homing; work out better leading?              
+            }
 
             // Full-timestep position change (leapfrog integrator)
             currentPosition += period * currentVelocity; //move bullet
@@ -546,7 +561,7 @@ namespace BDArmory.Bullets
                 currentVelocity += period * FlightGlobals.getGeeForceAtPosition(currentPosition);
             if (underwater)
             {
-                UpdateDragEstimate(); //update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drop.
+                UpdateDragEstimate(); // Update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drag.
                 currentVelocity *= dragVelocityFactor; // Note: If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 currentSpeed = currentVelocity.magnitude;
                 timeElapsedSinceCurrentSpeedWasAdjusted = 0;
@@ -559,7 +574,7 @@ namespace BDArmory.Bullets
         /// <returns></returns>
         Vector3 GetDragAdjustedVelocity()
         {
-            UpdateDragEstimate();
+            UpdateDragEstimate(); 
             if (timeElapsedSinceCurrentSpeedWasAdjusted > 0)
             {
                 return currentVelocity * dragVelocityFactor;
@@ -1279,8 +1294,8 @@ namespace BDArmory.Bullets
                             //impactVelocity = impactVelocity * adjustedPenRatio;
                             //currentVelocity = hitPartVelocity + impactVelocity;
                         }
-                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber, 
-                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, ExplosionFx.WarheadTypes.Standard, null, 1f, 
+                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber,
+                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, ExplosionFx.WarheadTypes.Standard, null, 1f,
                             -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
                     }
                     else
@@ -1485,7 +1500,7 @@ namespace BDArmory.Bullets
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                     pBullet.timeToLiveUntil = Mathf.Max(sBullet.projectileTTL, detonationRange / pBullet.bulletVelocity * 1.1f) + Time.time;
                     //Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                    Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle; 
+                    Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
                     pBullet.currentVelocity = firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
@@ -1680,7 +1695,7 @@ namespace BDArmory.Bullets
             if (underwater)
                 atmDensity = 1030f; // Sea water (3% salt) has a density of 1030kg/m^3 at 4°C at sea level. https://en.wikipedia.org/wiki/Density#Various_materials
             else
-                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
+                atmDensity = atmosphereDensity;
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
 
