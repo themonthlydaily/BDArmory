@@ -206,6 +206,7 @@ namespace BDArmory.Radar
                     if (displayedTargets[i].vessel == desiredTarget)
                     {
                         data = displayedTargets[i].targetData;
+                        data.lockedByRadar = displayedTargets[i].detectedByRadar;
                         return data;
                     }
                 }
@@ -223,6 +224,7 @@ namespace BDArmory.Radar
             if (targetMagnitude > 0)
             {
                 data = displayedTargets[brightestTarget].targetData;
+                data.lockedByRadar = displayedTargets[brightestTarget].detectedByRadar;
                 return data;
             }
             else
@@ -664,10 +666,13 @@ namespace BDArmory.Radar
             weaponManager.slavingTurrets = true;
             if (!locked) return;
             TargetSignatureData lockedTarget = lockedTargetData.targetData;
-            weaponManager.slavedPosition = lockedTarget.predictedPosition;
+            weaponManager.slavedPosition = lockedTarget.predictedPositionWithChaffFactor(lockedTargetData.detectedByRadar.radarChaffClutterFactor);
             weaponManager.slavedVelocity = lockedTarget.velocity;
             weaponManager.slavedAcceleration = lockedTarget.acceleration;
             weaponManager.slavedTarget = lockedTarget;
+            //This is only slaving turrets if there's a radar lock on the WM's guardTarget
+            //no radar-guided gunnery for scan radars?
+            //what about multiple turret multitarget tracking?
         }
 
         private void Update()
@@ -1750,6 +1755,7 @@ namespace BDArmory.Radar
             rData.detectedByRadar = radar;
             rData.locked = _locked;
             rData.targetData = contactData;
+            contactData.lockedByRadar = radar;
             rData.pingPosition = UpdatedPingPosition(contactData.position, radar);
 
             if (_locked)
