@@ -335,8 +335,8 @@ namespace BDArmory.UI
                                 for (int wp = 0; wp < wpCourse.waypoints.Count; wp++)
                                 {
                                     if (!string.IsNullOrEmpty(wpCourse.waypoints[wp].model))
-                                        SelectedModel = "BDArmory/Models/WayPoint/" + wpCourse.waypoints[wp].model;
-                                    else SelectedModel = "BDArmory/Models/WayPoint/Ring";
+                                        SelectedModel = wpCourse.waypoints[wp].model;
+                                    else SelectedModel = "Ring";
                                     float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(wpCourse.waypoints[wp].location.x, wpCourse.waypoints[wp].location.y);
                                     Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(wpCourse.waypoints[wp].location.x, wpCourse.waypoints[wp].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? wpCourse.waypoints[wp].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE) + terrainAltitude), FlightGlobals.currentMainBody);
                                     var direction = (WorldCoords - previousLocation).normalized;
@@ -534,25 +534,25 @@ namespace BDArmory.UI
                 rects = SRight3Rects(++line);
                 if (GUI.RepeatButton(SFieldButtonRect(line, 1), "<", BDArmorySetup.BDGuiSkin.button))
                 {
-                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - (movementIncrement / 10)); //having lat/long increase by 1 per frame while the button is held is going to cause gates to go *flying* across the continent
+                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - (movementIncrement / 100)); //having lat/long increase by 1 per frame while the button is held is going to cause gates to go *flying* across the continent
                     if (spawnFields["lat"].currentValue < -90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + 180);
                 }
                 spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8, spawnFields["lat"].style));
                 if (GUI.RepeatButton(SFieldButtonRect(line, 7), ">", BDArmorySetup.BDGuiSkin.button))
                 {
-                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + (movementIncrement / 10));
+                    spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue + (movementIncrement / 100));
                     if (spawnFields["lat"].currentValue > 90) spawnFields["lat"].SetCurrentValue(spawnFields["lat"].currentValue - 180);
                 }
 
                 if (GUI.RepeatButton(SFieldButtonRect(line, 8.5f), "<", BDArmorySetup.BDGuiSkin.button))
                 {
-                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - (movementIncrement / 10));
+                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - (movementIncrement / 100));
                     if (spawnFields["lon"].currentValue < -180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + 360);
                 }
                 spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8, spawnFields["lon"].style));
                 if (GUI.RepeatButton(SFieldButtonRect(line, 14.5f), ">", BDArmorySetup.BDGuiSkin.button))
                 {
-                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + (movementIncrement / 10));
+                    spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue + (movementIncrement / 100));
                     if (spawnFields["lon"].currentValue > 180) spawnFields["lon"].SetCurrentValue(spawnFields["lon"].currentValue - 360);
                 }
 
@@ -633,6 +633,7 @@ namespace BDArmory.UI
                         currGate.scale = (float)spawnFields["diameter"].currentValue;
                         currGate.maxSpeed = (float)spawnFields["speed"].currentValue;
                         //WaypointField.Save(); //instead have a separate button and do saving manually?
+                        currGate.model = SelectedModel;
                         loadedGates[selected_gate_index].UpdateWaypoint(currGate, selected_gate_index, WaypointCourses.CourseLocations[selected_index].waypoints);
                         //SnapCameraToGate(false);
                     }
@@ -700,8 +701,8 @@ spawnFields["alt"].currentValue != BDArmorySettings.VESSEL_SPAWN_ALTITUDE)
             }
             //WaypointField.Save();
             if (!string.IsNullOrEmpty(SelectedModel))
-                SelectedModel = "BDArmory/Models/WayPoint/" + SelectedModel;
-            else SelectedModel = "BDArmory/Models/WayPoint/Ring";
+                if (string.IsNullOrEmpty(SelectedModel))
+                    SelectedModel = "Ring";
 
             Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.y, (BDArmorySettings.WAYPOINTS_ALTITUDE == 0 ? WaypointCourses.CourseLocations[selected_index].waypoints[wp].location.z : BDArmorySettings.WAYPOINTS_ALTITUDE)), FlightGlobals.currentMainBody);
             Vector3d previousLocation = FlightGlobals.ActiveVessel.transform.position;
