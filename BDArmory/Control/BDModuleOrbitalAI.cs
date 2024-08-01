@@ -50,6 +50,10 @@ namespace BDArmory.Control
         private bool hasEC;
         private float maxAcceleration;
         private float maxThrust;
+        private float reverseForwardThrustRatio = 0f;
+        private List<ModuleEngines> forwardEngines = new List<ModuleEngines>();
+        private List<ModuleEngines> reverseEngines = new List<ModuleEngines>();
+        private bool currentForwardThrust;
         private Vector3 maxAngularAcceleration;
         private float maxAngularAccelerationMag;
         private Vector3 availableTorque;
@@ -90,7 +94,7 @@ namespace BDArmory.Control
         }
 
         // User parameters changed via UI.
-
+        #region PID
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_OrbitalPIDActive"),//PID active mode
             UI_ChooseOption(options = new string[3] { "Inactive", "Firing", "Everything" })]
         public string pidMode = "Firing";
@@ -110,23 +114,36 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SteerDamping"),//Steer Damping
             UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float steerDamping = 5;
+        #endregion
 
+        #region Combat
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_MinEngagementRange"),//Min engagement range
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float MinEngagementRange = 100;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_BroadsideAttack"),//Attack vector
+            UI_Toggle(enabledText = "#LOC_BDArmory_AI_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_AI_BroadsideAttack_disabledText")]//Broadside--Bow
+        public bool BroadsideAttack = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_RollMode"),// Preferred roll direction of ship towards target
             UI_ChooseOption(options = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" })]
         public string rollTowards = "Port_Starboard";
         public readonly string[] rollTowardsModes = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" };
-
         public RollModeTypes rollMode
             => (RollModeTypes)Enum.Parse(typeof(RollModeTypes), rollTowards);
+        #endregion
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ManeuverRCS"),//RCS active
+        #region Control
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ManeuverRCS"),//Use RCS for all maneuvering
             UI_Toggle(enabledText = "#LOC_BDArmory_AI_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_AI_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
         public bool ManeuverRCS = false;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ReverseEngines"),//Use reverse engines
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool ReverseThrust = true;
+        #endregion
+
+        #region Speeds
         [KSPField(isPersistant = true,
             guiActive = true,
             guiActiveEditor = true,
@@ -163,6 +180,7 @@ namespace BDArmory.Control
                 scene = UI_Scene.All
             )]
         public float firingAngularVelocityLimit = 10f;
+        #endregion
 
         #region Evade
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_MinEvasionTime", advancedTweakable = true, // Min Evasion Time
@@ -311,6 +329,7 @@ namespace BDArmory.Control
                 fc.throttleLerpRate = 3;
             }
             fc.Activate();
+            UpdateEngineLists(true); // Update engine list, turn off reverse engines if active
         }
 
         public override void DeactivatePilot()
@@ -350,6 +369,7 @@ namespace BDArmory.Control
 
             if (!BDArmorySettings.DEBUG_LINES) return;
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, PIDActive ? debugTargetPosition : fc.attitude * 1000, 5, Color.red); // The point we're asked to turn to
+            if (fc.thrustDirection != fc.attitude) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.thrustDirection * 100, 5, Color.yellow); // Thrust direction
             if (PIDActive) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugTargetDirection, 5, Color.green); // The direction PID control will actually turn to
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVector * 100, 5, Color.cyan); // RCS command
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.magenta); // RCS lerped command
@@ -439,6 +459,7 @@ namespace BDArmory.Control
         {
             upDir = vessel.up;
             UpdateBody();
+            UpdateEngineLists();
             CalculateAngularAcceleration();
             maxAcceleration = GetMaxAcceleration(vessel);
             fc.alignmentToleranceforBurn = 7.5f;
@@ -446,6 +467,8 @@ namespace BDArmory.Control
                 lastFiringSolution = Vector3.zero; // Forget prior firing solution if we recently used engines
             fc.throttle = 0;
             fc.lerpThrottle = true;
+            fc.useReverseThrust = false;
+            fc.thrustDirection = Vector3.zero;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
             maneuverStateChanged = false;
         }
@@ -453,8 +476,7 @@ namespace BDArmory.Control
         void Maneuver()
         {
             Vector3 rcsVector = Vector3.zero;
-            
-            
+
             switch (currentStatusMode)
             {
                 case StatusMode.AvoidingCollision:
@@ -551,7 +573,7 @@ namespace BDArmory.Control
                                 // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
                                 SetStatus("Correcting Orbit (Falling inside atmo)");
                                 ongoingOrbitCorrectionDueTo = OrbitCorrectionReason.FallingInsideAtmosphere;
-                                
+
                                 fc.attitude = o.Radial(UT);
                                 fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise.
                                 fc.throttle = 1;
@@ -598,18 +620,17 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Firing:
                     {
-                        // Aim at appropriate point to launch missiles that aren't able to launch now
-                        SetStatus("Firing Missiles");
+                        // Aim at appropriate point to fire guns/launch missiles
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
                         fc.lerpAttitude = false;
-                        Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
+                        Vector3 firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
                         rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                         if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
                             SetStatus("Firing Guns");
-                            firingSolution = weaponManager.currentGun.FiringSolutionVector ?? Vector3.zero;
+                            firingSolution = GunFiringSolution(weaponManager.currentGun);
                         }
                         else if (weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                         {
@@ -628,9 +649,9 @@ namespace BDArmory.Control
                 case StatusMode.Maneuvering:
                     {
                         Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
-                        
+
                         TimeSpan t = TimeSpan.FromSeconds(timeToCPA);
-                        timeToCPAString = string.Format((t.Hours > 0 ? "{0:D2}h:" : "") + (t.Minutes > 0 ? "{1:D2}m:" : "") + "{2:D2}s",t.Hours,t.Minutes,t.Seconds);
+                        timeToCPAString = string.Format((t.Hours > 0 ? "{0:D2}h:" : "") + (t.Minutes > 0 ? "{1:D2}m:" : "") + "{2:D2}s", t.Hours, t.Minutes, t.Seconds);
 
                         float minRange = interceptRanges.x;
                         float maxRange = interceptRanges.y;
@@ -650,19 +671,30 @@ namespace BDArmory.Control
                             SetStatus("Maneuvering (Away)");
                             fc.throttle = 1;
                             fc.alignmentToleranceforBurn = 135;
-                            fc.attitude = -toTarget;
-                            fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
+                            fc.thrustDirection = -toTarget;
+                            if (UseForwardThrust(fc.thrustDirection))
+                                fc.attitude = -toTarget;
+                            else
+                                fc.attitude = toTarget;
+                            fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.thrustDirection) < ManeuverSpeed ? 1 : 0;
                         }
                         else if (hasPropulsion && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f) || killVelOngoing)) // Approaching intercept point, kill velocity
                             KillVelocity(true);
                         else if (hasPropulsion && interceptOngoing || (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : interceptMargin))) // Too far away, intercept target
                             InterceptTarget();
-                        else if (currentRange > interceptRange && OnIntercept(0.25f))
+                        else if (currentRange > interceptRange && OnIntercept(interceptMargin))
                         {
                             fc.throttle = 0;
-                            
+                            fc.thrustDirection = -toTarget;
                             if (ApproachingIntercept(3f))
-                                fc.attitude = -toTarget;
+                            {
+                                Vector3 killVel = (relVel + targetVessel.perturbation).normalized;
+                                fc.thrustDirection = killVel;
+                                if (UseForwardThrust(fc.thrustDirection))
+                                    fc.attitude = killVel;
+                                else
+                                    fc.attitude = -killVel;
+                            }
                             else
                                 fc.attitude = toTarget;
                             SetStatus($"Maneuvering (On Intercept), {timeToCPAString}");
@@ -685,10 +717,12 @@ namespace BDArmory.Control
                             {
                                 fc.throttle = 0;
                                 fc.attitude = toTarget;
-                                if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
-                                    fc.attitude = weaponManager.previousGun.FiringSolutionVector ?? fc.attitude;
-                                else if (lastFiringSolution != Vector3.zero)
-                                    fc.attitude = lastFiringSolution;
+
+                                if (RecentFiringSolution(out Vector3 recentSolution)) // If we had a valid firing solution recently, use it to continue pointing toward target
+                                    fc.attitude = recentSolution;
+                                else if (BroadsideAttack)
+                                    fc.attitude = BroadsideAttitude(vessel, targetVessel);
+
                                 if (currentRange < minRange)
                                     SetStatus("Maneuvering (Drift Away)");
                                 else
@@ -701,7 +735,7 @@ namespace BDArmory.Control
                     {
                         SetStatus("Stranded");
 
-                        fc.attitude = FromTo(vessel, targetVessel).normalized;
+                        fc.attitude = GunFiringSolution(weaponManager.previousGun);
                         fc.throttle = 0;
                     }
                     break;
@@ -717,27 +751,33 @@ namespace BDArmory.Control
                     }
                     break;
             }
+            AlignEnginesWithThrust();
             UpdateRCSVector(rcsVector);
             UpdateBurnAlignmentTolerance();
         }
 
         void KillVelocity(bool onIntercept = false)
         {
+            // Slow down to KillVelocityTargetSpeed(). If on an intercept to within gun range, try to slow down as late as possible
+            // Otherwise, keep burning until at target speed
+
+            Vector3 relPos = targetVessel.CoM - vessel.CoM;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             float targetSpeed = KillVelocityTargetSpeed();
             bool maintainThrottle = (relVel.sqrMagnitude > targetSpeed * targetSpeed);
+            fc.thrustDirection = (relVel + targetVessel.perturbation).normalized;
+            bool useReverseThrust = !UseForwardThrust(fc.thrustDirection) && (Vector3.Dot(relPos, relVel) < 0f);
             if (onIntercept)
             {
-                Vector3 relPos = targetVessel.CoM - vessel.CoM;
                 Vector3 relAccel = targetVessel.perturbation - vessel.perturbation;
                 Vector3 toIntercept = Intercept(relPos, relVel);
                 float distanceToIntercept = toIntercept.magnitude;
-                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.Velocity(), targetVessel.perturbation);
+                float timeToIntercept = vessel.TimeToCPA(toIntercept, targetVessel.GetObtVelocity(), targetVessel.perturbation, (float)vessel.orbit.period / 4f); // Avoid checking too far ahead (in case of multiple intercepts)
                 float cpaDistSqr = AIUtils.PredictPosition(relPos, relVel, relAccel, timeToIntercept).sqrMagnitude;
-
+                float interceptRangeMargin = Mathf.Min(interceptRanges.z * (1f + interceptMargin + (useReverseThrust ? 0.25f : 0f)), interceptRanges.y); // Extra margin when reverse thrusting since still facing target
                 if (cpaDistSqr < weaponManager.gunRange * weaponManager.gunRange) // Gun range intercept, balance between throttle actions and intercept accuracy
-                    maintainThrottle = relPos.sqrMagnitude < ((1f + interceptMargin) * (1f + interceptMargin) * interceptRanges.z * interceptRanges.z) || // Within intercept range margin
-                        (timeToIntercept == 0f) || // Moving away from target
+                    maintainThrottle = relPos.sqrMagnitude < (interceptRangeMargin * interceptRangeMargin) || // Within intercept range margin
+                        (maintainThrottle && Vector3.Dot(relPos, relVel) > 0f) || // Moving away from target faster than target speed, timeToIntecept == 0 does not always work here because it's possible we are on an orbit with two intersection points
                         ApproachingIntercept(); // Stopping distance > distance to target
                 //else missile range intercept, exact positioning matters less
 
@@ -748,7 +788,10 @@ namespace BDArmory.Control
                 SetStatus($"Maneuvering (Kill Velocity)");
             }
 
-            fc.attitude = (relVel + targetVessel.perturbation).normalized;
+            if (useReverseThrust) // Use reverse thrust if possible and we are closing to target
+                fc.attitude = -fc.thrustDirection;
+            else
+                fc.attitude = fc.thrustDirection;
             fc.throttle = maintainThrottle ? 1f : 0f;
             fc.alignmentToleranceforBurn = 45f;
         }
@@ -771,8 +814,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine($"Current Status: {currentStatus}");
-                debugString.AppendLine($"Has Propulsion: {hasPropulsion}");
-                debugString.AppendLine($"Has Weapons: {hasWeapons}");
+                debugString.AppendLine($"Propulsion:{hasPropulsion}; RCS:{hasRCS}; EC:{hasEC}; Weapons:{hasWeapons}");
                 if (targetVessel)
                 {
                     debugString.AppendLine($"Target Vessel: {targetVessel.GetDisplayName()}");
@@ -782,8 +824,8 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Time to CPA: {timeToCPA:G3}");
                     debugString.AppendLine($"Distance to CPA: {distToCPA:G3}");
                     debugString.AppendLine($"Stopping Distance: {stoppingDist:G3}");
-                    debugString.AppendLine($"Apoapsis: {vessel.orbit.ApA/1000:G2}km / {vessel.orbit.timeToAp:G2}s");
-                    debugString.AppendLine($"Periapsis: {vessel.orbit.PeA/1000:G2}km / {vessel.orbit.timeToPe:G2}s");
+                    debugString.AppendLine($"Apoapsis: {vessel.orbit.ApA / 1000:G2}km / {vessel.orbit.timeToAp:G2}s");
+                    debugString.AppendLine($"Periapsis: {vessel.orbit.PeA / 1000:G2}km / {vessel.orbit.timeToPe:G2}s");
                     debugString.AppendLine($"Missile Launch Fail Timer: {missileTryLaunchTime:G2}s");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
@@ -794,8 +836,11 @@ namespace BDArmory.Control
         void UpdateStatus()
         {
             // Update propulsion and weapon status
-            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
-            hasPropulsion = hasRCS || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
+            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout);
+            hasPropulsion = hasRCS || 
+                VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational)) ||
+                VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
+                (ReverseThrust && (forwardEngines.Count + reverseEngines.Count > 0));
             vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
             hasEC = EcCurrent > 0 || CheatOptions.InfiniteElectricity;
             hasWeapons = (weaponManager != null) && weaponManager.HasWeaponsAndAmmo();
@@ -959,7 +1004,7 @@ namespace BDArmory.Control
             {
                 if (evasiveTimer < minEvasionTime)
                 {
-                    threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
+                    threatRelativePosition = vessel.GetObtVelocity().normalized + vesselTransform.right;
                     if (weaponManager)
                     {
                         if (weaponManager.underFire)
@@ -1039,23 +1084,25 @@ namespace BDArmory.Control
             return canIntercept;
         }
 
-        public float BurnTime(float deltaV, float totalConsumption)
+        public float BurnTime(float deltaV, float totalConsumption, bool useReverseThrust)
         {
+            float thrust = maxThrust * ((useReverseThrust && currentForwardThrust) ? reverseForwardThrustRatio : 1f);
             if (totalConsumption == 0f)
-                return ((float)vessel.totalMass * deltaV / GetMaxThrust(vessel));
+                return ((float)vessel.totalMass * deltaV / thrust);
             else
             {
-                float isp = GetMaxThrust(vessel) / totalConsumption;
+                float isp = thrust / totalConsumption;
                 return ((float)vessel.totalMass * (1.0f - 1.0f / Mathf.Exp(deltaV / isp)) / totalConsumption);
             }
         }
 
-        public float StoppingDistance(float speed)
+        public float StoppingDistance(float speed, bool useReverseThrust)
         {
-            float consumptionRate = GetConsumptionRate(vessel);
-            float time = BurnTime(speed, consumptionRate);
-            float jerk = (float)(maxThrust / (vessel.totalMass - consumptionRate)) - maxAcceleration;
-            return speed * time + 0.5f * -maxAcceleration * time * time + 1 / 6 * -jerk * time * time * time;
+            float consumptionRate = GetConsumptionRate(useReverseThrust);
+            float time = BurnTime(speed, consumptionRate, useReverseThrust);
+            float f = ((useReverseThrust && currentForwardThrust) ? reverseForwardThrustRatio : 1f);
+            float jerk = (float)(f * maxThrust / (vessel.totalMass - consumptionRate)) - f * maxAcceleration;
+            return speed * time + 0.5f * -(f * maxAcceleration) * time * time + 1 / 6 * -jerk * time * time * time;
         }
 
         private bool ApproachingIntercept(float margin = 0.0f)
@@ -1064,11 +1111,13 @@ namespace BDArmory.Control
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             if (Vector3.Dot(relVel, relPos.normalized) > -10f)
                 return false;
-            float angleToRotate = Vector3.Angle(vessel.ReferenceTransform.up, relVel) * Mathf.Deg2Rad * 0.75f;
+            Vector3 toIntercept = Intercept(relPos, relVel);
+            bool useReverseThrust = (!UseForwardThrust(-toIntercept) && (Vector3.Dot(relPos, relVel) < 0f)) || (ReverseThrust && forwardEngines.Count == 0);
+            margin += useReverseThrust ? 1.5f : 0f; // Stop earlier when reverse thrusting to keep facing target
+            float angleToRotate = Vector3.Angle((useReverseThrust ? -1 : 1) * vessel.ReferenceTransform.up, relVel) * Mathf.Deg2Rad * 0.75f;
             float timeToRotate = BDAMath.SolveTime(angleToRotate, maxAngularAccelerationMag) / 0.75f;
             float relSpeed = relVel.magnitude;
-            float interceptStoppingDistance = StoppingDistance(relSpeed) + relSpeed * (margin + timeToRotate * 3f);
-            Vector3 toIntercept = Intercept(relPos, relVel);
+            float interceptStoppingDistance = StoppingDistance(relSpeed, useReverseThrust) + relSpeed * (margin + timeToRotate * 3f);
             float distanceToIntercept = toIntercept.magnitude;
             distToCPA = distanceToIntercept;
             stoppingDist = interceptStoppingDistance;
@@ -1101,10 +1150,11 @@ namespace BDArmory.Control
         {
             Vector3 interceptRanges = Vector3.zero;
             float minRange = MinEngagementRange;
-            float maxRange = Mathf.Max(weaponManager.gunRange, minRange * 1.2f);
+            float maxRange = minRange * 1.2f;
             bool usingProjectile = true;
             if (weaponManager != null)
             {
+                bool checkAllWeapons = false;
                 if (weaponManager.selectedWeapon != null)
                 {
                     currentWeapon = weaponManager.selectedWeapon;
@@ -1115,7 +1165,10 @@ namespace BDArmory.Control
                     if (usingProjectile)
                     {
                         missileTryLaunchTime = 0f;
-                        maxRange = Mathf.Min(maxRange, weaponManager.gunRange);
+                        if (weaponManager.CheckAmmo(currentWeapon as ModuleWeapon))
+                            maxRange = Mathf.Min(maxRange, weaponManager.gunRange);
+                        else
+                            checkAllWeapons = true;
                     }
                     else
                     {
@@ -1130,22 +1183,25 @@ namespace BDArmory.Control
                     }
                 }
                 else
+                    checkAllWeapons = true;
+
+                if (checkAllWeapons)
                 {
                     missileTryLaunchTime = 0f;
-                    for (int i = 0; i < weaponManager.weaponArray.Length; i++)
+
+                    foreach (var weapon in VesselModuleRegistry.GetModules<IBDWeapon>(vessel))
                     {
-                        var weapon = weaponManager.weaponArray[i];
                         if (weapon == null) continue;
                         if (!((EngageableWeapon)weapon).engageAir) continue;
                         float maxEngageRange = ((EngageableWeapon)weapon).GetEngagementRangeMax();
-                        if (weapon.GetWeaponClass() != WeaponClasses.Missile)
-                            maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
-                        else
+                        if (weapon.GetWeaponClass() == WeaponClasses.Missile)
                         {
                             MissileBase ml = weapon as MissileBase;
                             maxRange = Mathf.Max(weaponManager.MaxMissileRange(ml, weaponManager.UnguidedMissile(ml, maxRange)), maxRange);
                             usingProjectile = false;
                         }
+                        else if (weaponManager.CheckAmmo(weapon as ModuleWeapon))
+                            maxRange = Mathf.Max(Mathf.Min(maxEngageRange, weaponManager.gunRange), maxRange);
                     }
                 }
                 if (targetVessel != null)
@@ -1182,6 +1238,58 @@ namespace BDArmory.Control
                 return relVelSqrMag < firingSpeed * firingSpeed;
         }
 
+        private Vector3 GunFiringSolution(ModuleWeapon weapon)
+        {
+            // For fixed weapons, returns attitude that puts fixed weapon on target, even if not aligned with vesselTransform.up
+            // For turreted weapons, returns attitude toward target or broadside attitude depending on BroadsideAttack setting
+
+            Vector3 firingSolution;
+            if (weapon != null && !weapon.turret)
+            {
+                Vector3 leadOffset = weapon.GetLeadOffset();
+                Vector3 target = targetVessel.CoM;
+                target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
+                                       // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                Vector3 weaponPosition = weapon.offsetWeaponPosition + vessel.ReferenceTransform.position;
+                Vector3 weaponDirection = vessel.ReferenceTransform.TransformDirection(weapon.offsetWeaponDirection);
+
+                target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
+                var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
+
+                debugString.AppendLine($"WeaponOffset ({targetVessel.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                firingSolution = (target - vessel.CoM).normalized;
+            }
+            else // Null weapon or firing turrets, just point in general direction
+            {
+                firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
+            }
+            return firingSolution;
+        }
+
+        private bool RecentFiringSolution(out Vector3 recentFiringSolution)
+        {
+            // Return true if a valid recent firing solution exists, if the solution exists, also return that value
+            bool validRecentSolution = false;
+
+            if (lastFiringSolution == Vector3.zero) // Throttle was used recently, no valid firing solution exists, even if previousGun != null
+            {
+                recentFiringSolution = Vector3.zero;
+            }
+            else if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
+            {
+                recentFiringSolution = GunFiringSolution(weaponManager.previousGun);
+                validRecentSolution = true;
+            }
+            else // (lastFiringSolution != Vector3.zero)
+            {
+                recentFiringSolution = lastFiringSolution;
+                validRecentSolution = true;
+            }
+
+            return validRecentSolution;
+        }
+
         private float KillVelocityTargetSpeed()
         {
             return Mathf.Clamp(maxAcceleration * 0.15f, firingSpeed / 5f, firingSpeed);
@@ -1195,10 +1303,11 @@ namespace BDArmory.Control
             Vector3 toTarget = FromTo(vessel, targetVessel);
             Vector3 toEscape = -toTarget.normalized;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-
-            float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, toEscape) * Mathf.Deg2Rad;
+            bool useForwardThrust = UseForwardThrust(toEscape);
+            Vector3 thrustDir = useForwardThrust ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.up;
+            float rotDistance = Vector3.Angle(thrustDir, toEscape) * Mathf.Deg2Rad;
             float timeToRotate = BDAMath.SolveTime(rotDistance / 2, maxAngularAccelerationMag) * 2;
-            float timeToDisplace = BDAMath.SolveTime(minRange - toTarget.magnitude, maxAcceleration, Vector3.Dot(-relVel, toEscape));
+            float timeToDisplace = BDAMath.SolveTime(minRange - toTarget.magnitude, (!useForwardThrust && currentForwardThrust ? reverseForwardThrustRatio : 1f) * maxAcceleration, Vector3.Dot(-relVel, toEscape));
             float timeToEscape = timeToRotate * 2 + timeToDisplace;
 
             Vector3 drift = AIUtils.PredictPosition(toTarget, relVel, Vector3.zero, timeToEscape);
@@ -1217,7 +1326,7 @@ namespace BDArmory.Control
                 badDirection = Vector3.zero;
                 return false;
             }
-                    
+
 
             // Adjust some values for asteroids.
             var targetRadius = v.GetRadius();
@@ -1320,6 +1429,20 @@ namespace BDArmory.Control
             return false;
         }
 
+        Vector3 broadsideAttitudeLerp;
+        private Vector3 BroadsideAttitude(Vessel self, Vessel target)
+        {
+            // Return lerped attitude for broadside attack. Lerp attitude to reduce oscillation.
+            Vector3 toTarget = FromTo(self, target).normalized;
+            Vector3 up = self.vesselTransform.up;
+            Vector3 broadsideAttitude = up.ProjectOnPlanePreNormalized(toTarget);
+            float error = Vector3.Angle(up, broadsideAttitude);
+            float angleLerp = Mathf.InverseLerp(0, 10, error);
+            float lerpRate = Mathf.Lerp(1, 10, angleLerp);
+            broadsideAttitudeLerp = Vector3.Lerp(broadsideAttitudeLerp, broadsideAttitude, lerpRate * Time.deltaTime); //Lerp has reduced oscillation compared to Slerp
+            return broadsideAttitudeLerp;
+        }
+
         private void UpdateRCSVector(Vector3 inputVec = default(Vector3))
         {
             if (currentStatusMode == StatusMode.AvoidingCollision)
@@ -1393,7 +1516,7 @@ namespace BDArmory.Control
             float angAccel = Mathf.Abs(angVel - lastAngVel) / Time.fixedDeltaTime / 3f;
             dynAngAccel *= dynDecayRate; // Decay the highest observed angular acceleration (we want a fairly recent value in case the craft's dynamics have changed).
             dynAngAccel = Mathf.Max(dynAngAccel, angAccel);
-            maxAngularAccelerationMag = Mathf.Clamp(((1f - 0.1f)*maxAngularAccelerationMag + 0.1f * dynAngAccel), maxAngularAccelerationMag, dynAngAccel);
+            maxAngularAccelerationMag = Mathf.Clamp(((1f - 0.1f) * maxAngularAccelerationMag + 0.1f * dynAngAccel), maxAngularAccelerationMag, dynAngAccel);
             lastAngVel = angVel;
         }
 
@@ -1424,11 +1547,89 @@ namespace BDArmory.Control
             return thrust;
         }
 
-        private static float GetConsumptionRate(Vessel v)
+        private void UpdateEngineLists(bool forceUpdate = false)
+        {
+            // Update lists of engines that can provide forward and reverse thrust
+            if (!ReverseThrust && !forceUpdate) return;
+            forwardEngines.Clear();
+            reverseEngines.Clear();
+            float forwardThrust = 0f;
+            float reverseThrust = 0f;
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
+            {
+                if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
+                if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0)
+                {
+                    forwardEngines.Add(engine);
+                    forwardThrust += engine.MaxThrustOutputVac(true);
+                }
+                else if (Vector3.Dot(-engine.thrustTransforms[0].forward, -vesselTransform.up) > 0)
+                {
+                    reverseEngines.Add(engine);
+                    reverseThrust += engine.MaxThrustOutputVac(true);
+                }
+            }
+            if (ReverseThrust && reverseEngines.Count == 0) // Disable reverse thrust if no reverse engines available
+            {
+                ReverseThrust = false;
+                reverseForwardThrustRatio = 1f;
+                fc.thrustDirection = vesselTransform.up;
+                currentForwardThrust = false;
+                AlignEnginesWithThrust(true);
+            }
+            else
+                reverseForwardThrustRatio = (forwardThrust == 0) ? 1 : reverseThrust / forwardThrust;
+        }
+
+        private void AlignEnginesWithThrust(bool forceUpdate = false)
+        {
+            // Activate or shutdown forward or reverse engines based on fc.thrustDirection
+            fc.thrustDirection = (fc.thrustDirection == Vector3.zero) ? fc.attitude : fc.thrustDirection; // Set thrust direction to attitude if not already set
+
+            if (!ReverseThrust && !forceUpdate) return; // Don't continue if reverse thrust is disabled
+            bool forwardThrust = UseForwardThrust(fc.thrustDirection); // See if it makes sense to use forward thrust for this thrustDirection
+
+            if (forwardEngines.Count == 0 && reverseEngines.Count > 0 && fc.throttle > 0) // Edge case of no forward engines, but we have reverse engines
+            {
+                forwardThrust = false;
+                fc.attitude = -fc.thrustDirection;
+            }
+
+            fc.useReverseThrust = !forwardThrust; // Tell fc what thrust mode to use
+
+            if (forwardThrust == currentForwardThrust) return; // Don't bother toggling engines if desired direction matches current
+            if (forwardThrust) // Activate forward engines, shutdown reverse engines
+            {
+                foreach (var engine in forwardEngines)
+                    engine.Activate();
+                foreach (var engine in reverseEngines)
+                    engine.Shutdown();
+                currentForwardThrust = true;
+            }
+            else // Activate reverse engines, shutdown forward engines
+            {
+                foreach (var engine in reverseEngines)
+                    engine.Activate();
+                foreach (var engine in forwardEngines)
+                    engine.Shutdown();
+                currentForwardThrust = false;
+            }
+        }
+
+        private bool UseForwardThrust(Vector3 thrustDir)
+        {
+            if (!ReverseThrust) return true;
+            else
+                return Vector3.Dot(thrustDir, vesselTransform.up) > -0.3f; // Use forward thrust for directions within ~110 deg of vesselTransform.up
+        }
+
+        private float GetConsumptionRate(bool useReverseThrust)
         {
             if (BDArmorySettings.INFINITE_FUEL || CheatOptions.InfinitePropellant) return 0f;
             float consumptionRate = 0.0f;
-            foreach (var engine in VesselModuleRegistry.GetModuleEngines(v))
+            List<ModuleEngines> engines = !ReverseThrust ? VesselModuleRegistry.GetModuleEngines(vessel).FindAll(e => (e.EngineIgnited && e.isOperational)) : // No reverse thrust capability, use active engines
+                (useReverseThrust ? reverseEngines : forwardEngines); // Reverse thrust capability, use appropriate thrusters to evaluate ISP
+            foreach (var engine in engines)
                 consumptionRate += Mathf.Lerp(engine.minFuelFlow, engine.maxFuelFlow, 0.01f * engine.thrustPercentage) * engine.flowMultiplier;
             return consumptionRate;
         }
@@ -1444,47 +1645,59 @@ namespace BDArmory.Control
             Vector3 targetDirection = fc.attitude;
             Vector3 currentRoll = -vesselTransform.forward;
             Vector3 rollTarget = currentRoll;
+            debugRollTarget = Vector3.zero;
             if (targetVessel != null) // If we have a target, adjust roll orientation relative to target based on rollMode setting
             {
-                Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
-                switch (rollMode)
+                // Determine toTarget direction for roll command
+                Vector3 toTarget;
+                if (currentStatusMode == StatusMode.Firing)
+                    toTarget = targetDirection;
+                else if (RecentFiringSolution(out Vector3 recentSolution)) // If we valid firing solution recently, use it to continue pointing toward target
+                    toTarget = recentSolution;
+                else
+                    toTarget = FromTo(vessel, targetVessel);
+                toTarget = toTarget.normalized;
+
+                // Determine roll target
+                if (Vector3.Dot(vesselTransform.up, toTarget) < 0.999) // Only roll if we are not aligned with target/firing solution
                 {
-                    case RollModeTypes.Port_Starboard:
-                        {
-                            if (Vector3.Dot(toTarget, vesselTransform.right) > 0f)
-                                rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                            else
-                                rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        }
-                        break;
-                    case RollModeTypes.Dorsal_Ventral:
-                        {
-                            if (Vector3.Dot(toTarget, vesselTransform.forward) > 0f)
-                                rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                            else
-                                rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        }
-                        break;
-                    case RollModeTypes.Port:
-                        rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Starboard:
-                        rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Dorsal:
-                        rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                    case RollModeTypes.Ventral:
-                        rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
-                        break;
-                }
-                debugRollTarget = rollTarget * 100f; ;
+                    switch (rollMode)
+                    {
+                        case RollModeTypes.Port_Starboard:
+                            {
+                                if (Vector3.Dot(toTarget, vesselTransform.right) > 0f)
+                                    rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                                else
+                                    rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            }
+                            break;
+                        case RollModeTypes.Dorsal_Ventral:
+                            {
+                                if (Vector3.Dot(toTarget, vesselTransform.forward) < 0f)
+                                    rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                                else
+                                    rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            }
+                            break;
+                        case RollModeTypes.Port:
+                            rollTarget = Vector3.Cross(-vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Starboard:
+                            rollTarget = Vector3.Cross(vesselTransform.up, toTarget).ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Dorsal:
+                            rollTarget = toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                        case RollModeTypes.Ventral:
+                            rollTarget = -toTarget.ProjectOnPlanePreNormalized(vesselTransform.up);
+                            break;
+                    }
+                    debugRollTarget = rollTarget * 100f;
+                } 
             }
-            else
-                debugRollTarget = Vector3.zero;
 
             Vector3 localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
-            float rotationPerFrame = currentStatusMode == StatusMode.Firing ? 25f : 45f;
+            float rotationPerFrame = (currentStatusMode == StatusMode.Firing && Vector3.Dot(vesselTransform.up, targetDirection) > 0.94) ? 25f : 45f; // Reduce rotation rate if firing and within ~20 deg of target
             localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, rotationPerFrame * Mathf.Deg2Rad, 0);
 
             float pitchError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);

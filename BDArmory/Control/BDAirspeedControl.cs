@@ -440,6 +440,8 @@ namespace BDArmory.Control
         public float rcsLerpRate = 5;
         public bool rcsRotate = false;
         public float alignmentToleranceforBurn = 5;
+        public bool useReverseThrust = false;
+        public Vector3 thrustDirection = Vector3.zero;
 
         AxisGroupsModule axisGroupsModule;
         bool hasAxisGroupsModule = false; // To avoid repeated null checks
@@ -485,7 +487,8 @@ namespace BDArmory.Control
 
         private void UpdateThrottle(FlightCtrlState s)
         {
-            facingDesiredRotation = error < alignmentToleranceforBurn;
+            facingDesiredRotation = Vector3.Angle((useReverseThrust ? -1 : 1) * vessel.ReferenceTransform.up, thrustDirection) < alignmentToleranceforBurn;
+ 
             throttleActual = facingDesiredRotation ? throttle : 0;
 
             // Move actual throttle towards throttle target gradually.
