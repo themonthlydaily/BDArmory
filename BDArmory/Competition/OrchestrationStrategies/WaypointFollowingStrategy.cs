@@ -72,7 +72,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset a bunch of stuff related to competitions so they don't interfere.
             BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES, "", CompetitionType.WAYPOINTS);
             if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
-            { foreach (var pilot in pilots) pilot.MaintainFuelLevelsUntilWaypoint(); }
+            { foreach (var pilot in pilots) pilot.MaintainFuelLevels(true); } //waypoints is dependent on PilotCommands.Waypoint, which gets overridden to PilotCommands.FlyTo by the start of comp.
             yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionStarting);
             yield return new WaitWhile(() => BDACompetitionMode.Instance.pinataAlive);
             PrepareCompetition();
@@ -85,6 +85,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             foreach (var pilot in pilots)
             {
                 pilot.SetWaypoints(mappedWaypoints);
+                pilot.MaintainFuelLevelsUntilWaypoint();
                 foreach (var kerbal in VesselModuleRegistry.GetKerbalEVAs(pilot.vessel))
                 {
                     if (kerbal == null) continue;
