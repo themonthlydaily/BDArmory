@@ -224,6 +224,10 @@ namespace BDArmory.Weapons
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
 
+        // For aiming corrections for offset/non-centerline fixed weapon positions
+        public Vector3 offsetWeaponPosition = Vector3.zero;
+        public Vector3 offsetWeaponDirection = Vector3.zero;
+
         public bool recentlyFiring //used by guard to know if it should evade this
         {
             get { return timeSinceFired < 1; }
@@ -398,10 +402,16 @@ namespace BDArmory.Weapons
         public Transform[] shellEjectTransforms;
 
         [KSPField]
+        public float shellEjectDelay = 0;
+
+        [KSPField]
+        public float shellEjectLifeTime = 2;
+
+        [KSPField]
         public Vector3 shellEjectVelocity = new(0, 0, 7);
 
         [KSPField]
-        public float shellEjectDeviation = 0.1f;
+        public float shellEjectDeviation = 0.5f;
 
         [KSPField]
         public bool hasDeployAnim = false;
@@ -1452,6 +1462,8 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
+
+                UpdateOffsetWeapon(); // Update compensations for offset/non-centerline weapons
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -3328,22 +3340,30 @@ namespace BDArmory.Weapons
             //shell ejection
             if (BDArmorySettings.EJECT_SHELLS)
             {
-                for (int i = 0; i < shellEjectTransforms.Length; i++)
+                for (int i = 0; i < shellEjectTransforms.Length; ++i)
                 {
                     if ((!useRippleFire || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
-                    {
-                        GameObject ejectedShell = shellPool.GetPooledObject();
-                        ejectedShell.transform.position = shellEjectTransforms[i].position;
-                        ejectedShell.transform.rotation = shellEjectTransforms[i].rotation;
-                        ejectedShell.transform.localScale = Vector3.one * shellScale;
-                        ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
-                        shellComponent.initialV = part.rb.velocity;
-                        shellComponent.configV = shellEjectVelocity;
-                        shellComponent.configD = shellEjectDeviation;
-                        ejectedShell.SetActive(true);
-                    }
+                        StartCoroutine(EjectShell(shellEjectDelay, i));
                 }
             }
+        }
+
+        IEnumerator EjectShell(float delay, int ejectTransformIndex)
+        {
+            if (delay > 0) yield return new WaitForSecondsFixed(delay);
+            if (part == null || part.rb == null) yield break;
+
+            GameObject ejectedShell = shellPool.GetPooledObject();
+            ejectedShell.transform.position = shellEjectTransforms[ejectTransformIndex].position;
+            ejectedShell.transform.rotation = shellEjectTransforms[ejectTransformIndex].rotation;
+            ejectedShell.transform.localScale = Vector3.one * shellScale;
+            ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
+            shellComponent.initialV = part.rb.velocity;
+            shellComponent.configV = shellEjectVelocity;
+            shellComponent.configD = shellEjectDeviation;
+            shellComponent.lifeTime = shellEjectLifeTime;
+            ejectedShell.SetActive(true);
+
         }
 
         private void CheckLoadedAmmo()
@@ -3412,7 +3432,7 @@ namespace BDArmory.Weapons
                 return;
 
             StopShutdownStartupRoutines();
-
+            UpdateOffsetWeapon(); // Re-calculate offset/non-centerline weapon corrections on weapon selection
             startupRoutine = StartCoroutine(StartupRoutine(secondaryFiring: secondaryFiring));
         }
 
@@ -4388,6 +4408,25 @@ namespace BDArmory.Weapons
         public Vector3 GetLeadOffset()
         {
             return fixedLeadOffset;
+        }
+
+        void UpdateOffsetWeapon()
+        {
+            Vector3 weaponPosition = fireTransforms[0].position;
+            Vector3 weaponDirection = fireTransforms[0].forward;
+            if (part.symmetryCounterparts.Count > 0)
+            {
+                foreach (var part in part.symmetryCounterparts)
+                {
+                    weaponPosition += part.transform.position;
+                    weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                }
+                weaponPosition /= 1 + part.symmetryCounterparts.Count;
+                weaponDirection /= 1 + part.symmetryCounterparts.Count;
+            }
+
+            offsetWeaponPosition = weaponPosition - vessel.ReferenceTransform.position;
+            offsetWeaponDirection = vessel.ReferenceTransform.InverseTransformDirection(weaponDirection);
         }
 
         public float targetCosAngle;

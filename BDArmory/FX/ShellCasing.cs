@@ -11,6 +11,7 @@ namespace BDArmory.FX
         public Vector3 initialV;
         public Vector3 configV;
         public float configD;
+        public float lifeTime = 2;
 
         Vector3 velocity;
         Vector3 angularVelocity;
@@ -23,9 +24,9 @@ namespace BDArmory.FX
             startTime = Time.time;
             Vector3 randV = Random.insideUnitSphere;
             velocity = initialV + transform.rotation * new Vector3(
-                configV.x + configD * (1f + Mathf.Abs(configV.x)) * randV.x,
-                configV.y + configD * (1f + Mathf.Abs(configV.y)) * randV.y,
-                configV.z + configD * (1f + Mathf.Abs(configV.z)) * randV.z
+                configV.x + (configD + 0.1f * Mathf.Abs(configV.x)) * randV.x,
+                configV.y + (configD + 0.1f * Mathf.Abs(configV.y)) * randV.y,
+                configV.z + (configD + 0.1f * Mathf.Abs(configV.z)) * randV.z
             );
             angularVelocity = 100f * Random.insideUnitSphere;
             atmDensity = (float)FlightGlobals.getAtmDensity(
@@ -36,7 +37,7 @@ namespace BDArmory.FX
         void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy) return;
-            if (Time.time - startTime > 2)
+            if (Time.time - startTime > lifeTime)
             {
                 gameObject.SetActive(false);
                 return;
