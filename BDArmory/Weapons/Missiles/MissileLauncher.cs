@@ -210,7 +210,7 @@ namespace BDArmory.Weapons.Missiles
         KSPParticleEmitter downRCS;
         KSPParticleEmitter leftRCS;
         KSPParticleEmitter rightRCS;
-        KSPParticleEmitter forwardRCS;
+        List<KSPParticleEmitter> forwardRCS;
         float rcsAudioMinInterval = 0.2f;
 
         private AudioSource audioSource;
@@ -478,6 +478,7 @@ namespace BDArmory.Weapons.Missiles
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
             boostGaplessEmitters = new List<BDAGaplessParticleEmitter>();
+            if (hasRCS) forwardRCS = new List<KSPParticleEmitter>();
 
             Fields["maxOffBoresight"].guiActive = false;
             Fields["maxOffBoresight"].guiActiveEditor = false;
@@ -663,7 +664,7 @@ namespace BDArmory.Weapons.Missiles
                             else if (pe.Current.gameObject.name == "rcsDown") downRCS = pe.Current;
                             else if (pe.Current.gameObject.name == "rcsLeft") leftRCS = pe.Current;
                             else if (pe.Current.gameObject.name == "rcsRight") rightRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsForward") forwardRCS = pe.Current;
+                            else if (pe.Current.gameObject.name.Contains("rcsForward")) forwardRCS.Add(pe.Current);
                         }
 
                         if (!pe.Current.gameObject.name.Contains("rcs") && !pe.Current.useWorldSpace)
@@ -1051,7 +1052,9 @@ namespace BDArmory.Weapons.Missiles
             if (downRCS) EffectBehaviour.RemoveParticleEmitter(downRCS);
             if (leftRCS) EffectBehaviour.RemoveParticleEmitter(leftRCS);
             if (rightRCS) EffectBehaviour.RemoveParticleEmitter(rightRCS);
-            if (forwardRCS) EffectBehaviour.RemoveParticleEmitter(forwardRCS);
+            if (forwardRCS != null)
+                foreach (var pe in forwardRCS)
+                    if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             if (pEmitters != null)
                 foreach (var pe in pEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
@@ -2300,7 +2303,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 boostEmitters = pEmitters;
                 if (hasRCS && rcsTransforms != null) boostEmitters.RemoveAll(pe => rcsTransforms.Contains(pe));
-                if (hasRCS && forwardRCS && !boostEmitters.Contains(forwardRCS)) boostEmitters.Add(forwardRCS);
+                if (hasRCS && forwardRCS.Any())
+                    foreach (var pe in forwardRCS)
+                        if (!boostEmitters.Contains(pe)) boostEmitters.Add(pe);
                 boostGaplessEmitters = gaplessEmitters;
             }
 
@@ -2468,7 +2473,8 @@ namespace BDArmory.Weapons.Missiles
                 }
 
             if (!hasRCS) return;
-            forwardRCS.emit = false;
+            foreach (var pe in forwardRCS)
+                pe.emit = false;
             audioSource.Stop();
         }
 

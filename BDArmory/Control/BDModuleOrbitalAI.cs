@@ -134,8 +134,12 @@ namespace BDArmory.Control
         #endregion
 
         #region Control
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_FiringRCS"),//Use RCS to kill relative velocity when firing
+            UI_Toggle(enabledText = "#LOC_BDArmory_AI_FiringRCS_enabledText", disabledText = "#LOC_BDArmory_AI_FiringRCS_disabledText", scene = UI_Scene.All),]//Manage Velocity--Maneuvers Only
+        public bool FiringRCS = true;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ManeuverRCS"),//Use RCS for all maneuvering
-            UI_Toggle(enabledText = "#LOC_BDArmory_AI_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_AI_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
+            UI_Toggle(enabledText = "#LOC_BDArmory_AI_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_AI_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Always--Combat Only
         public bool ManeuverRCS = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ReverseEngines"),//Use reverse engines
@@ -156,6 +160,19 @@ namespace BDArmory.Control
                 scene = UI_Scene.All
             )]
         public float ManeuverSpeed = 100f;
+
+        [KSPField(isPersistant = true,
+            guiActive = true,
+            guiActiveEditor = true,
+            guiName = "#LOC_BDArmory_AI_FiringSpeedMin",
+            guiUnits = " m/s"),
+            UI_FloatSemiLogRange(
+                minValue = 2f,
+                maxValue = 1000f,
+                scene = UI_Scene.All,
+                withZero = true
+            )]
+        public float minFiringSpeed = 0f;
 
         [KSPField(isPersistant = true,
             guiActive = true,
@@ -296,6 +313,27 @@ namespace BDArmory.Control
 
         #endregion RMB info in editor
 
+        #region UI Initialisers and Callbacks
+        protected void SetSliderPairClamps(string fieldNameMin, string fieldNameMax)
+        {
+            // Enforce min <= max for pairs of sliders
+            UI_FloatRange field = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldNameMin].uiControlFlight : Fields[fieldNameMin].uiControlEditor);
+            field.onFieldChanged = OnMinUpdated;
+            field = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldNameMax].uiControlFlight : Fields[fieldNameMax].uiControlEditor);
+            field.onFieldChanged = OnMaxUpdated;
+        }
+
+        public void OnMinUpdated(BaseField field = null, object obj = null)
+        {
+            if (firingSpeed < minFiringSpeed) { firingSpeed = minFiringSpeed; } // Enforce min < max for firing speeds.
+        }
+
+        public void OnMaxUpdated(BaseField field = null, object obj = null)
+        {
+            if (minFiringSpeed > firingSpeed) { minFiringSpeed = firingSpeed; }  // Enforce min < max for firing speeds.
+        }
+        #endregion
+
         #region events
 
         public override void OnStart(StartState state)
@@ -303,6 +341,7 @@ namespace BDArmory.Control
             base.OnStart(state);
             if (!(HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)) return;
             SetChooseOptions();
+            SetSliderPairClamps("minFiringSpeed", "firingSpeed");
             if (HighLogic.LoadedSceneIsFlight)
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
             CalculateAvailableTorque(vessel);
@@ -625,7 +664,18 @@ namespace BDArmory.Control
 
                         fc.lerpAttitude = false;
                         Vector3 firingSolution = BroadsideAttack ? BroadsideAttitude(vessel, targetVessel) : FromTo(vessel, targetVessel).normalized;
-                        rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
+                        Vector3 relVel = RelVel(vessel, targetVessel);
+                        if (FiringRCS)
+                        {
+                            float targetSpeed = FiringTargetSpeed();
+                            float margin = Mathf.Max(Mathf.Abs(firingSpeed - minFiringSpeed) * 0.1f, 2f);
+                            float minSpeed = Mathf.Clamp(targetSpeed - margin, minFiringSpeed, firingSpeed);
+                            float maxSpeed = Mathf.Clamp(targetSpeed + margin, minFiringSpeed, firingSpeed);
+                            if (minFiringSpeed == 0 || relVel.sqrMagnitude > maxSpeed * maxSpeed)
+                                rcsVector = -Vector3.ProjectOnPlane(relVel, FromTo(vessel, targetVessel));
+                            else if (relVel.sqrMagnitude < minSpeed * minSpeed)
+                                rcsVector = Vector3.ProjectOnPlane(relVel, FromTo(vessel, targetVessel));
+                        }
 
                         if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
@@ -702,6 +752,7 @@ namespace BDArmory.Control
                         else // Within weapons range, adjust velocity and attitude for targeting
                         {
                             bool killAngOngoing = currentStatus.Contains("Kill Angular Velocity") && (AngularVelocity(vessel, targetVessel, 5f) < firingAngularVelocityLimit / 2);
+                            bool increaseVelOngoing = currentStatus.Contains("Increasing Velocity") && relVel.sqrMagnitude < FiringTargetSpeed() * FiringTargetSpeed();
                             if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed || killVelOngoing))
                             {
                                 KillVelocity();
@@ -712,6 +763,19 @@ namespace BDArmory.Control
                                 fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), vessel.PredictPosition(timeToCPA)).normalized;
                                 fc.throttle = 1;
                                 fc.alignmentToleranceforBurn = 45f;
+                            }
+                            else if (hasPropulsion && targetVessel != null && (relVel.sqrMagnitude < minFiringSpeed * minFiringSpeed || increaseVelOngoing))
+                            {
+                                SetStatus("Maneuvering (Increasing Velocity)");
+                                Vector3 relPos = targetVessel.CoM - vessel.CoM;
+                                Vector3 lateralOffset = Vector3.ProjectOnPlane(relVel, relPos).normalized * currentRange;
+                                fc.thrustDirection = relPos + lateralOffset;
+                                if (UseForwardThrust(fc.thrustDirection))
+                                    fc.attitude = fc.thrustDirection;
+                                else
+                                    fc.attitude = -fc.thrustDirection;
+                                fc.throttle = 1;
+                                fc.alignmentToleranceforBurn = 135f;
                             }
                             else // Drifting
                             {
@@ -815,6 +879,7 @@ namespace BDArmory.Control
             {
                 debugString.AppendLine($"Current Status: {currentStatus}");
                 debugString.AppendLine($"Propulsion:{hasPropulsion}; RCS:{hasRCS}; EC:{hasEC}; Weapons:{hasWeapons}");
+                debugString.AppendLine($"Max Acceleration:{maxAcceleration:G3}; Intercept Velocity:{KillVelocityTargetSpeed():G3}");
                 if (targetVessel)
                 {
                     debugString.AppendLine($"Target Vessel: {targetVessel.GetDisplayName()}");
@@ -1292,7 +1357,12 @@ namespace BDArmory.Control
 
         private float KillVelocityTargetSpeed()
         {
-            return Mathf.Clamp(maxAcceleration * 0.15f, firingSpeed / 5f, firingSpeed);
+            return Mathf.Clamp(maxAcceleration * 0.15f, FiringTargetSpeed(), firingSpeed);
+        }
+
+        private float FiringTargetSpeed()
+        {
+            return Mathf.Abs(firingSpeed - minFiringSpeed) * 0.2f + minFiringSpeed;
         }
 
         private bool AwayCheck(float minRange)
@@ -1303,6 +1373,7 @@ namespace BDArmory.Control
             Vector3 toTarget = FromTo(vessel, targetVessel);
             Vector3 toEscape = -toTarget.normalized;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
+            if (relVel.sqrMagnitude < minFiringSpeed * minFiringSpeed) return true;
             bool useForwardThrust = UseForwardThrust(toEscape);
             Vector3 thrustDir = useForwardThrust ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.up;
             float rotDistance = Vector3.Angle(thrustDir, toEscape) * Mathf.Deg2Rad;
