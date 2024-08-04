@@ -780,7 +780,15 @@ namespace BDArmory.GameModes
                         {
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                            factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
+                            if (inOrbit)
+                            {
+                                // In orbit, don't continually attract asteroids at close range because AI is unable to avoid accelerating asteroids at close range
+                                float omega = 2.71828182845905f; // e
+                                float x = (float)offset.sqrMagnitude / 1e5f;
+                                factor = x > 10f ? 0f : 4.48168907033806f * x / (omega * omega) * Mathf.Exp(-x * x / (2f * omega * omega)); // 0 attraction at 0km and 1km, 1 attraction at 500m (Rayleigh with sigma=e)
+                            }
+                            else
+                                factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
                             if (factor > 0) anomalousAttraction += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
                         }
                         anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH;

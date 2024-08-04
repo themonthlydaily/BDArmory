@@ -232,13 +232,13 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_CollisionAvoidanceThreshold", advancedTweakable = true, //Vessel collision avoidance threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 50f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float collisionAvoidanceThreshold = 20f; // 20m + target's average radius.
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float collisionAvoidanceThreshold = 50f; // 20m + target's average radius.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_CollisionAvoidanceLookAheadPeriod", advancedTweakable = true, //Vessel collision avoidance look ahead period
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 15f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float vesselCollisionAvoidanceLookAheadPeriod = 5f; // Look 4s ahead for potential collisions.
+            UI_FloatRange(minValue = 0f, maxValue = 30f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        public float vesselCollisionAvoidanceLookAheadPeriod = 10f; // Look 10s ahead for potential collisions.
         #endregion
 
 
@@ -414,6 +414,7 @@ namespace BDArmory.Control
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.magenta); // RCS lerped command
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugRollTarget, 2, Color.blue); // Roll target
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
+            if (currentStatusMode==StatusMode.AvoidingCollision) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, currentlyAvoidedVessel.transform.position, 8, Color.grey); // Collision avoidance
         }
 
         #endregion events
@@ -869,7 +870,14 @@ namespace BDArmory.Control
             // Burn the difference between the target and current velocities.
             Vector3 toIntercept = Intercept(relPos, relVel);
             Vector3 burn = toIntercept.normalized * ManeuverSpeed + relVel;
-            fc.attitude = burn.normalized;
+            fc.thrustDirection = burn.normalized;
+
+            // Use reverse thrust if it is necessary to face target during intercept
+            bool useReverseThrust = ReverseThrust && (Vector3.Dot(relPos, fc.thrustDirection) < 0f);
+            if (useReverseThrust) 
+                fc.attitude = -fc.thrustDirection;
+            else
+                fc.attitude = fc.thrustDirection;
             fc.throttle = 1f;
         }
 
@@ -928,10 +936,10 @@ namespace BDArmory.Control
             }
 
             // Update status mode
-            if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
-                currentStatusMode = StatusMode.Evading;
-            else if (FlyAvoidOthers())
+            if (FlyAvoidOthers())
                 currentStatusMode = StatusMode.AvoidingCollision;
+            else if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
+                currentStatusMode = StatusMode.Evading;
             else if (fixOrbitNow)
                 currentStatusMode = StatusMode.CorrectingOrbit;
             else if (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow || currentCommand == PilotCommands.Attack)
