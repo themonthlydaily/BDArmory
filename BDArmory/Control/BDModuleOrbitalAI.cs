@@ -927,16 +927,11 @@ namespace BDArmory.Control
                     fixOrbitNow = ((vessel.CoM - targetVessel.CoM).sqrMagnitude > interceptRanges.y * interceptRanges.y) && (timeToCPA > 10f);
             }
 
-            // FIXME Josue There seems to be a fair bit of oscillation between circularising, intercept velocity and kill velocity in my tests, with the craft repeatedly rotating 180° to perform burns in opposite directions.
-            // In particular, this happens a lot when the craft's periapsis is at the min safe altitude, which occurs frequently if the spawn distance is large enough to give significant inclinations.
-            // I think there needs to be some manoeuvre logic to better handle this condition, such as modifying burns that would bring the periapsis below the min safe altitude, which might help with inclination shifts.
-            // Also, maybe some logic to ignore targets that will fall below the min safe altitude before they can be reached could be useful.
-
             // Update status mode
-            if (FlyAvoidOthers())
-                currentStatusMode = StatusMode.AvoidingCollision;
-            else if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
+            if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
                 currentStatusMode = StatusMode.Evading;
+            else if (FlyAvoidOthers())
+                currentStatusMode = StatusMode.AvoidingCollision;
             else if (fixOrbitNow)
                 currentStatusMode = StatusMode.CorrectingOrbit;
             else if (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow || currentCommand == PilotCommands.Attack)

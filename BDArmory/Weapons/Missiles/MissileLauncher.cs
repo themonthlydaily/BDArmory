@@ -692,8 +692,6 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            SetFields();
-
             if (deployAnimationName != "")
             {
                 deployStates = GUIUtils.SetUpAnimation(deployAnimationName, part);
@@ -747,6 +745,9 @@ namespace BDArmory.Weapons.Missiles
                 else continue;
                 break;
             }
+
+            SetFields();
+
             partModules.Dispose();
             smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
@@ -972,6 +973,16 @@ namespace BDArmory.Weapons.Missiles
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: OnStart missile {shortName}: setting default locktrackcurve with maxrange/minrcs: {activeRadarLockTrackCurve.maxTime}/{RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS}");
             }
+
+            // Don't show detonation distance settings for kinetic warheads
+            if (warheadType == WarheadTypes.Kinetic)
+            {
+                Fields["DetonationDistance"].guiActive = false;
+                Fields["DetonationDistance"].guiActiveEditor = false;
+                Fields["DetonateAtMinimumDistance"].guiActive = false;
+                Fields["DetonateAtMinimumDistance"].guiActiveEditor = false;
+            }
+
             GUIUtils.RefreshAssociatedWindows(part);
         }
 
@@ -3078,11 +3089,14 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else // Kill relative velocity to target
                     relV = TargetVelocity - vessel.Velocity();
-                
-                // Adjust for gravity
-                Vector3 toBody = (part.transform.position - vessel.orbit.referenceBody.position);
-                float bodyGravity = (float)vessel.orbit.referenceBody.gravParameter / toBody.sqrMagnitude;
-                relV += -bodyGravity * vessel.up;
+
+                // Adjust for gravity if no aero or in near vacuum
+                if (!aero || vessel.InNearVacuum())
+                {
+                    Vector3 toBody = (part.transform.position - vessel.orbit.referenceBody.position);
+                    float bodyGravity = (float)vessel.orbit.referenceBody.gravParameter / toBody.sqrMagnitude;
+                    relV += -bodyGravity * vessel.up;
+                }
 
                 for (int i = 0; i < 4; i++)
                 {
