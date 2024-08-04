@@ -786,7 +786,7 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\IRSTPod\irst.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\jdamMk83\tex_jdam.png" />
-    <Content Include="Distribution\GameData\BDArmory\Parts\kkv\muzzle.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\kkv\muzzle.dds" />
     <Content Include="Distribution\GameData\BDArmory\Parts\kkv\TEX_TCA_KKV.dds" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\tex_m102.png" />
