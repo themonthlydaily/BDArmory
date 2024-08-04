@@ -3078,6 +3078,11 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else // Kill relative velocity to target
                     relV = TargetVelocity - vessel.Velocity();
+                
+                // Adjust for gravity
+                Vector3 toBody = (part.transform.position - vessel.orbit.referenceBody.position);
+                float bodyGravity = (float)vessel.orbit.referenceBody.gravParameter / toBody.sqrMagnitude;
+                relV += -bodyGravity * vessel.up;
 
                 for (int i = 0; i < 4; i++)
                 {
