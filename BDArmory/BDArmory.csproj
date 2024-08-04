@@ -551,6 +551,8 @@
     <None Include="Distribution\GameData\BDArmory\Parts\IRSTPod\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\jdam.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\model.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\kkv\kkv.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\kkv\KKV_TCA.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\m102.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\m1Abrams.cfg" />
@@ -784,6 +786,8 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\IRSTPod\irst.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\jdamMk83\tex_jdam.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\kkv\muzzle.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\kkv\TEX_TCA_KKV.dds" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\tex_m102.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m1Abrams\muzzle.png" />
