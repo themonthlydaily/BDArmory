@@ -555,17 +555,17 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Evading:
                     {
-                            SetStatus("Evading Missile");
-                            vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+                        SetStatus("Evading Missile");
+                        vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
-                            Vector3 incomingVector = FromTo(vessel, weaponManager.incomingMissileVessel);
-                            Vector3 dodgeVector = Vector3.ProjectOnPlane(vessel.ReferenceTransform.up, incomingVector.normalized);
+                        Vector3 incomingVector = FromTo(vessel, weaponManager.incomingMissileVessel);
+                        Vector3 dodgeVector = Vector3.ProjectOnPlane(vessel.ReferenceTransform.up, incomingVector.normalized);
 
-                            fc.attitude = dodgeVector;
-                            fc.alignmentToleranceforBurn = 70;
-                            fc.throttle = 1;
-                            fc.lerpThrottle = false;
-                            rcsVector = dodgeVector;
+                        fc.attitude = dodgeVector;
+                        fc.alignmentToleranceforBurn = 70;
+                        fc.throttle = 1;
+                        fc.lerpThrottle = false;
+                        rcsVector = dodgeVector;
                     }
                     break;
                 case StatusMode.CorrectingOrbit:
