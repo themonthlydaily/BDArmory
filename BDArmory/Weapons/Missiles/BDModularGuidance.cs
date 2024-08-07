@@ -899,7 +899,7 @@ namespace BDArmory.Weapons.Missiles
                         relVel = 100f * relVel.ProjectOnPlane(targetPosition - vessel.CoM);
                     }
                     else // Kill relative velocity to target
-                        relVel = targetVelocity - vessel.Velocity();
+                        relVel = vessel.Velocity() - targetVelocity;
                     rcsVector = Vector3.ProjectOnPlane(relVel, forwardDir) * -1;
                 }
             }

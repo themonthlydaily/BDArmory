@@ -26,8 +26,7 @@ namespace BDArmory.Control
         public float updateInterval;
         public float emergencyUpdateInterval = 0.5f;
         public float combatUpdateInterval = 2.5f;
-        private bool allowWithdrawal = true;
-
+        
         private BDOrbitalControl fc;
         private bool PIDActive;
         private int ECID;
@@ -117,10 +116,6 @@ namespace BDArmory.Control
         #endregion
 
         #region Combat
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_MinEngagementRange"),//Min engagement range
-            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
-        public float MinEngagementRange = 100;
-
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_BroadsideAttack"),//Attack vector
             UI_Toggle(enabledText = "#LOC_BDArmory_AI_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_AI_BroadsideAttack_disabledText")]//Broadside--Bow
         public bool BroadsideAttack = false;
@@ -131,6 +126,15 @@ namespace BDArmory.Control
         public readonly string[] rollTowardsModes = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" };
         public RollModeTypes rollMode
             => (RollModeTypes)Enum.Parse(typeof(RollModeTypes), rollTowards);
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_MinEngagementRange"),//Min engagement range
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
+        public float MinEngagementRange = 100;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_AllowRamming", advancedTweakable = true, //Toggle Allow Ramming
+            groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_AI_Ramming", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool allowRamming = true; // Allow switching to ramming mode.
         #endregion
 
         #region Control
@@ -225,6 +229,16 @@ namespace BDArmory.Control
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float evasionMinRangeThreshold = 10f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_EvasionRCS", advancedTweakable = true,//Use RCS for gun evasion
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]//Enabled--Disabled
+        public bool evasionRCS = true;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_EvasionEngines", advancedTweakable = true,//Use engines for gun evasion
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]//Enabled--Disabled
+        public bool evasionEngines = false;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_EvasionIgnoreMyTargetTargetingMe", advancedTweakable = true,//Ignore my target targeting me
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
@@ -265,12 +279,12 @@ namespace BDArmory.Control
         #endregion
 
         #region Status Mode
-        public enum StatusMode { Idle, AvoidingCollision, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded, Commanded, Custom }
+        public enum StatusMode { Idle, AvoidingCollision, Evading, CorrectingOrbit, Withdrawing, Ramming, Firing, Maneuvering, Stranded, Commanded, Custom }
         public StatusMode currentStatusMode = StatusMode.Idle;
         StatusMode lastStatusMode = StatusMode.Idle;
         protected override void SetStatus(string status)
         {
-            if (evadingGunfire)
+            if (evadingGunfire && (evasionRCS || evasionEngines))
                 status += evasionString;
 
             base.SetStatus(status);
@@ -279,6 +293,7 @@ namespace BDArmory.Control
             else if (status.StartsWith("Correcting Orbit")) currentStatusMode = StatusMode.CorrectingOrbit;
             else if (status.StartsWith("Evading")) currentStatusMode = StatusMode.Evading;
             else if (status.StartsWith("Withdrawing")) currentStatusMode = StatusMode.Withdrawing;
+            else if (status.StartsWith("Ramming")) currentStatusMode = StatusMode.Ramming;
             else if (status.StartsWith("Firing")) currentStatusMode = StatusMode.Firing;
             else if (status.StartsWith("Maneuvering")) currentStatusMode = StatusMode.Maneuvering;
             else if (status.StartsWith("Stranded")) currentStatusMode = StatusMode.Stranded;
@@ -326,11 +341,13 @@ namespace BDArmory.Control
         public void OnMinUpdated(BaseField field = null, object obj = null)
         {
             if (firingSpeed < minFiringSpeed) { firingSpeed = minFiringSpeed; } // Enforce min < max for firing speeds.
+            if (ManeuverSpeed < firingSpeed) { ManeuverSpeed = firingSpeed; } // Enforce firing < maneuver for firing/maneuver speeds.
         }
 
         public void OnMaxUpdated(BaseField field = null, object obj = null)
         {
             if (minFiringSpeed > firingSpeed) { minFiringSpeed = firingSpeed; }  // Enforce min < max for firing speeds.
+            if (firingSpeed > ManeuverSpeed) { firingSpeed = ManeuverSpeed; }  // Enforce firing < maneuver for firing/maneuver speeds.
         }
         #endregion
 
@@ -342,6 +359,7 @@ namespace BDArmory.Control
             if (!(HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)) return;
             SetChooseOptions();
             SetSliderPairClamps("minFiringSpeed", "firingSpeed");
+            SetSliderPairClamps("firingSpeed", "ManeuverSpeed");
             if (HighLogic.LoadedSceneIsFlight)
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
             CalculateAvailableTorque(vessel);
@@ -464,6 +482,8 @@ namespace BDArmory.Control
                             attitudeCommand = (orbitNormal * (facingNorth ? 1 : -1)).normalized;
                         }
                         break;
+                    case StatusMode.Ramming:
+                        break;
                     case StatusMode.Commanded:
                         {
                             lastUpdateCommand = currentCommand;
@@ -535,17 +555,17 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Evading:
                     {
-                        SetStatus("Evading Missile");
-                        vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+                            SetStatus("Evading Missile");
+                            vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
-                        Vector3 incomingVector = FromTo(vessel, weaponManager.incomingMissileVessel);
-                        Vector3 dodgeVector = Vector3.ProjectOnPlane(vessel.ReferenceTransform.up, incomingVector.normalized);
+                            Vector3 incomingVector = FromTo(vessel, weaponManager.incomingMissileVessel);
+                            Vector3 dodgeVector = Vector3.ProjectOnPlane(vessel.ReferenceTransform.up, incomingVector.normalized);
 
-                        fc.attitude = dodgeVector;
-                        fc.alignmentToleranceforBurn = 70;
-                        fc.throttle = 1;
-                        fc.lerpThrottle = false;
-                        rcsVector = dodgeVector;
+                            fc.attitude = dodgeVector;
+                            fc.alignmentToleranceforBurn = 70;
+                            fc.throttle = 1;
+                            fc.lerpThrottle = false;
+                            rcsVector = dodgeVector;
                     }
                     break;
                 case StatusMode.CorrectingOrbit:
@@ -658,6 +678,32 @@ namespace BDArmory.Control
                         fc.alignmentToleranceforBurn = 70;
                     }
                     break;
+                case StatusMode.Ramming:
+                    {
+                        SetStatus("Ramming Speed!");
+
+                        vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+
+                        // Target information
+                        Vector3 targetPosition = targetVessel.CoM;
+                        Vector3 targetVector = targetPosition - vessel.CoM;
+                        Vector3 relVel = vessel.GetObtVelocity() - targetVessel.GetObtVelocity();
+                        Vector3 relVelNrm = relVel.normalized;
+                        Vector3 interceptVector;
+                        float relVelmag = relVel.magnitude;
+
+                        float timeToImpact = BDAMath.SolveTime(targetVector.magnitude, maxAcceleration, Vector3.Dot(relVel, targetVector.normalized));
+                        Vector3 lead = -timeToImpact * relVelmag * relVelNrm;
+                        interceptVector = (targetPosition + lead) - vessel.CoM;
+
+                        fc.attitude = interceptVector;
+                        fc.thrustDirection = interceptVector;
+                        fc.throttle = 1f;
+                        fc.alignmentToleranceforBurn = 25f;
+
+                        rcsVector = Vector3.ProjectOnPlane(relVel, vesselTransform.up) * -1;
+                    }
+                    break;
                 case StatusMode.Firing:
                     {
                         // Aim at appropriate point to fire guns/launch missiles
@@ -714,7 +760,7 @@ namespace BDArmory.Control
                         Vector3 relVel = RelVel(vessel, targetVessel);
 
                         float speedTarget = KillVelocityTargetSpeed();
-                        bool killVelOngoing = currentStatus.Contains("Kill Velocity") && (relVel.sqrMagnitude > speedTarget * speedTarget);
+                        bool killVelOngoing = currentStatus.Contains("Kill Velocity");
                         bool interceptOngoing = currentStatus.Contains("Intercept Target") && !OnIntercept(0.05f) && !ApproachingIntercept();
 
                         if (currentRange < minRange && AwayCheck(minRange)) // Too close, maneuever away
@@ -729,7 +775,7 @@ namespace BDArmory.Control
                                 fc.attitude = toTarget;
                             fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.thrustDirection) < ManeuverSpeed ? 1 : 0;
                         }
-                        else if (hasPropulsion && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f) || killVelOngoing)) // Approaching intercept point, kill velocity
+                        else if (hasPropulsion && (relVel.sqrMagnitude > speedTarget * speedTarget) && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f)  || killVelOngoing)) // Approaching intercept point, kill velocity
                             KillVelocity(true);
                         else if (hasPropulsion && interceptOngoing || (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : interceptMargin))) // Too far away, intercept target
                             InterceptTarget();
@@ -769,14 +815,15 @@ namespace BDArmory.Control
                             {
                                 SetStatus("Maneuvering (Increasing Velocity)");
                                 Vector3 relPos = targetVessel.CoM - vessel.CoM;
-                                Vector3 lateralOffset = Vector3.ProjectOnPlane(relVel, relPos).normalized * currentRange;
-                                fc.thrustDirection = relPos + lateralOffset;
+                                float r = Mathf.Clamp01(currentRange / interceptRanges.y);
+                                Vector3 lateralOffset = Vector3.ProjectOnPlane(relVel, relPos).normalized * Mathf.Max(interceptRanges.z, currentRange);
+                                fc.thrustDirection = Vector3.Lerp(relVel - targetVessel.perturbation, relPos + lateralOffset, r).normalized;
                                 if (UseForwardThrust(fc.thrustDirection))
                                     fc.attitude = fc.thrustDirection;
                                 else
                                     fc.attitude = -fc.thrustDirection;
                                 fc.throttle = 1;
-                                fc.alignmentToleranceforBurn = 135f;
+                                fc.alignmentToleranceforBurn = 45f;
                             }
                             else // Drifting
                             {
@@ -816,6 +863,7 @@ namespace BDArmory.Control
                     }
                     break;
             }
+            GunEngineEvasion();
             AlignEnginesWithThrust();
             UpdateRCSVector(rcsVector);
             UpdateBurnAlignmentTolerance();
@@ -926,17 +974,17 @@ namespace BDArmory.Control
             if (targetVessel != null) timeToCPA = vessel.TimeToCPA(targetVessel);
 
             // Prioritize safe orbits over combat outside of weapon range
-            bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrectionDueTo != OrbitCorrectionReason.None);
+            bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrectionDueTo != OrbitCorrectionReason.None) && currentStatusMode != StatusMode.Ramming;
             bool fixOrbitLater = false;
             if (hasPropulsion && !fixOrbitNow && CheckOrbitUnsafe())
             {
                 fixOrbitLater = true;
-                if (weaponManager && targetVessel != null)
+                if (weaponManager && targetVessel != null && currentStatusMode != StatusMode.Ramming)
                     fixOrbitNow = ((vessel.CoM - targetVessel.CoM).sqrMagnitude > interceptRanges.y * interceptRanges.y) && (timeToCPA > 10f);
             }
 
             // Update status mode
-            if (FlyAvoidOthers())
+            if (currentStatusMode != StatusMode.Ramming && FlyAvoidOthers())
                 currentStatusMode = StatusMode.AvoidingCollision;
             else if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
                 currentStatusMode = StatusMode.Evading;
@@ -950,7 +998,9 @@ namespace BDArmory.Control
             }
             else if (weaponManager)
             {
-                if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
+                if (hasPropulsion && !hasWeapons && (allowRamming && !BDArmorySettings.DISABLE_RAMMING) && targetVessel != null)
+                    currentStatusMode = StatusMode.Ramming;
+                else if (hasPropulsion && !hasWeapons && CheckWithdraw())
                     currentStatusMode = StatusMode.Withdrawing;
                 else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
                     currentStatusMode = StatusMode.Firing; // Guns
@@ -1012,11 +1062,14 @@ namespace BDArmory.Control
             else
                 fc.Stability(false);
 
+            // Disable PID when ramming to prevent vessels from going haywire - FIXME - Figure out why this is happening and fix
+            if (PIDActive && currentStatusMode == StatusMode.Ramming)
+                PIDActive = false;
+
             // Set PID Mode
             fc.PIDActive = PIDActive;
             if (PIDActive)
                 vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
-
             // Check for incoming gunfire
             EvasionStatus();
 
@@ -1053,8 +1106,8 @@ namespace BDArmory.Control
         {
             evadingGunfire = false;
 
-            // Return if evading missile
-            if (currentStatusMode == StatusMode.Evading)
+            // Return if evading missile or ramming
+            if (currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.Ramming)
             {
                 evasiveTimer = 0;
                 return;
@@ -1517,18 +1570,48 @@ namespace BDArmory.Control
             return broadsideAttitudeLerp;
         }
 
+        private void GunEngineEvasion()
+        {
+            if (!((evadingGunfire && evasionEngines) && (currentStatusMode == StatusMode.Maneuvering || currentStatusMode == StatusMode.Firing))) return;
+
+            Vector3 relVelProjected = Vector3.ProjectOnPlane(weaponManager.incomingThreatVessel ? RelVel(vessel, weaponManager.incomingThreatVessel) : vessel.GetObtVelocity(), threatRelativePosition);
+            Vector3 evasionDir = evasionErraticness * Vector3.Project(evasionNonLinearityDirection, relVelProjected).normalized;
+            Vector3 thrustDir = (fc.thrustDirection == Vector3.zero ? fc.attitude : fc.thrustDirection);
+            evasionDir = evasionErraticness == 0 ? thrustDir : Vector3.Lerp(evasionDir, thrustDir + evasionDir, fc.throttle).normalized;
+            if (fc.thrustDirection == fc.attitude || fc.thrustDirection == Vector3.zero)
+            {
+                fc.thrustDirection = evasionDir;
+                fc.attitude = evasionDir;
+            }
+            else
+            {
+                fc.thrustDirection = evasionDir;
+                fc.attitude = -evasionDir;
+            }
+            fc.alignmentToleranceforBurn = 70;
+            fc.throttle = Mathf.Clamp01(fc.throttle + Mathf.Clamp01(1f - threatRelativePosition.sqrMagnitude / 1e8f));
+            fc.lerpThrottle = false;
+        }
+
         private void UpdateRCSVector(Vector3 inputVec = default(Vector3))
         {
             if (currentStatusMode == StatusMode.AvoidingCollision)
             {
-                fc.rcsLerpRate = 15f;
-                fc.rcsRotate = true;
+                fc.rcsLerpRate = 100f / Time.fixedDeltaTime; // instant changes, don't Lerp
+                fc.rcsRotate = false;
             }
-            else if (evadingGunfire) // Quickly move RCS vector
+            else if (currentStatusMode == StatusMode.Ramming)
             {
-                inputVec = Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition);
-                fc.rcsLerpRate = 15f;
-                fc.rcsRotate = true;
+                fc.RCSPower = 20f;
+                fc.rcsLerpRate = 5f;
+                fc.rcsRotate = false;
+            }
+            else if (evadingGunfire && evasionRCS) // Quickly move RCS vector
+            {
+                Vector3 relVelProjected = Vector3.ProjectOnPlane(weaponManager.incomingThreatVessel ? RelVel(vessel, weaponManager.incomingThreatVessel) : vessel.GetObtVelocity(), threatRelativePosition);
+                inputVec = Vector3.Cross(Vector3.Project(evasionNonLinearityDirection, relVelProjected), threatRelativePosition).normalized;
+                fc.rcsLerpRate = 100f / Time.fixedDeltaTime; // instant changes, don't Lerp
+                fc.rcsRotate = false;
             }
             else // Slowly lerp RCS vector
             {

@@ -1945,6 +1945,10 @@ namespace BDArmory.UI
                                     }
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.MinEngagementRange, nameof(AI.MinEngagementRange), "MinEngagementRange", $"{AI.MinEngagementRange:0}m");
 
+                                    AI.allowRamming = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.allowRamming,
+                                        StringUtils.Localize("#LOC_BDArmory_AI_AllowRamming"), AI.allowRamming ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Allow Ramming"
+                                    line += 1.25f;
+
                                     GUI.EndGroup();
                                     sectionHeights[Section.Combat] = Mathf.Lerp(sectionHeight, line, 0.15f);
                                     line += 0.1f;
@@ -1957,8 +1961,15 @@ namespace BDArmory.UI
                                     GUI.BeginGroup(new Rect(contentBorder, contentHeight + line * entryHeight, contentWidth, sectionHeight * entryHeight), GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                                     line += 0.25f;
 
+                                    var oldManeuverSpeed = AI.ManeuverSpeed;
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.ManeuverSpeed, nameof(AI.ManeuverSpeed), "ManeuverSpeed", $"{AI.ManeuverSpeed:0}m/s");
-                                    
+                                    if (AI.ManeuverSpeed != oldManeuverSpeed)
+                                    {
+                                        AI.OnMaxUpdated(null, null);
+                                        var field = inputFields["FiringSpeed"];
+                                        field.SetCurrentValue(AI.firingSpeed);
+                                    }
+
                                     var oldMinFiringSpeed = AI.minFiringSpeed;
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.minFiringSpeed, nameof(AI.minFiringSpeed), "minFiringSpeed", $"{AI.minFiringSpeed:0}m/s");
                                     if (AI.minFiringSpeed != oldMinFiringSpeed)
@@ -1975,6 +1986,10 @@ namespace BDArmory.UI
                                         AI.OnMaxUpdated(null, null);
                                         var field = inputFields["minFiringSpeed"];
                                         field.SetCurrentValue(AI.minFiringSpeed);
+
+                                        AI.OnMinUpdated(null, null);
+                                        var field2 = inputFields["ManeuverSpeed"];
+                                        field2.SetCurrentValue(AI.ManeuverSpeed);
                                     }
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.firingAngularVelocityLimit, nameof(AI.firingAngularVelocityLimit), "FiringAngularVelocityLimit", $"{AI.firingAngularVelocityLimit:0}deg/s");
 
@@ -2035,6 +2050,23 @@ namespace BDArmory.UI
                                     line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.evasionTimeThreshold, nameof(AI.evasionTimeThreshold), "EvasionTimeThreshold", $"{AI.evasionTimeThreshold:0.0}s");
                                     line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.evasionErraticness, nameof(AI.evasionErraticness), "EvasionErraticness", $"{AI.evasionErraticness:0.00}");
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.evasionMinRangeThreshold, nameof(AI.evasionMinRangeThreshold), "EvasionMinRangeThreshold", AI.evasionMinRangeThreshold < 1000 ? $"{AI.evasionMinRangeThreshold:0}m" : $"{AI.evasionMinRangeThreshold / 1000:0}km");
+                                    AI.evasionRCS = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.evasionRCS,
+                                        StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionRCS") + " : " + (AI.evasionRCS ? StringUtils.Localize("#LOC_BDArmory_Enabled") : StringUtils.Localize("#LOC_BDArmory_Disabled")),
+                                        AI.evasionRCS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                    line += 1.25f;
+                                    if (contextTipsEnabled)
+                                    {
+                                        GUI.Label(ContextLabelRect(line++), StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionRCS_Context"), contextLabel);
+                                    }
+
+                                    AI.evasionEngines = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.evasionEngines,
+                                        StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionEngines") + " : " + (AI.evasionEngines ? StringUtils.Localize("#LOC_BDArmory_Enabled") : StringUtils.Localize("#LOC_BDArmory_Disabled")),
+                                        AI.evasionEngines ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                    line += 1.25f;
+                                    if (contextTipsEnabled)
+                                    {
+                                        GUI.Label(ContextLabelRect(line++), StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionEngines_Context"), contextLabel);
+                                    }
 
                                     AI.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.evasionIgnoreMyTargetTargetingMe, StringUtils.Localize("#LOC_BDArmory_AI_EvasionIgnoreMyTargetTargetingMe"), AI.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                                     line += 1.25f;
