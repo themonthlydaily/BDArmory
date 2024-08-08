@@ -272,6 +272,16 @@ namespace BDArmory.UI
             BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
         }
 
+        /// <summary>
+        /// Update the value of the spawn fields from the current settings values.
+        /// </summary>
+        public void RefreshSpawnFieldsFromSettings()
+        {
+            spawnFields["lat"].SetCurrentValue(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x);
+            spawnFields["lon"].SetCurrentValue(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y);
+            spawnFields["alt"].SetCurrentValue(BDArmorySettings.VESSEL_SPAWN_ALTITUDE);
+        }
+
         private void SetNewHeight(float windowHeight)
         {
             var previousWindowHeight = BDArmorySetup.WindowRectVesselSpawner.height;

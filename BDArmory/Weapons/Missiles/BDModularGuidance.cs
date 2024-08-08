@@ -833,10 +833,14 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
-                Vector3 targetPosition = TargetPosition + TimeWarp.fixedDeltaTime * TargetVelocity; // Fix for TargetPosition being off by one frame relative to targetVessel.Vessel.CoM, this works better than including acceleration term
-                Vector3 targetVelocity = TargetVelocity;
+                // Target information update is one frame behind on vessel.OnFlyByWire, so compensate here
+                Vector3 targetAcceleration = TargetAcceleration;
+                Vector3 targetVelocity = TargetVelocity + Time.fixedDeltaTime * targetAcceleration;
+                Vector3 targetPosition = TargetPosition + TimeWarp.fixedDeltaTime * targetVelocity;
+                
                 Vector3 targetVector = targetPosition - vessel.CoM;
-                Vector3 relVel = vessel.GetObtVelocity() - targetVelocity;
+                Vector3 relVel = vessel.Velocity() - targetVelocity;
+
                 Vector3 relVelNrm = relVel.normalized;
                 Vector3 interceptVector;
                 float relVelmag = relVel.magnitude;  
@@ -858,9 +862,10 @@ namespace BDArmory.Weapons.Missiles
                 else
                 {
                     Vector3 acceleration = forwardDir * maxAcceleration;
-                    relVel = TargetVelocity - vessel.GetObtVelocity();
-                    timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
-                    interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * acceleration, timeToImpact);
+
+                    relVel = targetVelocity - vessel.Velocity();
+                    timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, targetAcceleration - acceleration, 30);
+                    interceptVector = AIUtils.PredictPosition(targetVector, relVel, targetAcceleration - 0.5f * acceleration, timeToImpact);
 
                     if (Vector3.Dot(interceptVector, targetVector) < 0)
                         interceptVector = targetVector;
