@@ -79,7 +79,7 @@ namespace BDArmory.Weapons
             Delay,      //detonates 0.02s after any impact. easily defeated by whipple shields
             Penetrating,//detonates 0.02s after penetrating a minimum thickness of armor. will ignore lightly armored/soft hits
             Impact      //standard contact + graze fuze, detonates on hit
-            //Laser     //laser-guided smart rounds?
+                        //Laser     //laser-guided smart rounds?
         }
         public enum FillerTypes
         {
@@ -1437,7 +1437,7 @@ namespace BDArmory.Weapons
                 else
                     Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {ammoName} not found!");
                 ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id; // This should always be found.
-                //laser setup
+                                                                                        //laser setup
                 if (eWeaponType == WeaponTypes.Laser)
                 {
                     SetupLaserSpecifics();
@@ -1588,14 +1588,14 @@ namespace BDArmory.Weapons
                 }
             }
             /*
-            if (graviticWeapon)
-            {
-                GraviticInConfig = true;
-            }
-            if (impulseWeapon)
-            {
-                ImpulseInConfig = true;
-            }*/
+			if (graviticWeapon)
+			{
+				GraviticInConfig = true;
+			}
+			if (impulseWeapon)
+			{
+				ImpulseInConfig = true;
+			}*/
             if (eWeaponType != WeaponTypes.Laser)
             {
                 SetupAmmo(null, null);
@@ -1827,14 +1827,14 @@ namespace BDArmory.Weapons
         {
             string status = "Weapon Type: ";
             /*
-            if (eWeaponType == WeaponTypes.Ballistic)
-                status += "Ballistic; BulletType: " + currentType;
-            if (eWeaponType == WeaponTypes.Rocket)
-                status += "Rocket; RocketType: " + currentType + "; " + rocketModelPath;
-            if (eWeaponType == WeaponTypes.Laser)
-                status += "Laser";
-            status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
-            */
+			if (eWeaponType == WeaponTypes.Ballistic)
+				status += "Ballistic; BulletType: " + currentType;
+			if (eWeaponType == WeaponTypes.Rocket)
+				status += "Rocket; RocketType: " + currentType + "; " + rocketModelPath;
+			if (eWeaponType == WeaponTypes.Laser)
+				status += "Laser";
+			status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
+			*/
             status += "-Lead Offset: " + GetLeadOffset() + "; FinalAimTgt: " + finalAimTarget + "; tgt: " + visualTargetVessel.GetName() + "; tgt Pos: " + targetPosition + "; pointingAtSelf: " + pointingAtSelf + "; tgt CosAngle " + targetCosAngle + "; wpn CosAngle " + targetAdjustedMaxCosAngle + "; Wpn Autofire " + autoFire;
 
             return status;
@@ -2517,13 +2517,13 @@ namespace BDArmory.Weapons
                         targetDirectionLR = rayDirection.normalized;
                     }
                     /*else if (((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) || (isAPS && (tgtShell != null || tgtRocket != null))) && (turret && (turret.yawRange > 0 && turret.maxPitch > 0))) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
-                        && Vector3.Angle(rayDirection, targetDirection) < (isAPS ? 1f : 0.25f)) //if turret and within .25 deg (or 1 deg if APS), snap to target
-                    {
-                        //targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
-                        targetDirection = targetPosition - tf.position; //something in here is throwing off the laser aim, causing the beam to be fired wildly off-target. Disabling it for now. FIXME - debug this later
-                        rayDirection = targetDirection;
-                        targetDirectionLR = targetDirection.normalized;
-                    }*/
+						&& Vector3.Angle(rayDirection, targetDirection) < (isAPS ? 1f : 0.25f)) //if turret and within .25 deg (or 1 deg if APS), snap to target
+					{
+						//targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
+						targetDirection = targetPosition - tf.position; //something in here is throwing off the laser aim, causing the beam to be fired wildly off-target. Disabling it for now. FIXME - debug this later
+						rayDirection = targetDirection;
+						targetDirectionLR = targetDirection.normalized;
+					}*/
                     Ray ray = new Ray(tf.position, rayDirection);
                     lr.useWorldSpace = false;
                     lr.SetPosition(0, Vector3.zero);
@@ -2852,6 +2852,7 @@ namespace BDArmory.Weapons
         // this is the extent of RocketLauncher code that differs from ModuleWeapon
         public void FireRocket() //#11, #673
         {
+            logSim = false;
             int rocketsLeft;
 
             float timeGap = GetTimeGap();
@@ -3428,6 +3429,7 @@ namespace BDArmory.Weapons
         HashSet<WeaponStates> enabledStates = new HashSet<WeaponStates> { WeaponStates.Enabled, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void EnableWeapon(bool secondaryFiring = false)
         {
+            logSim = true;
             if (enabledStates.Contains(weaponState) || (secondaryFiring && weaponState == WeaponStates.EnabledForSecondaryFiring))
                 return;
 
@@ -3618,15 +3620,14 @@ namespace BDArmory.Weapons
                     switch (eWeaponType)
                     {
                         case WeaponTypes.Ballistic:
+                        case WeaponTypes.Rocket: // Perform same correction for rockets as for bullets (it's probably fine).
                             finalAimTarget += lastTimeToCPA * (stalePartVelocity - BDKrakensbane.FrameVelocityV3f - smoothedPartVelocity); // Account for our own velocity changes.
-                            break;
-                        case WeaponTypes.Rocket: // FIXME
                             break;
                             // Lasers have no timeToCPA correction.
                     }
 
                     fixedLeadOffset = targetPosition - finalAimTarget; //for aiming fixed guns to moving target
-                    // if (FlightGlobals.ActiveVessel == vessel) Debug.Log($"DEBUG t: {Time.time}, tgt acq: {targetAcquired}, stale: {weaponManager.staleTarget}, Stale aimer: aim at {finalAimTarget:G3} ({finalAimTarget.magnitude:G3}m), last: {staleFinalAimTarget:G3}, Δt: {timeSinceGood:F2}s ({timeSinceGood / (1f + timeSinceGood / 30f):F2}s)");
+                                                                       // if (FlightGlobals.ActiveVessel == vessel) Debug.Log($"DEBUG t: {Time.time}, tgt acq: {targetAcquired}, stale: {weaponManager.staleTarget}, Stale aimer: aim at {finalAimTarget:G3} ({finalAimTarget.magnitude:G3}m), last: {staleFinalAimTarget:G3}, Δt: {timeSinceGood:F2}s ({timeSinceGood / (1f + timeSinceGood / 30f):F2}s)");
 
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
                     {
@@ -3757,144 +3758,155 @@ namespace BDArmory.Weapons
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
                 origTargetDistance = targetDistance;
 
-                if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic) //Gun targeting
+                RunTrajectorySimulation(); // Run the trajectory sim after picking a target for this frame, otherwise a bunch of stuff is reset between frames. This is required for the rocket aiming.
+
+                if (BDArmorySettings.AIM_ASSIST || aiControlled)
                 {
-                    /* There are 3 main situations that the aiming code needs to satisfy:
-                        - Static: where the two vessels are supported on or near the surface of Kerbin.
-                            In this situation, there is no effect from velocity, acceleration or Krakensbane, just the variation in gravity over the path of the bullet.
-                            VM gives perfectly stationary vessels, and the kinematic smoothing should give sufficiently static landed/splashed vessels.
-                            The numerical integrator for the target is irrelevant here due to the target being static.
-                            This situation is useful for getting the initial setup of the bullets and their trajectories (e.g., bullet drop, iTime) correct. Bullets should closely follow the debug lines.
-                        - Translational: where variation in gravity is negligible, e.g., at the limit of Kerbin's SoI.
-                            In this situation, the solution should be analytically solvable for constantly accelerating vessels once changes in the Krakensbane velocity offloading are accounted for.
-                            This situation is useful for getting the velocity corrections to finalTarget correct (e.g., part.rb.velocity)'b'.
-                            The solution from numerical simulation should agree closely with the analytic solution here — can be used to partially validate the numerical accuracy of KSP/Unity (only partially since the simplicity of the Hamiltonian may mean that the integrators appear more accurate here than they would normally be).
-                            This situation also covers most short-range conditions during in atmosphere dogfights, which generally are sufficiently covered by the analytic solution.
-                            FIXME There still seems to be a small offset for the non-active vessels (e.g., firing from the active vessel, then switching to the targetted vessel shortly before the bullets arrive shows an offset of ~1m.)
-                        - Orbital (>100km): where varying gravity, vessel acceleration and Krakensbane must all be accounted for.
-                            In this situation, the numerical integrators for bullets and the target need to closely approximate their actual trajectories.
-                            This situation is useful for making sure that the way finalTarget is calculated works in this geometry (i.e., is combining bulletDrop and part.rb.velocity to get the firing direction sufficient or are they just the lowest order terms when in orbit?) and dealing with KSP's orbital drift compensation (separate gravitational vs local acceleration).
-                            For <100km orbits, corrections due to Krakensbane may need adjusting.
-                    */
-                    Vector3 bulletInitialPosition, relativePosition, bulletEffectiveVelocity, relativeVelocity, bulletAcceleration, relativeAcceleration, targetPredictedPosition, bulletDropOffset, bulletInitialVelocityDelta;
-                    float timeToCPA;
-                    Vector3 firingDirection, lastFiringDirection;
+                    switch (eWeaponType)
+                    {
+                        case WeaponTypes.Ballistic: //Gun targeting
+                            {
+                                /* There are 3 main situations that the aiming code needs to satisfy:
+									- Static: where the two vessels are supported on or near the surface of Kerbin.
+										In this situation, there is no effect from velocity, acceleration or Krakensbane, just the variation in gravity over the path of the bullet.
+										VM gives perfectly stationary vessels, and the kinematic smoothing should give sufficiently static landed/splashed vessels.
+										The numerical integrator for the target is irrelevant here due to the target being static.
+										This situation is useful for getting the initial setup of the bullets and their trajectories (e.g., bullet drop, iTime) correct. Bullets should closely follow the debug lines.
+									- Translational: where variation in gravity is negligible, e.g., at the limit of Kerbin's SoI.
+										In this situation, the solution should be analytically solvable for constantly accelerating vessels once changes in the Krakensbane velocity offloading are accounted for.
+										This situation is useful for getting the velocity corrections to finalTarget correct (e.g., part.rb.velocity)'b'.
+										The solution from numerical simulation should agree closely with the analytic solution here — can be used to partially validate the numerical accuracy of KSP/Unity (only partially since the simplicity of the Hamiltonian may mean that the integrators appear more accurate here than they would normally be).
+										This situation also covers most short-range conditions during in atmosphere dogfights, which generally are sufficiently covered by the analytic solution.
+										FIXME There still seems to be a small offset for the non-active vessels (e.g., firing from the active vessel, then switching to the targetted vessel shortly before the bullets arrive shows an offset of ~1m.)
+									- Orbital (>100km): where varying gravity, vessel acceleration and Krakensbane must all be accounted for.
+										In this situation, the numerical integrators for bullets and the target need to closely approximate their actual trajectories.
+										This situation is useful for making sure that the way finalTarget is calculated works in this geometry (i.e., is combining bulletDrop and part.rb.velocity to get the firing direction sufficient or are they just the lowest order terms when in orbit?) and dealing with KSP's orbital drift compensation (separate gravitational vs local acceleration).
+										For <100km orbits, corrections due to Krakensbane may need adjusting.
+								*/
+                                Vector3 bulletInitialPosition, relativePosition, bulletEffectiveVelocity, relativeVelocity, bulletAcceleration, relativeAcceleration, targetPredictedPosition, bulletDropOffset, bulletInitialVelocityDelta;
+                                float timeToCPA;
+                                Vector3 firingDirection, lastFiringDirection;
 
-                    var timeGap = GetTimeGap();
-                    var iTime = timeSinceFired - timeGap >= TimeWarp.fixedDeltaTime ?
-                        TimeWarp.fixedDeltaTime :
-                        TimeWarp.fixedDeltaTime - (TimeWarp.fixedDeltaTime + timeGap - timeSinceFired) % TimeWarp.fixedDeltaTime; // This is the iTime correction for the frame that the gun will actually fire on.
-                    if (iTime < 1e-4f) iTime = TimeWarp.fixedDeltaTime; // Avoid jitter by aliasing iTime < 1e-4 to TimeWarp.fixedDeltaTime for the frame after.
-                    var firePosition = AIUtils.PredictPosition(fireTransforms[0].position, smoothedPartVelocity, smoothedPartAcceleration, Time.fixedDeltaTime); // Position of the end of the barrel at the start of the next frame.
+                                var timeGap = GetTimeGap();
+                                var iTime = timeSinceFired - timeGap >= TimeWarp.fixedDeltaTime ?
+                                    TimeWarp.fixedDeltaTime :
+                                    TimeWarp.fixedDeltaTime - (TimeWarp.fixedDeltaTime + timeGap - timeSinceFired) % TimeWarp.fixedDeltaTime; // This is the iTime correction for the frame that the gun will actually fire on.
+                                if (iTime < 1e-4f) iTime = TimeWarp.fixedDeltaTime; // Avoid jitter by aliasing iTime < 1e-4 to TimeWarp.fixedDeltaTime for the frame after.
+                                var firePosition = AIUtils.PredictPosition(fireTransforms[0].position, smoothedPartVelocity, smoothedPartAcceleration, Time.fixedDeltaTime); // Position of the end of the barrel at the start of the next frame.
 
-                    firingDirection = smoothedRelativeFinalTarget.At(Time.fixedDeltaTime).normalized; // Estimate of the current firing direction for this frame based on the previous frames.
-                    bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
-                    bulletInitialPosition = AIUtils.PredictPosition(firePosition, baseBulletVelocity * firingDirection, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
-                    if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
-                    bulletInitialVelocityDelta = iTime * bulletAcceleration;
+                                firingDirection = smoothedRelativeFinalTarget.At(Time.fixedDeltaTime).normalized; // Estimate of the current firing direction for this frame based on the previous frames.
+                                bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
+                                bulletInitialPosition = AIUtils.PredictPosition(firePosition, baseBulletVelocity * firingDirection, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
+                                if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                bulletInitialVelocityDelta = iTime * bulletAcceleration;
 
-                    // Check whether we should use the analytic solution or the numeric one. These initial values don't affect the numeric solution.
-                    if (lastTimeToCPA >= 0)
-                    {
-                        timeToCPA = lastTimeToCPA + deltaTimeToCPA; // Use the previous timeToCPA adjusted for the previous delta as a decent initial estimate.
-                    }
-                    else
-                    {
-                        relativePosition = targetPosition - bulletInitialPosition;
-                        relativeVelocity = targetVelocity - (smoothedPartVelocity + baseBulletVelocity * firingDirection);
-                        timeToCPA = BDAMath.Sqrt(relativePosition.sqrMagnitude / relativeVelocity.sqrMagnitude); // Rough initial estimate.
-                    }
-                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
-                    bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Average acceleration over the bullet's path. Drag is ignored.
-                    var offTarget = Vector3.Dot(firingDirection, fireTransforms[0].forward) < 0.985f; // More than 10° off-target. This should cover most cases, even when not using the analytic solution.
-                    bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude < 100f; // TODO This condition could be improved to better cover all situations where the analytic solution isn't sufficiently accurate.
-                    if (offTarget || useAnalyticAiming) // The gun is significantly off-target or we want the optimum analytic solution => perform a loop based on an "optimal" firing direction.
-                    {
-                        // For artillery (if it ever gets implemented), TimeToCPA needs to use the furthest time, not the closest (AIUtils.CPAType).
-                        int count = 0;
-                        // This loop is correct for situation 1.
-                        // It also appears to be correct for situation 2, but accuracy is different depending on which vessel has focus.
-                        // - From the target's perspective, the shots are quite accurate.
-                        // - From the shooter's perspective, the shots are often wide, but not consistently.
-                        do
-                        {
-                            // Note: Bullets are initially placed up to 1 frame ahead (iTime) to compensate for where they would move to during this physics frame.
-                            //       Also, we have already adjusted the target's position and velocity for where it ought to be next frame.
-                            //       Thus, the following calculations are based on the state at the start of the next frame.
-                            //       It is also using the firing direction from the initial estimate, so it is effectively always performing 2 iterations (1 initial and 1 here).
-                            lastFiringDirection = firingDirection;
-                            bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection + bulletInitialVelocityDelta;
-                            bulletInitialPosition = firePosition + iTime * baseBulletVelocity * firingDirection;
-                            if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
-                            bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Drag is ignored.
-                            relativePosition = targetPosition - bulletInitialPosition;
-                            relativeVelocity = targetVelocity - bulletEffectiveVelocity;
-                            relativeAcceleration = targetAcceleration - bulletAcceleration;
-                            timeToCPA = AIUtils.TimeToCPA(relativePosition, relativeVelocity, relativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude); // time to CPA from the next frame (where the bullet starts).
-                            targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
-                            bulletDropOffset = -0.5f * (timeToCPA + iTime) * (timeToCPA + iTime) * bulletAcceleration; // The bullet starts on the next frame so it uses timeToCPA+iTime, other uses use timeToCPA+Time.fixedDeltaTime.
-                            finalTarget = targetPredictedPosition + bulletDropOffset - (timeToCPA + Time.fixedDeltaTime) * smoothedPartVelocity;
-                            firingDirection = (finalTarget - fireTransforms[0].position).normalized;
-                        } while (++count < 10 && Vector3.Dot(lastFiringDirection, firingDirection) < 0.9998f); // ~1° margin of error is sufficient to prevent premature firing (usually)
-                    }
-                    else // Reasonably on-target and the analytic solution isn't accurate enough.
-                    {
-                        // Note: we can't base this on the firing direction from the analytic solution as the single step is not enough to converge sufficiently accurately from the analytic solution to the correct solution.
-                        // Instead, we must rely on the convergence over time based on our estimate from the previous frame (which is very quick unless near the limits of the weapon).
-                        // This is correct for situations 1 and 2.
-                        // It suffers the same accuracy noise as the analytic solution.
-                        // However, there seems to be some inconsistencies between the analytic and numeric solutions when the CPA distance is non-zero (t<0 or t>max) or when the solver switches between roots of the cubic. Fortunately, these situations are generally only for extreme situations.
-                        // Also, the numeric solution is giving strangely discrete values initially.
-                        // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 5-15km.
+                                // Check whether we should use the analytic solution or the numeric one. These initial values don't affect the numeric solution.
+                                if (lastTimeToCPA >= 0)
+                                {
+                                    timeToCPA = lastTimeToCPA + deltaTimeToCPA; // Use the previous timeToCPA adjusted for the previous delta as a decent initial estimate.
+                                }
+                                else
+                                {
+                                    relativePosition = targetPosition - bulletInitialPosition;
+                                    relativeVelocity = targetVelocity - (smoothedPartVelocity + baseBulletVelocity * firingDirection);
+                                    timeToCPA = BDAMath.Sqrt(relativePosition.sqrMagnitude / relativeVelocity.sqrMagnitude); // Rough initial estimate.
+                                }
+                                targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                                bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Average acceleration over the bullet's path. Drag is ignored.
+                                var offTarget = Vector3.Dot(firingDirection, fireTransforms[0].forward) < 0.985f; // More than 10° off-target. This should cover most cases, even when not using the analytic solution.
+                                bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude < 100f; // TODO This condition could be improved to better cover all situations where the analytic solution isn't sufficiently accurate.
+                                if (offTarget || useAnalyticAiming) // The gun is significantly off-target or we want the optimum analytic solution => perform a loop based on an "optimal" firing direction.
+                                {
+                                    // For artillery (if it ever gets implemented), TimeToCPA needs to use the furthest time, not the closest (AIUtils.CPAType).
+                                    int count = 0;
+                                    // This loop is correct for situation 1.
+                                    // It also appears to be correct for situation 2, but accuracy is different depending on which vessel has focus.
+                                    // - From the target's perspective, the shots are quite accurate.
+                                    // - From the shooter's perspective, the shots are often wide, but not consistently.
+                                    do
+                                    {
+                                        // Note: Bullets are initially placed up to 1 frame ahead (iTime) to compensate for where they would move to during this physics frame.
+                                        //       Also, we have already adjusted the target's position and velocity for where it ought to be next frame.
+                                        //       Thus, the following calculations are based on the state at the start of the next frame.
+                                        //       It is also using the firing direction from the initial estimate, so it is effectively always performing 2 iterations (1 initial and 1 here).
+                                        lastFiringDirection = firingDirection;
+                                        bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection + bulletInitialVelocityDelta;
+                                        bulletInitialPosition = firePosition + iTime * baseBulletVelocity * firingDirection;
+                                        if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                        bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Drag is ignored.
+                                        relativePosition = targetPosition - bulletInitialPosition;
+                                        relativeVelocity = targetVelocity - bulletEffectiveVelocity;
+                                        relativeAcceleration = targetAcceleration - bulletAcceleration;
+                                        timeToCPA = AIUtils.TimeToCPA(relativePosition, relativeVelocity, relativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude); // time to CPA from the next frame (where the bullet starts).
+                                        targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                                        bulletDropOffset = -0.5f * (timeToCPA + iTime) * (timeToCPA + iTime) * bulletAcceleration; // The bullet starts on the next frame so it uses timeToCPA+iTime, other uses use timeToCPA+Time.fixedDeltaTime.
+                                        finalTarget = targetPredictedPosition + bulletDropOffset - (timeToCPA + Time.fixedDeltaTime) * smoothedPartVelocity;
+                                        firingDirection = (finalTarget - fireTransforms[0].position).normalized;
+                                    } while (++count < 10 && Vector3.Dot(lastFiringDirection, firingDirection) < 0.9998f); // ~1° margin of error is sufficient to prevent premature firing (usually)
+                                }
+                                else // Reasonably on-target and the analytic solution isn't accurate enough.
+                                {
+                                    // Note: we can't base this on the firing direction from the analytic solution as the single step is not enough to converge sufficiently accurately from the analytic solution to the correct solution.
+                                    // Instead, we must rely on the convergence over time based on our estimate from the previous frame (which is very quick unless near the limits of the weapon).
+                                    // This is correct for situations 1 and 2.
+                                    // It suffers the same accuracy noise as the analytic solution.
+                                    // However, there seems to be some inconsistencies between the analytic and numeric solutions when the CPA distance is non-zero (t<0 or t>max) or when the solver switches between roots of the cubic. Fortunately, these situations are generally only for extreme situations.
+                                    // Also, the numeric solution is giving strangely discrete values initially.
+                                    // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 5-15km.
 
-                        bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection;
+                                    bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection;
 
-                        var (simBulletCPA, simTargetCPA, simTimeToCPA) = BallisticTrajectoryClosestApproachSimulation(
-                            bulletInitialPosition,
-                            bulletEffectiveVelocity + bulletInitialVelocityDelta,
-                            bulletDrop,
-                            targetPosition,
-                            targetVelocity,
-                            targetAcceleration,
-                            supported,
-                            BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER * Time.fixedDeltaTime,
-                            maxTargetingRange / bulletEffectiveVelocity.magnitude,
-                            AIUtils.CPAType.Earliest
-                        );
-                        timeToCPA = simTimeToCPA;
-                        bulletDropOffset = AIUtils.PredictPosition(bulletInitialPosition, bulletEffectiveVelocity, Vector3.zero, timeToCPA) - simBulletCPA; // Bullet drop is the acceleration component.
-                        finalTarget = simTargetCPA + bulletDropOffset - (timeToCPA + Time.fixedDeltaTime) * smoothedPartVelocity;
-                    }
-                    if (lastTimeToCPA >= 0)
-                    {
-                        deltaTimeToCPA = timeToCPA - lastTimeToCPA;
-                        smoothedRelativeFinalTarget.Update(finalTarget - fireTransforms[0].position);
-                    }
-                    else
-                    {
-                        deltaTimeToCPA = 0;
-                        smoothedRelativeFinalTarget.Reset(finalTarget - fireTransforms[0].position);
-                    }
-                    lastTimeToCPA = timeToCPA;
-                    bulletTimeToCPA = timeToCPA;
-                    targetDistance = Vector3.Distance(finalTarget, firePosition);
+                                    var (simBulletCPA, simTargetCPA, simTimeToCPA) = BallisticTrajectoryClosestApproachSimulation(
+                                        bulletInitialPosition,
+                                        bulletEffectiveVelocity + bulletInitialVelocityDelta,
+                                        bulletDrop,
+                                        targetPosition,
+                                        targetVelocity,
+                                        targetAcceleration,
+                                        supported,
+                                        BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER * Time.fixedDeltaTime,
+                                        maxTargetingRange / bulletEffectiveVelocity.magnitude,
+                                        AIUtils.CPAType.Earliest
+                                    );
+                                    timeToCPA = simTimeToCPA;
+                                    bulletDropOffset = AIUtils.PredictPosition(bulletInitialPosition, bulletEffectiveVelocity, Vector3.zero, timeToCPA) - simBulletCPA; // Bullet drop is the acceleration component.
+                                    finalTarget = simTargetCPA + bulletDropOffset - (timeToCPA + Time.fixedDeltaTime) * smoothedPartVelocity;
+                                }
+                                if (lastTimeToCPA >= 0)
+                                {
+                                    deltaTimeToCPA = timeToCPA - lastTimeToCPA;
+                                    smoothedRelativeFinalTarget.Update(finalTarget - fireTransforms[0].position);
+                                }
+                                else
+                                {
+                                    deltaTimeToCPA = 0;
+                                    smoothedRelativeFinalTarget.Reset(finalTarget - fireTransforms[0].position);
+                                }
+                                lastTimeToCPA = timeToCPA;
+                                bulletTimeToCPA = timeToCPA;
+                                targetDistance = Vector3.Distance(finalTarget, firePosition);
 
-                    if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
-                    {
-                        // Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
-                        debugTargetPosition = targetPosition;
-                        debugLastTargetPosition = debugTargetPosition;
-                        debugRelVelAdj = (targetVelocity - smoothedPartVelocity) * timeToCPA;
-                        debugAccAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
-                        debugGravAdj = bulletDropOffset;
-                        // var missDistance = AIUtils.PredictPosition(relativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
-                        // if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
+                                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                                {
+                                    // Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
+                                    debugTargetPosition = targetPosition;
+                                    debugLastTargetPosition = debugTargetPosition;
+                                    debugRelVelAdj = (targetVelocity - smoothedPartVelocity) * timeToCPA;
+                                    debugAccAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
+                                    debugGravAdj = bulletDropOffset;
+                                    // var missDistance = AIUtils.PredictPosition(relativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
+                                    // if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
+                                }
+                            }
+                            break;
+                        case WeaponTypes.Rocket: //Rocket targeting
+                            {
+                                // FIXME The prediction for co-orbiting planes is still slightly off.
+                                finalTarget = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, predictedFlightTime) + trajectoryOffset;
+                                targetDistance = Mathf.Clamp(Vector3.Distance(targetPosition, fireTransform.parent.position), 0, maxTargetingRange);
+                            }
+                            break;
                     }
-                }
-                if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Rocket) //Rocket targeting
-                {
-                    finalTarget = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, predictedFlightTime) + trajectoryOffset;
-                    targetDistance = Mathf.Clamp(Vector3.Distance(targetPosition, fireTransform.parent.position), 0, maxTargetingRange);
                 }
                 //airdetonation
                 if (eFuzeType == FuzeTypes.Timed || eFuzeType == FuzeTypes.Flak)
@@ -3931,12 +3943,16 @@ namespace BDArmory.Weapons
             }
         }
 
+        bool logSim = true;
         /// <summary>
         /// Run a trajectory simulation in the current frame.
         /// 
         /// Note: Since this is running in the current frame, for moving targets the trajectory appears to be off, but it's not.
         /// By the time the projectile arrives at the target, the target has moved to that point in the trajectory.
         /// </summary>
+        /// For bullets, this isn't used for aiming, only for visuals. But for rockets it is.
+        /// FIXME In orbit, this should run in the local velocity frame, max distance is the distance to the target, scenery is irrelevant (?), should timeout on reaching CPA to target
+        /// When not in orbit, this should run in the non-moving frame
         public void RunTrajectorySimulation()
         {
             if ((eWeaponType == WeaponTypes.Rocket && ((BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && vessel.isActiveVessel) || aiControlled)) ||
@@ -3984,7 +4000,7 @@ namespace BDArmory.Weapons
                     {
                         Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f + baseBulletVelocity * fireTransform.forward + iTime * bulletAcceleration;
                         var simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than with Euler variants (what was used before). Always take at least 2 steps though.
-                        BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity / Vector3.Dot((targetPosition - simCurrPos).normalized, fireTransform.forward), simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
+                        BallisticTrajectorySimulation(ref simCurrPos, simVelocity, maxTargetingRange / baseBulletVelocity / Vector3.Dot((targetPosition - simCurrPos).normalized, fireTransform.forward), simDeltaTime, 0, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
                         bulletPrediction = simCurrPos;
                     }
                 }
@@ -3992,74 +4008,81 @@ namespace BDArmory.Weapons
                 {
                     float simTime = 0;
                     float maxTime = rocketInfo.lifeTime;
-                    float maxDistance = Mathf.Min(targetDistance, maxTargetingRange); // Rockets often detonate earlier than their lifetime.
+                    Vector3 startPos = rocketPod ? rockets[0].position : fireTransform.position; // FIXME testing
+                    Vector3 simVelocity = smoothedPartVelocity; // Use the velocity in the local velocity frame.   + BDKrakensbane.FrameVelocityV3f; // Use the real velocity in the sim.
+                    Vector3 simCurrPos = startPos;
                     Vector3 pointingDirection = fireTransform.forward;
-                    Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
-                    Vector3 simCurrPos = fireTransform.position;
-                    Vector3 simPrevPos = simCurrPos;
-                    Vector3 simStartPos = simCurrPos;
+                    Quaternion simRotation = fireTransform.rotation;
+                    Vector3 simInvInitialDirection = Quaternion.Inverse(simRotation) * pointingDirection;
+                    if (logSim) Debug.Log($"DEBUG Sim (initial). {simTime}s, pos: {simCurrPos - startPos} ({(simCurrPos - startPos).magnitude}), vel: {simVelocity} ({simVelocity.magnitude}), dir: {1000 * pointingDirection}");
                     Vector3 closestPointOfApproach = simCurrPos;
-                    float closestDistanceSqr = float.MaxValue;
-                    RaycastHit hit;
+                    float timeToCPA;
+                    Vector3 targetPredictedPosition;
                     bool hitDetected = false;
-                    float simDeltaTime = Time.fixedDeltaTime;
                     float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(vessel.staticPressurekPa, vessel.externalTemperature, vessel.mainBody));
                     bool slaved = turret && weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode);
+                    bool inOrbit = vessel.InOrbit(); // When in orbit, ignore raycasts
+                    // Debug.Log($"DEBUG In Orbit: {inOrbit}");
 
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     {
-                        if (trajectoryPoints == null) trajectoryPoints = new List<Vector3>();
+                        trajectoryPoints ??= [];
                         trajectoryPoints.Clear();
                         trajectoryPoints.Add(simCurrPos);
                     }
 
-                    // Bootstrap leap-frog
-                    var gravity = FlightGlobals.getGeeForceAtPosition(simCurrPos);
-                    if (FlightGlobals.RefFrameIsRotating)
-                    { simVelocity += 0.5f * simDeltaTime * gravity; }
-                    simVelocity += 0.5f * thrust / rocketMass * simDeltaTime * pointingDirection;
+                    // Initial frame (no forces or collision/proximity detection)
+                    float simDeltaTime = Time.fixedDeltaTime;
+                    simCurrPos += simDeltaTime * simVelocity;
+                    simTime += simDeltaTime;
 
                     while (true)
                     {
+                        // Update acceleration for this frame.
+                        Vector3 simAcceleration = FlightGlobals.RefFrameIsRotating ? FlightGlobals.getGeeForceAtPosition(simCurrPos) : Vector3.zero;
+                        if (simTime <= thrustTime) simAcceleration += thrust / rocketMass * pointingDirection;
+                        Vector3 simVelocityActual = simVelocity + BDKrakensbane.FrameVelocityV3f;
+                        if (BDArmorySettings.BULLET_WATER_DRAG)
+                        {
+                            if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0)
+                                simAcceleration += -(0.5f * 1 * simVelocityActual.sqrMagnitude * 0.5f * (Mathf.PI * caliber * caliber * 0.25f / 1000000)) / rocketMass * pointingDirection;//this is going to throw off aiming code, but you aren't going to hit anything with rockets underwater anyway
+                        }
+
+                        // Rotation (aero stabilize).
+                        var lastDirection = pointingDirection;
+                        var atmosFactor = atmosMultiplier * 0.5f * 0.012f * simVelocityActual.sqrMagnitude * simDeltaTime;
+                        simRotation = Quaternion.RotateTowards(simRotation, Quaternion.LookRotation(simVelocityActual, fireTransform.up), atmosFactor); // Using Vector3.RotateTowards isn't accurate enough.
+                        pointingDirection = simRotation * simInvInitialDirection;
+                        var angleDelta = Vector3.Angle(lastDirection, pointingDirection);
+
+                        if (logSim && simTime < 0.4f) Debug.Log($"DEBUG Sim. {simTime}s, pos: {simCurrPos - startPos} ({(simCurrPos - startPos).magnitude}), vel: {simVelocity} ({simVelocity.magnitude}), acc: {simAcceleration} ({simAcceleration.magnitude}), dir: {1000 * pointingDirection}, atm: {atmosFactor}, Δang: {angleDelta}");
 
                         // No longer thrusting, finish up with a ballistic sim.
                         if (simTime > thrustTime)
                         {
-                            // Correct the velocity for the current time.
-                            if (FlightGlobals.RefFrameIsRotating)
-                            { simVelocity -= 0.5f * simDeltaTime * gravity; }
-                            simVelocity -= 0.5f * thrust / rocketMass * simDeltaTime * pointingDirection; // Note: we're ignoring the underwater slow-down here.
-
-                            var distanceRemaining = Mathf.Min(maxDistance - (simCurrPos - simStartPos).magnitude, (targetPosition - simCurrPos).magnitude);
+                            targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, simTime);
                             var timeRemaining = maxTime - simTime;
-                            simDeltaTime = Mathf.Clamp(Mathf.Min(distanceRemaining / simVelocity.magnitude, timeRemaining) / 8f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // Take 8 steps for smoother visuals.
-                            var timeToCPA = AIUtils.TimeToCPA(targetPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - gravity, timeRemaining); // For aiming, we want the closest approach to refine our aim.
-                            closestPointOfApproach = AIUtils.PredictPosition(simCurrPos, simVelocity, gravity, timeToCPA);
+                            timeToCPA = AIUtils.TimeToCPA(targetPredictedPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - simAcceleration, timeRemaining); // For aiming, we want the closest approach to refine our aim.
+                            closestPointOfApproach = AIUtils.PredictPosition(simCurrPos, simVelocity, simAcceleration, timeToCPA);
                             if (!hitDetected) bulletPrediction = closestPointOfApproach;
                             if (BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && !hitDetected)
                             {
-                                var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, distanceRemaining, timeRemaining, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0, SimulationStage.Normal, false); // For visuals, we want the trajectory sim with collision detection. Note: this is done after to avoid messing with simCurrPos.
-                                if (!hitDetected)
-                                {
-                                    bulletPrediction = simCurrPos; // Overwrite the bulletPrediction with the results of the trajectory sim if a hit was detected.
-                                    hitDetected = true;
-                                }
+                                // var distanceRemaining = Mathf.Min(maxDistance - (simCurrPos - simStartPos).magnitude, (targetPredictedPosition - simCurrPos).magnitude);
+                                // simDeltaTime = Mathf.Clamp(Mathf.Min(distanceRemaining / simVelocity.magnitude, timeRemaining) / 8f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // Take 8 steps for smoother visuals.
+                                simDeltaTime = Time.fixedDeltaTime;
+                                var simElapsedTime = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, timeRemaining, simDeltaTime, simTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0, resetTrajectoryPoints: false); // For visuals, we want the trajectory sim with collision detection. Note: this is done after to avoid messing with simCurrPos.
+                                if (!hitDetected) bulletPrediction = simCurrPos; // Overwrite the bulletPrediction with the results of the trajectory sim unless a hit was detected.
+                                if (logSim) Debug.Log($"DEBUG CPA vs sim: {(closestPointOfApproach - simCurrPos).magnitude}m, ttCPA: {timeToCPA}s, simTime: {simElapsedTime}s, timeRemaining: {timeRemaining}s");
                             }
                             simTime += timeToCPA;
+                            if (logSim) Debug.Log($"DEBUG {Time.time} Break due to post-thrust CPA at {simTime}s");
                             break;
                         }
 
-                        // Update the current sim time.
-                        simTime += simDeltaTime;
-
-                        // Position update (current time).
-                        simPrevPos = simCurrPos;
-                        simCurrPos += simVelocity * simDeltaTime;
-
-                        // Check for collisions within the last update.
-                        if (!hitDetected && !aiControlled && !slaved)
+                        // Check for collisions within the next update. (Note: this is only relevant against static objects and isn't used for aiming.)
+                        if (!inOrbit && !hitDetected && !aiControlled && !slaved)
                         {
-                            if (Physics.Raycast(simPrevPos, simVelocity, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Any hit other than the part firing the rocket.
+                            if (Physics.Raycast(simCurrPos, simVelocity, out RaycastHit hit, simDeltaTime * simVelocity.magnitude, layerMask1) && hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part) // Any hit other than the part firing the rocket.
                             {
                                 bulletPrediction = hit.point;
                                 hitDetected = true;
@@ -4087,49 +4110,46 @@ namespace BDArmory.Weapons
                             // }
                         }
 
-                        // Check for closest approach within the last update.
-                        if ((simPrevPos - targetPosition).sqrMagnitude < closestDistanceSqr)
-                        {
-                            var timeToCPA = AIUtils.TimeToCPA(targetPosition - simPrevPos, targetVelocity - simVelocity, targetAcceleration - gravity, simDeltaTime);
-                            if (timeToCPA < simDeltaTime)
-                                closestPointOfApproach = AIUtils.PredictPosition(simPrevPos, simVelocity, gravity, timeToCPA);
-                            else
-                                closestPointOfApproach = simPrevPos;
-                            closestDistanceSqr = (closestPointOfApproach - targetPosition).sqrMagnitude;
-                        }
-                        else
+                        // Check for closest approach within the next update.
+                        targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, simTime);
+                        var targetPredictedVelocity = targetVelocity + simTime * targetAcceleration;
+                        timeToCPA = AIUtils.TimeToCPA(targetPredictedPosition - simCurrPos, targetPredictedVelocity - simVelocity, targetAcceleration - simAcceleration, simDeltaTime);
+                        if (timeToCPA < 0) // No longer approaching.
                         {
                             if (!hitDetected) bulletPrediction = closestPointOfApproach;
+                            if (logSim) Debug.Log($"DEBUG {Time.time} Break due to no longer approaching at {simTime}s");
+                            break; // No longer approaching.
+                        }
+                        else if (timeToCPA < simDeltaTime) // CPA within the next frame.
+                        {
+                            closestPointOfApproach = AIUtils.PredictPosition(simCurrPos, simVelocity, simAcceleration, timeToCPA);
+                            if (!hitDetected) bulletPrediction = closestPointOfApproach;
+                            simTime += timeToCPA;
+                            if (logSim) Debug.Log($"DEBUG {Time.time} Break due to CPA at {simTime}s with separation {(closestPointOfApproach - targetPredictedPosition).magnitude}m, target pos: {targetPosition}, vel: {targetVelocity}, acc: {targetAcceleration}");
                             break;
                         }
+                        else // CPA beyond the next frame.
+                        {
+                            closestPointOfApproach = simCurrPos;
+                        }
+
+                        // Symplectic Euler. (Unity's integrator is closer to Symplectic Euler than LeapFrog.)
+                        simVelocity += simDeltaTime * simAcceleration;
+                        simCurrPos += simDeltaTime * simVelocity;
+
+                        // Update the current sim time.
+                        simTime += simDeltaTime;
 
                         if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && !hitDetected)
-                            trajectoryPoints.Add(simCurrPos);
+                            trajectoryPoints.Add(inOrbit ? simCurrPos - simTime * BDKrakensbane.FrameVelocityV3f : simCurrPos);
+                            // trajectoryPoints.Add(simCurrPos - simTime * BDKrakensbane.FrameVelocityV3f);
 
-                        // Book-keeping and max distance checks.
-                        if (simTime > maxTime || (simStartPos - simCurrPos).sqrMagnitude > maxDistance * maxDistance)
+                        // Book-keeping and max time checks.
+                        if (simTime > maxTime)
                         {
                             if (!hitDetected) bulletPrediction = simCurrPos;
+                            if (logSim) Debug.Log($"DEBUG {Time.time} Break due to out of time at {simTime}s / {maxTime}s");
                             break;
-                        }
-
-                        // Rotation (aero stabilize).
-                        pointingDirection = Vector3.RotateTowards(pointingDirection, simVelocity + BDKrakensbane.FrameVelocityV3f, atmosMultiplier * (0.5f * simTime) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
-
-                        // Velocity update (half of current time and half of the next... that's why it's called leapfrog).
-                        if (simTime < thrustTime)
-                        { simVelocity += thrust / rocketMass * simDeltaTime * pointingDirection; }
-                        if (FlightGlobals.RefFrameIsRotating)
-                        {
-                            gravity = FlightGlobals.getGeeForceAtPosition(simCurrPos);
-                            simVelocity += gravity * simDeltaTime;
-                        }
-                        if (BDArmorySettings.BULLET_WATER_DRAG)
-                        {
-                            if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0)
-                            {
-                                simVelocity += (-(0.5f * 1 * (simVelocity.magnitude * simVelocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * simDeltaTime) * pointingDirection;//this is going to throw off aiming code, but you aren't going to hit anything with rockets underwater anyway
-                            }
                         }
                     }
 
@@ -4137,6 +4157,7 @@ namespace BDArmory.Weapons
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     {
                         trajectoryPoints.Add(bulletPrediction);
+                        // Debug.Log($"DEBUG traj d {simTime}s Δ {trajectoryPoints.Count - 1}: {(trajectoryPoints[trajectoryPoints.Count - 1] - trajectoryPoints[trajectoryPoints.Count - 2]).magnitude}");
                         trajectoryRenderer = gameObject.GetComponent<LineRenderer>();
                         if (trajectoryRenderer == null)
                         {
@@ -4148,12 +4169,12 @@ namespace BDArmory.Weapons
                         trajectoryRenderer.positionCount = trajectoryPoints.Count;
                         int i = 0;
                         var offset = BDKrakensbane.IsActive ? Vector3.zero : AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-                        using (var point = trajectoryPoints.GetEnumerator())
-                            while (point.MoveNext())
-                            {
-                                trajectoryRenderer.SetPosition(i, point.Current + offset);
-                                ++i;
-                            }
+                        using var point = trajectoryPoints.GetEnumerator();
+                        while (point.MoveNext())
+                        {
+                            trajectoryRenderer.SetPosition(i, point.Current + offset);
+                            ++i;
+                        }
                     }
 
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
@@ -4169,41 +4190,47 @@ namespace BDArmory.Weapons
         /// The leapfrog integrator is a second-order symplectic method.
         /// 
         /// Note: Use this to see the trajectory with collision detection, but use BallisticTrajectoryClosestApproachSimulation instead for targeting purposes.
-        /// </summary>
         /// <param name="position"></param>
         /// <param name="velocity"></param>
         /// <param name="maxTime"></param>
         /// <param name="timeStep"></param>
-        public float BallisticTrajectorySimulation(ref Vector3 position, Vector3 velocity, float maxDistance, float maxTime, float timeStep, bool ignoreWater = false, SimulationStage stage = SimulationStage.Normal, bool resetTrajectoryPoints = true)
+        /// <param name="startTime"></param>
+        /// <param name="ignoreWater"></param>
+        /// <param name="stage"></param>
+        /// <param name="resetTrajectoryPoints"></param>
+        /// <returns></returns>
+        public float BallisticTrajectorySimulation(ref Vector3 position, Vector3 velocity, float maxTime, float timeStep, float startTime = 0, bool ignoreWater = false, SimulationStage stage = SimulationStage.Normal, bool resetTrajectoryPoints = true)
         {
             float elapsedTime = 0f;
             var startPosition = position;
             if (FlightGlobals.getAltitudeAtPos(position) < 0) ignoreWater = true;
+            bool inOrbit = vessel.InOrbit(); // When in orbit, perform trajectory sim in the local velocity frame for more meaningful results.
             var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(position);
             velocity += 0.5f * timeStep * gravity; // Boot-strap velocity calculation.
-            Ray ray = new Ray();
-            RaycastHit hit;
-            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
+            Ray ray = new();
+            RaycastHit hit = new();
+            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && stage == SimulationStage.Normal)
             {
-                if (trajectoryPoints == null) trajectoryPoints = new List<Vector3>();
+                trajectoryPoints ??= [];
                 if (resetTrajectoryPoints)
                     trajectoryPoints.Clear();
                 if (trajectoryPoints.Count == 0)
                     trajectoryPoints.Add(fireTransforms[0].position);
-                trajectoryPoints.Add(position);
+                // trajectoryPoints.Add(inOrbit ? position - startTime * BDKrakensbane.FrameVelocityV3f : position);
+                trajectoryPoints.Add(position - startTime * BDKrakensbane.FrameVelocityV3f);
+                if (logSim) Debug.Log($"DEBUG traj {stage} a {startTime + elapsedTime}s Δ {trajectoryPoints.Count - 1}: {(trajectoryPoints[trajectoryPoints.Count - 1] - trajectoryPoints[trajectoryPoints.Count - 2]).magnitude}");
             }
             while (elapsedTime < maxTime)
             {
                 ray.origin = position;
                 ray.direction = velocity;
                 var deltaPosition = timeStep * velocity;
-                var deltaDistance = Vector3.Dot(deltaPosition, (position - startPosition).normalized);
-                var elapsedDistance = (startPosition - position).magnitude;
                 var altitude = FlightGlobals.getAltitudeAtPos(position + deltaPosition);
-                if ((Physics.Raycast(ray, out hit, deltaPosition.magnitude, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                if (!inOrbit // Raycast detection isn't meaningful in orbit as it assumes stationary targets. Use CPA instead.
+                    && Physics.Raycast(ray, out hit, deltaPosition.magnitude, layerMask1) && hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part
                     || (!ignoreWater && altitude < 0) // Underwater
                     || (stage == SimulationStage.Normal && elapsedTime + timeStep > maxTime) // Out of time
-                    || (stage == SimulationStage.Normal && maxDistance - elapsedDistance < deltaDistance)) // Out of distance
+                )
                 {
                     switch (stage)
                     {
@@ -4211,17 +4238,9 @@ namespace BDArmory.Weapons
                             {
                                 if (elapsedTime + timeStep > maxTime) // Final time amount.
                                 {
-                                    // Debug.Log($"DEBUG Refining trajectory sim due to final time, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
+                                    if (logSim) Debug.Log($"DEBUG Refining trajectory sim due to final time, time: {startTime + elapsedTime}, {timeStep}, {maxTime}");
                                     velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
-                                    var finalTime = BallisticTrajectorySimulation(ref position, velocity, maxDistance - elapsedDistance, maxTime - elapsedTime, (maxTime - elapsedTime) / 4f, ignoreWater, SimulationStage.Final, false);
-                                    elapsedTime += finalTime;
-                                }
-                                else if (maxDistance - elapsedDistance < deltaDistance) // Final distance amount.
-                                {
-                                    // Debug.Log($"DEBUG Refining trajectory sim due to final distance, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
-                                    velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
-                                    var newTimeStep = timeStep * (maxDistance - elapsedDistance) / deltaDistance;
-                                    var finalTime = BallisticTrajectorySimulation(ref position, velocity, maxDistance - elapsedDistance, newTimeStep, newTimeStep / 4f, ignoreWater, SimulationStage.Final, false);
+                                    var finalTime = BallisticTrajectorySimulation(ref position, velocity, maxTime - elapsedTime, (maxTime - elapsedTime) / 4f, startTime + elapsedTime, ignoreWater, SimulationStage.Final, false);
                                     elapsedTime += finalTime;
                                 }
                                 else
@@ -4230,9 +4249,9 @@ namespace BDArmory.Weapons
                             }
                         case SimulationStage.Refining: // Perform a more accurate final step for the collision.
                             {
-                                // Debug.Log($"DEBUG Refining trajectory sim, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
+                                if (logSim) Debug.Log($"DEBUG Refining trajectory sim from {stage}, time: {startTime + elapsedTime}, Δt {timeStep}s ({deltaPosition.magnitude}m), Tmax: {maxTime}s");
                                 velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
-                                var finalTime = BallisticTrajectorySimulation(ref position, velocity, velocity.magnitude * timeStep, timeStep, timeStep / 4f, ignoreWater, timeStep > 5f * Time.fixedDeltaTime ? SimulationStage.Refining : SimulationStage.Final, false);
+                                var finalTime = BallisticTrajectorySimulation(ref position, velocity, timeStep, timeStep / 4f, startTime + elapsedTime, ignoreWater, timeStep > 5f * Time.fixedDeltaTime ? SimulationStage.Refining : SimulationStage.Final, false);
                                 elapsedTime += finalTime;
                                 break;
                             }
@@ -4246,7 +4265,7 @@ namespace BDArmory.Weapons
                                     position += timeStep * velocity;
                                     // Debug.Log("DEBUG breaking trajectory sim due to water at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                                 }
-                                else // Collision
+                                else if (!inOrbit) // Collision
                                 {
                                     elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
                                     position = hit.point;
@@ -4269,29 +4288,45 @@ namespace BDArmory.Weapons
                                             Debug.Log("[BDArmory.ModuleWeapon]:NullReferenceException for Ballistic Hit: " + e.Message);
                                         }
                                     }
-                                    // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
+                                    if (logSim) Debug.Log($"DEBUG breaking trajectory sim at {startTime + elapsedTime}s due to hit at {position} at altitude {FlightGlobals.getAltitudeAtPos(position)}");
                                 }
                                 break;
                             }
                     }
                     break;
                 }
-                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
-                    trajectoryPoints.Add(position);
+                { // CPA check
+                    var timeToCPA = AIUtils.TimeToCPA(
+                        AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, elapsedTime) - position,
+                        targetVelocity + elapsedTime * targetAcceleration - velocity,
+                        targetAcceleration - gravity,
+                        timeStep);
+                    if (timeToCPA < timeStep)
+                    {
+                        position = AIUtils.PredictPosition(position, velocity, gravity, timeToCPA);
+                        elapsedTime += timeToCPA;
+                        if (logSim) Debug.Log($"DEBUG breaking trajectory sim due to CPA at {startTime + elapsedTime}s");
+                        break;
+                    }
+                }
                 position += deltaPosition;
                 gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(position);
                 velocity += timeStep * gravity;
                 elapsedTime += timeStep;
-                if (elapsedDistance > maxDistance)
+                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                 {
-                    // Debug.Log($"DEBUG breaking trajectory sim due to max distance: {maxDistance} at altitude {FlightGlobals.getAltitudeAtPos(position)}");
-                    break;
+                    // Use local velocity frame when in orbit for more meaningful trajectories (at least, over shorter distances).
+                    // trajectoryPoints.Add(inOrbit ? position - (startTime + elapsedTime) * BDKrakensbane.FrameVelocityV3f : position);
+                    trajectoryPoints.Add(position - (startTime + elapsedTime) * BDKrakensbane.FrameVelocityV3f);
+                    if (logSim) Debug.Log($"DEBUG traj {stage} b {startTime + elapsedTime}s Δ {trajectoryPoints.Count - 1}: {(trajectoryPoints[trajectoryPoints.Count - 1] - trajectoryPoints[trajectoryPoints.Count - 2]).magnitude}");
                 }
             }
-            // if (elapsedTime > maxTime) Debug.Log($"DEBUG Time elapsed: {elapsedTime} / {maxTime}, dist: {maxDistance}, {(startPosition - position).magnitude}, {(timeStep * velocity).magnitude}");
+            if (logSim && elapsedTime > maxTime) Debug.Log($"DEBUG Time elapsed: {elapsedTime} / {maxTime}, {(startPosition - position).magnitude}, {(timeStep * velocity).magnitude}");
             if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && resetTrajectoryPoints)
             {
-                trajectoryPoints.Add(position);
+                // trajectoryPoints.Add(inOrbit ? position - (startTime + elapsedTime) * BDKrakensbane.FrameVelocityV3f : position);
+                trajectoryPoints.Add(position - (startTime + elapsedTime) * BDKrakensbane.FrameVelocityV3f);
+                if (logSim) Debug.Log($"DEBUG traj {stage} c {startTime + elapsedTime}s Δ {trajectoryPoints.Count - 1}: {(trajectoryPoints[trajectoryPoints.Count - 1] - trajectoryPoints[trajectoryPoints.Count - 2]).magnitude}");
                 trajectoryRenderer = gameObject.GetComponent<LineRenderer>();
                 if (trajectoryRenderer == null)
                 {
@@ -4303,12 +4338,12 @@ namespace BDArmory.Weapons
                 trajectoryRenderer.positionCount = trajectoryPoints.Count;
                 int i = 0;
                 var offset = BDKrakensbane.IsActive ? Vector3.zero : AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-                using (var point = trajectoryPoints.GetEnumerator())
-                    while (point.MoveNext())
-                    {
-                        trajectoryRenderer.SetPosition(i, point.Current + offset);
-                        ++i;
-                    }
+                using var point = trajectoryPoints.GetEnumerator();
+                while (point.MoveNext())
+                {
+                    trajectoryRenderer.SetPosition(i, point.Current + offset);
+                    ++i;
+                }
             }
             return elapsedTime;
         }
@@ -4470,7 +4505,7 @@ namespace BDArmory.Weapons
                     autoFire = false;
                 }
                 if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel != null && lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
-                // won't catch cloaked tanks, but oh well.
+                                                                                                                                                                                       // won't catch cloaked tanks, but oh well.
 
                 // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 // {
@@ -4610,7 +4645,7 @@ namespace BDArmory.Weapons
                     {
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate)); //FIXME - possibly not getting called in all circumstances? Investigate later, future SI
-                        //Debug.Log($"[BDarmory.moduleWeapon] Weapon on rippleindex {weaponManager.GetRippleIndex(WeaponName)} cant't fire, skipping to next weapon after a {initialFireDelay * TimeWarp.CurrentRate} sec delay");
+                                                                                                       //Debug.Log($"[BDarmory.moduleWeapon] Weapon on rippleindex {weaponManager.GetRippleIndex(WeaponName)} cant't fire, skipping to next weapon after a {initialFireDelay * TimeWarp.CurrentRate} sec delay");
                         isRippleFiring = true;
                     }
                     if (eWeaponType == WeaponTypes.Laser)
@@ -4751,7 +4786,6 @@ namespace BDArmory.Weapons
                 SmoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, targetIsLandedOrSplashed, reset);
             }
 
-            RunTrajectorySimulation();
             Aim();
             if (aimAndFireIfPossible)
             {
@@ -5370,9 +5404,9 @@ namespace BDArmory.Weapons
                 else
                 {
                     if (turret && visualTargetVessel == null) turret.ReturnTurret(); //reset turret if no target
-                    //visualTargetPart = null;
-                    //tgtShell = null;
-                    //tgtRocket = null;
+                                                                                     //visualTargetPart = null;
+                                                                                     //tgtShell = null;
+                                                                                     //tgtRocket = null;
                 }
             }
             return false;

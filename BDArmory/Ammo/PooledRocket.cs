@@ -165,14 +165,17 @@ namespace BDArmory.Bullets
             massScalar = 0.012f / rocketMass;
 
             rb.mass = rocketMass;
-            rb.isKinematic = true;
+            rb.isKinematic = false;
             rb.useGravity = false;
-            rb.velocity = Vector3.zero;
-            currentVelocity = Vector3.zero;
+            rb.velocity = parentRB ? parentRB.velocity : Vector3.zero; // Use rb.velocity in the velocity frame reference. Use currentVelocity for absolute velocity.
+            currentVelocity = rb.velocity + BDKrakensbane.FrameVelocityV3f;
+            transform.parent = null; // Clear the parent transform so the rocket is now independent.
+            Debug.Log($"DEBUG Actual (initial). {Time.time - startTime}s, pos: {currentPosition - startPosition} ({(currentPosition - startPosition).magnitude}), vel: {currentVelocity} ({currentVelocity.magnitude}), dir: {1000 * transform.forward}");
 
             randThrustSeed = UnityEngine.Random.Range(0f, 100f);
             thrustVector = new Vector3(0, 0, thrust);
             dragVector = new Vector3();
+
             SetupAudio();
 
             // Log rockets fired.
@@ -266,26 +269,23 @@ namespace BDArmory.Bullets
             currentPosition = transform.position; // Adjust our local copy for any adjustments that the physics engine has made.
             distanceFromStart = Vector3.Distance(currentPosition, startPosition);
 
-            if (transform.parent != null && parentRB) // Has been fired.
-            {
-                transform.parent = null;
-                rb.isKinematic = false;
-                rb.velocity = parentRB.velocity + BDKrakensbane.FrameVelocityV3f;
-            }
-
             if (rb && !rb.isKinematic)
             {
-                UpdateKinematics();
+                UpdateKinematics(); // Update forces and get current velocity.
 
                 //guidance and attitude stabilisation scales to atmospheric density.
-                float atmosMultiplier =
-                    Mathf.Clamp01((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition),
-                                      FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
+                float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
 
                 //model transform. always points prograde
-                transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                    Quaternion.LookRotation(rb.velocity, transform.up),
-                    Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * TimeWarp.fixedDeltaTime);
+                var lastForward = transform.forward;
+                // transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosMultiplier * (0.5f * (Time.time - startTime)) * 50 * TimeWarp.fixedDeltaTime); // Why does this depend on startTime?
+
+                var atmosFactor = atmosMultiplier * 0.5f * 0.012f * currentVelocity.sqrMagnitude * TimeWarp.fixedDeltaTime;
+                // transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosMultiplier * 0.5f * currentVelocity.sqrMagnitude * TimeWarp.fixedDeltaTime);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosFactor);
+                var angleDelta = Vector3.Angle(lastForward, transform.forward);
+
+                if (Time.time - startTime < 0.4f) Debug.Log($"DEBUG Actual. {Time.time - startTime}s, pos: {currentPosition - startPosition} ({(currentPosition - startPosition).magnitude}), vel: {currentVelocity} ({currentVelocity.magnitude}), acc: {currentAcceleration} ({currentAcceleration.magnitude}), dir: {1000 * transform.forward}, atm: {atmosFactor}, Δang: {angleDelta}");
             }
 
             if (Time.time - startTime > thrustTime)
@@ -350,15 +350,16 @@ namespace BDArmory.Bullets
         {
             if (BDKrakensbane.IsActive)
             {
+                var offset = BDKrakensbane.FloatingOriginOffset; // Working with the RB in the velocity frame means we apply the KB offset instead of the nonKB one.
                 if (reverse)
                 {
-                    currentPosition += BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-                    startPosition += BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    currentPosition += offset;
+                    startPosition += offset;
                 }
                 else
                 {
-                    currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-                    startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    currentPosition -= offset;
+                    startPosition -= offset;
                 }
             }
         }
@@ -373,10 +374,10 @@ namespace BDArmory.Bullets
             }
             currentAcceleration = gravity;
 
-            if (Time.time - startTime < thrustTime)
+            if (Time.time - startTime <= thrustTime)
             {
-                thrustVector.x = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
-                thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
+                // thrustVector.x = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
+                // thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
                 rb.AddRelativeForce(thrustVector);
                 currentAcceleration += Quaternion.FromToRotation(Vector3.forward, rb.transform.forward) * thrustVector / rb.mass;
             }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
@@ -385,15 +386,15 @@ namespace BDArmory.Bullets
                 if (FlightGlobals.getAltitudeAtPos(currentPosition) < 0)
                 {
                     //atmosMultiplier *= 83.33f;
-                    dragVector.z = -(0.5f * 1 * rb.velocity.sqrMagnitude * 0.5f * (Mathf.PI * caliber * caliber * 0.25f / 1000000)) * TimeWarp.fixedDeltaTime;
+                    dragVector.z = -(0.5f * 1 * currentVelocity.sqrMagnitude * 0.5f * (Mathf.PI * caliber * caliber * 0.25f / 1000000));
                     rb.AddRelativeForce(dragVector); //this is going to throw off aiming code, but you aren't going to hit anything with rockets underwater anyway
                     currentAcceleration += Quaternion.FromToRotation(Vector3.forward, rb.transform.forward) * dragVector / rb.mass;
                 }
-                //dragVector.z = -(0.5f * (atmosMultiplier * 0.012f) * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000))*TimeWarp.fixedDeltaTime;
+                //dragVector.z = -(0.5f * (atmosMultiplier * 0.012f) * currentVelocity.sqrMagnitude * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000));
                 //rb.AddRelativeForce(dragVector);
-                //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
+                //Debug.Log("[ROCKETDRAG] current vel: " + currentVelocity.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
             }
-            currentVelocity = rb.velocity + 0.5f * TimeWarp.fixedDeltaTime * currentAcceleration; // The rb.velocity is w/o offloading here, since rockets aren't vessels. Approximation to the average velocity throughout the coming physics.
+            currentVelocity = rb.velocity + BDKrakensbane.FrameVelocityV3f;// + 0.5f * TimeWarp.fixedDeltaTime * currentAcceleration; // Approximation to the average velocity throughout the coming physics.
         }
 
         /// <summary>
@@ -591,9 +592,9 @@ namespace BDArmory.Bullets
                 hitPart = hitEVA.part;
                 // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                 if (hitPart.rb != null)
-                    impactVelocity = (rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
+                    impactVelocity = (currentVelocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
                 else
-                    impactVelocity = rb.velocity.magnitude;
+                    impactVelocity = currentVelocity.magnitude;
                 if (dmgMult < 0)
                 {
                     hitPart.AddInstagibDamage();
@@ -609,17 +610,17 @@ namespace BDArmory.Bullets
 
             if (hitPart != null && hitPart.vessel == sourceVessel) return false;  //avoid autohit;
 
-            Vector3 impactVector = rb.velocity;
+            Vector3 impactVector = currentVelocity;
             if (hitPart != null && hitPart.rb != null)
                 // using relative velocity vector instead of just rocket velocity
                 // since KSP vessels can easily be moving faster than rockets
-                impactVector = rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
+                impactVector = currentVelocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
 
             float hitAngle = Vector3.Angle(impactVector, -hit.normal);
 
             if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
             {
-                if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
+                if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, currentVelocity, bulletDmgMult);
                 Detonate(hit.point, false);
                 return true;
             }
@@ -737,8 +738,9 @@ namespace BDArmory.Bullets
             }
             if (penetration > thickness)
             {
-                rb.velocity *= BDAMath.Sqrt(thickness / penetration);
-                if (penTicker > 0) rb.velocity *= 0.55f;
+                currentVelocity *= BDAMath.Sqrt(thickness / penetration);
+                if (penTicker > 0) currentVelocity *= 0.55f;
+                rb.velocity = currentVelocity - BDKrakensbane.FrameVelocityV3f; // In case the rocket survives and has further physics updates.
             }
 
             if (penetrationFactor > 1)
@@ -767,7 +769,7 @@ namespace BDArmory.Bullets
 
                 if (explosive || !viableBullet)
                 {
-                    currentPosition += rb.velocity * TimeWarp.fixedDeltaTime / 3;
+                    currentPosition += currentVelocity * TimeWarp.fixedDeltaTime / 3;
 
                     Detonate(currentPosition, false, hitPart); //explode inside part
                     return true;
@@ -804,7 +806,7 @@ namespace BDArmory.Bullets
                 return true;
             }
 
-            if (rb.velocity.magnitude <= 100 && hasPenetrated && (Time.time - startTime > thrustTime))
+            if (currentVelocity.sqrMagnitude <= 10000 && hasPenetrated && (Time.time - startTime > thrustTime))
             {
                 if (BDArmorySettings.DEBUG_WEAPONS)
                 {
@@ -918,7 +920,7 @@ namespace BDArmory.Bullets
                         Vector3 direction = default(Vector3);
                         if (shaped)
                         {
-                            direction = rb.velocity.normalized;
+                            direction = currentVelocity.normalized;
                             //direction = transform.forward //ideal, but no guarantee that mod rockets have correct transform orientation
                         }
                         if (gravitic)
@@ -1097,7 +1099,7 @@ namespace BDArmory.Bullets
                     pBullet.currentPosition = currentPosition;
 
                     pBullet.caliber = sBullet.caliber;
-                    pBullet.bulletVelocity = sBullet.bulletVelocity + rb.velocity.magnitude;
+                    pBullet.bulletVelocity = sBullet.bulletVelocity + currentVelocity.magnitude;
                     pBullet.bulletMass = sBullet.bulletMass;
                     pBullet.incendiary = sBullet.incendiary;
                     pBullet.apBulletMod = sBullet.apBulletMod;
