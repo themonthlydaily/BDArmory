@@ -776,7 +776,7 @@ namespace BDArmory.Bullets
                         {
                             for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
                             {
-                                Ray LoSRay = new Ray(currentPosition, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
+                                Ray LoSRay = new Ray(prevPosition, VectorUtils.GaussianDirectionDeviation(rb.velocity.normalized, 80));
                                 RaycastHit hit;
                                 if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, collisionLayerMask)) // only add fires to parts in LoS of blast
                                 {

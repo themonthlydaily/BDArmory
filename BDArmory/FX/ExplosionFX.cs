@@ -1064,12 +1064,9 @@ namespace BDArmory.FX
                     if (rb != null && rb.mass > 0 && !BDArmorySettings.PAINTBALL_MODE)
                         AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
                 }
-                eventToExecute.Finished();
             }
             if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange)
             {
-                //float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
-                //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                 float anglemultiplier = Mathf.Abs(Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal));
                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
                 var Armor = part.FindModuleImplementing<HitpointTracker>();
@@ -1082,6 +1079,7 @@ namespace BDArmory.FX
 
                 ProjectileUtils.CalculateShrapnelDamage(part, eventToExecute.Hit, Caliber, Power, realDistance, SourceVesselName, ExplosionSource, ProjMass, -1, thickness); //part hit by shrapnel, but not pressure wave
             }
+            eventToExecute.Finished();
         }
 
         // We use an ObjectPool for the ExplosionFx instances as they leak KSPParticleEmitters otherwise.

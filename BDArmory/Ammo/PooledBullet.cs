@@ -122,6 +122,7 @@ namespace BDArmory.Bullets
         public float bulletMass;
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
+        public float guidanceDPS = 0;
         public bool sabot = false;
         private float HERatio = 0.06f;
         public float ballisticCoefficient;
@@ -145,6 +146,8 @@ namespace BDArmory.Bullets
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
+        public Vessel targetVessel;
+        float atmosphereDensity;
         public int penTicker = 0;
 
         Ray bulletRay;
@@ -188,7 +191,7 @@ namespace BDArmory.Bullets
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
             timeAlive = 0;
             armingTime = isSubProjectile ? 0 : 1.5f * ((beehive ? BlastPhysicsUtils.CalculateBlastRange(tntMass) : detonationRange) / bulletVelocity); //beehive rounds have artifically large detDists; only need explosive radius arming check
-
+            fuzeTriggered = false;
             if (HEType != PooledBulletTypes.Slug)
             {
                 HERatio = Mathf.Clamp(tntMass / (bulletMass < tntMass ? tntMass * 1.25f : bulletMass), 0.01f, 0.95f);
@@ -506,8 +509,20 @@ namespace BDArmory.Bullets
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
+            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
+
+            if (targetVessel != null && atmosphereDensity > 0.05f)
+            {
+                if (penTicker == 0) // && Vector3.Dot((targetVessel.CoM - currentPosition).normalized, currentVelocity.normalized) < 0) //don't circle around if it misses, or after it hits something
+                {
+                    if (Vector3.Angle(currentVelocity, targetVessel.CoM) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient);
+                    //apply some drag to projectile if it's turning. Will mess up initial CPA aim calculations, true; on the other hand, its a guided homing bullet.                                                                                                                                                                                                                
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, ((targetVessel.CoM + targetVessel.Velocity() * (Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity)) - currentPosition).normalized, guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
+                }
+                //still doing tailchase homing; work out better leading?              
+            }
 
             // Full-timestep position change (leapfrog integrator)
             currentPosition += period * currentVelocity; //move bullet
@@ -1680,7 +1695,7 @@ namespace BDArmory.Bullets
             if (underwater)
                 atmDensity = 1030f; // Sea water (3% salt) has a density of 1030kg/m^3 at 4°C at sea level. https://en.wikipedia.org/wiki/Density#Various_materials
             else
-                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
+                atmDensity = atmosphereDensity;
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
 
