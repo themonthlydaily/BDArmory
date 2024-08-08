@@ -63,6 +63,10 @@
 		- Fix missile softlock issue if AI tries to fire a GPS missile at a target further than the targeting camera's max range.
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
+	- Fix shrapnel damage from explosions phasing through armor.
+	- Fix delay-fuzed rounds occasionally not detonating.
+	-Add support for guided bullets (needs radar/laser lock on target) for specialty ammo, new bulletDef field 'guidanceDPS', sets degrees/sec ammo can turn.
+	-Fixes S-8KOM rocket mass.
 - Spawning:
 	- Allow specifying the reference heading for the first craft for circular spawning (loses precision within 1° of the poles).
 - RWP:
