@@ -374,7 +374,7 @@ namespace BDArmory.Utils
         public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, ExplosionSourceType explosionSource, float projmass = -1, float penetrationFactor = -1, float thickness = -1)
         {
             /// <summary>
-            /// Calculates damage from flak/shrapnel, based on HEmass and projMass, of both contact and airburst detoantions.
+            /// Calculates damage from flak/shrapnel, based on HEmass and projMass, of both contact and airburst detonations.
             /// Calculates # hits per m^2 based on distribution across sphere detonationDist in radius
             /// Shrapnel penetration dist determined by caliber, penetration. Penetration = -1 is part only hit by blast/airburst
             /// </summary>

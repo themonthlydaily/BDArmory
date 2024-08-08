@@ -1156,7 +1156,7 @@ namespace BDArmory.UI
                 */
                 //armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
                 armorValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, ArmorStrength, ArmorVfactor, ArmorMu1, ArmorMu2, ArmorMu3); //why is this hardcoded? it needs to be the selected armor mat's vars
-                relValue = BDAMath.RoundToUnit(steelValue / armorValue, 0.1f);
+                relValue = BDAMath.RoundToUnit(armorValue / steelValue, 0.1f);
                 exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);
             }
         }
