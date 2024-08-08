@@ -1793,7 +1793,10 @@ namespace BDArmory.Control
             belowMinAltitude = vessel.LandedOrSplashed;
             prevTargetDir = vesselTransform.up;
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
+            {
                 initialTakeOff = false;
+                TakingOff = false;
+            }
             SetOnBrakingPriorityChanged(); // Has to be set after the speed controller exists.
 
             bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
@@ -3619,7 +3622,10 @@ namespace BDArmory.Control
             float radarAlt = (float)vessel.radarAltitude;
 
             if (initialTakeOff && radarAlt > terrainAlertDetectionRadius)
+            {
                 initialTakeOff = false;
+                TakingOff = false;
+            }
 
             // Get surface normal relative to our velocity direction below the vessel and where the vessel is heading.
             RaycastHit rayHit;
@@ -4463,7 +4469,7 @@ namespace BDArmory.Control
                     ReleaseCommand(false);
                     return;
                 }
-                else if (weaponManager.underAttack || weaponManager.underFire)
+                else if (weaponManager == null || weaponManager.underAttack || weaponManager.underFire)
                 {
                     ReleaseCommand(false);
                     return;

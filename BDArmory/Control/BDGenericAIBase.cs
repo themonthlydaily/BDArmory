@@ -247,6 +247,8 @@ namespace BDArmory.Control
         public virtual string Name { get; } = "AI Control";
         public bool Enabled => pilotEnabled;
 
+        public bool TakingOff = true;
+
         public void Toggle() => TogglePilot();
 
         #endregion Pilot on/off
@@ -301,7 +303,7 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                GUI.Label(new Rect(200, Screen.height - 700, 600, 700), $"{vessel.name}\n{debugString.ToString()}");
+                GUI.Label(new Rect(200, Screen.height - 350, 600, 350), $"{vessel.name}\n{debugString.ToString()}");
             }
         }
 
