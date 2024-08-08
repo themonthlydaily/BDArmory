@@ -1233,7 +1233,7 @@ namespace BDArmory.Competition
             {
                 var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (mf != null)
-                    if ((mf.currentHP / mf.totalHP * 100) < BDArmorySettings.COMPETITION_GM_KILL_HP)
+                    if (mf.currentHP < BDArmorySettings.COMPETITION_GM_KILL_HP)
                         StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " crippled. Terminated by GM."));
             }
         }

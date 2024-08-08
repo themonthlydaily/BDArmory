@@ -241,10 +241,6 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool NO_ENGINES = false;
         [BDAPersistentSettingsField] public static bool WAYPOINTS_MODE = false;         // Waypoint section of Vessel Spawner Window.
         [BDAPersistentSettingsField] public static string PINATA_NAME = "Pinata";
-        [BDAPersistentSettingsField] public static bool G_LIMITS = false;
-        [BDAPersistentSettingsField] public static bool PART_GLIMIT = false;
-        [BDAPersistentSettingsField] public static bool KERB_GLIMIT = false;
-        [BDAPersistentSettingsField] public static float G_TOLERANCE = 0.4f;                       // Adjust the GToleranceMult to set Max G endurance of all kerbs to a desired amount
         #endregion
 
         #region Battle Damage settings

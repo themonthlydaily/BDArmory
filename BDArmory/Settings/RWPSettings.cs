@@ -198,61 +198,42 @@ namespace BDArmory.Settings
       }
     }
 
-        /// <summary>
-        /// Override settings based on the RWP overrides.
-        /// </summary>
-        /// <param name="round">The RWP round number.</param>
-        public static void SetOverrides(int round)
+    /// <summary>
+    /// Override settings based on the RWP overrides.
+    /// </summary>
+    /// <param name="round">The RWP round number.</param>
+    public static void SetOverrides(int round)
+    {
+      if (!RWPOverrides.ContainsKey(round)) return;
+      if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Setting overrides for RWP round {round}");
+      var overrides = RWPOverrides[round];
+      foreach (var setting in overrides.Keys)
+      {
+        var field = typeof(BDArmorySettings).GetField(setting, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+        if (field == null)
         {
-            if (!RWPOverrides.ContainsKey(round)) return;
-            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Setting overrides for RWP round {round}");
-            var overrides = RWPOverrides[round];
-            foreach (var setting in overrides.Keys)
-            {
-                var field = typeof(BDArmorySettings).GetField(setting, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                if (field == null)
-                {
-                    Debug.LogWarning($"[BDArmory.RWPSettings]: Invalid field name {setting} for RWP round {round}.");
-                    continue;
-                }
-                try
-                {
-                    field.SetValue(null, Convert.ChangeType(overrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
-                }
-            }
-
-            // Add any additional round-specific setup here.
-            // Note: Anything called from here has to be capable of being called during BDArmorySetup's Awake function.
-            switch (round)
-            {
-                case 61:
-                    GameModes.MutatorInfo.SetupGunGame();
-                    break;
-            }
-            if (HighLogic.CurrentGame != null)
-            {
-                if (BDArmorySettings.G_LIMITS)
-                {
-                    var advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>();
-                    advancedParams.GPartLimits = BDArmorySettings.PART_GLIMIT;
-                    advancedParams.GKerbalLimits = BDArmorySettings.KERB_GLIMIT;
-                    advancedParams.KerbalGToleranceMult = BDArmorySettings.G_TOLERANCE / 20.5f; //Default 0.5 Courage BadS Pilot kerb has a GLimit of 20.5
-                    GamePersistence.SaveGame("persistent", HighLogic.SaveFolder, SaveMode.OVERWRITE); // Update the persistent save.
-                }
-                else // Reset G-Limits to defaults and disable them.
-                {
-                    var advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>();
-                    advancedParams.GPartLimits = false;
-                    advancedParams.GKerbalLimits = false;
-                    advancedParams.KerbalGToleranceMult = 1f;
-                    GamePersistence.SaveGame("persistent", HighLogic.SaveFolder, SaveMode.OVERWRITE); // Update the persistent save.
-                }
-            }
+          Debug.LogWarning($"[BDArmory.RWPSettings]: Invalid field name {setting} for RWP round {round}.");
+          continue;
         }
+        try
+        {
+          field.SetValue(null, Convert.ChangeType(overrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
+        }
+        catch (Exception e)
+        {
+          Debug.LogError($"[BDArmory.RWPSettings]: Failed to set value {overrides[setting]} for {setting}: {e.Message}");
+        }
+      }
+
+      // Add any additional round-specific setup here.
+      // Note: Anything called from here has to be capable of being called during BDArmorySetup's Awake function.
+      switch (round)
+      {
+        case 61:
+          GameModes.MutatorInfo.SetupGunGame();
+          break;
+      }
+    }
 
     /// <summary>
     /// Save RWP settings to file.

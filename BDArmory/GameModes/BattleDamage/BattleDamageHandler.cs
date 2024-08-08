@@ -417,7 +417,6 @@ namespace BDArmory.GameModes
                         part.RemoveModule(cam);
                         subsysCrit = true;
                     }
-                    part.RefreshAssociatedWindows();
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BattleDamageHandler]: {part.name} on {part.vessel.vesselName} took subsystem damage");
                     if (subsysCrit && Diceroll <= (damageChance / 2)) //only start fire on part that actually contains destroyed subsystem
                     {

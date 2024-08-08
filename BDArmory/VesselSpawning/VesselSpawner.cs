@@ -232,7 +232,6 @@ namespace BDArmory.VesselSpawning
                             KerbalRoster.SetExperienceTrait(newCrewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                             KerbalRoster.SetExperienceLevel(newCrewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
                             newCrewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
-                            newCrewMember.courage = 0.5f; //make their G-tolerance identical; 0.5 Courage BadS Pilot yields 20.5G tolerance
                             crewData.Add(newCrewMember); // Add them into the crewData list.
                         }
                         else
@@ -270,7 +269,7 @@ namespace BDArmory.VesselSpawning
                         KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                         KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
                         crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
-                        crewMember.courage = 0.5f;
+
                         // Add them to the part
                         part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
                         crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
@@ -332,7 +331,7 @@ namespace BDArmory.VesselSpawning
                     KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
                     crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
-                    crewMember.courage = 0.5f;
+
                     crewArray[i++] = crewMember;
                 }
 

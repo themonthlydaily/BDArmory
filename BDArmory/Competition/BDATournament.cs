@@ -2119,14 +2119,13 @@ namespace BDArmory.Competition
                     kerbal.isBadass = true; // Make them badass.
                     KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
-                    kerbal.courage = 0.5f;
                 }
             }
             else
             {
                 GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame);
             }
-            // Update the game state and save it to the persistent save (since that's what eventually ends up getting loaded when we call Start()).
+            // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
             HighLogic.CurrentGame.Updated();
             GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
             HighLogic.CurrentGame.Start();

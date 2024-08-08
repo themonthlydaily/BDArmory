@@ -34,11 +34,12 @@ namespace BDArmory.Weapons.Missiles
         public float clusterMissileTriggerDist = 750;
 
         Transform[] launchTransforms;
-        public int launchTubes;
         [KSPField(isPersistant = true)] public string subMunitionName; //name of missile in .cfg - e.g. "bahaAim120"
         [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
         public float missileMass = 0.1f;
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
+        public string exhaustTransformName;
+        public string boostTransformName;
         //[KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
         public float salvoSize = 1;
@@ -69,15 +70,15 @@ namespace BDArmory.Weapons.Missiles
         public BDTeam Team = BDTeam.Get("Neutral");
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),// Length
-    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float Scale = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),// Length
-    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float Length = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Offset"),// Ordinance Offset
-    UI_FloatRange(minValue = -1, maxValue = 1, stepIncrement = 0.1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = -1, maxValue = 1, stepIncrement = 0.1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float attachOffset = 0;
 
         [KSPField]
@@ -151,7 +152,6 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
             targetsAssigned = new List<TargetInfo>();
-            launchTubes = launchTransforms.Length;
             StartCoroutine(DelayedStart());
         }
 
@@ -165,15 +165,13 @@ namespace BDArmory.Weapons.Missiles
             if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present in case cfg not set up properly
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
-                //missileSpawner.maxAmmo = isClusterMissile ? 1 : salvoSize * 5;
-                missileSpawner.ammoCount = isClusterMissile ? 1 : launchTubes;
-                missileSpawner.maxAmmo = isClusterMissile ? 1 : launchTubes;
-                missileSpawner.Fields["ammoCount"].guiActiveEditor = false;
+                missileSpawner.maxAmmo = isClusterMissile ? 1 : salvoSize * 5;
+                missileSpawner.ammoCount = isClusterMissile ? 1 : launchTransforms.Length;
                 missileSpawner.MissileName = subMunitionName;
                 if (!isClusterMissile) //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
                     Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
-            if (BDArmorySettings.LIMITED_ORDINANCE) missileSpawner.ammoCount = isClusterMissile ? 1 : launchTubes;
+            if (BDArmorySettings.LIMITED_ORDINANCE) missileSpawner.ammoCount = isClusterMissile ? 1 : launchTransforms.Length;
             missileSpawner.isMultiLauncher = isMultiLauncher;
             if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
             {
@@ -568,11 +566,6 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.gMargin = MLConfig.gMargin;
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
-            missileLauncher.liftArea = MLConfig.liftArea;
-            missileLauncher.useSimpleDrag = MLConfig.useSimpleDrag;
-            missileLauncher.simpleCoD = MLConfig.simpleCoD;
-            missileLauncher.maxTorque = MLConfig.maxTorque;
-            missileLauncher.simpleStableTorque = MLConfig.simpleStableTorque;
 
             if (configurableSettings)
             {
@@ -735,7 +728,6 @@ namespace BDArmory.Weapons.Missiles
                     if (wpm.currentTarget != null) targetsAssigned.Add(wpm.currentTarget);
             }
             //else Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: weaponmanager null!");
-            missileLauncher.launched = true;
             if (deployState != null)
             {
                 deployState.enabled = true;
@@ -752,14 +744,12 @@ namespace BDArmory.Weapons.Missiles
             if (missileSpawner == null) yield break; // Died while waiting.
             for (int m = tubesFired; m < launchTransforms.Length; m++)
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
                 if (missileSpawner == null) yield break; // Died while waiting.
                 if (launchesThisSalvo >= (int)salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) 
-                        Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
+                    //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
                     break;
                 }
                 if (!isLaunchedClusterMissile && (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
@@ -994,7 +984,7 @@ namespace BDArmory.Weapons.Missiles
                                     ml.TargetAcquired = true;
                                     firedTargets.Add(targetsAssigned[TargetID]);
                                     if (BDArmorySettings.DEBUG_MISSILES)
-                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count}");
+                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count - 1}");
                                 }
                                 else //else try remaining targets on the list. 
                                 {
@@ -1026,13 +1016,12 @@ namespace BDArmory.Weapons.Missiles
                                             firedTargets.Add(targetsAssigned[t]);
                                             if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {targetsAssigned[t].Vessel.GetName()}");
-                                            break;
                                         }
                                     }
+                                    if (BDArmorySettings.DEBUG_MISSILES)
+                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                     if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
                                     {
-                                        if (BDArmorySettings.DEBUG_MISSILES)
-                                            Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                         using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
@@ -1107,7 +1096,8 @@ namespace BDArmory.Weapons.Missiles
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
                 if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
-            }            
+            }
+            missileLauncher.launched = true;
             if (wpm != null)
             {
                 using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
@@ -1137,7 +1127,7 @@ namespace BDArmory.Weapons.Missiles
             if (missileLauncher == null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
-                if (!isLaunchedClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.totalAmmo > 0))
+                if (!isLaunchedClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= (int)salvoSize))
                     if (!(missileLauncher.reloadRoutine != null))
                     {
                         missileLauncher.reloadRoutine = StartCoroutine(missileLauncher.MissileReload());

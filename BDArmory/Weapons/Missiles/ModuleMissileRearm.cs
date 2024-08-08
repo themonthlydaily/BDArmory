@@ -9,7 +9,6 @@ using UnityEngine;
 using BDArmory.WeaponMounts;
 using BDArmory.Settings;
 using System.Text;
-using BDArmory.Utils;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -28,28 +27,20 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
 UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.Editor)]
-        public float ammoCount = 1; //munitions included with/loaded in the launcher (VLS/CLS pods, etc)
-        public int magazineAmmo = 0;
-        public int totalAmmo => magazineAmmo + (int)ammoCount;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
-UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
-        public float ammoRemaining = 1;
+        public float ammoCount = 1; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
 
         [KSPField(isPersistant = true)]
         public string MissileName = "bahaAim120";
 
         [KSPField] public float reloadTime = 5f;
         [KSPField] public bool AccountForAmmo = true;
-        [KSPField] public float maxAmmo = -1;
-
-        public List<ModuleMissileMagazine> linkedMagazines;
+        [KSPField] public float maxAmmo = 20;
         //public float tntmass = 1;
         AvailablePart missilePart;
         public Part SpawnedMissile;
         public bool SpawnMissile(Transform MissileTransform, float offset = 0, bool deductAmmo = true)
         {
-            if (totalAmmo >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
+            if (ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
             {
                 if (missilePart != null)
                 {
@@ -65,12 +56,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                             SpawnedMissile = CreatePart(partNode, offset > 0 ? (MissileTransform.position + MissileTransform.forward * offset) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
                             ModuleMissileRearm MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
                             if (MMR != null) SpawnedMissile.RemoveModule(MMR);
-                            if (!BDArmorySettings.INFINITE_ORDINANCE && deductAmmo)
-                            {
-                                ammoCount--;
-                                ammoRemaining--;
-                            }
-                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
+                            if (!BDArmorySettings.INFINITE_ORDINANCE && deductAmmo) ammoCount--;
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
                             return true;
                         }
                     }
@@ -78,49 +65,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             }
             return false;
         }
-        public void loadOrdinance(int tubesToReload)
-        {
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.ModuleMissileRearm] reloading {tubesToReload} launchrails, {ammoCount} ordinance in launcher, queuing {tubesToReload - ammoCount} new munitions from magazine");
-            if (linkedMagazines.Count > 0 && totalAmmo > 0 && ammoCount < tubesToReload) //no/not enough ammo internal to launcher? grab some from magazine
-            {
-                int neededReloads = (int)(tubesToReload - ammoCount);
-                for (int t2r = 0; t2r < neededReloads; t2r++)
-                {
-                    ModuleMissileMagazine priorityMagazine = null;
-                    float lastPriority = -1;
-                    float lastAmmoQty = -1;
-                    for (int mmm = 0; mmm < linkedMagazines.Count; mmm++)
-                    {
-                        if (linkedMagazines[mmm].ammoCount >= 1)
-                        {
-                            if (linkedMagazines[mmm].priority >= lastPriority)
-                            {
-                                lastPriority = linkedMagazines[mmm].priority;
-                                if (linkedMagazines[mmm].ammoCount >= lastAmmoQty) //FIXME - sometimes priority is ignored, revise logic later
-                                {                                                  
-                                    lastAmmoQty = linkedMagazines[mmm].ammoCount; 
-                                    priorityMagazine = linkedMagazines[mmm];
-                                }
-                            }
-                        }
-                    }
-                    if (priorityMagazine != null)
-                    {
-                        priorityMagazine.ammoCount--; //transfer ammo from mag to launcher
-                        priorityMagazine.ammoRemaining--;
-                        ammoCount++;
-                        ammoRemaining++;
-                        using (var mmr = VesselModuleRegistry.GetModules<ModuleMissileRearm>(vessel).GetEnumerator())
-                            while (mmr.MoveNext())
-                            {
-                                if (mmr.Current == null) continue;
-                                if (mmr.Current.MissileName != MissileName) continue;
-                                mmr.Current.magazineAmmo--; //syncronize magazine count across all launchers using that ammo
-                            }
-                    }
-                }
-            }
-        }
+
         public override void OnStart(PartModule.StartState state)
         {
             this.enabled = true;
@@ -130,31 +75,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             if (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
                 StartCoroutine(GetMissileValues());
             //GameEvents.onEditorShipModified.Add(ShipModified);
-            if (maxAmmo < 0) maxAmmo = ammoCount;
-            if (maxAmmo == 1) Fields["ammoCount"].guiActiveEditor = false;
-            else
-            {
-                UI_FloatRange Ammo = (UI_FloatRange)Fields["ammoCount"].uiControlEditor;
-                Ammo.maxValue = maxAmmo;
-            }
-            if (HighLogic.LoadedSceneIsFlight) 
-            {
-                using (var mmm = VesselModuleRegistry.GetModules<ModuleMissileMagazine>(vessel).GetEnumerator())
-                    while (mmm.MoveNext())
-                    {
-                        if (mmm.Current == null) continue;
-                        if (mmm.Current.MissileName != MissileName) continue;
-                        linkedMagazines.Add(mmm.Current);
-                        magazineAmmo += (int)mmm.Current.ammoCount;
-                    }
-                UI_ProgressBar ordinance = (UI_ProgressBar)Fields["ammoRemaining"].uiControlFlight;
-                ordinance.maxValue = ammoCount;
-                ammoRemaining = ammoCount;
-            }            
+            UI_FloatRange Ammo = (UI_FloatRange)Fields["ammoCount"].uiControlEditor;
+            Ammo.maxValue = maxAmmo;
         }
         private void OnDestroy()
         {
-            //GameEvents.onEditorShipModified.Remove(ShipModified);
+            GameEvents.onEditorShipModified.Remove(ShipModified);
         }
 
         public void ShipModified(ShipConstruct data)
@@ -169,7 +95,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 }
                 else
                 {*/
-                //Fields["ammoCount"].guiActiveEditor = true;
+                Fields["ammoCount"].guiActiveEditor = true;
                 //}
 
             }
