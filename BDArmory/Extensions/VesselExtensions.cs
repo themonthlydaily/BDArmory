@@ -109,7 +109,7 @@ namespace BDArmory.Extensions
 #if DEBUG
                 if (radius < bounds.x / 2f && radius < bounds.y / 2f && radius < bounds.z / 2f) Debug.LogWarning($"DEBUG Radius {radius} of {vessel.vesselName} is less than half its minimum bounds {bounds}");
 #endif
-                return Mathf.Min(radius, (Mathf.Max(Mathf.Max(vessel.vesselSize.x, vessel.vesselSize.y), vessel.vesselSize.z) / 2f) * 1.732f); // clamp bounds to vesselsize in case of Bounds erroneously reporting vessel sizes that are impossibly large
+                return Mathf.Min(radius, (Mathf.Max(Mathf.Max(vessel.vesselSize.x, vessel.vesselSize.y), vessel.vesselSize.z) / 2f) * 1.7321f); // clamp bounds to vesselsize in case of Bounds erroneously reporting vessel sizes that are impossibly large
             }
         }
 

@@ -429,15 +429,19 @@ namespace BDArmory.Control
         public bool lerpAttitude = true;
         private float lerpRate;
         private bool lockAttitude = false;
+        public bool PIDActive = false;
 
         private bool facingDesiredRotation;
         public float throttle;
         public float throttleActual;
         internal float throttleLerped;
         public float throttleLerpRate = 1;
+        public bool lerpThrottle = true;
         public float rcsLerpRate = 5;
         public bool rcsRotate = false;
         public float alignmentToleranceforBurn = 5;
+        public bool useReverseThrust = false;
+        public Vector3 thrustDirection = Vector3.zero;
 
         AxisGroupsModule axisGroupsModule;
         bool hasAxisGroupsModule = false; // To avoid repeated null checks
@@ -475,20 +479,22 @@ namespace BDArmory.Control
         {
             error = Vector3.Angle(vessel.ReferenceTransform.up, attitude);
 
-            UpdateSAS(s);
+            if (!PIDActive)
+                UpdateSAS(s);
             UpdateThrottle(s);
             UpdateRCS(s);
         }
 
         private void UpdateThrottle(FlightCtrlState s)
         {
-            facingDesiredRotation = error < alignmentToleranceforBurn;
+            facingDesiredRotation = Vector3.Angle((useReverseThrust ? -1 : 1) * vessel.ReferenceTransform.up, thrustDirection) < alignmentToleranceforBurn;
+ 
             throttleActual = facingDesiredRotation ? throttle : 0;
 
             // Move actual throttle towards throttle target gradually.
             throttleLerped = Mathf.MoveTowards(throttleLerped, throttleActual, throttleLerpRate * Time.fixedDeltaTime);
 
-            SetThrottle(s, throttleLerped);
+            SetThrottle(s, lerpThrottle ? throttleLerped : throttleActual);
 
         }
 
