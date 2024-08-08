@@ -336,13 +336,17 @@ namespace BDArmory.Damage
             {
                 HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
             }
+            if (HullTypeNum < 1 || HullTypeNum > HullInfo.materialNames.Count)
+            {
+                Debug.LogWarning($"[BDArmory.HitpointTracker]: Invalid HullTypeNum found on {part.partInfo.name} on {part.vessel.vesselName}. Resetting to Aluminium.");
+                HullTypeNum = 2; // Invalid hull type number, revert to default Aluminium
+            }
             if (SelectedArmorType == "Legacy Armor")
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None");
             else
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
-
             if (part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
             {
                 skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
@@ -1503,9 +1507,10 @@ namespace BDArmory.Damage
                 _hullConfigured = true;
                 return;
             }
-            if (isAI || ArmorPanel || ProjectileUtils.isMaterialBlackListpart(this.part))
+            if (isAI || ArmorPanel || ProjectileUtils.isMaterialBlackListpart(part))
             {
                 _hullConfigured = true;
+                part.gTolerance = (isAI || part.vesselType == VesselType.SpaceObject) ? 999 : ArmorPanel ? 50 : part.partInfo.partPrefab.gTolerance; //50 for now, armor panels should probably either be determined by armor material, or arbitrary 'weld/mounting bracket' strength
                 return;
                 //HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
             }
