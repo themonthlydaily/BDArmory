@@ -230,7 +230,7 @@ namespace BDArmory.Bullets
                     {
                         string name = "unknown";
                         try { name = (string)ParseField(node, "name", typeof(string)); } catch { }
-                        Debug.LogError($"[BDArmory.BulletInfo]: Using default value of {defaultValue} for {field} of {name} | {e}");
+                        Debug.LogWarning($"[BDArmory.BulletInfo]: Using default value of {defaultValue} for {field} of {name} | {e}");
                     }
                     return defaultValue;
                 }

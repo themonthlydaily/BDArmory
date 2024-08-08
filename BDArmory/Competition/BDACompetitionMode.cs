@@ -214,7 +214,7 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
                             {
                                 double hpPercent = 1;
-                                float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum() + +Scores.ScoreData[BDArmorySettings.PINATA_NAME].            damageFromMissiles.Values.Sum());
+                                float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum() + +Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromMissiles.Values.Sum());
                                 hpPercent = Mathf.Clamp((BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken) / BDArmorySettings.MAX_ACTIVE_RADAR_RANGE, 0, 1);
                                 if (hpPercent > 0)
                                 {
@@ -499,21 +499,6 @@ namespace BDArmory.Competition
 
                     if (!string.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
 
-                    if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
-                    {
-                        if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-
-                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                        else
-                        {
-                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
-                            if (FlightGlobals.ActiveVessel != pilot.vessel && !(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67))
-                            {
-                                LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
-                            }
-                        }
-                    }
-
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
                     {
                         teamPilots = new List<IBDAIControl>();
@@ -753,6 +738,26 @@ namespace BDArmory.Competition
             foreach (var leader in leaders)
                 leader.weaponManager.wingCommander.CommandAllFollow();
 
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
+            { // For S6R7 switch to piñata teams and enable guard mode prior to take-off to avoid orbiting issues.
+                foreach (var pilot in GetAllPilots())
+                {
+                    if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                    {
+                        SpawnUtils.SaveTeams();
+                        if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                        {
+                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                            pilot.weaponManager.guardMode = true; // Enable guard mode prior to take-off to avoid orbiting issues.
+                        }
+                        else
+                        {
+                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                        }
+                        Scores.ScoreData[pilot.vessel.vesselName].team = pilot.weaponManager.Team.Name;
+                    }
+                }
+            }
             //wait till the leaders are ready to engage (airborne for PilotAI)
             while (true)
             {
@@ -799,6 +804,29 @@ namespace BDArmory.Competition
                 }
                 yield return new WaitForSeconds(1);
             }
+
+            if (!(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67))
+            { // Switch to piñata teams after everyone is ready.
+                foreach (var pilot in GetAllPilots())
+                {
+                    if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                    {
+                        SpawnUtils.SaveTeams();
+                        if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                        else
+                        {
+                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                            if (FlightGlobals.ActiveVessel != pilot.vessel)
+                            {
+                                LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
+                            }
+                        }
+                        Scores.ScoreData[pilot.vessel.vesselName].team = pilot.weaponManager.Team.Name;
+                    }
+                }
+            }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67) startCompetitionNow = true;
 
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
@@ -1233,7 +1261,7 @@ namespace BDArmory.Competition
             {
                 var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (mf != null)
-                    if (mf.currentHP < BDArmorySettings.COMPETITION_GM_KILL_HP)
+                    if (mf.currentHP / mf.totalHP * 100 < BDArmorySettings.COMPETITION_GM_KILL_HP)
                         StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " crippled. Terminated by GM."));
             }
         }
@@ -1935,6 +1963,7 @@ namespace BDArmory.Competition
                     case "SetTeam":
                         {
                             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: setting team.");
+                            SpawnUtils.SaveTeams();
                             foreach (var pilot in pilots)
                             {
                                 if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
@@ -1944,6 +1973,7 @@ namespace BDArmory.Competition
                                     else
                                         pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
                                 }
+                                Scores.ScoreData[pilot.vessel.vesselName].team = pilot.weaponManager.Team.Name;
                             }
                             break;
                         }
@@ -2828,8 +2858,9 @@ namespace BDArmory.Competition
                             competitionStatus.Add("Failed to stop the Asteroid in time!");
                             PartExploderSystem.AddPartToExplode(vessel.rootPart);
                             NukeFX.CreateExplosion(vessel.CoM, ExplosionSourceType.BattleDamage, "Asteroid", "Impact", 0, 5000, 20, 0, true, "BDArmory/Models/explosion/nuke/nukeBoom", "", "BDArmory/Models/explosion/nuke/nukeShock", "BDArmory/Models/explosion/nuke/nukeBlast", "", "", "", "", nukePart: vessel.rootPart);
-                            StopCompetition();
-                            return;
+                            pinataAlive = false;
+                            if (alive.Contains(BDArmorySettings.PINATA_NAME)) alive.Remove(BDArmorySettings.PINATA_NAME);
+                            // Don't immediately stop the competition, so that craft caught in the explosion get a chance to die.
                         }
                     }
                 }
@@ -2853,6 +2884,7 @@ namespace BDArmory.Competition
                     {
                         competitionStatus.Add("Asteroid destroyed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "!");
                         Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
+                        Scores.RegisterDeath(BDArmorySettings.PINATA_NAME, GMKillReason.None, now);
                         foreach (string key in alive)
                         {
                             competitionStatus.Add(key + " wins the round!");
@@ -2862,7 +2894,7 @@ namespace BDArmory.Competition
                         return;
                     }
                     // switch everyone onto separate teams when the Pinata Dies
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(originalTeams: true);
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
@@ -3018,6 +3050,15 @@ namespace BDArmory.Competition
                 }
                 if (!runningWPs && BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD <= 60 && now - finalGracePeriodStart > BDArmorySettings.COMPETITION_FINAL_GRACE_PERIOD)
                 {
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67)
+                    {
+                        foreach (var vessel in FlightGlobals.Vessels)
+                        {
+                            Scores.RegisterDeath(vessel.vesselName, GMKillReason.GM, now);
+                            VesselUtils.ForceDeadVessel(vessel);
+                        }
+                        alive.Clear();
+                    }
                     competitionStatus.Add("All Pilots are Dead");
                     foreach (string key in alive)
                     {
