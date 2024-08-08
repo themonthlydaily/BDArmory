@@ -496,7 +496,7 @@ namespace BDArmory.Weapons.Missiles
             get
             {
                 if (!hasAmmo) return 1;
-                return (int)reloadableRail.ammoCount;
+                return (int)reloadableRail.railAmmo;
             }
         }
         public bool isMMG = false;
@@ -526,6 +526,7 @@ namespace BDArmory.Weapons.Missiles
                     if (craftPart.Current.engageRangeMax != engageRangeMax) continue;
                     missilecount += craftPart.Current.AmmoCount;
                 }
+            if (hasAmmo) missilecount += (int)reloadableRail.magazineAmmo;
         }
 
         public string GetSubLabel()
