@@ -1456,6 +1456,7 @@ namespace BDArmory.Radar
                             if (dataIndex < dataArray.Length)
                             {
                                 dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                dataArray[dataIndex].lockedByRadar = radar;
                                 dataIndex++;
                                 hasLocked = true;
                             }
@@ -1664,6 +1665,7 @@ namespace BDArmory.Radar
                                     if (dataIndex < dataArray.Length)
                                     {
                                         dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                        dataArray[dataIndex].lockedByRadar = radar;
                                         dataIndex++;
                                         hasLocked = true;
                                     }
