@@ -48,6 +48,7 @@ namespace BDArmory.FX
         public float travelDistance { get; set; }
 
         public Part projectileHitPart { get; set; }
+        public float ImpactSpeed { get; set; } // For kinetic impactors.
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
@@ -87,7 +88,8 @@ namespace BDArmory.FX
         {
             Standard,
             ShapedCharge,
-            ContinuousRod
+            ContinuousRod,
+            Kinetic // Expanding cone from kinetic impact.
         }
 
         public WarheadTypes warheadType;
@@ -215,7 +217,7 @@ namespace BDArmory.FX
             explosionEventsVesselsHit.Clear();
 
             SCRange = 0;
-            if (warheadType == WarheadTypes.ShapedCharge)
+            if (warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.Kinetic) // FIXME is this a valid place to handle the Kinetic case?
             {
                 // Based on shaped charge standoff penetration falloff, set equal to 10% and solved for the range
                 // Equation is from https://www.diva-portal.org/smash/get/diva2:643824/FULLTEXT01.pdf and gives an
@@ -823,7 +825,7 @@ namespace BDArmory.FX
             var realDistance = eventToExecute.Distance;
             var vesselMass = part.vessel.totalMass;
             if (vesselMass == 0) vesselMass = part.mass; // Sometimes if the root part is the only part of the vessel, then part.vessel.totalMass is 0, despite the part.mass not being 0.
-            bool shapedEffect = ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect);
+            bool shapedEffect = (warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.Kinetic || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect;
 
 
             if (BDArmorySettings.DEBUG_WEAPONS && shapedEffect)
@@ -911,7 +913,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if (shapedEffect && ((warheadType == WarheadTypes.ShapedCharge) ? (realDistance <= SCRange) : warheadType == WarheadTypes.ContinuousRod))
+                            if (shapedEffect && ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.Kinetic) ? (realDistance <= SCRange) : warheadType == WarheadTypes.ContinuousRod))
                             {
                                 //float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                                 //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
@@ -973,7 +975,14 @@ namespace BDArmory.FX
                                     //else ProjectileUtils.CalculateArmorDamage(part, penetrationFactor, Caliber, hardness, Ductility, Density, ExplosionVelocity, SourceVesselName, ExplosionSourceType.Missile, type);
                                     else if (penetrationFactor > 0)
                                     {
-                                        ProjectileUtils.CalculateArmorDamage(part, penetrationFactor, Caliber * 2.5f, hardness, Ductility, Density, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, SourceVesselName, ExplosionSourceType.Missile, type);
+                                        ProjectileUtils.CalculateArmorDamage(part, penetrationFactor, Caliber * 2.5f, hardness, Ductility, Density,
+                                            warheadType switch
+                                            {
+                                                WarheadTypes.ShapedCharge => 5000f,
+                                                WarheadTypes.Kinetic => ImpactSpeed,
+                                                _ => ExplosionVelocity
+                                            },
+                                            SourceVesselName, ExplosionSourceType.Missile, type);
                                     }
                                 }
                                 else
@@ -985,7 +994,14 @@ namespace BDArmory.FX
                                 if (penetrationFactor > 0)
                                 {
                                     BulletHitFX.CreateBulletHit(part, eventToExecute.HitPoint, eventToExecute.Hit, eventToExecute.Hit.normal, true, Caliber, penetrationFactor > 0 ? penetrationFactor : 0f, null);
-                                    damage = part.AddBallisticDamage(warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, Caliber, 1f, penetrationFactor, dmgMult, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, ExplosionSourceType.Missile);
+                                    damage = part.AddBallisticDamage(warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, Caliber, 1f, penetrationFactor, dmgMult,
+                                        warheadType switch
+                                        {
+                                            WarheadTypes.ShapedCharge => 5000f,
+                                            WarheadTypes.Kinetic => ImpactSpeed,
+                                            _ => ExplosionVelocity
+                                        },
+                                        ExplosionSourceType.Missile);
                                 }
 
                                 if (penetrationFactor > 1)
@@ -1133,7 +1149,7 @@ namespace BDArmory.FX
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
             float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceVesselTeam = null, string sourceWeaponName = null, Vector3 direction = default,
-            float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null,
+            float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, WarheadTypes warheadType = WarheadTypes.Standard, Part Hitpart = null,
             float apMod = 1f, float distancetravelled = -1, Vector3 sourceVelocity = default)
         {
             if (BDArmorySettings.DEBUG_MISSILES && explosionSourceType == ExplosionSourceType.Missile && (!explosionFXPools.ContainsKey(explModelPath) || !audioClips.ContainsKey(soundPath)))
@@ -1173,17 +1189,15 @@ namespace BDArmory.FX
             eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             eFx.SoundPath = soundPath;
-            type = type.ToLower();
-            switch (type)
+            eFx.warheadType = warheadType;
+            switch (eFx.warheadType)
             {
-                case "continuousrod":
-                    eFx.warheadType = WarheadTypes.ContinuousRod;
+                case WarheadTypes.ContinuousRod:
                     //eFx.AngleOfEffect = 165;
                     eFx.Caliber = caliber > 0 ? caliber / 4 : 30;
                     eFx.ProjMass = 0.3f + (tntMassEquivalent / 75);
                     break;
-                case "shapedcharge":
-                    eFx.warheadType = WarheadTypes.ShapedCharge;
+                case WarheadTypes.ShapedCharge:
                     //eFx.AngleOfEffect = 10f;
                     //eFx.AngleOfEffect = 5f;
                     eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 5f); // cos(5 degrees)
@@ -1196,42 +1210,46 @@ namespace BDArmory.FX
                     eFx.apMod = apMod;
                     eFx.travelDistance = distancetravelled;
                     break;
-                case "kinetic":
-                    eFx.warheadType = WarheadTypes.ShapedCharge;
+                case WarheadTypes.Kinetic:
                     eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 45f); // cos(45 degrees)
                     eFx.Caliber = caliber;
                     eFx.apMod = apMod;
                     eFx.travelDistance = distancetravelled;
+                    eFx.ImpactSpeed = (sourceVelocity - (Hitpart != null ? Hitpart.vessel.Velocity() : Vector3.zero)).magnitude;
                     break;
-                default:
-                    eFx.warheadType = WarheadTypes.Standard;
+                case WarheadTypes.Standard:
                     eFx.cosAngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
                     eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * eFx.cosAngleOfEffect);
                     break;
+                default:
+                    Debug.LogError($"[BDArmory.ExplosionFX]: Unhandled warheadType {eFx.warheadType}, defaulting to {WarheadTypes.Standard}.");
+                    goto case WarheadTypes.Standard;
             }
 
-            if (type == "shapedcharge" || type == "continuousrod")
+            switch (eFx.warheadType)
             {
-                eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, type == "shapedcharge" ? 5000f : ExplosionVelocity, type == "shapedcharge" ? tntMassEquivalent * 0.0555f : eFx.ProjMass, apMod);
-                // Approximate fitting of mass to tntMass for modern shaped charges was done,
-                // giving the estimate of 0.0555*tntMass which works surprisingly well for modern
-                // warheads. 5000 m/s is around the average velocity of the jet. In reality, the
-                // jet has a velocity which linearly decreases from the tip to the tail, with the
-                // velocity being O(detVelocity) at the tip and O(1/4*detVelocity) at the tail.
-                // The linear estimate is also from "The Hollow Charge Effect", however this is
-                // too complex for the non-numerical penetration model used. Note that the density
-                // of the liner is far overestimated here, however this is accounted for in the
-                // estimate of the liner mass and the simple fit for liner mass of modern warheads
-                // is surprisingly good using the above formula.
+                case WarheadTypes.ShapedCharge:
+                case WarheadTypes.ContinuousRod:
+                    eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, eFx.warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, eFx.warheadType == WarheadTypes.ShapedCharge ? tntMassEquivalent * 0.0555f : eFx.ProjMass, apMod);
+                    // Approximate fitting of mass to tntMass for modern shaped charges was done,
+                    // giving the estimate of 0.0555*tntMass which works surprisingly well for modern
+                    // warheads. 5000 m/s is around the average velocity of the jet. In reality, the
+                    // jet has a velocity which linearly decreases from the tip to the tail, with the
+                    // velocity being O(detVelocity) at the tip and O(1/4*detVelocity) at the tail.
+                    // The linear estimate is also from "The Hollow Charge Effect", however this is
+                    // too complex for the non-numerical penetration model used. Note that the density
+                    // of the liner is far overestimated here, however this is accounted for in the
+                    // estimate of the liner mass and the simple fit for liner mass of modern warheads
+                    // is surprisingly good using the above formula.
+                    break;
+                case WarheadTypes.Kinetic:
+                    eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, sourceVelocity.magnitude, eFx.ProjMass, apMod);
+                    break;
+                default:
+                    eFx.penetration = 0;
+                    break;
             }
-            else if (type == "kinetic")
-            {
-                eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, sourceVelocity.magnitude, eFx.ProjMass, apMod);
-            }
-            else
-            {
-                eFx.penetration = 0;
-            }
+
 
             if (direction == default(Vector3) && explosionSourceType == ExplosionSourceType.Missile)
             {

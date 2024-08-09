@@ -310,7 +310,7 @@ namespace BDArmory.Weapons.Missiles
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Kinetic, Standard, ContinuousRod, EMP, Nuke }
+        public enum WarheadTypes { Kinetic, Standard, ContinuousRod, EMP, Nuke, Legacy, Launcher }
 
         public WarheadTypes warheadType = WarheadTypes.Kinetic;
         public bool HasFired { get; set; } = false;
