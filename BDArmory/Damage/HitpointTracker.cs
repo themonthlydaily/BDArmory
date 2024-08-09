@@ -293,6 +293,8 @@ namespace BDArmory.Damage
                 {
                     Fields["Hitpoints"].guiActive = false;
                     Fields["Hitpoints"].guiActiveEditor = false;
+                    Fields["HullTypeNum"].guiActive = false;
+                    Fields["HullTypeNum"].guiActiveEditor = false;
                 }
                 Hitpoints = maxHitPoints_;
                 if (!ArmorSet) overrideArmorSetFromConfig();
@@ -1177,11 +1179,13 @@ namespace BDArmory.Damage
                     Armour = Armor;
                 }
             }
+            Debug.Log("[HPTracker] Debug: current Armor: " + Armor + "; ArmorRemaining: " + ArmorRemaining + "; ArmorPanel: " + ArmorPanel);
             if (ArmorPanel)
             {
                 Hitpoints = ArmorRemaining; // * armorVolume * 10;
                 if (Armor <= 0)
                 {
+                    Debug.Log("[HPTracker] Debug: Armor integrety reduced to 0! Destroying panel");
                     DestroyPart();
                 }
             }

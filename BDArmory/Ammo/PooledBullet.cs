@@ -588,7 +588,7 @@ namespace BDArmory.Bullets
             hasPenetrated = true;
             hasDetonated = false;
             hasRicocheted = false;
-            CurrentPart = null;
+            //CurrentPart = null; //this needs to persist, at least while the bullet is Enabled
             //penTicker = 0;
             allHits.Clear();
             rayLength.Clear();
@@ -1374,7 +1374,8 @@ namespace BDArmory.Bullets
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
-                        ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
+                        if (!ProjectileUtils.IsArmorPart(CurrentPart)) //HE round that's punched through an armor panel would be exploding on the wrong side of it for shrapnel damage to be relevant
+                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
                         hasDetonated = true;
                         KillBullet();
                         distanceTraveled += hit.distance;
@@ -1384,7 +1385,8 @@ namespace BDArmory.Bullets
                     {
                         if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
-                        ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
+                        if (!ProjectileUtils.IsArmorPart(CurrentPart))
+                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                         hasDetonated = true;
                         KillBullet();
                         distanceTraveled += hit.distance;

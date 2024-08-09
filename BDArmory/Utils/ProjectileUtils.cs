@@ -347,7 +347,7 @@ namespace BDArmory.Utils
             if (volumeToReduce < 0)
             {
                 var modifiedCaliber = 0.5f * caliber * caliberModifier;
-                volumeToReduce = modifiedCaliber * modifiedCaliber * Mathf.PI / 100 * (thickness / 10); //cm3
+                volumeToReduce = modifiedCaliber * modifiedCaliber * Mathf.PI / 400 * (thickness / 10); //cm3
             }
             if (BDArmorySettings.DEBUG_ARMOR)
             {
