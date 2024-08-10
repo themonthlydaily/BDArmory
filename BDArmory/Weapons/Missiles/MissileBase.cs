@@ -755,7 +755,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetPosition = heatTarget.position;
                     TargetVelocity = heatTarget.velocity;
                     TargetAcceleration = heatTarget.acceleration;
-                    targetVessel = heatTarget.targetInfo;
+                    //targetVessel = heatTarget.targetInfo;
                     lockFailTimer = 0;
 
                     // Update target information
@@ -1648,7 +1648,8 @@ namespace BDArmory.Weapons.Missiles
                                     Vector3 relPos = TargetPosition - vessel.CoM;
                                     Vector3 relVel = TargetVelocity - vessel.Velocity();
                                     bool approaching = Vector3.Dot(relPos, relVel) < 0f;
-                                    float targetRad = targetVessel.Vessel.GetRadius();
+                                    float targetRad = heatTarget.exists && heatTarget.vessel == null ? 1 : targetVessel.Vessel.GetRadius();
+                                    // if target is a flare, return 1, else standard vessel radius
                                     float selfRad = vessel.GetRadius();
                                     float sepRad = 1.7321f * (targetRad + selfRad);
 
