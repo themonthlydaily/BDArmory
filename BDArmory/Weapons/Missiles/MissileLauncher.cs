@@ -1963,7 +1963,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = heatTarget.position;
                             TargetVelocity = heatTarget.velocity;
                             TargetAcceleration = heatTarget.acceleration;
-                            targetVessel = heatTarget.targetInfo;
+                            //targetVessel = heatTarget.targetInfo; will mess with AI MissilesAway and potentially result in ripplefired IR missiles against an enemy actively flaring and decoying heaters.
                             lockFailTimer = -1; // ensures proper entry into UpdateHeatTarget()
 
                             // Disable terminal guidance and switch to regular heat guidance for next update
