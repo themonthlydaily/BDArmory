@@ -192,7 +192,7 @@ namespace BDArmory.VesselSpawning
             }
             var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)))) : 0f; // If it's a single craft, spawn it at the spawn point.
 
-            LogMessage($"Spawning {spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)} vessels at an altitude of {spawnConfig.altitude.ToString("G0")}m ({(spawnInOrbit ? "in orbit" : spawnAirborne ? "airborne" : "landed")}){(spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".")}");
+            LogMessage($"Spawning {spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)} vessels at an altitude of {(spawnConfig.altitude < 1000 ? $"{spawnConfig.altitude:G5}m" : $"{spawnConfig.altitude / 1000:G5}km")} ({(spawnInOrbit ? "in orbit" : spawnAirborne ? "airborne" : "landed")}){(spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".")}");
             #endregion
 
             yield return AcquireSpawnPoint(spawnConfig, 2f * spawnDistance, spawnAirborne);

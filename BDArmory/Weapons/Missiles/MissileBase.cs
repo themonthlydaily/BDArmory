@@ -1368,6 +1368,7 @@ namespace BDArmory.Weapons.Missiles
             if (vacuumSteerable && (vessel.InVacuum()))
             {
                 float dotTol;
+                float clearedDotTol = hasRCS ? 0.98f : 0.7f;
                 Vector3 toSource = CoM - SourceVessel.CoM;
                 Ray toTarget = new Ray(CoM, orbitalTarget);
                 float sourceRadius = SourceVessel.GetRadius();
@@ -1388,7 +1389,7 @@ namespace BDArmory.Weapons.Missiles
                                 {
                                     vacuumClearanceState = VacuumClearanceStates.Cleared;
                                     Throttle = 1f;
-                                    dotTol = 0.7f;
+                                    dotTol = clearedDotTol;
                                 }
                             }
                             else
@@ -1402,7 +1403,7 @@ namespace BDArmory.Weapons.Missiles
                                 {
                                     vacuumClearanceState = VacuumClearanceStates.Cleared;
                                     Throttle = 1f;
-                                    dotTol = 0.7f;
+                                    dotTol = clearedDotTol;
                                 }
                             }
                             if (vacuumClearanceState == VacuumClearanceStates.Clearing) // Adjust throttle if still clearing
@@ -1431,13 +1432,14 @@ namespace BDArmory.Weapons.Missiles
                             if ((Vector3.Dot((orbitalTarget - CoM).normalized, GetForwardTransform()) >= dotTol) && cleared)
                             {
                                 vacuumClearanceState = VacuumClearanceStates.Cleared;
+                                dotTol = clearedDotTol;
                                 Throttle = 1f;
                             }
                         }
                         break;
                     default: // VacuumClearanceStates.Cleared, We are engaging target
                         {
-                            dotTol = 0.7f;
+                            dotTol = clearedDotTol;
                             Throttle = 1f;
                         }
                         break;
@@ -1638,6 +1640,47 @@ namespace BDArmory.Weapons.Missiles
                                                 // ignored
                                                 Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonationState: " + e.Message + "\n" + e.StackTrace);
                                             }
+                                        }
+                                    }
+                                }
+                                else if (TargetAcquired && targetVessel != null && targetVessel.Vessel != null)
+                                {
+                                    // For very high speed intercepts when missiles may phase through small vessels/missiles within a frame
+                                    Vector3 relPos = TargetPosition - vessel.CoM;
+                                    Vector3 relVel = TargetVelocity - vessel.Velocity();
+                                    bool approaching = Vector3.Dot(relPos, relVel) < 0f;
+                                    float targetRad = targetVessel.Vessel.GetRadius();
+                                    float selfRad = vessel.GetRadius();
+                                    float sepRad = 1.7321f * (targetRad + selfRad);
+
+                                    if (approaching && relVel.sqrMagnitude * Time.fixedDeltaTime * Time.fixedDeltaTime > sepRad * sepRad)
+                                    {
+                                        bool shouldDetonate = false;
+                                        Ray ray = new(vessel.CoM, -relVel);
+                                        ray.origin += selfRad * ray.direction; // Start at the tip of the missile (assuming it's pointing roughly prograde in the relVel direction and is longest on that axis).
+                                        if (Physics.Raycast(ray, out RaycastHit hit, relativeSpeed, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels))) // Hit!
+                                        {
+                                            vessel.SetPosition(hit.point - 0.5f * ray.direction); // Slightly back so that shaped charge explosives hit properly.
+                                            shouldDetonate = true;
+                                        }
+                                        else // Not hitting, just getting close, check for reaching CPA.
+                                        {
+                                            Vector3 relAccel = TargetAcceleration - vessel.acceleration_immediate;
+                                            float cpaTime = AIUtils.TimeToCPA(relPos, relVel, relAccel, Time.fixedDeltaTime);
+
+                                            if (cpaTime > 0f && cpaTime < Time.fixedDeltaTime)
+                                            {
+                                                // Set relative position to the same as at CPA point, but relative to the target's current position. This avoids having to move the target and wait an additional frame.
+                                                vessel.SetPosition(TargetPosition - AIUtils.PredictPosition(relPos, relVel, relAccel, cpaTime));
+                                                shouldDetonate = true;
+                                            }
+                                        }
+                                        if (shouldDetonate)
+                                        {
+                                            Detonate();
+                                            if (targetVessel.isMissile && targetVessel.MissileBaseModule)
+                                                targetVessel.MissileBaseModule.Detonate(); // The above approach is only about ~50% effective against missiles, so just tell the other missile to detonate just in case
+                                            return;
                                         }
                                     }
                                 }

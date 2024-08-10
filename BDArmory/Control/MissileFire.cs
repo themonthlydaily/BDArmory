@@ -8109,7 +8109,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     {
                                         missilesAway.TryGetValue(PDMslTgts[TgtMsl], out int missiles);
                                         interceptorsAway = missiles;
-                                        Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against secondary target {PDMslTgts[TgtMsl].Vessel.GetName()}: {interceptorsAway}");
+                                        //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against secondary target {PDMslTgts[TgtMsl].Vessel.GetName()}: {interceptorsAway}");
                                     }
                                     if (interceptorsAway < maxMissilesOnTarget)      
                                     {
