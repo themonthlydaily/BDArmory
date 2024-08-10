@@ -901,7 +901,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else // Kill relative velocity to target
                         relVel = vessel.Velocity() - targetVelocity;
-                    rcsVector = Vector3.ProjectOnPlane(relVel, forwardDir) * -1;
+                    rcsVector = -Vector3.ProjectOnPlane(relVel, forwardDir);
                 }
             }
             else
@@ -1225,8 +1225,8 @@ namespace BDArmory.Weapons.Missiles
                             float rcsThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, rcsPower, rcsLerpMag));
                             Vector3 rcsThrust = rcsVectorLerped.normalized * rcsThrottle;
 
-                            Vector3 up = vessel.ReferenceTransform.forward * -1;
-                            Vector3 forward = vessel.ReferenceTransform.up * -1;
+                            Vector3 up = -vessel.ReferenceTransform.forward;
+                            Vector3 forward = -vessel.ReferenceTransform.up;
                             Vector3 right = Vector3.Cross(up, forward);
 
                             s.X = Mathf.Clamp(Vector3.Dot(rcsThrust, right), -1, 1);

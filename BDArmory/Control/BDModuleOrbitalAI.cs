@@ -705,7 +705,7 @@ namespace BDArmory.Control
                         fc.throttle = 1f;
                         fc.alignmentToleranceforBurn = 25f;
 
-                        rcsVector = Vector3.ProjectOnPlane(relVel, vesselTransform.up) * -1;
+                        rcsVector = -Vector3.ProjectOnPlane(relVel, vesselTransform.up);
                     }
                     break;
                 case StatusMode.Firing:
