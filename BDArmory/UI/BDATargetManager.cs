@@ -583,7 +583,7 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score, targetCoM ? null : IRSig.Item2);
                         }
                     }
-                    // Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
                 }
                 // else Debug.Log($"[IR DEBUG] ignoring {vessel.GetName()} at angle {angle}°, which is beyond scanRadius {scanRadius}°");
             }

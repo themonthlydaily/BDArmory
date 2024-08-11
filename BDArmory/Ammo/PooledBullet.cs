@@ -320,6 +320,7 @@ namespace BDArmory.Bullets
             {
                 BDATargetManager.FiredBullets.Add(this);
             }
+            randomness = UnityEngine.Random.onUnitSphere;
         }
 
         void OnDisable()
@@ -507,6 +508,7 @@ namespace BDArmory.Bullets
         /// Note: water drag on bullets breaks the symplectic nature of the integrator (since it's modifying the Hamiltonian), which isn't accounted for during aiming.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
+        Vector3 randomness;
         public void MoveBullet(float period)
         {
             atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); //moving this here so it's not getting called 2x a tick in LeapFrogVelocityHalfStep
@@ -520,7 +522,7 @@ namespace BDArmory.Bullets
                     Vector3 leadTargetOffset = targetVessel.CoM + targetVessel.Velocity() * (Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity);
                     //if (Vector3.Angle(currentVelocity, leadTargetOffset) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient); needs bulletdrop gravity accel factored in as well
                     //apply some drag to projectile if it's turning. Will mess up initial CPA aim calculations, true; on the other hand, its a guided homing bullet.                                                                                                                                                                                                                
-                    currentVelocity = Vector3.RotateTowards(currentVelocity, (leadTargetOffset - currentPosition).normalized, guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, ((leadTargetOffset + (randomness * 2)) - currentPosition).normalized, guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
                 }           
             }
 

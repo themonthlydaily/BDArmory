@@ -1962,7 +1962,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = heatTarget.position;
                             TargetVelocity = heatTarget.velocity;
                             TargetAcceleration = heatTarget.acceleration;
-                            targetVessel = heatTarget.targetInfo;
+                            //targetVessel = heatTarget.targetInfo;
                             lockFailTimer = -1; // ensures proper entry into UpdateHeatTarget()
 
                             // Disable terminal guidance and switch to regular heat guidance for next update

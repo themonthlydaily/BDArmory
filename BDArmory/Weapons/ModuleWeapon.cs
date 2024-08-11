@@ -1480,8 +1480,6 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
-
-                UpdateOffsetWeapon(); // Update compensations for offset/non-centerline weapons
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -2322,10 +2320,10 @@ namespace BDArmory.Weapons
                                     }
                                     pBullet.targetVessel = null;
                                     pBullet.guidanceDPS = 0;
-                                    if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
+                                    if (visualTargetVessel != null && (targetAcquisitionType == TargetAcquisitionType.Slaved || vessel.name.Contains("S-1")))
                                     {
                                         pBullet.targetVessel = visualTargetVessel;
-                                        pBullet.guidanceDPS = bulletInfo.guidanceDPS;
+                                        pBullet.guidanceDPS = (shortName == "Freischultz" ? 0.25f : bulletInfo.guidanceDPS);
                                     }
                                     pBullet.isSubProjectile = false;
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
@@ -4435,6 +4433,7 @@ namespace BDArmory.Weapons
 
         void UpdateOffsetWeapon()
         {
+            if (fireTransforms == null) return;
             Vector3 weaponPosition = fireTransforms[0].position;
             Vector3 weaponDirection = fireTransforms[0].forward;
             if (part.symmetryCounterparts.Count > 0)
@@ -4442,7 +4441,8 @@ namespace BDArmory.Weapons
                 foreach (var part in part.symmetryCounterparts)
                 {
                     weaponPosition += part.transform.position;
-                    weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                    if (part.GetComponent<ModuleWeapon>().fireTransforms != null)
+                        weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
                 }
                 weaponPosition /= 1 + part.symmetryCounterparts.Count;
                 weaponDirection /= 1 + part.symmetryCounterparts.Count;
@@ -5093,25 +5093,28 @@ namespace BDArmory.Weapons
                     {
                         //TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData; //no support for radar tracking, only locks?
                         TargetSignatureData targetData = weaponManager.vesselRadarData.detectedRadarTarget(visualTargetVessel, weaponManager);
-                        targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
-                        targetPosition = targetData.predictedPositionWithChaffFactor(targetData.lockedByRadar.radarChaffClutterFactor);
-                        targetRadius = targetData.vessel.GetRadius();
-                        targetAcceleration = targetData.acceleration;
-                        targetIsLandedOrSplashed = false;
-                        if (targetData.vessel)
+                        if (targetData.exists)
                         {
-                            targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
-                            visualTargetVessel = targetData.vessel; //will override multitarget assignment if multiple turrets and multiple targets and multiTargetNum > 1
+                            targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
+                            targetPosition = targetData.predictedPositionWithChaffFactor(targetData.lockedByRadar.radarChaffClutterFactor);
+                            targetRadius = targetData.vessel.GetRadius();
+                            targetAcceleration = targetData.acceleration;
+                            targetIsLandedOrSplashed = false;
+                            if (targetData.vessel)
+                            {
+                                targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
+                                visualTargetVessel = targetData.vessel; //will override multitarget assignment if multiple turrets and multiple targets and multiTargetNum > 1
+                            }
+                            targetAcquired = true;
+                            targetAcquisitionType = TargetAcquisitionType.Radar;
+                            if (weaponManager.vesselRadarData.locked)
+                            {
+                                if (visualTargetVessel == weaponManager.vesselRadarData.lockedTargetData.targetData.vessel)
+                                    targetAcquisitionType = TargetAcquisitionType.Slaved;
+                            }
+                            radarTarget = true;
+                            return;
                         }
-                        targetAcquired = true;
-                        targetAcquisitionType = TargetAcquisitionType.Radar;
-                        if (weaponManager.vesselRadarData.locked)
-                        {
-                            if (visualTargetVessel == weaponManager.vesselRadarData.lockedTargetData.targetData.vessel)
-                                targetAcquisitionType = TargetAcquisitionType.Slaved;
-                        }
-                        radarTarget = true;
-                        return;
                     }
                 }
                 //else, we have turrets slaved to a targetpainter, use that
@@ -5139,8 +5142,7 @@ namespace BDArmory.Weapons
                 }
                 //legacy or visual range guard targeting
                 // within visual range and no radar aiming/need precision visual targeting of specific subsystems
-                if (aiControlled && visualTargetVessel && 
-                    visRange)
+                if (aiControlled && visualTargetVessel && visRange)
                 {
                     //targetRadius = visualTargetVessel.GetRadius();
 

@@ -742,7 +742,7 @@ namespace BDArmory.Weapons.Missiles
                     lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
                 DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, predictedHeatTarget.exists ? Color.magenta : heatTarget.exists ? Color.yellow : Color.blue);
-                //Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}; heatTarget vessel {(heatTarget.exists && heatTarget.vessel != null ? heatTarget.vessel.name : "null")}");
                 // Update heat target
                 if (activeRadarRange < 0)
                     heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, lockedSensorFOVBias, lockedSensorVelocityBias,
@@ -756,7 +756,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetPosition = heatTarget.position;
                     TargetVelocity = heatTarget.velocity;
                     TargetAcceleration = heatTarget.acceleration;
-                    targetVessel = heatTarget.targetInfo;
+                    //targetVessel = heatTarget.targetInfo;
                     lockFailTimer = 0;
 
                     // Update target information
@@ -1649,7 +1649,7 @@ namespace BDArmory.Weapons.Missiles
                                     Vector3 relPos = TargetPosition - vessel.CoM;
                                     Vector3 relVel = TargetVelocity - vessel.Velocity();
                                     bool approaching = Vector3.Dot(relPos, relVel) < 0f;
-                                    float targetRad = targetVessel.Vessel.GetRadius();
+                                    float targetRad = heatTarget.exists && heatTarget.vessel == null ? 1 : targetVessel.Vessel.GetRadius();
                                     float selfRad = vessel.GetRadius();
                                     float sepRad = 1.7321f * (targetRad + selfRad);
 
