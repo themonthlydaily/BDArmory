@@ -50,10 +50,12 @@ namespace BDArmory.Control
         private bool hasEC;
         private float maxAcceleration;
         private float maxThrust;
+
         private float reverseForwardThrustRatio = 0f;
         private List<ModuleEngines> forwardEngines = new List<ModuleEngines>();
         private List<ModuleEngines> reverseEngines = new List<ModuleEngines>();
         private bool currentForwardThrust;
+
         private Vector3 maxAngularAcceleration;
         private float maxAngularAccelerationMag;
         private Vector3 availableTorque;
@@ -128,6 +130,7 @@ namespace BDArmory.Control
             UI_ChooseOption(options = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" })]
         public string rollTowards = "Port_Starboard";
         public readonly string[] rollTowardsModes = new string[6] { "Port_Starboard", "Dorsal_Ventral", "Port", "Starboard", "Dorsal", "Ventral" };
+
         public RollModeTypes rollMode
             => (RollModeTypes)Enum.Parse(typeof(RollModeTypes), rollTowards);
         #endregion
@@ -318,7 +321,7 @@ namespace BDArmory.Control
         {
             base.ActivatePilot();
             TakingOff = false;
-            
+
             dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
             //originalMaxSpeed = ManeuverSpeed;
             if (!fc)
@@ -1235,7 +1238,6 @@ namespace BDArmory.Control
             else
                 return relVelSqrMag < firingSpeed * firingSpeed;
         }
-
         private Vector3 GunFiringSolution(ModuleWeapon weapon)
         {
             // For fixed weapons, returns attitude that puts fixed weapon on target, even if not aligned with vesselTransform.up

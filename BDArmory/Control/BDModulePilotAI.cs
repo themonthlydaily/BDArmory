@@ -1046,7 +1046,6 @@ namespace BDArmory.Control
         bool regainEnergy = false;
 
         bool maxAltitudeEnabled = false;
-        bool initialTakeOff = true; // False after the initial take-off.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
         bool gainAltInhibited = false; // Inhibit gain altitude to minimum altitude when chasing or evading someone as long as we're pointing upwards.
         bool gainingAlt = false, wasGainingAlt = false; // Flags for tracking when we're gaining altitude.
@@ -1790,9 +1789,8 @@ namespace BDArmory.Control
             originalMaxSpeed = maxSpeed;
             belowMinAltitude = vessel.LandedOrSplashed;
             prevTargetDir = vesselTransform.up;
-            if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
+            if (TakingOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
             {
-                initialTakeOff = false;
                 TakingOff = false; 
             }
 
@@ -1944,7 +1942,7 @@ namespace BDArmory.Control
             wasGainingAlt = gainingAlt; gainingAlt = false;
             if (!vessel.LandedOrSplashed && ((!(ramming && steerMode == SteerModes.Aiming) && FlyAvoidTerrain(s)) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes, unless we're trying to ram stuff.
             { turningTimer = 0; }
-            else if (initialTakeOff) // Take off.
+            else if (TakingOff) // Take off.
             {
                 TakeOff(s);
                 turningTimer = 0;
@@ -3598,7 +3596,7 @@ namespace BDArmory.Control
         {
             if (vessel.LandedOrSplashed && vessel.srfSpeed < takeOffSpeed)
             {
-                SetStatus(initialTakeOff ? "Taking off" : vessel.Splashed ? "Splashed" : "Landed");
+                SetStatus(TakingOff ? "Taking off" : vessel.Splashed ? "Splashed" : "Landed");
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Taking off");
                 if (vessel.Splashed)
                 { vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false); }
@@ -3607,13 +3605,11 @@ namespace BDArmory.Control
             }
             SetStatus("Gain Alt. (" + (int)minAltitude + "m)");
 
-            steerMode = initialTakeOff ? SteerModes.Aiming : SteerModes.NormalFlight;
+            steerMode = TakingOff ? SteerModes.Aiming : SteerModes.NormalFlight;
 
             float radarAlt = vessel.Splashed ? 0 : (float)vessel.radarAltitude;
-
-            if (initialTakeOff && radarAlt > terrainAlertDetectionRadius)
+            if (TakingOff && radarAlt > terrainAlertDetectionRadius)
             {
-                initialTakeOff = false;
                 TakingOff = false;
             }
 
@@ -3646,7 +3642,7 @@ namespace BDArmory.Control
             gainingAlt = true;
             float rise = Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR * Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius), 1f); // Scale climb rate by TWR (if >1 and not really close to terrain) to allow more powerful craft to climb faster.
             rise = Mathf.Min(rise, 1.5f * (defaultAltitude - radarAlt)); // Aim for at most 50% higher than the default altitude.
-            if (initialTakeOff) // During the initial take-off, use a more gentle climb rate. 5°—15° at the take-off speed.
+            if (TakingOff) // During the initial take-off, use a more gentle climb rate. 5°—15° at the take-off speed.
             { rise = Mathf.Min(rise, Mathf.Max(5f, 10f * (float)vessel.srfSpeed / takeOffSpeed) * (0.5f + Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius))); }
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Gaining altitude @ {Mathf.Rad2Deg * Mathf.Atan(rise / 100f):0.0}°");
             FlyToPosition(s, vessel.transform.position + gainAltSmoothedForwardPoint + upDirection * rise);
@@ -3661,7 +3657,7 @@ namespace BDArmory.Control
 
         bool FlyAvoidTerrain(FlightCtrlState s) // Check for terrain ahead.
         {
-            if (initialTakeOff) return false; // Don't do anything during the initial take-off.
+            if (TakingOff) return false; // Don't do anything during the initial take-off.
             var vesselPosition = vessel.transform.position;
             var vesselSrfVelDir = vessel.srf_vel_direction;
             terrainAlertNormalColour = Color.green;
