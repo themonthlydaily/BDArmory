@@ -4523,56 +4523,26 @@ namespace BDArmory.Weapons
             }
 
             //disable autofire after burst length
-            if (BurstOverride)
+            if (autoFire && (!BurstOverride && Time.time - autoFireTimer > autoFireLength) || (BurstOverride && autofireShotCount >= fireBurstLength))
             {
-                if (autoFire && autofireShotCount >= fireBurstLength)
+                autoFire = false;
+                //visualTargetVessel = null;
+                //visualTargetPart = null;
+                //tgtShell = null;
+                //tgtRocket = null;
+                if (SpoolUpTime > 0)
                 {
-                    if (Time.time - autoFireTimer > autoFireLength) autofireShotCount = 0;
-                    autoFire = false;
-                    //visualTargetVessel = null; //if there's no target, these get nulled in MissileFire. Nulling them here would cause Ai to stop engaging target with longer TargetScanIntervals as 
-                    //visualTargetPart = null; //there's no longer a targetVessel/part to do leadOffset aim calcs for.
-                    tgtShell = null;
-                    tgtRocket = null;
-
-                    if (SpoolUpTime > 0)
-                    {
-                        roundsPerMinute = baseRPM / 10;
-                        spooltime = 0;
-                    }
-                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
-                    {
-                        projectileColorC = GUIUtils.ParseColor255(projectileColor);
-                        startColorS = startColor.Split(","[0]);
-                        laserDamage = baseLaserdamage;
-                        tracerStartWidth = tracerBaseSWidth;
-                        tracerEndWidth = tracerBaseEWidth;
-                        Offset = 0;
-                    }
+                    roundsPerMinute = baseRPM / 10;
+                    spooltime = 0;
                 }
-            }
-            else
-            {
-                if (autoFire && Time.time - autoFireTimer > autoFireLength)
+                if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
                 {
-                    autoFire = false;
-                    //visualTargetVessel = null;
-                    //visualTargetPart = null;
-                    //tgtShell = null;
-                    //tgtRocket = null;
-                    if (SpoolUpTime > 0)
-                    {
-                        roundsPerMinute = baseRPM / 10;
-                        spooltime = 0;
-                    }
-                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
-                    {
-                        projectileColorC = GUIUtils.ParseColor255(projectileColor);
-                        startColorS = startColor.Split(","[0]);
-                        laserDamage = baseLaserdamage;
-                        tracerStartWidth = tracerBaseSWidth;
-                        tracerEndWidth = tracerBaseEWidth;
-                        Offset = 0;
-                    }
+                    projectileColorC = GUIUtils.ParseColor255(projectileColor);
+                    startColorS = startColor.Split(","[0]);
+                    laserDamage = baseLaserdamage;
+                    tracerStartWidth = tracerBaseSWidth;
+                    tracerEndWidth = tracerBaseEWidth;
+                    Offset = 0;
                 }
             }
             if (isAPS)
