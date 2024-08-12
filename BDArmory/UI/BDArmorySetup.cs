@@ -217,6 +217,7 @@ namespace BDArmory.UI
         string HoSString = "";
         public string HoSTag = "";
         bool enteredHoS = false;
+        static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
         string compDistGui;
@@ -645,7 +646,7 @@ namespace BDArmory.UI
         void ToggleToolbarButton()
         {
             if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
-            else { windowSettingsEnabled = !windowSettingsEnabled; }
+            else { ToggleWindowSettings(); }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -709,6 +710,7 @@ namespace BDArmory.UI
             if (windowSettingsEnabled)
             {
                 // LoadConfig(); // Don't reload settings, since they're already loaded and mess with other settings windows.
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
             }
             else
             {
@@ -3503,7 +3505,7 @@ namespace BDArmory.UI
                     RWPSettings.SyncToGameSettings();
                 }
                 // Resource steal
-                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
+                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                 {
                     BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal_RespectFlowStateIn"));//Respect Flow State In

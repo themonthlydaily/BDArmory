@@ -1425,7 +1425,7 @@ namespace BDArmory.Weapons.Missiles
                 SetAntiRadTargeting();
 
                 part.force_activate();
-
+                part.gTolerance = 999;
                 vessel.situation = Vessel.Situations.FLYING;
                 part.rb.isKinematic = false;
                 part.bodyLiftMultiplier = 0;
