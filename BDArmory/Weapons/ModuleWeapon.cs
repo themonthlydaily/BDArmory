@@ -1462,8 +1462,6 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
-
-                UpdateOffsetWeapon(); // Update compensations for offset/non-centerline weapons
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -4419,6 +4417,7 @@ namespace BDArmory.Weapons
 
         void UpdateOffsetWeapon()
         {
+            if (fireTransforms == null) return;
             Vector3 weaponPosition = fireTransforms[0].position;
             Vector3 weaponDirection = fireTransforms[0].forward;
             if (part.symmetryCounterparts.Count > 0)
@@ -4426,7 +4425,8 @@ namespace BDArmory.Weapons
                 foreach (var part in part.symmetryCounterparts)
                 {
                     weaponPosition += part.transform.position;
-                    weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                    if (part.GetComponent<ModuleWeapon>().fireTransforms != null)
+                        weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
                 }
                 weaponPosition /= 1 + part.symmetryCounterparts.Count;
                 weaponDirection /= 1 + part.symmetryCounterparts.Count;

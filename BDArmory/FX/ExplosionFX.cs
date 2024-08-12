@@ -1004,7 +1004,7 @@ namespace BDArmory.FX
                                         ExplosionSourceType.Missile);
                                 }
 
-                                if (penetrationFactor > 1)
+                                if (penetrationFactor > 1 && warheadType != WarheadTypes.Kinetic)
                                 {
                                     if (blastInfo.Damage > 0)
                                     {
@@ -1082,7 +1082,7 @@ namespace BDArmory.FX
                         AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
                 }
             }
-            if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange)
+            if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange) //check shrapnel damage of stuff in shrapnel range
             {
                 float anglemultiplier = Mathf.Abs(Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal));
                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);

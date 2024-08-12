@@ -10,10 +10,14 @@
 	- Improvements to the Orbital AI
 		- PID control option available, by default is active only during weapon firing, can be toggled to be active always or never active.
 		- If a fixed weapon is selected, AI will orient itself to fire the weapon, even if the weapon is not aligned with the forward direction of the craft.
+		- Improved maneuvering behavior, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections when within combat range.
 		- Add option to engage head-on or broadside (for use with turreted weapons).
 		- Add option to select broadside direction (only active when PID is enabled).
 		- AI is now able to use reverse engines for maneuvers provided the "Reverse Engines" option is enabled (enabled by default).
-		- Improved maneuvering behavior, it is now better at intercepting targets, killing velocity, and prioritizes combat over minor orbital corrections when within combat range.
+		- Add minimum firing speed option. If below this speed and within weapons range, AI will increase speed.
+		- Add option for AI using RCS to manage velocity relative to the target when firing (enabled by default).
+		- Add options to enable/disable evading gunfire using RCS and/or engine thrust.
+		- Add option to allow ramming (enabled by default). If enabled, AI will try to ram the target when it loses weapons, if disabled the AI will withdraw from combat.
 		- AI will not engage vessels if doing so will put the AI in risk of de-orbiting.
 		- Fixed AI repeatedly jumping back and forth between orbit correction and other modes.
 		- AI is now capable of avoiding collisions with other vessels, debris, and asteroids.
@@ -35,18 +39,21 @@
 			- Missiles are now capable of intercepting each other at orbital speeds and will not phase through each other, even without the ContinousCollisions mod.
 			- Modular Missiles can be selected to intercept missiles if they have Engage Missiles enabled.
 			- Modular Missiles with Orbital Guidance now perform vacuum clearance maneuver (similar to HEKVs in space).
-			- Improvements to regular missile orbital guidance, missiles can now use homingType = orbital without RCS
+			- Improvements to regular missile orbital guidance, missiles can now use homingType = orbital without RCS.
+			- Missiles with RCS will use RCS to offset gravity.
 			- Add targetCoM configuration option for IR missiles. If set to true, the missile will target the center of mass instead of the hottest part.
 		- Fixes
 			- Fix Modular Missiles with Orbital Guidance not hitting vessel and missile targets.
 			- Fix point defense missile interceptors not firing.
 			- Missile turrets now track targets properly in orbit.
 			- Fix missiles with no targeting type (i.e. AIR-2) not firing within engage range.
-		- Balancing
+		- Parts / Balancing
+			- Add new Kinetic Kill Vehicle (KKV) missile. The KKV is an orbital missile with 6 km/s delta-V and no warhead. It relies on kinetic energy from hitting a target directly to deal damage.
 			- Re-balanced the HE-KV-1 missile. The HE-KV-1 now has 3 km/s delta-V with a 60 km range and is best at shorter ranges (under 30 km). The HE-KV-1 retains the same mass.
 			- Orbital guidance missiles now have drag applied to them in atmosphere.	
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
+	- Missiles with RCS can now have multiple forwardRCS transforms.
 - Spawning:
 	- Allow specifying the reference heading for the first craft for circular spawning (loses precision within 1° of the poles).
 - RWP:
