@@ -780,8 +780,10 @@ namespace BDArmory.GameModes
                         {
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                            factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
-                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 69) // Punish immobile turrets
+                            // factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction, i.e., asteroids within 1km.
+                            var R = (float)offset.sqrMagnitude / 1e6f;
+                            factor = 0.25f + 3f * R * (1f - R); // 0.25 at 0m, 1 at 707m, 0 at 1.038km (reduced attraction at close range to avoid inescapable asteroids).
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 70) // Punish immobile turrets
                             {
                                 float twr = VesselModuleRegistry.GetModuleEngines(weaponManager.vessel).Where(e => e != null && e.allowRestart).Sum(e => e.MaxThrustOutputVac(true)) / weaponManager.vessel.GetTotalMass();
                                 factor *= 1f / Mathf.Clamp(twr, 0.01f, 1f);
@@ -1111,7 +1113,7 @@ namespace BDArmory.GameModes
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
-                Debug.Log($"DEBUG {asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()} and is {(asteroidPool[i].gameObject.activeInHierarchy?"active":"inactive")} at distance {(asteroidPool[i].transform.position - spawnPoint).magnitude}m from the spawn point.");
+                Debug.Log($"DEBUG {asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()} and is {(asteroidPool[i].gameObject.activeInHierarchy ? "active" : "inactive")} at distance {(asteroidPool[i].transform.position - spawnPoint).magnitude}m from the spawn point.");
                 if (asteroidPool[i].gameObject != null)
                 {
                     if (asteroidPool[i].gameObject.activeInHierarchy)
