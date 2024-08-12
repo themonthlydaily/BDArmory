@@ -350,7 +350,6 @@
     <Compile Include="Weapons\Missiles\MissileDummy.cs" />
     <Compile Include="Weapons\Missiles\MissileLaunchParams.cs" />
     <Compile Include="Weapons\Missiles\MissileLauncher.cs" />
-    <Compile Include="Weapons\Missiles\ModuleMissileMagazine.cs" />
     <Compile Include="Weapons\Missiles\ModuleMissileRearm.cs" />
     <Compile Include="Weapons\Missiles\MultiMissileLauncher.cs" />
     <Compile Include="Weapons\ModuleEMP.cs" />
