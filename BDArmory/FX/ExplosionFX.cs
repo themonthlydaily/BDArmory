@@ -1004,7 +1004,7 @@ namespace BDArmory.FX
                                         ExplosionSourceType.Missile);
                                 }
 
-                                if (penetrationFactor > 1)
+                                if (penetrationFactor > 1 && warheadType != WarheadTypes.Kinetic)
                                 {
                                     if (blastInfo.Damage > 0)
                                     {

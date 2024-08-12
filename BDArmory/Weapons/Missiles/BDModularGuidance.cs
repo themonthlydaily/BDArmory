@@ -833,7 +833,6 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
-
                 // Target information update is one frame behind on vessel.OnFlyByWire, so compensate here
                 Vector3 targetAcceleration = TargetAcceleration;
                 Vector3 targetVelocity = TargetVelocity + Time.fixedDeltaTime * targetAcceleration;
@@ -841,9 +840,10 @@ namespace BDArmory.Weapons.Missiles
                 
                 Vector3 targetVector = targetPosition - vessel.CoM;
                 Vector3 relVel = vessel.Velocity() - targetVelocity;
+
                 Vector3 relVelNrm = relVel.normalized;
                 Vector3 interceptVector;
-                float relVelmag = relVel.magnitude;
+                float relVelmag = relVel.magnitude;  
 
                 // Calculate max accel
                 Vector3 propulsionVector = vessel.transform.InverseTransformDirection(-GetFireVector(engines, rcsThrusters, -forwardDir));
@@ -862,6 +862,7 @@ namespace BDArmory.Weapons.Missiles
                 else
                 {
                     Vector3 acceleration = forwardDir * maxAcceleration;
+
                     relVel = targetVelocity - vessel.Velocity();
                     timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, targetAcceleration - acceleration, 30);
                     interceptVector = AIUtils.PredictPosition(targetVector, relVel, targetAcceleration - 0.5f * acceleration, timeToImpact);

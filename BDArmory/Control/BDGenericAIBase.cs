@@ -247,6 +247,8 @@ namespace BDArmory.Control
         public virtual string Name { get; } = "AI Control";
         public bool Enabled => pilotEnabled;
 
+        public bool TakingOff = true;
+
         public void Toggle() => TogglePilot();
 
         #endregion Pilot on/off
