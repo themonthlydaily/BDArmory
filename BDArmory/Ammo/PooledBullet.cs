@@ -509,13 +509,13 @@ namespace BDArmory.Bullets
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
-            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); //moving this here so it's not getting called 2x a tick in LeapFrogVelocityHalfStep
+            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
 
             if (targetVessel != null && atmosphereDensity > 0.05f)
             {
-                if (penTicker == 0  && Vector3.Dot((targetVessel.CoM - currentPosition).normalized, currentVelocity.normalized) > 0) //don't circle around if it misses, or after it hits something
+                if (penTicker == 0 && Vector3.Dot((targetVessel.CoM - currentPosition).normalized, currentVelocity.normalized) > 0) //don't circle around if it misses, or after it hits something
                 {
                     Vector3 leadTargetOffset = targetVessel.CoM + targetVessel.Velocity() * (Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity);
                     //if (Vector3.Angle(currentVelocity, leadTargetOffset) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient); needs bulletdrop gravity accel factored in as well

@@ -249,7 +249,6 @@ namespace BDArmory.Settings
 					break;
 			}
 
-
 			// Update NumericInputFields for spawn values.
 			if (VesselSpawnerWindow.Instance != null && (overrides.ContainsKey("VESSEL_SPAWN_ALTITUDE") || overrides.ContainsKey("VESSEL_SPAWN_GEOCOORDS"))) VesselSpawnerWindow.Instance.RefreshSpawnFieldsFromSettings();
 		}

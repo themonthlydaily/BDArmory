@@ -1110,7 +1110,7 @@ namespace BDArmory.Damage
                 return;
             }
 
-            partdamage = Mathf.Max(partdamage, 0f) * -1;
+            partdamage = -Mathf.Max(partdamage, 0f);
             Hitpoints += (partdamage / defenseMutator); //why not just go -= partdamage?
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_PART_STRENGTH)
             {
@@ -1138,7 +1138,7 @@ namespace BDArmory.Damage
 
         public void AddDamageToKerbal(KerbalEVA kerbal, float damage)
         {
-            damage = Mathf.Max(damage, 0f) * -1;
+            damage = -Mathf.Max(damage, 0f);
             Hitpoints += damage;
 
             if (Hitpoints <= 0)
@@ -1555,7 +1555,7 @@ namespace BDArmory.Damage
             part.breakingForce = maxForce;
             maxTorque = part.partInfo.partPrefab.breakingTorque * hullInfo.ImpactMod;
             part.breakingTorque = maxTorque;
-            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
+            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
             hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;
