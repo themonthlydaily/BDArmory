@@ -3608,7 +3608,6 @@ namespace BDArmory.Control
             steerMode = TakingOff ? SteerModes.Aiming : SteerModes.NormalFlight;
 
             float radarAlt = vessel.Splashed ? 0 : (float)vessel.radarAltitude;
-
             if (TakingOff && radarAlt > terrainAlertDetectionRadius)
             {
                 TakingOff = false;

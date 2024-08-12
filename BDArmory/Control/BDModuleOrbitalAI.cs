@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,7 +26,7 @@ namespace BDArmory.Control
         public float updateInterval;
         public float emergencyUpdateInterval = 0.5f;
         public float combatUpdateInterval = 2.5f;
-        
+
         private BDOrbitalControl fc;
         private bool PIDActive;
         private int ECID;
@@ -436,7 +436,7 @@ namespace BDArmory.Control
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.magenta); // RCS lerped command
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugRollTarget, 2, Color.blue); // Roll target
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
-            if (currentStatusMode==StatusMode.AvoidingCollision) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, currentlyAvoidedVessel.transform.position, 8, Color.grey); // Collision avoidance
+            if (currentStatusMode == StatusMode.AvoidingCollision) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, currentlyAvoidedVessel.transform.position, 8, Color.grey); // Collision avoidance
         }
 
         #endregion events
@@ -779,7 +779,7 @@ namespace BDArmory.Control
                                 fc.attitude = toTarget;
                             fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.thrustDirection) < ManeuverSpeed ? 1 : 0;
                         }
-                        else if (hasPropulsion && (relVel.sqrMagnitude > speedTarget * speedTarget) && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f)  || killVelOngoing)) // Approaching intercept point, kill velocity
+                        else if (hasPropulsion && (relVel.sqrMagnitude > speedTarget * speedTarget) && (ApproachingIntercept(currentStatus.Contains("Kill Velocity") ? 1.5f : 0f) || killVelOngoing)) // Approaching intercept point, kill velocity
                             KillVelocity(true);
                         else if (hasPropulsion && interceptOngoing || (currentRange > maxRange && CanInterceptShip(targetVessel) && !OnIntercept(currentStatus.Contains("Intercept Target") ? 0.05f : interceptMargin))) // Too far away, intercept target
                             InterceptTarget();
@@ -926,7 +926,7 @@ namespace BDArmory.Control
 
             // Use reverse thrust if it is necessary to face target during intercept
             bool useReverseThrust = ReverseThrust && (Vector3.Dot(relPos, fc.thrustDirection) < 0f);
-            if (useReverseThrust) 
+            if (useReverseThrust)
                 fc.attitude = -fc.thrustDirection;
             else
                 fc.attitude = fc.thrustDirection;
@@ -962,7 +962,7 @@ namespace BDArmory.Control
         {
             // Update propulsion and weapon status
             hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout);
-            hasPropulsion = hasRCS || 
+            hasPropulsion = hasRCS ||
                 VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational)) ||
                 VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
                 (ReverseThrust && (forwardEngines.Count + reverseEngines.Count > 0));
@@ -1789,7 +1789,7 @@ namespace BDArmory.Control
                 consumptionRate += Mathf.Lerp(engine.minFuelFlow, engine.maxFuelFlow, 0.01f * engine.thrustPercentage) * engine.flowMultiplier;
             return consumptionRate;
         }
-        
+
         //Controller Integral
         Vector3 directionIntegral;
         float pitchIntegral;
@@ -1849,7 +1849,7 @@ namespace BDArmory.Control
                             break;
                     }
                     debugRollTarget = rollTarget * 100f;
-                } 
+                }
             }
 
             Vector3 localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
