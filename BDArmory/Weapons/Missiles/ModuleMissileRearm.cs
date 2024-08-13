@@ -90,20 +90,18 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     ModuleMissileMagazine priorityMagazine = null;
                     float lastPriority = -1;
                     float lastAmmoQty = -1;
-                    for (int mmm = 0; mmm < linkedMagazines.Count; mmm++)
+                    foreach (var mag in linkedMagazines)
                     {
-                        if (linkedMagazines[mmm].ammoCount >= 1)
+                        if (mag == null || mag.ammoCount < 1) continue; // Ignore broken or empty mags.
+                        if (mag.priority < lastPriority) continue; // Ignore lower priority mags.
+                        if (mag.priority > lastPriority)
                         {
-                            if (linkedMagazines[mmm].priority >= lastPriority)
-                            {
-                                lastPriority = linkedMagazines[mmm].priority;
-                                if (linkedMagazines[mmm].ammoCount >= lastAmmoQty) //FIXME - sometimes priority is ignored, revise logic later
-                                {
-                                    lastAmmoQty = linkedMagazines[mmm].ammoCount;
-                                    priorityMagazine = linkedMagazines[mmm];
-                                }
-                            }
+                            lastAmmoQty = -1; // Reset the ammo quantity, so that the quantity of lower priority mags aren't considered.
+                            lastPriority = mag.priority;
                         }
+                        if (mag.ammoCount < lastAmmoQty) continue; // Ignore mags with the same priority but less ammo.
+                        lastAmmoQty = mag.ammoCount;
+                        priorityMagazine = mag;
                     }
                     if (priorityMagazine != null)
                     {

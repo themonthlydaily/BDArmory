@@ -193,7 +193,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                                     MissileName = missile.name;
                                     missileScale = new Vector2(Mathf.Max(missile.collider.bounds.size.x, missile.collider.bounds.size.y, missile.collider.bounds.size.z), Mathf.Min(missile.collider.bounds.size.x, missile.collider.bounds.size.y, missile.collider.bounds.size.z));
                                     //Debug.Log($"[MissileMagazine] Missile bounds are {missile.collider.bounds.size.x.ToString("0.00")}, {missile.collider.bounds.size.y.ToString("0.00")}, {missile.collider.bounds.size.z.ToString("0.00")}");
-                                    //this will grab missile body dia/lenght, something something folding fins. But given BDA missiles are IRL scale insyytead of ~0.7 kerbalscale, including fins would make the mags *really* large
+                                    //this will grab missile body dia/length, something something folding fins. But given BDA missiles are IRL scale instead of ~0.7 kerbalscale, including fins would make the mags *really* large
                                     MissileLauncher MLConfig = missile.FindModuleImplementing<MissileLauncher>();
                                     Fields["loadedMissileName"].guiActive = true;
                                     Fields["loadedMissileName"].guiActiveEditor = true;
