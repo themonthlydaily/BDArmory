@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,7 +67,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
-            pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetModule<BDGenericAIBase>(v)).Where(p => p != null).ToList();
+            pilots = BDACompetitionMode.Instance.GetAllPilots().Select(p => VesselModuleRegistry.GetModule<BDGenericAIBase>(p.vessel)).ToList();
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Stop any currently active competition.
             BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset a bunch of stuff related to competitions so they don't interfere.
             BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES, "", CompetitionType.WAYPOINTS);
@@ -129,8 +129,9 @@ namespace BDArmory.Competition.OrchestrationStrategies
         }
 
         void PrepareCompetition()
-        {            
-            BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
+        {
+            // Scores are already configure in ResetCompetitionStuff prior to this being called.
+            pilots = pilots.Where(p => p != null).ToList(); // Remove any already dead pilots.
             if (pilots.Count > 1) //running multiple craft through the waypoints at the same time
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
             else //increment team each heat

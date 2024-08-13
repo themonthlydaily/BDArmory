@@ -352,7 +352,6 @@ namespace BDArmory.Control
             aimingMode = false;
             upDir = vessel.up;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine("");
-
             if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
             // check if we should be panicking
             if (SurfaceType == AIUtils.VehicleMovementType.Stationary || !PanicModes()) // Stationary vehicles don't panic (so, free-fall stationary turrets are a possibility).

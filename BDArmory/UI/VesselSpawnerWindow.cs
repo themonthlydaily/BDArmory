@@ -847,7 +847,7 @@ namespace BDArmory.UI
                                         BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
                                     ),
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE),
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_REF_HEADING)
                                 ),
                                 new WaypointFollowingStrategy(course),
@@ -877,13 +877,14 @@ namespace BDArmory.UI
                                     ),
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                    BDArmorySettings.VESSEL_SPAWN_REF_HEADING)
+                                    BDArmorySettings.VESSEL_SPAWN_REF_HEADING
                                 ))).ToList();
                             TournamentCoordinator.Instance.RunForEach(strategies,
                                 new WaypointFollowingStrategy(course),
                                 CircularSpawning.Instance
                             );
                         }
+                        waypointsRunning = true;
                     }
                 }
                 else
