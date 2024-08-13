@@ -515,12 +515,12 @@ namespace BDArmory.Bullets
 
             if (targetVessel != null && atmosphereDensity > 0.05f)
             {
-                if (penTicker == 0 && Vector3.Dot((targetVessel.CoM - currentPosition).normalized, currentVelocity.normalized) > 0) //don't circle around if it misses, or after it hits something
+                if (penTicker == 0 && Vector3.Dot((targetVessel.CoM - currentPosition), currentVelocity.normalized) > 0) //don't circle around if it misses, or after it hits something
                 {
                     Vector3 leadTargetOffset = targetVessel.CoM + targetVessel.Velocity() * (Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity);
                     //if (Vector3.Angle(currentVelocity, leadTargetOffset) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient); needs bulletdrop gravity accel factored in as well
                     //apply some drag to projectile if it's turning. Will mess up initial CPA aim calculations, true; on the other hand, its a guided homing bullet.                                                                                                                                                                                                                
-                    currentVelocity = Vector3.RotateTowards(currentVelocity, (leadTargetOffset - currentPosition).normalized, guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, (leadTargetOffset - currentPosition), guidanceDPS * atmosphereDensity * Mathf.Deg2Rad * period, 0); //adapt to rockets for homing rockets?
                 }
             }
 
