@@ -344,7 +344,7 @@ namespace BDArmory.Competition
             }
         }
 
-        public void StartCompetitionMode(float distance, bool startDespiteFailures = false, string tag = "")
+        public void StartCompetitionMode(float distance, bool startDespiteFailures = false, string tag = "", CompetitionType compType = CompetitionType.FFA)
         {
             if (!competitionStarting)
             {
@@ -366,7 +366,7 @@ namespace BDArmory.Competition
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(!hasPinata || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 67));
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
-                competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance, startDespiteFailures));
+                competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance, startDespiteFailures, compType));
                 if (BDArmorySettings.COMPETITION_START_NOW_AFTER < 11)
                 {
                     if (BDArmorySettings.COMPETITION_START_NOW_AFTER > 5)
@@ -479,10 +479,10 @@ namespace BDArmory.Competition
             System.GC.Collect(); // Clear out garbage at a convenient time.
         }
 
-        IEnumerator DogfightCompetitionModeRoutine(float distance, bool startDespiteFailures = false)
+        IEnumerator DogfightCompetitionModeRoutine(float distance, bool startDespiteFailures = false, CompetitionType compMode = CompetitionType.FFA)
         {
             competitionStarting = true;
-            competitionType = CompetitionType.FFA;
+            competitionType = compMode;
             startTag = true; // Tag entry condition, should be true even if tag is not currently enabled, so if tag is enabled later in the competition it will function
             competitionStatus.Add("Competition: Pilots are taking off.");
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
@@ -701,7 +701,7 @@ namespace BDArmory.Competition
             CleanUpKSPsDeadReferences();
             RunDebugChecks();
 
-            if (pilots.Count < 2)
+            if (pilots.Count < (competitionType != CompetitionType.WAYPOINTS ? 2 : 1))
             {
                 Debug.LogWarning("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
                 competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
@@ -758,6 +758,7 @@ namespace BDArmory.Competition
                     }
                 }
             }
+
             //wait till the leaders are ready to engage (airborne for PilotAI)
             while (true)
             {
@@ -996,22 +997,24 @@ namespace BDArmory.Competition
             centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
 
             // Command attack
-            foreach (var teamPilots in pilots)
-                foreach (var pilot in teamPilots.Value)
-                {
-                    if (pilot == null) continue;
+            if (competitionType != CompetitionType.WAYPOINTS)
+            {
+                foreach (var teamPilots in pilots)
+                    foreach (var pilot in teamPilots.Value)
+                    {
+                        if (pilot == null) continue;
 
-                    if (!pilot.weaponManager.guardMode)
-                        pilot.weaponManager.ToggleGuardMode();
+                        if (!pilot.weaponManager.guardMode)
+                            pilot.weaponManager.ToggleGuardMode();
 
-                    //foreach (var leader in leaders)
-                    //BDATargetManager.ReportVessel(pilot.vessel, leader.weaponManager);
+                        //foreach (var leader in leaders)
+                        //BDATargetManager.ReportVessel(pilot.vessel, leader.weaponManager);
 
-                    pilot.ReleaseCommand();
-                    pilot.CommandAttack(centerGPS);
-                    pilot.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
-                }
-
+                        pilot.ReleaseCommand();
+                        pilot.CommandAttack(centerGPS);
+                        pilot.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
+                    }
+            }
             competitionStatus.Add("Competition starting!  Good luck!");
             CompetitionStarted();
         }
@@ -2796,7 +2799,7 @@ namespace BDArmory.Competition
                             var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
                             var vtolAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel); // Get the VTOL AI if the vessel has one.
                             var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel); // Get the Orbital AI if the vessel has one.
-                            if ((pilotAI == null && surfaceAI == null && vtolAI == null && orbitalAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !(pilotAI != null && pilotAI.allowRamming)))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
+                            if ((pilotAI == null && surfaceAI == null && vtolAI == null && orbitalAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !((pilotAI != null && pilotAI.allowRamming) || (orbitalAI != null && orbitalAI.allowRamming))))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
                                 mf.guardMode = false;
                         }
                     }

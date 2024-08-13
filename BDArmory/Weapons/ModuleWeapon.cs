@@ -1462,8 +1462,6 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
-
-                UpdateOffsetWeapon(); // Update compensations for offset/non-centerline weapons
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -4447,6 +4445,7 @@ namespace BDArmory.Weapons
 
         void UpdateOffsetWeapon()
         {
+            if (fireTransforms == null) return;
             Vector3 weaponPosition = fireTransforms[0].position;
             Vector3 weaponDirection = fireTransforms[0].forward;
             if (part.symmetryCounterparts.Count > 0)
@@ -4454,7 +4453,8 @@ namespace BDArmory.Weapons
                 foreach (var part in part.symmetryCounterparts)
                 {
                     weaponPosition += part.transform.position;
-                    weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
+                    if (part.GetComponent<ModuleWeapon>().fireTransforms != null)
+                        weaponDirection += part.GetComponent<ModuleWeapon>().fireTransforms[0].forward;
                 }
                 weaponPosition /= 1 + part.symmetryCounterparts.Count;
                 weaponDirection /= 1 + part.symmetryCounterparts.Count;
@@ -5228,6 +5228,7 @@ namespace BDArmory.Weapons
                     slaved = true;
                     targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
+                    //currently overriding multi-turret multi-targeting if enabled as all turrets slaved to WM's guardTarget/current active radarLock
                     targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
                     if (weaponManager.slavedTarget.vessel != null)
                     {
@@ -5243,25 +5244,28 @@ namespace BDArmory.Weapons
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
                 }
-
-                if (weaponManager.vesselRadarData && weaponManager.vesselRadarData.locked)
+                //if (weaponManager.vesselRadarData && weaponManager.vesselRadarData.locked) //would only apply if fixed gun, else VRD would slave the weapon and the above block applies
+                if (weaponManager.vesselRadarData && visualTargetVessel != null)
                 {
-                    TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData;
+                    //TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData; //no support for radar tracking, only locks?
+                    TargetSignatureData targetData = weaponManager.vesselRadarData.detectedRadarTarget(visualTargetVessel, weaponManager);
                     targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
-                    targetPosition = targetData.predictedPosition;
-                    targetRadius = 35f;
+                    targetPosition = targetData.predictedPositionWithChaffFactor(targetData.lockedByRadar.radarChaffClutterFactor);
+                    targetRadius = targetData.vessel.GetRadius();
                     targetAcceleration = targetData.acceleration;
                     targetIsLandedOrSplashed = false;
                     if (targetData.vessel)
                     {
-                        targetVelocity = targetData.vessel != null ? targetData.vessel.rb_velocity : targetVelocity;
-                        targetPosition = targetData.vessel.CoM;
-                        targetAcceleration = targetData.vessel.acceleration;
                         targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
-                        targetRadius = targetData.vessel.GetRadius();
+                        visualTargetVessel = targetData.vessel; //will override multitarget assignment if multiple turrets and multiple targets and multiTargetNum > 1
                     }
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
+                    if (weaponManager.vesselRadarData.locked)
+                    {
+                        if (visualTargetVessel == weaponManager.vesselRadarData.lockedTargetData.targetData.vessel)
+                            targetAcquisitionType = TargetAcquisitionType.Slaved;
+                    }
                     radarTarget = true;
                     return;
                 }

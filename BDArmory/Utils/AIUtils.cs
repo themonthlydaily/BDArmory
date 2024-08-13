@@ -217,7 +217,7 @@ namespace BDArmory.Utils
             float lag = ai.commandLeader.lag;
 
             float right = rightSign * positionFactor * spread;
-            float back = positionFactor * lag * -1;
+            float back = -positionFactor * lag;
 
             return new Vector3(right, back, 0);
         }
