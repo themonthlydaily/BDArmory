@@ -206,6 +206,7 @@ namespace BDArmory.Radar
                     if (displayedTargets[i].vessel == desiredTarget)
                     {
                         data = displayedTargets[i].targetData;
+                        data.lockedByRadar = displayedTargets[i].detectedByRadar;
                         return data;
                     }
                 }
@@ -223,6 +224,7 @@ namespace BDArmory.Radar
             if (targetMagnitude > 0)
             {
                 data = displayedTargets[brightestTarget].targetData;
+                data.lockedByRadar = displayedTargets[brightestTarget].detectedByRadar;
                 return data;
             }
             else
@@ -664,7 +666,7 @@ namespace BDArmory.Radar
             weaponManager.slavingTurrets = true;
             if (!locked) return;
             TargetSignatureData lockedTarget = lockedTargetData.targetData;
-            weaponManager.slavedPosition = lockedTarget.predictedPosition;
+            weaponManager.slavedPosition = lockedTarget.predictedPositionWithChaffFactor(lockedTargetData.detectedByRadar.radarChaffClutterFactor);
             weaponManager.slavedVelocity = lockedTarget.velocity;
             weaponManager.slavedAcceleration = lockedTarget.acceleration;
             weaponManager.slavedTarget = lockedTarget;
@@ -1726,7 +1728,7 @@ namespace BDArmory.Radar
             mr.AddExternalVRD(this);
         }
 
-        public void AddRadarContact(ModuleRadar radar, TargetSignatureData contactData, bool _locked)
+        public void AddRadarContact(ModuleRadar radar, TargetSignatureData contactData, bool _locked, bool receivedData = false)
         {
             bool addContact = true;
 
@@ -1735,11 +1737,14 @@ namespace BDArmory.Radar
 
             if (rData.vessel == vessel) return;
 
-            if (rData.vessel.altitude < -20 && radar.sonarMode == ModuleRadar.SonarModes.None) addContact = false; // Normal Radar Should not detect Underwater vessels
-            if (!rData.vessel.LandedOrSplashed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; //Sonar should not detect Aircraft
-            if (rData.vessel.Splashed && radar.sonarMode != ModuleRadar.SonarModes.None && vessel.Splashed) addContact = true; //Sonar only detects underwater vessels // Sonar should only work when in the water
-            if (!vessel.Splashed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; // Sonar should only work when in the water
-            if (rData.vessel.Landed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; //Sonar should not detect land vessels
+            if (!receivedData) //don't prevent VRD from e.g. getting datalinked sonar data from an ally boat despite being airborne
+            {
+                if (rData.vessel.altitude < -20 && radar.sonarMode == ModuleRadar.SonarModes.None) addContact = false; // Normal Radar Should not detect Underwater vessels
+                if (!rData.vessel.LandedOrSplashed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; //Sonar should not detect Aircraft
+                if (rData.vessel.Splashed && radar.sonarMode != ModuleRadar.SonarModes.None && vessel.Splashed) addContact = true; //Sonar only detects underwater vessels // Sonar should only work when in the water
+                if (!vessel.Splashed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; // Sonar should only work when in the water
+                if (rData.vessel.Landed && radar.sonarMode != ModuleRadar.SonarModes.None) addContact = false; //Sonar should not detect land vessels
+            }
 
             if (addContact == false) return;
 
@@ -1747,6 +1752,7 @@ namespace BDArmory.Radar
             rData.detectedByRadar = radar;
             rData.locked = _locked;
             rData.targetData = contactData;
+            contactData.lockedByRadar = radar;
             rData.pingPosition = UpdatedPingPosition(contactData.position, radar);
 
             if (_locked)
