@@ -774,6 +774,31 @@ namespace BDArmory.Bullets
                         }
                         if (incendiary)
                         {
+                            Unity.Collections.NativeArray<RaycastCommand> RaycastCommands = new Unity.Collections.NativeArray<RaycastCommand>(20, Unity.Collections.Allocator.TempJob);
+                            Unity.Collections.NativeArray<RaycastHit> RaycastHits = new Unity.Collections.NativeArray<RaycastHit>(20, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
+
+                            for (int j = 0; j < 20; ++j)
+                                RaycastCommands[j] = new RaycastCommand(prevPosition, VectorUtils.GaussianDirectionDeviation(currentVelocity, 80), blastRadius * 1.2f, (int)LayerMasks.Parts);
+                            var job = RaycastCommand.ScheduleBatch(RaycastCommands, RaycastHits, 1, default(Unity.Jobs.JobHandle));
+                            job.Complete(); // Wait for the job to complete.
+                            foreach (var hit in RaycastHits)
+                            {
+                                if (hit.collider != null)
+                                {
+                                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                    if (p != null)
+                                    {
+                                        float distance = Vector3.Distance(currentPosition, hit.point);
+                                        BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
+                                        if (BDArmorySettings.DEBUG_WEAPONS)
+                                            Debug.Log("[BDArmory.PooledRocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                    }
+                                    if (BDArmorySettings.DEBUG_WEAPONS)
+                                        Debug.Log("[BDArmory.PooledRocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
+                                }
+                            }
+                            /*
                             for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
                             {
                                 Ray LoSRay = new Ray(prevPosition, VectorUtils.GaussianDirectionDeviation(currentVelocity, 80));
@@ -792,7 +817,8 @@ namespace BDArmory.Bullets
                                     if (BDArmorySettings.DEBUG_WEAPONS)
                                         Debug.Log("[BDArmory.PooledRocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                                 }
-                            }
+                            }    
+                            */
                         }
                         if (concussion || EMP || choker)
                         {
