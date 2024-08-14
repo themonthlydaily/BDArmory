@@ -710,6 +710,7 @@ namespace BDArmory.UI
             if (windowSettingsEnabled)
             {
                 // LoadConfig(); // Don't reload settings, since they're already loaded and mess with other settings windows.
+                if (HighLogic.CurrentGame != null) advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>(); // Grab the current AdvancedParams.
             }
             else
             {

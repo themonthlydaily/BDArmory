@@ -1457,6 +1457,7 @@ namespace BDArmory.Radar
                             if (dataIndex < dataArray.Length)
                             {
                                 dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                dataArray[dataIndex].lockedByRadar = radar;
                                 dataIndex++;
                                 hasLocked = true;
                             }
@@ -1665,6 +1666,7 @@ namespace BDArmory.Radar
                                     if (dataIndex < dataArray.Length)
                                     {
                                         dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                        dataArray[dataIndex].lockedByRadar = radar;
                                         dataIndex++;
                                         hasLocked = true;
                                     }
@@ -2093,7 +2095,7 @@ namespace BDArmory.Radar
                 bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
                 bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar) ?
                     (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
-                var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
+                var missileBlastRadiusSqr = 3f * Mathf.Max(missile.GetBlastRadius(), mf.vessel.GetRadius()); // Blast radius or self radius, whichever is larger
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
                 return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching && maneuverCapability &&
