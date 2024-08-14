@@ -509,7 +509,7 @@ namespace BDArmory.Bullets
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
-            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition)); 
+            atmosphereDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(currentPosition));
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
 
@@ -520,7 +520,7 @@ namespace BDArmory.Bullets
                     Vector3 leadTargetOffset = targetVessel.CoM + Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity * targetVessel.Velocity();
                     //if (Vector3.Angle(currentVelocity, leadTargetOffset) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient); needs bulletdrop gravity accel factored in as well
                     //apply some drag to projectile if it's turning. Will mess up initial CPA aim calculations, true; on the other hand, its a guided homing bullet.                                                                                                                                                                                                                
-                    currentVelocity = Vector3.RotateTowards(currentVelocity, leadTargetOffset - currentPosition,  period * guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, leadTargetOffset - currentPosition, period * guidanceDPS * atmosphereDensity * Mathf.Deg2Rad, 0); //adapt to rockets for homing rockets?
                 }
             }
 
@@ -1294,8 +1294,8 @@ namespace BDArmory.Bullets
                             //impactVelocity = impactVelocity * adjustedPenRatio;
                             //currentVelocity = hitPartVelocity + impactVelocity;
                         }
-                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber, 
-                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, ExplosionFx.WarheadTypes.Standard, null, 1f, 
+                        ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber,
+                            null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, ExplosionFx.WarheadTypes.Standard, null, 1f,
                             -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
                     }
                     else
@@ -1373,8 +1373,9 @@ namespace BDArmory.Bullets
                     else //impact by impact, Timed, Prox and Flak, if for whatever reason those last two have 0 proxi range
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
+                        var calculateShrapnel = !ProjectileUtils.IsArmorPart(CurrentPart); //HE round that's punched through an armor panel would be exploding on the wrong side of it for shrapnel damage to be relevant. ExplosiveDetonation disables the bullet setting CurrentPart to null
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
-                         if (!ProjectileUtils.IsArmorPart(CurrentPart)) //HE round that's punched through an armor panel would be exploding on the wrong side of it for shrapnel damage to be relevant
+                        if (calculateShrapnel)
                             ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
                         hasDetonated = true;
                         KillBullet();
@@ -1384,8 +1385,9 @@ namespace BDArmory.Bullets
                     if (!viableBullet)
                     {
                         if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
+                        var calculateShrapnel = !ProjectileUtils.IsArmorPart(CurrentPart); //HE round that's punched through an armor panel would be exploding on the wrong side of it for shrapnel damage to be relevant. ExplosiveDetonation disables the bullet setting CurrentPart to null
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
-                         if (!ProjectileUtils.IsArmorPart(CurrentPart))
+                        if (calculateShrapnel)
                             ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                         hasDetonated = true;
                         KillBullet();
