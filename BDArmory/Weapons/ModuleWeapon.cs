@@ -2615,7 +2615,7 @@ namespace BDArmory.Weapons
                                             }
                                             emp.softEMP = true;
                                             damage = EMPDamage;
-                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}
+                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                         }
                                         else
                                         {

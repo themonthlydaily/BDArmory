@@ -2193,7 +2193,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     else if (_irstsEnabled)
                                     {
                                         heatTarget = vesselRadarData.activeIRTarget(targetVessel, this);
-                                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * tryLockTime)));
                                     }
                                 }
                             }
