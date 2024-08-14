@@ -773,13 +773,13 @@ namespace BDArmory.Bullets
                             }
                         }
                         if (incendiary)
-                        {
-                            Unity.Collections.NativeArray<RaycastCommand> RaycastCommands = new Unity.Collections.NativeArray<RaycastCommand>(20, Unity.Collections.Allocator.TempJob);
-                            Unity.Collections.NativeArray<RaycastHit> RaycastHits = new Unity.Collections.NativeArray<RaycastHit>(20, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
+                        { // throw 20 random raytraces out in a cone and see what gets tagged
+                            var RaycastCommands = new Unity.Collections.NativeArray<RaycastCommand>(20, Unity.Collections.Allocator.TempJob);
+                            var RaycastHits = new Unity.Collections.NativeArray<RaycastHit>(20, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
 
                             for (int j = 0; j < 20; ++j)
                                 RaycastCommands[j] = new RaycastCommand(prevPosition, VectorUtils.GaussianDirectionDeviation(currentVelocity, 80), blastRadius * 1.2f, (int)LayerMasks.Parts);
-                            var job = RaycastCommand.ScheduleBatch(RaycastCommands, RaycastHits, 1, default(Unity.Jobs.JobHandle));
+                            var job = RaycastCommand.ScheduleBatch(RaycastCommands, RaycastHits, 1, default);
                             job.Complete(); // Wait for the job to complete.
                             foreach (var hit in RaycastHits)
                             {
