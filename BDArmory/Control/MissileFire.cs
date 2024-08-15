@@ -2182,7 +2182,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                              targetVessel.transform.position).sqrMagnitude > 40 * 40)
                                         {
                                             //vesselRadarData.TryLockTarget(guardTarget.transform.position);
-                                            if (PreviousMissile == null || PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
+                                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
                                             {
                                                 vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
                                             }
