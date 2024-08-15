@@ -271,6 +271,7 @@ namespace BDArmory.VesselSpawning
                         KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
                         crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
                         crewMember.courage = 0.5f;
+
                         // Add them to the part
                         part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
                         crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;

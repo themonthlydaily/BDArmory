@@ -2300,6 +2300,13 @@ namespace BDArmory.Weapons
                                         pBullet.tgtRocket = tgtRocket;
                                         if (delayTime > -1) pBullet.timeToLiveUntil = delayTime;
                                     }
+                                    pBullet.targetVessel = null;
+                                    pBullet.guidanceDPS = 0;
+                                    if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
+                                    {
+                                        pBullet.targetVessel = visualTargetVessel;
+                                        pBullet.guidanceDPS = bulletInfo.guidanceDPS;
+                                    }
                                     pBullet.isSubProjectile = false;
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
                                     pBullet.gameObject.SetActive(true);
@@ -5345,6 +5352,7 @@ namespace BDArmory.Weapons
                 targetIsLandedOrSplashed = false;
             }
         }
+
 
         bool TrackIncomingProjectile()
         {
