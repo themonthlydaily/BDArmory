@@ -220,7 +220,7 @@ namespace BDArmory.UI
         static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
-        string compDistGui;
+        public string compDistGui;
         string compIntraTeamSeparationBase;
         string compIntraTeamSeparationPerMember;
 
