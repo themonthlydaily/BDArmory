@@ -1665,7 +1665,8 @@ namespace BDArmory.Weapons
             {
                 if (isAPS)
                 {
-                    EnableWeapon();
+                    // Wait a frame before enabling the weapon so that all symmetric weapons have started.
+                    StartCoroutine(EnableWeaponNextFrame());
                 }
             }
 
@@ -1707,6 +1708,12 @@ namespace BDArmory.Weapons
                         }
                 }
             }
+        }
+
+        IEnumerator EnableWeaponNextFrame()
+        {
+            yield return new WaitForFixedUpdate();
+            EnableWeapon();
         }
 
         private float S6R5dynamicRecoil;
