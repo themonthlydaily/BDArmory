@@ -1791,7 +1791,7 @@ namespace BDArmory.Control
             prevTargetDir = vesselTransform.up;
             if (TakingOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
             {
-                TakingOff = false; 
+                TakingOff = false;
             }
 
             SetOnBrakingPriorityChanged(); // Has to be set after the speed controller exists.
@@ -2325,17 +2325,28 @@ namespace BDArmory.Control
                     ModuleWeapon weapon = weaponManager.currentGun;
                     if (weapon != null)
                     {
-                        Vector3 leadOffset = weapon.GetLeadOffset();
-                        target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
-                                               // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
-                        Vector3 weaponPosition = weapon.offsetWeaponPosition + vessel.ReferenceTransform.position;
-                        Vector3 weaponDirection = vessel.ReferenceTransform.TransformDirection(weapon.offsetWeaponDirection);
+                        Vector3 weaponPosition, weaponDirection;
+                        if (weapon.turret) // Don't apply lead offset and weapon offsets for turrets.
+                        {
+                            weaponPosition = vessel.ReferenceTransform.position;
+                            weaponDirection = vesselTransform.up;
+                        }
+                        else
+                        {
+                            Vector3 leadOffset = weapon.GetLeadOffset();
+                            target -= leadOffset;  // Lead offset from aiming assuming the gun is forward aligned and centred.
 
-                        target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
-                        var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
+                            // Note: depending on the airframe, there is an island of stability around -2°—30° in pitch and ±10° in yaw where the vessel can stably aim with offset weapons.
+                            weaponPosition = weapon.offsetWeaponPosition + vessel.ReferenceTransform.position;
+                            weaponDirection = vessel.ReferenceTransform.TransformDirection(weapon.offsetWeaponDirection);
 
-                        debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
-                        target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                            target = Quaternion.FromToRotation(weaponDirection, vesselTransform.up) * (target - vesselTransform.position) + vesselTransform.position; // correctly account for angular offset guns/schrage Musik
+                            var weaponOffset = vessel.ReferenceTransform.position - weaponPosition;
+
+                            debugString.AppendLine($"WeaponOffset ({v.vesselName}): {weaponOffset.x}x m; {weaponOffset.y}y m; {weaponOffset.z}z m");
+                            target += weaponOffset; //account for weapons with translational offset from longitudinal axis
+                        }
+
                         angleToTarget = Vector3.Angle(weaponDirection, target - weaponPosition);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
