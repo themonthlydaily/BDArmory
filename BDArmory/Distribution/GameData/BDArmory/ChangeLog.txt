@@ -51,6 +51,13 @@
 			- Add new Kinetic Kill Vehicle (KKV) missile. The KKV is an orbital missile with 6 km/s delta-V and no warhead. It relies on kinetic energy from hitting a target directly to deal damage.
 			- Re-balanced the HE-KV-1 missile. The HE-KV-1 now has 3 km/s delta-V with a 60 km range and is best at shorter ranges (under 30 km). The HE-KV-1 retains the same mass.
 			- Orbital guidance missiles now have drag applied to them in atmosphere.	
+	- Rockets:
+		- Rework the rocket aiming to be consistent with how rockets fly, both in atmosphere and in orbit.
+		- Add a "detonate at minimum distance" option to flak/proximity rockets (enabled by default).
+		- Aero-stabilization is now stateless (doesn't depend on the time since launch).
+		- Hydra70 and S0KOM rocket types updated and variants added.
+	- Don't apply lead and weapon offset corrections to the pilot AI for turrets.
+	- Proximity detonation now uses the target's "average radius" instead of its "max radius".
 	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
 	- Missiles with RCS can now have multiple forwardRCS transforms.
