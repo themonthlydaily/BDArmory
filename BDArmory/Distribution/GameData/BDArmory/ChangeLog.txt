@@ -23,6 +23,8 @@
 		- AI is now capable of avoiding collisions with other vessels, debris, and asteroids.
 		- AI is now properly aims and fires unguided missiles in orbit.
 		- AI will automatically move to closer intercept ranges if it is unable to lock missiles after 20s.
+	- Don't set the global infinite fuel option when maintaining fuel levels for individual vessels.
+	- Don't raycast for terrain normals when taking off from water, just use the up direction.
 - Armor / Hull:
 	- Revert invalid HullTypeNum values to that of Aluminium and log a warning.
 - Competition:
@@ -31,6 +33,11 @@
 	- Fix incorrect parsing of unicode chars in the tournament parser for "wins".
 - Game Modes:
 	- Added g-force limits game mode for part failure and Kerbal GLOC (note: the pilot AI's g-limiter still doesn't work well).
+	- Asteroids Field:
+		- Adjust the asteroid field game mode to also work in orbit.
+		- Adjust forces on asteroids to keep them reasonably contained within the requested field volume and to avoid pinballing.
+		- Adjust the asteroid anomalous attraction distance profile to peak at 707m and drop to 0.25 at 0m and 0 at just over 1km.
+		- Improved competition messages related to asteroid fields.
 - Weapons:
 	- Missiles:
 		- Improvements
@@ -58,13 +65,15 @@
 		- Hydra70 and S-8KOM rocket types updated and variants added.
 	- Don't apply lead and weapon offset corrections to the pilot AI for turrets.
 	- Proximity detonation now uses the target's "average radius" instead of its "max radius".
-	- Shell ejection direction and variability (deviation) now customisable in the weapon config.
+	- Shell ejection direction, variability (deviation), delay and lifetime are now customisable in the weapon config.
 	- Mostly fix the bomb-aimer - bombs without significant lift work fairly well, but JDAMs can be fairly imprecise.
 	- Missiles with RCS can now have multiple forwardRCS transforms.
+	- Avoid double-counting HP+armour of intervening parts in explosions and scale the damage reduction by the appropriate modifier.
 - Spawning:
 	- Allow specifying the reference heading for the first craft for circular spawning (loses precision within 1° of the poles).
 - RWP:
-	- Add S6R6, S6R7 and S6R8 defaults and custom logic.
+	- Add S6R6, S6R7, S6R8, S6R9 and S6R10 defaults and custom logic.
+	- Refresh various UI text fields from the settings values when updating from RWP settings.
 - Evolution:
 	- Various fixes for the evolution engine from user themonthlydaily:
 		- Applies mutations to the correct craft.
