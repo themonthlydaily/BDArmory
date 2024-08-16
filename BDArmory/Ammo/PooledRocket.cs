@@ -170,7 +170,6 @@ namespace BDArmory.Bullets
             rb.velocity = parentRB ? parentRB.velocity : Vector3.zero; // Use rb.velocity in the velocity frame reference. Use currentVelocity for absolute velocity.
             currentVelocity = rb.velocity + BDKrakensbane.FrameVelocityV3f;
             transform.parent = null; // Clear the parent transform so the rocket is now independent.
-            Debug.Log($"DEBUG Actual (initial). {Time.time - startTime}s, pos: {currentPosition - startPosition} ({(currentPosition - startPosition).magnitude}), vel: {currentVelocity} ({currentVelocity.magnitude}), dir: {1000 * transform.forward}");
 
             randThrustSeed = UnityEngine.Random.Range(0f, 100f);
             thrustVector = new Vector3(0, 0, thrust);
@@ -275,17 +274,12 @@ namespace BDArmory.Bullets
 
                 //guidance and attitude stabilisation scales to atmospheric density.
                 float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currentPosition), FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
-
-                //model transform. always points prograde
-                var lastForward = transform.forward;
-                // transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosMultiplier * (0.5f * (Time.time - startTime)) * 50 * TimeWarp.fixedDeltaTime); // Why does this depend on startTime?
-
-                var atmosFactor = atmosMultiplier * 0.5f * 0.012f * currentVelocity.sqrMagnitude * TimeWarp.fixedDeltaTime;
-                // transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosMultiplier * 0.5f * currentVelocity.sqrMagnitude * TimeWarp.fixedDeltaTime);
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosFactor);
-                var angleDelta = Vector3.Angle(lastForward, transform.forward);
-
-                if (Time.time - startTime < 0.4f) Debug.Log($"DEBUG Actual. {Time.time - startTime}s, pos: {currentPosition - startPosition} ({(currentPosition - startPosition).magnitude}), vel: {currentVelocity} ({currentVelocity.magnitude}), acc: {currentAcceleration} ({currentAcceleration.magnitude}), dir: {1000 * transform.forward}, atm: {atmosFactor}, Δang: {angleDelta}");
+                if (atmosMultiplier > 0)
+                {
+                    //model transform. always points prograde
+                    var atmosFactor = atmosMultiplier * 0.5f * 0.012f * currentVelocity.sqrMagnitude * TimeWarp.fixedDeltaTime; // aero-stabilize
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(currentVelocity, transform.up), atmosFactor);
+                }
             }
 
             if (Time.time - startTime > thrustTime)
@@ -376,8 +370,8 @@ namespace BDArmory.Bullets
 
             if (Time.time - startTime <= thrustTime)
             {
-                // thrustVector.x = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
-                // thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
+                thrustVector.x = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
+                thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
                 rb.AddRelativeForce(thrustVector);
                 currentAcceleration += Quaternion.FromToRotation(Vector3.forward, rb.transform.forward) * thrustVector / rb.mass;
             }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
@@ -842,7 +836,7 @@ namespace BDArmory.Bullets
                 Vector3 relativeVelocity = loadedVessels.Current.Velocity() - currentVelocity;
                 float relativeSpeed = relativeVelocity.magnitude;
                 if (Vector3.Dot(relativeVelocity, loadedVessels.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
-                float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(); // Detonate when the outermost part of the vessel is within the detonateRange.
+                float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(average: true); // Detonate when the (average) outermost part of the vessel is within the detonateRange.
                 float detRangeTime = TimeWarp.fixedDeltaTime + 2 * localDetonationRange / Mathf.Max(1f, relativeSpeed); // Time for this frame's movement plus the relative separation to change by twice the detonation range + the vessel's radius (within reason). This is more than the worst-case time needed for the rocket to reach the CPA (ignoring relative acceleration, technically we should be solving x=v*t+1/2*a*t^2 for t).
                 var timeToCPA = loadedVessels.Current.TimeToCPA(currentPosition, currentVelocity, currentAcceleration, detRangeTime);
                 if (timeToCPA > 0 && timeToCPA < detRangeTime) // Going to reach the CPA within the detRangeTime
@@ -868,8 +862,8 @@ namespace BDArmory.Bullets
                         }
                         if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
                         {
-                            currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledRocket]: Detonating proxy rocket with detonation range {detonationRange}m ({localDetonationRange}m) at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m ({timeToCPA}s) from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
+                            currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA); // Adjust the rocket position back to the detonation position.
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledRocket]: Detonating proxy rocket with detonation range {detonationRange}m ({localDetonationRange}m) at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m ({timeToCPA}s) from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius(average: true)}m");
                             currentPosition -= timeToCPA * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
                             return true;
                         }
@@ -963,7 +957,7 @@ namespace BDArmory.Bullets
                             var RaycastHits = new Unity.Collections.NativeArray<RaycastHit>(20, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
 
                             for (int j = 0; j < 20; ++j)
-                                RaycastCommands[j] = new RaycastCommand(prevPosition, VectorUtils.GaussianDirectionDeviation(currentVelocity, 80), blastRadius * 1.2f, (int)LayerMasks.Parts);
+                                RaycastCommands[j] = new RaycastCommand(currentPosition, VectorUtils.GaussianDirectionDeviation(currentVelocity, 80), blastRadius * 1.2f, (int)LayerMasks.Parts);
                             var job = RaycastCommand.ScheduleBatch(RaycastCommands, RaycastHits, 1, default);
                             job.Complete(); // Wait for the job to complete.
                             foreach (var hit in RaycastHits)

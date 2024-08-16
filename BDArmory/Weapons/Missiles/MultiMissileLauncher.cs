@@ -208,8 +208,8 @@ namespace BDArmory.Weapons.Missiles
                     missileLauncher.Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
                     if (missileSpawner.maxAmmo == 1)
                     {
-                        missileSpawner.Fields["ammoCount"].guiActive = false;
-                        missileSpawner.Fields["ammoCount"].guiActiveEditor = false;
+                        missileSpawner.Fields["railAmmo"].guiActive = false;
+                        missileSpawner.Fields["railAmmo"].guiActiveEditor = false;
                     }
                 }
                 else
