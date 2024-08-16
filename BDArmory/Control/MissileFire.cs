@@ -2113,6 +2113,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             yield return wait;
                                         }
                                     }
+                                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                                 }
                                 yield return wait;
 
@@ -2237,6 +2239,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
 
                             yield return wait;
@@ -2286,6 +2290,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         while (tgp.MoveNext())
                                         {
                                             if (tgp.Current == null) continue;
+                                            if (tgp.Current.maxRayDistance * tgp.Current.maxRayDistance < (tgp.Current.cameraParentTransform.position - targetVessel.CoM).sqrMagnitude) continue; //target further than max camera range (def ~15.5km)
                                             tgp.Current.EnableCamera();
                                             tgp.Current.CoMLock = true;
                                             yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM, targetVessel));
@@ -2363,6 +2368,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
                             yield return wait;
                             if (vessel && targetVessel)
@@ -2423,6 +2430,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
 
                             yield return wait;
@@ -2446,6 +2455,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     while (tgp.MoveNext())
                                     {
                                         if (tgp.Current == null) continue;
+                                        if (tgp.Current.maxRayDistance * tgp.Current.maxRayDistance < (tgp.Current.cameraParentTransform.position - targetVessel.CoM).sqrMagnitude) continue; //target further than max camera range (def ~15.5km)
                                         tgp.Current.CoMLock = true;
                                         yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM, targetVessel));
                                         //if (tgp.Current.groundStabilized && (tgp.Current.GroundtargetPosition - guardTarget.transform.position).sqrMagnitude < 20 * 20) 
@@ -2496,6 +2506,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         yield return wait;
                                     }
                                 }
+                                if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                    yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                             }
                             yield return wait;
                             //Debug.Log($"[GMR_Debug] waiting... laspoint: {laserPointDetected}; foundCam: {foundCam != null}; targetVessel: {targetVessel != null}");
@@ -2580,6 +2592,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             yield return wait;
                                         }
                                     }
+                                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                                 }
                                 yield return wait;
 
@@ -2703,6 +2717,9 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 {
                     if (SetCargoBays())
                         yield return new WaitForSecondsFixed(2f);
+                    MissileLauncher mlauncher = CurrentMissile as MissileLauncher;
+                    if (mlauncher.multiLauncher && !mlauncher.multiLauncher.turret)
+                        yield return new WaitForSecondsFixed(mlauncher.multiLauncher.deploySpeed);
                 }
                 if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > targetToleranceSqr) //Was blastRadius, but these are precision guided munitions. Let's use a little precision here
                || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > targetToleranceSqr))))
@@ -7147,7 +7164,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
-                Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");
+                Debug.Log($"[BDArmory.MissileData]: firing missile at {(targetVessel != null ? targetVessel.GetName() : "null target")}");
         }
 
         #endregion Targeting
@@ -8244,7 +8261,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     MissileBase.TargetingModes.Laser => BDATargetManager.ActiveLasers.Count <= 0,
                     MissileBase.TargetingModes.Radar => !(torpedo ? _sonarsEnabled : _radarsEnabled) && (!ml.radarLOAL || (mlauncher != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / mlauncher.optimumAirspeed))),
                     MissileBase.TargetingModes.Inertial => !((torpedo ? _sonarsEnabled : _radarsEnabled) || _irstsEnabled),
-                    MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_sonarsEnabled,
+                    MissileBase.TargetingModes.Gps => BDATargetManager.ActiveLasers.Count <= 0 && !_radarsEnabled,
                     _ => false
                 }; //unify unguidedWeapon conditions
 

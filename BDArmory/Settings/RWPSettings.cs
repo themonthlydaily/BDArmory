@@ -81,7 +81,7 @@ namespace BDArmory.Settings
 			}},
 			{62, new(){ // Retrofuturistic on Eve
 				{"ASTEROID_FIELD", true},
-				{"ASTEROID_FIELD_ALTITUDE", 20},
+				{"ASTEROID_FIELD_ALTITUDE", 2000},
 				{"ASTEROID_FIELD_ANOMALOUS_ATTRACTION", true},
 				{"ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH", 0.5},
 				{"ASTEROID_FIELD_NUMBER", 200},
@@ -129,6 +129,32 @@ namespace BDArmory.Settings
 				{"G_LIMITS", true},
 				{"KERB_GLIMIT", true},
 				{"PART_GLIMIT", true},
+			}},
+			{69, new(){
+				{"WAYPOINTS_MODE", true},
+				{"VESSEL_SPAWN_ALTITUDE", 5},
+				{"WAYPOINTS_ONE_AT_A_TIME", false},
+				{"WAYPOINT_GUARD_INDEX", 6},
+				{"WAYPOINT_COURSE_INDEX", 8},
+				{"VESSEL_SPAWN_DISTANCE", 45},
+				{"COMPETITION_KILL_TIMER", 10},
+				{"COMPETITION_DURATION", 5},
+				{"VESSEL_SPAWN_GEOCOORDS", new Vector3d(33.911, -172.7)},
+			}},
+			{70,new(){
+				{"ASTEROID_FIELD", true},
+				{"ASTEROID_FIELD_ALTITUDE", 20000},
+				{"ASTEROID_FIELD_ANOMALOUS_ATTRACTION", true},
+				{"ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH", 0.05},
+				{"ASTEROID_FIELD_NUMBER", 250},
+				{"ASTEROID_FIELD_RADIUS", 8},
+				{"COMPETITION_DISTANCE", 1000},
+				{"COMPETITION_DURATION", 10},
+				{"MAX_SAS_TORQUE", 9999},
+				{"VESSEL_SPAWN_WORLDINDEX", 15},
+				{"VESSEL_SPAWN_ALTITUDE", 20000},
+				{"VESSEL_SPAWN_DISTANCE", 8500},
+				{"VESSEL_RELATIVE_BULLET_CHECKS", true},
 			}},
 		};
 		public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
@@ -251,6 +277,8 @@ namespace BDArmory.Settings
 
 			// Update NumericInputFields for spawn values.
 			if (VesselSpawnerWindow.Instance != null && (overrides.ContainsKey("VESSEL_SPAWN_ALTITUDE") || overrides.ContainsKey("VESSEL_SPAWN_GEOCOORDS"))) VesselSpawnerWindow.Instance.RefreshSpawnFieldsFromSettings();
+			// Update competition distance text field.
+			if (BDArmorySetup.Instance != null && overrides.ContainsKey("COMPETITION_DISTANCE")) BDArmorySetup.Instance.compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
 		}
 
 		/// <summary>
