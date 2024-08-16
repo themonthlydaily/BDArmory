@@ -797,6 +797,9 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 300f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
         public float detonationRange = -1f; // give ability to set proximity range
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
+        public bool detonateAtMinimumDistance = true;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_Type"),//Ammunition Types
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float AmmoTypeNum = 1;
@@ -838,7 +841,7 @@ namespace BDArmory.Weapons
         }
 
         [KSPField(isPersistant = true)]
-        public string SelectedAmmoType; //presumably Aubranium can use this to filter allowed/banned ammotypes
+        public string SelectedAmmoType;
 
         public List<string> ammoList;
 
@@ -1202,12 +1205,7 @@ namespace BDArmory.Weapons
                 }
             }
 
-            int typecount = 0;
             ammoList = BDAcTools.ParseNames(bulletType);
-            for (int i = 0; i < ammoList.Count; i++)
-            {
-                typecount++;
-            }
             if (ammoList.Count > 1)
             {
                 if (!canHotSwap)
@@ -1215,10 +1213,10 @@ namespace BDArmory.Weapons
                     Fields["AmmoTypeNum"].guiActive = false;
                 }
                 UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlEditor;
-                ATrangeEditor.maxValue = (float)typecount;
+                ATrangeEditor.maxValue = (float)ammoList.Count;
                 ATrangeEditor.onFieldChanged = SetupAmmo;
                 UI_FloatRange ATrangeFlight = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlFlight;
-                ATrangeFlight.maxValue = (float)typecount;
+                ATrangeFlight.maxValue = (float)ammoList.Count;
                 ATrangeFlight.onFieldChanged = SetupAmmo;
             }
             else //disable ammo selector
@@ -1455,7 +1453,7 @@ namespace BDArmory.Weapons
                 if (ammoList.Count > 1)
                 {
                     UI_FloatRange ATrangeFlight = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlFlight;
-                    ATrangeFlight.maxValue = (float)typecount;
+                    ATrangeFlight.maxValue = (float)ammoList.Count;
                     if (!canHotSwap)
                     {
                         Fields["AmmoTypeNum"].guiActive = false;
@@ -1747,6 +1745,16 @@ namespace BDArmory.Weapons
                 Fields["defaultDetonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
                 Fields["detonationRange"].guiActiveEditor = false;
+            }
+            if (eWeaponType == WeaponTypes.Rocket && proximityDetonation)
+            {
+                Fields["detonateAtMinimumDistance"].guiActive = true;
+                Fields["detonateAtMinimumDistance"].guiActiveEditor = true;
+            }
+            else
+            {
+                Fields["detonateAtMinimumDistance"].guiActive = false;
+                Fields["detonateAtMinimumDistance"].guiActiveEditor = false;
             }
             GUIUtils.RefreshAssociatedWindows(part);
         }
@@ -2917,6 +2925,7 @@ namespace BDArmory.Weapons
                                 rocket.thrustTime = thrustTime;
                                 rocket.lifeTime = rocketInfo.lifeTime;
                                 rocket.flak = proximityDetonation;
+                                rocket.detonateAtMinimumDistance = detonateAtMinimumDistance;
                                 rocket.detonationRange = detonationRange;
                                 // rocket.maxAirDetonationRange = maxAirDetonationRange;
                                 rocket.timeToDetonation = predictedFlightTime;
@@ -3007,6 +3016,7 @@ namespace BDArmory.Weapons
                                             rocket.thrustTime = thrustTime;
                                             rocket.lifeTime = rocketInfo.lifeTime;
                                             rocket.flak = proximityDetonation;
+                                            rocket.detonateAtMinimumDistance = detonateAtMinimumDistance;
                                             rocket.detonationRange = detonationRange;
                                             // rocket.maxAirDetonationRange = maxAirDetonationRange;
                                             rocket.timeToDetonation = predictedFlightTime;

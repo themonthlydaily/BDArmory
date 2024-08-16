@@ -38,6 +38,7 @@ namespace BDArmory.Bullets
         public float timeToDetonation;
         float armingTime;
         public bool flak;
+        public bool detonateAtMinimumDistance = false; // Detonate flak rockets when they reach min distance instead of when they enter the proximity range.
         public bool concussion;
         public bool gravitic;
         public bool EMP;
@@ -847,22 +848,25 @@ namespace BDArmory.Bullets
                     float localDetonationRangeSqr = localDetonationRange * localDetonationRange;
                     if (minSepSqr < localDetonationRangeSqr)
                     {
-                        // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
-                        float correctionDistance = BDAMath.Sqrt(localDetonationRangeSqr - minSepSqr);
-                        if (Time.time - startTime > thrustTime)
+                        if (!detonateAtMinimumDistance)
                         {
-                            timeToCPA = Mathf.Max(0, timeToCPA - correctionDistance / relativeSpeed);
-                        }
-                        else
-                        {
-                            float acceleration = currentAcceleration.magnitude;
-                            relativeSpeed += timeToCPA * acceleration; // Get the relative speed at the CPA for the correction.
-                            float determinant = relativeSpeed * relativeSpeed - 2 * acceleration * correctionDistance;
-                            timeToCPA = determinant > 0 ? Mathf.Max(0, timeToCPA - (relativeSpeed - BDAMath.Sqrt(determinant)) / acceleration) : 0;
+                            // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
+                            float correctionDistance = BDAMath.Sqrt(localDetonationRangeSqr - minSepSqr);
+                            if (Time.time - startTime > thrustTime)
+                            {
+                                timeToCPA = Mathf.Max(0, timeToCPA - correctionDistance / relativeSpeed);
+                            }
+                            else
+                            {
+                                float acceleration = currentAcceleration.magnitude;
+                                relativeSpeed += timeToCPA * acceleration; // Get the relative speed at the CPA for the correction.
+                                float determinant = relativeSpeed * relativeSpeed - 2 * acceleration * correctionDistance;
+                                timeToCPA = determinant > 0 ? Mathf.Max(0, timeToCPA - (relativeSpeed - BDAMath.Sqrt(determinant)) / acceleration) : 0;
+                            }
                         }
                         if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
                         {
-                            currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA); // Adjust the rocket position back to the detonation position.
+                            currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, currentAcceleration, timeToCPA); // Adjust the rocket position to the detonation position.
                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledRocket]: Detonating proxy rocket with detonation range {detonationRange}m ({localDetonationRange}m) at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m ({timeToCPA}s) from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius(average: true)}m");
                             currentPosition -= timeToCPA * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
                             return true;
@@ -1228,6 +1232,7 @@ namespace BDArmory.Bullets
                     rocket.thrust = sRocket.thrust;
                     rocket.thrustTime = sRocket.thrustTime;
                     rocket.flak = sRocket.flak;
+                    rocket.detonateAtMinimumDistance = detonateAtMinimumDistance;
                     rocket.detonationRange = detonationRange;
                     rocket.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
                     rocket.tntMass = sRocket.tntMass;
