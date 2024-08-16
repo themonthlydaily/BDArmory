@@ -54,7 +54,7 @@
 	- Rockets:
 		- Rework the rocket aiming to be consistent with how rockets fly, both in atmosphere and in orbit.
 		- Add a "detonate at minimum distance" option to flak/proximity rockets (enabled by default).
-		- Aero-stabilization is now stateless (doesn't depend on the time since launch).
+		- Aero-stabilization is now stateless (doesn't depend on the time since launch, only on current aero-forces).
 		- Hydra70 and S0KOM rocket types updated and variants added.
 	- Don't apply lead and weapon offset corrections to the pilot AI for turrets.
 	- Proximity detonation now uses the target's "average radius" instead of its "max radius".
