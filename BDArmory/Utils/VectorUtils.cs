@@ -106,8 +106,7 @@ namespace BDArmory.Utils
         public static Vector3 GaussianDirectionDeviation(Vector3 direction, float standardDeviation)
         {
             return Quaternion.AngleAxis(UnityEngine.Random.Range(-180f, 180f), direction)
-                * Quaternion.AngleAxis(Rayleigh() * (standardDeviation / 3.03f), //Rayleigh will modify the maxDeviation of the gun by anywhere from ~0.141 to ~3.03 (Rayleigh 0.01 - 0.99), so dividing standardDiv by min rayleigh so maxDeviation remains degrees
-                                                                                  // vs keeping this the same and needing to modify all weapon maxdeviation values by some factor to get the desired deviation in degrees.
+                * Quaternion.AngleAxis(Rayleigh() * standardDeviation,
                                        new Vector3(-1 / direction.x, -1 / direction.y, 2 / direction.z))  // orthogonal vector
                 * direction;
         }
