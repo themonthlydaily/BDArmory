@@ -52,11 +52,6 @@ namespace BDArmory.Radar
         private int resourceID;
 
         [KSPField]
-        public string resourceName = "ElectricCharge";
-
-        private int resourceID;
-
-        [KSPField]
         public bool omnidirectional = true;			//false=boresight only
 
         [KSPField]
@@ -316,12 +311,6 @@ namespace BDArmory.Radar
         {
             Events["Toggle"].guiName = radarEnabled ? StringUtils.Localize("#autoLOC_bda_1000000") : StringUtils.Localize("#autoLOC_bda_1000001");		// #autoLOC_bda_1000000 = Disable Radar		// #autoLOC_bda_1000001 = Enable Radar
         }
-        void Start()
-        {
-            resourceID = PartResourceLibrary.Instance.GetDefinition(resourceName).id;
-        }
-
-
         void Start()
         {
             resourceID = PartResourceLibrary.Instance.GetDefinition(resourceName).id;
@@ -1236,6 +1225,6 @@ namespace BDArmory.Radar
                 DisableRadar();
             }
         }
-    }// = Requires:
+    }
 
 }

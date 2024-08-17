@@ -12,7 +12,6 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
-using System.Resources;
 
 namespace BDArmory.Radar
 {
@@ -44,11 +43,6 @@ namespace BDArmory.Radar
         public double resourceDrain = 0.825;        //resource (EC/sec) usage of active irst
 
         [KSPField] 
-        public string resourceName = "ElectricCharge";
-
-        private int resourceID;
-
-        [KSPField]
         public string resourceName = "ElectricCharge";
 
         private int resourceID;
