@@ -573,8 +573,7 @@ namespace BDArmory.Control
                 {
                     Pathfind(waypointPosition);
                 }
-                else
-                if (leftPath && bypassTarget == null)
+                else if (leftPath && bypassTarget == null)
                 {
                     Pathfind(finalPositionGeo);
                     leftPath = false;

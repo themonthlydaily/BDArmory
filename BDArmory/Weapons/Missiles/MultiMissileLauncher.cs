@@ -69,15 +69,15 @@ namespace BDArmory.Weapons.Missiles
         public BDTeam Team = BDTeam.Get("Neutral");
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),// Length
-    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.Editor)]
         public float Scale = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),// Length
-    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.Editor)]
         public float Length = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Offset"),// Ordinance Offset
-    UI_FloatRange(minValue = -1, maxValue = 1, stepIncrement = 0.1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+    UI_FloatRange(minValue = -1, maxValue = 1, stepIncrement = 0.1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.Editor)]
         public float attachOffset = 0;
 
         [KSPField]
@@ -208,8 +208,8 @@ namespace BDArmory.Weapons.Missiles
                     missileLauncher.Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
                     if (missileSpawner.maxAmmo == 1)
                     {
-                        missileSpawner.Fields["ammoCount"].guiActive = false;
-                        missileSpawner.Fields["ammoCount"].guiActiveEditor = false;
+                        missileSpawner.Fields["railAmmo"].guiActive = false;
+                        missileSpawner.Fields["railAmmo"].guiActiveEditor = false;
                     }
                 }
                 else
@@ -734,7 +734,7 @@ namespace BDArmory.Weapons.Missiles
                 if (targetsAssigned.Count < 1)
                     if (wpm.currentTarget != null) targetsAssigned.Add(wpm.currentTarget);
             }
-            //else Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: weaponmanager null!");            
+            //else Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: weaponmanager null!"); 
             if (deployState != null)
             {
                 deployState.enabled = true;
@@ -935,7 +935,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (ml.TargetingMode == TargetingModes.Heat || ml.TargetingMode == TargetingModes.Radar || ml.TargetingMode == TargetingModes.Gps)
                     {
-                        Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
+                        //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
                         if (targetsAssigned.Count > 0 && salvoSize > 1)
                         {
                             if (TargetID <= Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum))
@@ -944,28 +944,28 @@ namespace BDArmory.Weapons.Missiles
                                 {// and each MMl will be independantly working off the same targets list, iterating over the same first couple targets
                                     if (wpm.missilesAway.ContainsKey(targetsAssigned[t]))
                                     {
-                                        Debug.Log($"[MML Targeting Debug] target {t} {targetsAssigned[t].Vessel.GetName()} already has {wpm.missilesAway[targetsAssigned[t]]}/{wpm.maxMissilesOnTarget} fired on it...");
+                                        //Debug.Log($"[MML Targeting Debug] target {t} {targetsAssigned[t].Vessel.GetName()} already has {wpm.missilesAway[targetsAssigned[t]]}/{wpm.maxMissilesOnTarget} fired on it...");
                                         if (wpm.missilesAway[targetsAssigned[t]] < wpm.maxMissilesOnTarget)
                                         {
                                             TargetID = t; //so go through and advance the target list start point based on who's already been fully engaged
-                                                          Debug.Log($"[MML Targeting Debug] advancing targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
+                                                          //Debug.Log($"[MML Targeting Debug] advancing targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
                                             break;
                                         }
                                     }
                                     else
                                     {
                                         TargetID = t;
-                                        Debug.Log($"[MML Targeting Debug] setting targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
+                                        //Debug.Log($"[MML Targeting Debug] setting targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
                                         break;
                                     }
                                 }
                             }
-                            Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum)}");
+                            //Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum)}");
                             if (TargetID > Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum))
                             {
                                 TargetID = 0; //if more missiles than targets, loop target list
                                 missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
-                                Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
+                                //Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
                             }
                             if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null)
                             {
@@ -991,8 +991,8 @@ namespace BDArmory.Weapons.Missiles
                                     ml.targetVessel = targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
                                     firedTargets.Add(targetsAssigned[TargetID]);
-                                    //if (BDArmorySettings.DEBUG_MISSILES)
-                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count}");
+                                    if (BDArmorySettings.DEBUG_MISSILES)
+                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count - 1}");
                                 }
                                 else //else try remaining targets on the list. 
                                 {
@@ -1022,15 +1022,15 @@ namespace BDArmory.Weapons.Missiles
                                             ml.targetVessel = targetsAssigned[t];
                                             ml.TargetAcquired = true;
                                             firedTargets.Add(targetsAssigned[t]);
-                                            //if (BDArmorySettings.DEBUG_MISSILES)
+                                            if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {targetsAssigned[t].Vessel.GetName()}");
                                             break;
                                         }
                                     }
+                                    if (BDArmorySettings.DEBUG_MISSILES)
+                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                     if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
                                     {
-                                        //if (BDArmorySettings.DEBUG_MISSILES)
-                                            Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                         using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
@@ -1058,7 +1058,7 @@ namespace BDArmory.Weapons.Missiles
                                                     ml.targetVessel = item.Current;
                                                     ml.TargetAcquired = true;
                                                     firedTargets.Add(item.Current);
-                                                    //if (BDArmorySettings.DEBUG_MISSILES)
+                                                    if (BDArmorySettings.DEBUG_MISSILES)
                                                         Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
                                                 }
@@ -1187,7 +1187,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         lockedTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
                         foundTarget = true;
-                        //if (BDArmorySettings.DEBUG_MISSILES)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                             Debug.Log($"[BDArmory.MultiMissileLauncher] Found locked Radar target {targetV.GetName()}");
                         break;
                     }
@@ -1207,7 +1207,7 @@ namespace BDArmory.Weapons.Missiles
                         if (scannedTargets[i].exists && scannedTargets[i].vessel == targetV)
                         {
                             lockedTarget = scannedTargets[i];
-                            //if (BDArmorySettings.DEBUG_MISSILES)
+                            if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Found Radar target {targetV.GetName()}");
                             break;
                         }
@@ -1228,7 +1228,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
             }
-            Debug.Log($"[BDArmory.MultiMissileLauncher] {targetV.GetName()}; assigned radar target {(ml.radarTarget.exists ? ml.radarTarget.vessel.GetName() : "null")}");
+            //Debug.Log($"[BDArmory.MultiMissileLauncher] {targetV.GetName()}; assigned radar target {(ml.radarTarget.exists ? ml.radarTarget.vessel.GetName() : "null")}");
         }
 
         public void SetupMissileDummyPool(string modelpath)

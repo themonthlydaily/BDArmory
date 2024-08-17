@@ -47,7 +47,7 @@ namespace BDArmory.GameModes.Waypoints
         //public string mutator;
         //have it so gates can trigger a specific mutator on passing? Speed boost/add ballast/fuel regen/etc?
         public Waypoint(string _name, Vector3 _location, float _scale, float _speed, string _model) { name = _name; location = _location; scale = _scale; maxSpeed = _speed; model = _model; }
-        public override string ToString() { return name + "| " + location.ToString("G6") + "| " + scale.ToString() +"| " + maxSpeed.ToString() + "| " + model + ": "; }
+        public override string ToString() { return name + "| " + location.ToString("G6") + "| " + scale.ToString() + "| " + maxSpeed.ToString() + "| " + model + ": "; }
     }
 
     public class WaypointCourse
@@ -232,14 +232,14 @@ namespace BDArmory.GameModes.Waypoints
                             {
                                 speed = (float)ParseValue(typeof(float), datavars[3]);
                             }
-                            catch {speed = -1f; }
+                            catch { speed = -1f; }
                             string model;
                             try
                             {
                                 model = (string)ParseValue(typeof(string), datavars[4]);
                                 model = model.Trim(' ');
                             }
-                            catch { model = ""; }   
+                            catch { model = ""; }
                             if (name != null && location != null)
                                 waypointList.Add(new Waypoint(WPname, location, scale, speed, model));
                         }

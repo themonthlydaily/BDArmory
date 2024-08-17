@@ -220,7 +220,7 @@ namespace BDArmory.UI
         static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
-        string compDistGui;
+        public string compDistGui;
         string compIntraTeamSeparationBase;
         string compIntraTeamSeparationPerMember;
 
@@ -2620,19 +2620,19 @@ namespace BDArmory.UI
                         //     for (int i = 0; i < N; ++i)
                         //     {
                         //         for (int j = 0; j < debug_numRaycasts; ++j)
-                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir - relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir + relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
                         //         var job = RaycastCommand.ScheduleBatch(proximityRaycastCommands, proximityRaycastHits, 1, default(Unity.Jobs.JobHandle));
                         //         job.Complete(); // Wait for the job to complete.
                         //     }
                         //     watch.Stop();
-                        //     Debug.Log($"Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     Debug.Log($"DEBUG Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                         //     RaycastHit rayHit;
                         //     watch.Reset(); watch.Start();
                         //     for (int i = 0; i < N; ++i)
                         //         for (int j = 0; j < debug_numRaycasts; ++j)
                         //             Physics.Raycast(new Ray(vesselPosition, (vesselSrfVelDir + relativeVelocityDownDirection).normalized), out rayHit, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
                         //     watch.Stop();
-                        //     Debug.Log($"{debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     Debug.Log($"DEBUG {debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                         //     proximityRaycastCommands.Dispose();
                         //     proximityRaycastHits.Dispose();
                         // }

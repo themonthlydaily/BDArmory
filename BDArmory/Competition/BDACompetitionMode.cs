@@ -758,6 +758,7 @@ namespace BDArmory.Competition
                     }
                 }
             }
+
             //wait till the leaders are ready to engage (airborne for PilotAI)
             while (true)
             {

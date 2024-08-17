@@ -49,6 +49,11 @@ namespace BDArmory.Radar
         private int resourceID;
 
         [KSPField]
+        public string resourceName = "ElectricCharge";
+
+        private int resourceID;
+
+        [KSPField]
         public bool omnidirectional = true;			//false=boresight only
 
         [KSPField]
@@ -522,7 +527,7 @@ namespace BDArmory.Radar
             double chargeAvailable = part.RequestResource(resourceID, drainAmount, ResourceFlowMode.ALL_VESSEL);
             if (chargeAvailable < drainAmount * 0.95f)
             {
-                ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(resourceName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);		// [part Title] Requires [localized resource name]
+                ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(resourceName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);     // [part Title] Requires [localized resource name]
                 DisableIRST();
             }
         }

@@ -242,7 +242,7 @@ namespace BDArmory.UI
                 float terrainAlt = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].spawnPoint.x, WaypointCourses.CourseLocations[selected_index].spawnPoint.y);
                 Vector3d SpawnCoords = new Vector3((float)WaypointCourses.CourseLocations[selected_index].spawnPoint.x, (float)WaypointCourses.CourseLocations[selected_index].spawnPoint.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + terrainAlt);
                 GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(SpawnCoords, FlightGlobals.currentMainBody), BDArmorySetup.Instance.greenPointCircleTexture, new Vector2(96, 96), 0);
-                if (selected_index >= 0 && selected_gate_index >=0)
+                if (selected_index >= 0 && selected_gate_index >= 0)
                 {
                     terrainAlt = (float)FlightGlobals.currentMainBody.TerrainAltitude(WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.x, WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.y);
                     terrainAlt += (WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].scale * 1.1f);
@@ -289,7 +289,7 @@ namespace BDArmory.UI
             }
             if (ShowLoadMenu)
             {
-                line++;                
+                line++;
                 int i = 0;
                 foreach (var wpCourse in WaypointCourses.CourseLocations)
                 {
@@ -326,7 +326,7 @@ namespace BDArmory.UI
                                 }
                                 loadedGates.Clear();
                                 ShowLoadMenu = false;
-                                selected_index = i -1;
+                                selected_index = i - 1;
                                 selected_gate_index = -1;
                                 showCourseWPsComboBox = true;
                                 moddingSpawnPoint = false;
@@ -461,7 +461,7 @@ namespace BDArmory.UI
 
                                 if (selected_gate_index >= WaypointCourses.CourseLocations[selected_index].waypoints.Count)
                                 {
-                                    if (WaypointCourses.CourseLocations[selected_index].waypoints.Count > 0) 
+                                    if (WaypointCourses.CourseLocations[selected_index].waypoints.Count > 0)
                                     {
                                         selected_gate_index = WaypointCourses.CourseLocations[selected_index].waypoints.Count - 1;
                                         spawnFields["lat"].SetCurrentValue(WaypointCourses.CourseLocations[selected_index].waypoints[selected_gate_index].location.x);
@@ -662,7 +662,7 @@ spawnFields["alt"].currentValue != BDArmorySettings.VESSEL_SPAWN_ALTITUDE)
                 showCoursePath = !showCoursePath;
             }
 
-            if (selected_index >= 0 && GUI.Button(SRightButtonRect(line), StringUtils.Localize("Snap Camera") , BDArmorySetup.BDGuiSkin.button)) //view path
+            if (selected_index >= 0 && GUI.Button(SRightButtonRect(line), StringUtils.Localize("Snap Camera"), BDArmorySetup.BDGuiSkin.button)) //view path
             {
                 SnapCameraToGate();
             }

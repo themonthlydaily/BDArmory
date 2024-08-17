@@ -78,6 +78,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             }
             return false;
         }
+
         public void loadOrdinance(int tubesToReload)
         {
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.ModuleMissileRearm] reloading {tubesToReload} launchrails, {railAmmo} ordinance in launcher, queuing {tubesToReload - railAmmo} new munitions from magazine");
@@ -89,20 +90,18 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     ModuleMissileMagazine priorityMagazine = null;
                     float lastPriority = -1;
                     float lastAmmoQty = -1;
-                    for (int mmm = 0; mmm < linkedMagazines.Count; mmm++)
+                    foreach (var mag in linkedMagazines)
                     {
-                        if (linkedMagazines[mmm].ammoCount >= 1)
+                        if (mag == null || mag.ammoCount < 1) continue; // Ignore broken or empty mags.
+                        if (mag.priority < lastPriority) continue; // Ignore lower priority mags.
+                        if (mag.priority > lastPriority)
                         {
-                            if (linkedMagazines[mmm].priority >= lastPriority)
-                            {
-                                lastPriority = linkedMagazines[mmm].priority;
-                                if (linkedMagazines[mmm].ammoCount >= lastAmmoQty) //FIXME - sometimes priority is ignored, revise logic later
-                                {
-                                    lastAmmoQty = linkedMagazines[mmm].ammoCount;
-                                    priorityMagazine = linkedMagazines[mmm];
-                                }
-                            }
+                            lastAmmoQty = -1; // Reset the ammo quantity, so that the quantity of lower priority mags aren't considered.
+                            lastPriority = mag.priority;
                         }
+                        if (mag.ammoCount < lastAmmoQty) continue; // Ignore mags with the same priority but less ammo.
+                        lastAmmoQty = mag.ammoCount;
+                        priorityMagazine = mag;
                     }
                     if (priorityMagazine != null)
                     {
@@ -118,11 +117,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                                 mmr.Current.magazineAmmo--; //syncronize magazine count across all launchers using that ammo
                             }
                     }
-                    //if we need to implement using a Resource (Aircraft Carrier Accessories resupply of landed craft...?) have an invisible resource with a density of 1kg/unit,
-                    //and assign a transfer value = current missile's partmass, and resource maxAmount = missilemagazine max munition quantity?
                 }
             }
         }
+
         public override void OnStart(PartModule.StartState state)
         {
             this.enabled = true;
