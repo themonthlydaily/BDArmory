@@ -6153,6 +6153,7 @@ namespace BDArmory.Weapons
                 {
                     output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
                     if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} seconds to come to max RPM");
+                    output.AppendLine($"Shot Deviation: {Mathf.Sin(maxDeviation / 57.29577f) * 1000:F2} mrad");            
                     if (HEpulses)
                     {
                         output.AppendLine($"Blast:");
@@ -6179,6 +6180,7 @@ namespace BDArmory.Weapons
                 }
                 if (weaponType == "ballistic")
                 {
+                    output.AppendLine($"Shot Deviation: {Mathf.Sin(maxDeviation / 57.29577f) * 1000:F2} mrad");
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         BulletInfo binfo = BulletInfo.bullets[ammoList[i].ToString()];
