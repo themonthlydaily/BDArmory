@@ -9,6 +9,7 @@
 
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
+- Motherships branch -> reimplemented as multi-craft branch
 
 - Wiki entries
 	- Auto-Tuning
@@ -56,7 +57,6 @@
 - Add NPC and piñata support for single competitions as well (currently they're only supported in tournaments)
 	- Add "role" option in the VM for specifying PC, NPC, piñata, etc.
 - Tournament support for custom spawn templates.
-- Motherships branch
 - Figure out why bullet hole decals are frequently offset behind the craft. - krakensbane or flightintegrator at time of decal attachment?
 - Inertial correction to pitch, roll, yaw errors for PID calcuations. Rotate the vessel reference transform first, computing debugPos2 from the top 
 - If re-assign teams is disabled, custom spawn templates should use the team name of the first vessel in each team as the team name.
