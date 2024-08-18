@@ -5130,25 +5130,28 @@ namespace BDArmory.Weapons
                     {
                         //TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData; //no support for radar tracking, only locks?
                         TargetSignatureData targetData = weaponManager.vesselRadarData.detectedRadarTarget(visualTargetVessel, weaponManager);
-                        targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
-                        targetPosition = targetData.predictedPositionWithChaffFactor(targetData.lockedByRadar.radarChaffClutterFactor);
-                        targetRadius = targetData.vessel.GetRadius();
-                        targetAcceleration = targetData.acceleration;
-                        targetIsLandedOrSplashed = false;
-                        if (targetData.vessel)
+                        if (targetData.exists)
                         {
-                            targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
-                            visualTargetVessel = targetData.vessel; //will override multitarget assignment if multiple turrets and multiple targets and multiTargetNum > 1
+                            targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
+                            targetPosition = targetData.predictedPositionWithChaffFactor(targetData.lockedByRadar.radarChaffClutterFactor);
+                            targetRadius = targetData.vessel.GetRadius();
+                            targetAcceleration = targetData.acceleration;
+                            targetIsLandedOrSplashed = false;
+                            if (targetData.vessel)
+                            {
+                                targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
+                                visualTargetVessel = targetData.vessel; //will override multitarget assignment if multiple turrets and multiple targets and multiTargetNum > 1
+                            }
+                            targetAcquired = true;
+                            targetAcquisitionType = TargetAcquisitionType.Radar;
+                            if (weaponManager.vesselRadarData.locked)
+                            {
+                                if (visualTargetVessel == weaponManager.vesselRadarData.lockedTargetData.targetData.vessel)
+                                    targetAcquisitionType = TargetAcquisitionType.Slaved;
+                            }
+                            radarTarget = true;
+                            return;
                         }
-                        targetAcquired = true;
-                        targetAcquisitionType = TargetAcquisitionType.Radar;
-                        if (weaponManager.vesselRadarData.locked)
-                        {
-                            if (visualTargetVessel == weaponManager.vesselRadarData.lockedTargetData.targetData.vessel)
-                                targetAcquisitionType = TargetAcquisitionType.Slaved;
-                        }
-                        radarTarget = true;
-                        return;
                     }
                 }
                 //else, we have turrets slaved to a targetpainter, use that
@@ -5175,8 +5178,7 @@ namespace BDArmory.Weapons
                 }
 				
                 //legacy or visual range guard targeting
-                if (aiControlled && weaponManager && visualTargetVessel &&
-                    (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
+                if (aiControlled && visualTargetVessel && visRange)
                 {
                     //targetRadius = visualTargetVessel.GetRadius();
 
