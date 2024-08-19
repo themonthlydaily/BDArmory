@@ -172,7 +172,7 @@ namespace BDArmory.UI
                 }
             var newResources = vesselResources.ToHashSet();
             newResources.ExceptWith(oldResources); // Newly added resources.
-            var resourceIDs = newResources.Select(res => PartResourceLibrary.Instance.GetDefinition(res.name).id).ToHashSet();
+            var resourceIDs = newResources.Select(res => PartResourceLibrary.Instance.GetDefinition(res.name).id).ToHashSet(); //add all resources to VRID by default so default drymass is true drymass, until specific resouces filtered
             resourceIDs.ExceptWith(vesselResourceIDs.ToHashSet()); // Only newly added resources that aren't already added to the IDs list.
             if (resourceIDs.Count > 0)
             {
@@ -499,11 +499,11 @@ namespace BDArmory.UI
                             {
                                 if (!vesselResourceIDs.Contains(resID))
                                 {
-                                    vesselResourceIDs.Add(resID);
+                                    vesselResourceIDs.Add(resID); //resource counted as wet mass
                                 }
                                 else
                                 {
-                                    vesselResourceIDs.Remove(resID);
+                                    vesselResourceIDs.Remove(resID); //resouce to be counded as drymass
                                 }
                                 CalculateTotalLift();
                             }
