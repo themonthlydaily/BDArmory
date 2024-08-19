@@ -486,7 +486,8 @@ UI_Toggle(enabledText = "#LOC_BDArmory_true", disabledText = "#LOC_BDArmory_fals
                         }
                         else
                         {
-                            targetVelocity = !maintainMinRange ? MaxSpeed : CombatSpeed / 10 + (MaxSpeed - CombatSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities                            if (weaponManager != null && weaponManager.selectedWeapon != null)
+                            targetVelocity = !maintainMinRange ? MaxSpeed : CombatSpeed / 10 + (MaxSpeed - CombatSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities
+                            if (weaponManager != null && weaponManager.selectedWeapon != null)
                             {
                                 switch (weaponManager.selectedWeapon.GetWeaponClass())
                                 {

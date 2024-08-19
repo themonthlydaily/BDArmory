@@ -93,7 +93,7 @@
 			- Add new Kinetic Kill Vehicle (KKV) missile. The KKV is an orbital missile with 6 km/s delta-V and no warhead. It relies on kinetic energy from hitting a target directly to deal damage.
 			- Re-balanced the HE-KV-1 missile. The HE-KV-1 now has 3 km/s delta-V with a 60 km range and is best at shorter ranges (under 30 km). The HE-KV-1 retains the same mass.
 			- Orbital guidance missiles now have drag applied to them in atmosphere.	
-	- Gun accuracy improved.
+	- Guns maxDeviation reduced following discovery they were miscalibrated last accuracy refactor; gun accuracy will see up to ~50% improvment across the board.
 	- Fix delay-fuzed rounds occasionally not detonating.
 	- Add support for guided bullets (needs radar/laser lock on target) for specialty ammo, new bulletDef field 'guidanceDPS', sets degrees/sec ammo can turn.
 	- The part menu infocard for Guns now lists weapon accuracy.

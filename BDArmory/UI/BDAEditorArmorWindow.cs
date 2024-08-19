@@ -157,18 +157,28 @@ namespace BDArmory.UI
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
+            var oldResources = vesselResources.ToHashSet();
             vesselResources.Clear();
-                using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
-                    while (part.MoveNext())
+            using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    foreach (PartResource res in part.Current.Resources)
                     {
-                        foreach (PartResource res in part.Current.Resources)
+                        if (!vesselResources.Contains(res.info))
                         {
-                            if (!vesselResources.Contains(res.info))
-                            {
-                                vesselResources.Add(res.info);
-                            }
+                            vesselResources.Add(res.info);
                         }
                     }
+                }
+            var newResources = vesselResources.ToHashSet();
+            newResources.ExceptWith(oldResources); // Newly added resources.
+            var resourceIDs = newResources.Select(res => PartResourceLibrary.Instance.GetDefinition(res.name).id).ToHashSet();
+            resourceIDs.ExceptWith(vesselResourceIDs.ToHashSet()); // Only newly added resources that aren't already added to the IDs list.
+            if (resourceIDs.Count > 0)
+            {
+                vesselResourceIDs.AddRange(resourceIDs);
+                if (!FerramAerospace.hasFAR) CalculateTotalLift();
+            }
         }
 
         private bool delayedRefreshVisuals = false;
@@ -473,6 +483,36 @@ namespace BDArmory.UI
                 }
 #endif
             }
+            if (!FerramAerospace.hasFAR)
+            {
+                resourcePick = GUI.Toggle(new Rect(10, line++ * lineHeight, 280, lineHeight), resourcePick, StringUtils.Localize("#LOC_BDArmory_DryMassWhitelist"), resourcePick ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                if (resourcePick)
+                {
+                    int pos = 0;
+                    using (var res = vesselResources.GetEnumerator())
+                        while (res.MoveNext())
+                        {
+                            if (res.Current.density == 0) continue; //don't show massless resouces for drymass blacklist
+                            if (res.Current.name.Contains("Intake")) continue; //don't include intake air, since that will always be present                            
+                            int resID = PartResourceLibrary.Instance.GetDefinition(res.Current.name).id;
+                            if (GUI.Button(new Rect(10 + (pos % 2) * (280) / 2f, (line + (int)(pos / 2)) * lineHeight, (280) / 2f, lineHeight), $"{res.Current.displayName}", vesselResourceIDs.Contains(resID) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
+                            {
+                                if (!vesselResourceIDs.Contains(resID))
+                                {
+                                    vesselResourceIDs.Add(resID);
+                                }
+                                else
+                                {
+                                    vesselResourceIDs.Remove(resID);
+                                }
+                                CalculateTotalLift();
+                            }
+                            pos++;
+                        }
+                    line += Mathf.CeilToInt(pos / 2f);
+                }
+                line += 0.5f;
+            }
             float StatLines = 0;
             float armorLines = 0;
             if (!BDArmorySettings.RESET_ARMOUR)
@@ -511,34 +551,6 @@ namespace BDArmory.UI
                     }
                     previous_index = selected_index;
                     CalculateArmorMass();
-                }
-                line += 0.5f;
-                resourcePick = GUI.Toggle(new Rect(10, (line++ + armorLines) * lineHeight, 280, lineHeight), resourcePick, StringUtils.Localize("Drymass Resources"), resourcePick ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                if (resourcePick)
-                {
-                    int pos = 0;
-                    line++;
-                    using (var res = vesselResources.GetEnumerator())
-                        while (res.MoveNext())
-                        {
-                            if (res.Current.density == 0) continue; //don't show massless resouces for drymass blacklist
-                            if (res.Current.name.Contains("Intake")) continue; //don't include intake air, since that will always be present                            
-                            int resID = PartResourceLibrary.Instance.GetDefinition(res.Current.name).id;
-                            if (GUI.Button(new Rect(10 + (pos % 2) * (280) / 2f, (line + (int)(pos / 2)) * lineHeight, (280) / 2f, lineHeight), $"{res.Current.displayName}", vesselResourceIDs.Contains(resID) ? BDArmorySetup.BDGuiSkin.button :BDArmorySetup.BDGuiSkin.box))
-                            {
-                                if (!vesselResourceIDs.Contains(resID))
-                                {
-                                    vesselResourceIDs.Add(resID);
-                                }
-                                else
-                                {
-                                    vesselResourceIDs.Remove(resID);
-                                }
-                                CalculateTotalLift();
-                            }
-                            pos++;
-                        }
-                    line += (int)pos/2;
                 }
                 line += 0.5f;
 
@@ -739,11 +751,25 @@ namespace BDArmory.UI
             WLRatioWet = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
             float dMass = 0;
             dMass = EditorLogic.fetch.ship.GetTotalMass();
-            using (var res = vesselResourceIDs.GetEnumerator())
-                while (res.MoveNext())
+            //Debug.Log("[Drymass Debug] VRID #: " + vesselResourceIDs.Count);
+            //using (var res = vesselResourceIDs.GetEnumerator())
+                //while (res.MoveNext())
+                //{
+                    //EditorLogic.fetch.ship.GetConnectedResourceTotals(res.Current, true, out double fuelCurrent, out double fuelmax); //fuelCurrent, fuelMax returning 0 for some reason?
+                    //dMass -= ((float)fuelCurrent * PartResourceLibrary.Instance.GetDefinition(res.Current).density); //substract all currently selected DMResources from wetmass to get drymass; unselected resources included in drymass.
+                    //Debug.Log($"[Drymass Debug]  - dryMass now: {dMass} - res: {PartResourceLibrary.Instance.GetDefinition(res.Current).name}; resAmount: {fuelCurrent}/{fuelmax} ; density: {PartResourceLibrary.Instance.GetDefinition(res.Current).density}");
+                //}
+            using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
+                while (part.MoveNext())
                 {
-                    EditorLogic.fetch.ship.GetConnectedResourceTotals(res.Current, true, out double fuelCurrent, out double fuelmax);
-                    dMass -= ((float)fuelCurrent * PartResourceLibrary.Instance.GetDefinition(res.Current).density); 
+                    foreach (PartResource res in part.Current.Resources) //less optimal, but at least it works.
+                    {
+                       if (vesselResourceIDs.Contains(PartResourceLibrary.Instance.GetDefinition(res.info.name).id))
+                        {
+                            dMass -= (float)res.amount * PartResourceLibrary.Instance.GetDefinition(res.info.name).density; //substract all currently selected DMResources from wetmass to get drymass; unselected resources included in drymass.
+                            //Debug.Log($"[Drymass Debug]  - dryMass now: {dMass} - res: {res.info.name}; resAmount: {res.amount} ; density: {res.info.density}");
+                        }
+                    }
                 }
             wingLoadingDry = totalLift / dMass;
             WLRatioDry = (dMass * 1000) / totalLiftArea;
