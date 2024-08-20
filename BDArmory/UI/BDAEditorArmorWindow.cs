@@ -172,7 +172,7 @@ namespace BDArmory.UI
                 }
             var newResources = vesselResources.ToHashSet();
             newResources.ExceptWith(oldResources); // Newly added resources.
-            var resourceIDs = newResources.Select(res => PartResourceLibrary.Instance.GetDefinition(res.name).id).ToHashSet(); //add all resources to VRID by default so default drymass is true drymass, until specific resouces filtered
+            var resourceIDs = newResources.Select(res => res.id).ToHashSet(); //add all resources to VRID by default so default drymass is true drymass, until specific resouces filtered
             resourceIDs.ExceptWith(vesselResourceIDs.ToHashSet()); // Only newly added resources that aren't already added to the IDs list.
             if (resourceIDs.Count > 0)
             {
@@ -496,7 +496,7 @@ namespace BDArmory.UI
                         {
                             if (res.Current.density == 0) continue; //don't show massless resouces for drymass blacklist
                             if (res.Current.name.Contains("Intake")) continue; //don't include intake air, since that will always be present                            
-                            int resID = PartResourceLibrary.Instance.GetDefinition(res.Current.name).id;
+                            int resID = res.Current.id;
                             var buttonName = res.Current.displayName.Length <= 17 ? res.Current.displayName : res.Current.displayName.Remove(14) + "...";
                             if (GUI.Button(new Rect(pos % 2 == 0 ? 13 : 152f, (line + (int)(pos / 2)) * lineHeight + 1, 135, lineHeight), $"{buttonName}", vesselResourceIDs.Contains(resID) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box)) // match BDGUIComboBox's layout
                             {
