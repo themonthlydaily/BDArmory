@@ -2061,7 +2061,37 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             yield return wait;
                                         }
                                         else
-                                            vesselRadarData.TryLockTarget(targetVessel);
+                                        {
+                                            // if a low lock capacity radar , and it already has a lock on another target, TLT will return false, because the radar already at lock cap
+                                            // end result: radar lock stuck on wrong target; need unlock, then lock if lock num = max locks
+                                            //if availableLocks, tryLocktarget, else, unlock target -> try locktarget
+                                            if (MaxradarLocks <= vesselRadarData.GetLockedTargets().Count) //not currently checking if available radar locks are viable, e.g. a rear-facing radar w/ lock capability
+                                            {
+                                                if (PreviousMissile == null || (PreviousMissile.TargetingMode != MissileBase.TargetingModes.Radar && PreviousMissile.TargetingMode != MissileBase.TargetingModes.Inertial && PreviousMissile.TargetingMode != MissileBase.TargetingModes.Gps))
+                                                    vesselRadarData.UnlockAllTargets();
+                                                else if (PreviousMissile.TargetingMode == MissileBase.TargetingModes.Radar)
+                                                {
+                                                    if (PreviousMissile.ActiveRadar)
+                                                        vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel); //no longer need that lock for guidance, remove
+                                                    else
+                                                    {
+                                                        if (MaxradarLocks > 1) //guiding a SARH, but he have a spare lock...
+                                                        {
+                                                            vesselRadarData.UnlockAllTargets(); //clear everything...
+                                                            vesselRadarData.TryLockTarget(PreviousMissile.targetVessel.Vessel); //and immediately relock the SARH target vessel as a work around for only having unlock everything, and unlockselected
+                                                        }
+                                                        else
+                                                        {
+                                                            if (!CurrentMissile.radarLOAL) //LOAL missiles at least can be dumbfired...
+                                                                if (BDArmorySettings.DEBUG_MISSILES)
+                                                                    Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} cannot fire radar missile, all locks in use! Aborting loaunch!");
+                                                            break; //we need single lock for our previous SARH against the previous target, break; current radar missile will have to wait.
+                                                        }
+                                                    }
+                                                }
+                                                vesselRadarData.TryLockTarget(targetVessel);
+                                            }
+                                        }
                                     }
                                     else
                                         vesselRadarData.TryLockTarget(targetVessel);
