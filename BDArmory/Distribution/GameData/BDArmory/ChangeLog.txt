@@ -36,7 +36,7 @@ IMPROVEMENTS / FIXES
 	- Don't raycast for terrain normals when taking off from water, just use the up direction.
 - Armor / Hull:
 	- Revert invalid HullTypeNum values to that of Aluminium and log a warning.
-	- Fix errors in armor damage calcs causing HE rounds to do decreasong amounds of armor damage over subsequent hits.
+	- Fix errors in armor damage calcs causing HE rounds to do decreasong amounts of armor damage over subsequent hits.
 	- Armor damage/integrity loss now adjustable via the Armor penetration Mult slider in the BDA Settigns menu, General Sliders subsection.
 	- Fix shrapnel damage from explosions phasing through armor.
 - Competition:
