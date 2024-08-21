@@ -670,6 +670,9 @@ namespace BDArmory.Radar
             weaponManager.slavedVelocity = lockedTarget.velocity;
             weaponManager.slavedAcceleration = lockedTarget.acceleration;
             weaponManager.slavedTarget = lockedTarget;
+            //This is only slaving turrets if there's a radar lock on the WM's guardTarget
+            //no radar-guided gunnery for scan radars?
+            //what about multiple turret multitarget tracking?
         }
 
         private void Update()

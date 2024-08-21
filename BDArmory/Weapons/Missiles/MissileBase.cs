@@ -1652,7 +1652,7 @@ namespace BDArmory.Weapons.Missiles
                                     float targetRad = heatTarget.exists && heatTarget.vessel == null ? 1 : targetVessel.Vessel.GetRadius();
                                     // if target is a flare, return 1, else standard vessel radius
                                     float selfRad = vessel.GetRadius();
-                                    float sepRad = 1.7321f * (targetRad + selfRad);
+                                    float sepRad = 1.7321f * (targetRad + selfRad);                                    
 
                                     if (approaching && relVel.sqrMagnitude * Time.fixedDeltaTime * Time.fixedDeltaTime > sepRad * sepRad)
                                     {

@@ -42,7 +42,7 @@ namespace BDArmory.Radar
         [KSPField]
         public double resourceDrain = 0.825;        //resource (EC/sec) usage of active irst
 
-        [KSPField]
+        [KSPField] 
         public string resourceName = "ElectricCharge";
 
         private int resourceID;

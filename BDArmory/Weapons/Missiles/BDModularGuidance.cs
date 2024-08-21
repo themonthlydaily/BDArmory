@@ -833,6 +833,7 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
+
                 // Target information update is one frame behind on vessel.OnFlyByWire, so compensate here
                 Vector3 targetAcceleration = TargetAcceleration;
                 Vector3 targetVelocity = TargetVelocity + Time.fixedDeltaTime * targetAcceleration;

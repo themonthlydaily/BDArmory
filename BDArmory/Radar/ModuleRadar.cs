@@ -46,7 +46,7 @@ namespace BDArmory.Radar
         [KSPField]
         public double resourceDrain = 0.825;        //resource (EC/sec) usage of active radar
 
-        [KSPField]
+        [KSPField] 
         public string resourceName = "ElectricCharge";
 
         private int resourceID;
@@ -315,7 +315,6 @@ namespace BDArmory.Radar
         {
             resourceID = PartResourceLibrary.Instance.GetDefinition(resourceName).id;
         }
-
 
         public void EnsureVesselRadarData()
         {
@@ -1227,4 +1226,5 @@ namespace BDArmory.Radar
             }
         }
     }
+
 }

@@ -1177,11 +1177,13 @@ namespace BDArmory.Damage
                     Armour = Armor;
                 }
             }
+            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[HPTracker] Debug: current Armor: " + Armor + "; ArmorRemaining: " + ArmorRemaining + "; ArmorPanel: " + ArmorPanel);
             if (ArmorPanel)
             {
                 Hitpoints = ArmorRemaining; // * armorVolume * 10;
                 if (Armor <= 0)
                 {
+                    Debug.Log("[HPTracker] Debug: Armor integrity reduced to 0! Destroying panel");
                     DestroyPart();
                 }
             }
