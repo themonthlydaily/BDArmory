@@ -95,6 +95,7 @@ namespace BDArmory.Utils
         static HashSet<string> armorParts;
         public static bool IsArmorPart(Part part)
         {
+            if (part == null) return false;
             if (BDArmorySettings.LEGACY_ARMOR) return false;
             if (armorParts == null)
             {
