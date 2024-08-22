@@ -6165,8 +6165,9 @@ namespace BDArmory.Weapons
                         output.AppendLine($"-Laser takes: {LaserGrowTime} seconds to reach max power");
                         output.AppendLine($"-Maximum output: {laserMaxDamage} damage");
                     }
-                    if (secondaryAmmoPerShot > 0)
+                    if (secondaryAmmoPerShot > 0 || ECPerShot > 0)
                     {
+                        if (secondaryAmmoPerShot == 0) secondaryAmmoPerShot = ECPerShot;
                         if (pulseLaser)
                         {
                             output.AppendLine($"{secondaryAmmoName} required per shot: {secondaryAmmoPerShot}");
@@ -6208,8 +6209,9 @@ namespace BDArmory.Weapons
                 if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} second" + (SpoolUpTime > 1 ? "s" : "") + " to come to max RPM");
                 output.AppendLine();
                 output.AppendLine($"Ammunition: {ammoName}");
-                if (secondaryAmmoPerShot > 0)
+                if (secondaryAmmoPerShot > 0 || ECPerShot > 0)
                 {
+                    if (secondaryAmmoPerShot == 0) secondaryAmmoPerShot = ECPerShot;
                     output.AppendLine($"{secondaryAmmoName} required per shot: {secondaryAmmoPerShot}");
                 }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
