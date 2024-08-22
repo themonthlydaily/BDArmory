@@ -1726,6 +1726,7 @@ namespace BDArmory.Weapons
                         }
                 }
             }
+            PAWRefresh(); // Refresh weapon PAW to enable/disable any extra options
         }
 
         IEnumerator EnableWeaponNextFrame()
