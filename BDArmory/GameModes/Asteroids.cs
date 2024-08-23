@@ -766,6 +766,7 @@ namespace BDArmory.GameModes
             Vector3 averagePosition;
             float factor = 0;
             float repulseTimer = Time.time;
+            float Rscale = 0.04f * radius * radius; // 20% of the field radius.
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
@@ -781,8 +782,8 @@ namespace BDArmory.GameModes
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
                             // factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction, i.e., asteroids within 1km.
-                            var R = (float)offset.sqrMagnitude / 1e6f;
-                            factor = 0.25f + 3f * R * (1f - R); // 0.25 at 0m, 1 at 707m, 0 at 1.038km (reduced attraction at close range to avoid inescapable asteroids).
+                            var R = (float)offset.sqrMagnitude / Rscale;
+                            factor = 0.25f + 3f * R * (1f - R); // 0.25 at 0m, 1 at 707m, 0 at 1.038km (for 1km Rscale) (reduced attraction at close range to avoid inescapable asteroids).
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 70) // Punish immobile turrets
                             {
                                 float twr = VesselModuleRegistry.GetModuleEngines(weaponManager.vessel).Where(e => e != null && e.allowRestart).Sum(e => e.MaxThrustOutputVac(true)) / (weaponManager.vessel.GetTotalMass() * (float)PhysicsGlobals.GravitationalAcceleration);
