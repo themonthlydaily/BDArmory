@@ -3147,6 +3147,11 @@ namespace BDArmory.UI
                 {
                     if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_Max_Armor_Limit")}:  {(BDArmorySettings.MAX_ARMOR_LIMIT >= 0 ? $"{BDArmorySettings.MAX_ARMOR_LIMIT:0}" : "Unclamped")}", leftLabel); // Armor Limit
+                if (BDArmorySettings.MAX_ARMOR_LIMIT != (BDArmorySettings.MAX_ARMOR_LIMIT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_ARMOR_LIMIT, -1, 100))))
+                {
+                    if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                }
 
                 line += 0.5f;
             }

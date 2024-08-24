@@ -174,6 +174,7 @@ namespace BDArmory.UI
             }
             if (WaygateCount >= 0) SelectedModel = Path.GetFileNameWithoutExtension(gateFiles[(int)SelectedGate]);
             else Debug.LogWarning($"[BDArmory.VesselSpawnerWindow]: No waypoint gate models found in {Gatepath}!");
+            if (BDArmorySettings.WAYPOINT_COURSE_INDEX >= WaypointCourses.CourseLocations.Count) BDArmorySettings.WAYPOINT_COURSE_INDEX = 0; // Sanitise the index in case the course list has changed.
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -580,6 +581,9 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.SHOW_WAYPOINTS_OPTIONS)
                 {
+                    // Sanitise the waypoint course index in case the course list has changed.
+                    BDArmorySettings.WAYPOINT_COURSE_INDEX = Mathf.Clamp(BDArmorySettings.WAYPOINT_COURSE_INDEX, 0, WaypointCourses.CourseLocations.Count - 1);
+
                     // Select waypoint course
                     string waypointCourseName;
                     /*
