@@ -53,6 +53,7 @@ namespace BDArmory.Control
         private float reverseForwardThrustRatio = 0f;
         private List<ModuleEngines> forwardEngines = new List<ModuleEngines>();
         private List<ModuleEngines> reverseEngines = new List<ModuleEngines>();
+        private List<ModuleEngines> rcsEngines = new List<ModuleEngines>();
         private bool currentForwardThrust;
 
         private Vector3 maxAngularAcceleration;
@@ -1724,6 +1725,16 @@ namespace BDArmory.Control
                     reverseEngines.Add(engine);
                     reverseThrust += engine.MaxThrustOutputVac(true);
                 }
+                else 
+                {
+                    if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) > 0.5f || 
+                        Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) < -0.5f ||
+                        Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.forward) > 0.5f ||
+                        Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.forward) < -0.5f)
+                        rcsEngines.Add(engine); //grab engines pointing sideways. Not grabbing fore/aft engines since while those would impart some torque,
+                                                //ship design is generally going to be long and anrrow, so torque imparted would be minimal while adding noticable forward/reverse vel
+                    engine.thrustPercentage = 0; //activate and set to 0 thrust so they're ready when needed
+                }
             }
             if (ReverseThrust && reverseEngines.Count == 0) // Disable reverse thrust if no reverse engines available
             {
@@ -1898,6 +1909,34 @@ namespace BDArmory.Control
                 Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
                 Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
                 Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
+
+            for (int i = 0; i < rcsEngines.Count; i++)
+            {
+                float giveThrust = 0;
+                Vector3 ctrlVector = (Vector3.Cross(-vessel.ReferenceTransform.forward, -vessel.ReferenceTransform.up) * steerPitch) + (-vessel.ReferenceTransform.forward * steerYaw); //not concerning oourselves w/ roll atm
+                bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0;
+
+                giveThrust = Vector3.Project(-ctrlVector, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, ctrlVector));
+                //else //invert thrust of sideways engines behind CoM to provide rotational, rather than translational, force.
+                //giveThrust = Vector3.Project(inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
+                if (frontMount) giveThrust *= -1;
+
+                Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
+                if (Mathf.Clamp01(giveThrust) > 0.13f)
+                {
+                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
+                }
+                else
+                {
+                    rcsEngines[i].thrustPercentage = 0; //ToDo - figure out interaction with battleDamage, since that also works via modifying thrustpercentage
+                    //rcsEngines[i].thrustPercentage *= GetDamagePercentage()?
+                }
+                //This really should go into flightControlState instead so it links into standard RCS/SAS control input
+            }
+
+
+
+
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
