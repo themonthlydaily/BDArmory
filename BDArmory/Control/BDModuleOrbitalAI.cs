@@ -1710,6 +1710,7 @@ namespace BDArmory.Control
             if (!ReverseThrust && !forceUpdate) return;
             forwardEngines.Clear();
             reverseEngines.Clear();
+            rcsEngines.Clear();
             float forwardThrust = 0f;
             float reverseThrust = 0f;
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
@@ -1733,7 +1734,12 @@ namespace BDArmory.Control
                         Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.forward) < -0.5f)
                         rcsEngines.Add(engine); //grab engines pointing sideways. Not grabbing fore/aft engines since while those would impart some torque,
                                                 //ship design is generally going to be long and anrrow, so torque imparted would be minimal while adding noticable forward/reverse vel
-                    engine.thrustPercentage = 0; //activate and set to 0 thrust so they're ready when needed
+                    if (engine.MaxThrustOutputVac(true) > 0) //just in case someone has mounted jets to the side of their space cruiser for some reason
+                    {
+                        engine.Activate();
+                        engine.independentThrottle = true;
+                        engine.independentThrottlePercentage = 0; //activate and set to 0 thrust so they're ready when needed
+                    }
                 }
             }
             if (ReverseThrust && reverseEngines.Count == 0) // Disable reverse thrust if no reverse engines available
@@ -1922,21 +1928,20 @@ namespace BDArmory.Control
                 if (frontMount) giveThrust *= -1;
 
                 Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
-                if (Mathf.Clamp01(giveThrust) > 0.13f)
+                if (giveThrust > 0.13f)
                 {
-                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
+                    rcsEngines[i].independentThrottlePercentage = (1 - Mathf.Clamp01(giveThrust)) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
+                    //also probably needs PID plugin
+                }
+                if (giveThrust > 0.95f)
+                {
+                    rcsEngines[i].independentThrottlePercentage = 0;
                 }
                 else
                 {
-                    rcsEngines[i].thrustPercentage = 0; //ToDo - figure out interaction with battleDamage, since that also works via modifying thrustpercentage
-                    //rcsEngines[i].thrustPercentage *= GetDamagePercentage()?
+                    rcsEngines[i].independentThrottlePercentage = 0;
                 }
-                //This really should go into flightControlState instead so it links into standard RCS/SAS control input
             }
-
-
-
-
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
