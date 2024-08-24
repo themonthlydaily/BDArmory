@@ -2891,6 +2891,29 @@ namespace BDArmory.UI
                         // {
                         //     foreach (var body in FlightGlobals.Bodies) Debug.Log($"DEBUG Min Safe Altitude for {body.GetName()} is {body.MinSafeAltitude()}m");
                         // }
+                        // if (HighLogic.LoadedSceneIsEditor && GUI.Button(SLineRect(++line), "Test GetConnectedResourceTotals"))
+                        // {
+                        //     EditorLogic.fetch.ship.UpdateResourceSets();
+                        //     float dMass = 0;
+                        //     foreach (var res in EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r.info).ToHashSet()) // Unique resource infos on the ship.
+                        //     {
+                        //         EditorLogic.fetch.ship.GetConnectedResourceTotals(res.id, true, out double fuelCurrent, out double fuelMax);
+                        //         dMass -= (float)fuelCurrent * res.density;
+                        //         Debug.Log($"DEBUG res {res.name}, ID: {res.id}, current: {fuelCurrent}, max: {fuelMax}, mass: {(float)fuelCurrent * res.density}");
+                        //     }
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = -EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r.info).ToHashSet().Select(res => { EditorLogic.fetch.ship.GetConnectedResourceTotals(res.id, true, out double fuelCurrent, out double fuelMax); return (float)fuelCurrent * res.density; }).Sum();
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = 0;
+                        //     foreach (var part in EditorLogic.fetch.ship.parts)
+                        //         foreach (var res in part.Resources)
+                        //         {
+                        //             dMass -= (float)res.amount * res.info.density;
+                        //         }
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = -EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r).Select(res => (float)res.amount * res.info.density).Sum();
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        // }
                     }
 #endif
                 }

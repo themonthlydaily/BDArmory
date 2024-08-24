@@ -47,6 +47,7 @@ namespace BDArmory.UI
         private float WLRatioDry;
         private List<PartResourceDefinition> vesselResources;
         private List<int> vesselResourceIDs;
+        private Rect vesselResourceBoxRect = new(10, 0, 280, 0);
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
@@ -157,28 +158,6 @@ namespace BDArmory.UI
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
-            var oldResources = vesselResources.ToHashSet();
-            vesselResources.Clear();
-            using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (part.MoveNext())
-                {
-                    foreach (PartResource res in part.Current.Resources)
-                    {
-                        if (!vesselResources.Contains(res.info))
-                        {
-                            vesselResources.Add(res.info);
-                        }
-                    }
-                }
-            var newResources = vesselResources.ToHashSet();
-            newResources.ExceptWith(oldResources); // Newly added resources.
-            var resourceIDs = newResources.Select(res => PartResourceLibrary.Instance.GetDefinition(res.name).id).ToHashSet(); //add all resources to VRID by default so default drymass is true drymass, until specific resouces filtered
-            resourceIDs.ExceptWith(vesselResourceIDs.ToHashSet()); // Only newly added resources that aren't already added to the IDs list.
-            if (resourceIDs.Count > 0)
-            {
-                vesselResourceIDs.AddRange(resourceIDs);
-                if (!FerramAerospace.hasFAR) CalculateTotalLift();
-            }
         }
 
         private bool delayedRefreshVisuals = false;
@@ -213,7 +192,7 @@ namespace BDArmory.UI
                         if (hp == null || hp.Ready) return null;
                         return hp;
                     }).Where(hp => hp != null).Select(hp => $"{hp.part.name}: {hp.Why}"));
-                //Debug.LogWarning($"[BDArmory.BDAEditorArmorWindow]: Ship HP failed to settle within {countLimit} frames.{(string.IsNullOrEmpty(reason) ? "" : $" {reason}")}");
+                Debug.LogWarning($"[BDArmory.BDAEditorArmorWindow]: Ship HP failed to settle within {countLimit} frames.{(string.IsNullOrEmpty(reason) ? "" : $" {reason}")}");
             }
             delayedRefreshVisualsInProgress = false;
 
@@ -233,6 +212,27 @@ namespace BDArmory.UI
                 }
                 shipModifiedfromCalcArmor = false;
                 CalculateArmorMass();
+
+                var oldResources = vesselResources.ToHashSet();
+                vesselResources.Clear();
+                using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        foreach (PartResource res in part.Current.Resources)
+                        {
+                            if (!vesselResources.Contains(res.info))
+                            {
+                                vesselResources.Add(res.info);
+                            }
+                        }
+                    }
+                var newResources = vesselResources.ToHashSet();
+                newResources.ExceptWith(oldResources); // Newly added resources.
+                var resourceIDs = newResources.Select(res => res.id).ToHashSet(); //add all resources to VRID by default so default drymass is true drymass, until specific resouces filtered
+                resourceIDs.ExceptWith(vesselResourceIDs.ToHashSet()); // Only newly added resources that aren't already added to the IDs list.
+                if (resourceIDs.Count > 0)
+                    vesselResourceIDs.AddRange(resourceIDs);
+
                 if (!FerramAerospace.hasFAR)
                     CalculateTotalLift(); // Re-calculate lift and wing loading on armor change
                 //Debug.Log("[ArmorTool] Recalculating mass/lift");
@@ -272,7 +272,7 @@ namespace BDArmory.UI
         public void ShowToolbarGUI()
         {
             showArmorWindow = true;
-            CalculateArmorMass();
+            OnEditorShipModifiedEvent(EditorLogic.fetch.ship); // Trigger updating of stuff.
         }
 
         public void HideToolbarGUI()
@@ -489,14 +489,15 @@ namespace BDArmory.UI
                 resourcePick = GUI.Toggle(new Rect(10, line++ * lineHeight, 280, lineHeight), resourcePick, StringUtils.Localize("#LOC_BDArmory_DryMassWhitelist"), resourcePick ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 if (resourcePick)
                 {
-                    GUI.Box(new Rect(10, line * lineHeight - 2, 280, Mathf.CeilToInt(vesselResourceIDs.Count / 2f - 1) * lineHeight + 6), "", BDArmorySetup.BDGuiSkin.box); // l,r,t,b = 3,3,3,3 with slight overlap of the toggle
+                    vesselResourceBoxRect.y = line * lineHeight - 2;
+                    GUI.Box(vesselResourceBoxRect, "", BDArmorySetup.BDGuiSkin.box); // l,r,t,b = 3,3,3,3 with slight overlap of the toggle
                     int pos = 0;
                     using (var res = vesselResources.GetEnumerator())
                         while (res.MoveNext())
                         {
                             if (res.Current.density == 0) continue; //don't show massless resouces for drymass blacklist
                             if (res.Current.name.Contains("Intake")) continue; //don't include intake air, since that will always be present                            
-                            int resID = PartResourceLibrary.Instance.GetDefinition(res.Current.name).id;
+                            int resID = res.Current.id;
                             var buttonName = res.Current.displayName.Length <= 17 ? res.Current.displayName : res.Current.displayName.Remove(14) + "...";
                             if (GUI.Button(new Rect(pos % 2 == 0 ? 13 : 152f, (line + (int)(pos / 2)) * lineHeight + 1, 135, lineHeight), $"{buttonName}", vesselResourceIDs.Contains(resID) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box)) // match BDGUIComboBox's layout
                             {
@@ -506,12 +507,13 @@ namespace BDArmory.UI
                                 }
                                 else
                                 {
-                                    vesselResourceIDs.Remove(resID); //resouce to be counded as drymass
+                                    vesselResourceIDs.Remove(resID); //resouce to be counted as drymass
                                 }
                                 CalculateTotalLift();
                             }
                             pos++;
                         }
+                    vesselResourceBoxRect.height = Mathf.CeilToInt(pos / 2f) * lineHeight + 6;
                     line += Mathf.CeilToInt(pos / 2f) + 0.25f;
                 }
             }
@@ -737,6 +739,7 @@ namespace BDArmory.UI
             if (EditorLogic.RootPart == null)
                 return;
 
+            var totalMass = EditorLogic.fetch.ship.GetTotalMass();
             totalLift = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
@@ -748,34 +751,11 @@ namespace BDArmory.UI
                         totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-            wingLoadingWet = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
+            wingLoadingWet = totalLift / totalMass; //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
             totalLiftArea = totalLift * 3.52f;
-            WLRatioWet = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
-            float dMass = 0;
-            dMass = EditorLogic.fetch.ship.GetTotalMass();
-            /*
-            //Debug.Log("[Drymass Debug] VRID #: " + vesselResourceIDs.Count);
-            //using (var res = vesselResourceIDs.GetEnumerator())
-                //while (res.MoveNext())
-                //{
-                    //EditorLogic.fetch.ship.GetConnectedResourceTotals(res.Current, true, out double fuelCurrent, out double fuelmax); //fuelCurrent, fuelMax returning 0 for some reason?
-                    //dMass -= ((float)fuelCurrent * PartResourceLibrary.Instance.GetDefinition(res.Current).density); //substract all currently selected DMResources from wetmass to get drymass; unselected resources included in drymass.
-                    //Debug.Log($"[Drymass Debug]  - dryMass now: {dMass} - res: {PartResourceLibrary.Instance.GetDefinition(res.Current).name}; resAmount: {fuelCurrent}/{fuelmax} ; density: {PartResourceLibrary.Instance.GetDefinition(res.Current).density}");
-                //}
-            using (var part = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (part.MoveNext())
-                {
-                    foreach (PartResource res in part.Current.Resources) //less optimal, but at least it works.
-                    {
-                       if (vesselResourceIDs.Contains(PartResourceLibrary.Instance.GetDefinition(res.info.name).id))
-                        {
-                            dMass -= (float)res.amount * PartResourceLibrary.Instance.GetDefinition(res.info.name).density; //substract all currently selected DMResources from wetmass to get drymass; unselected resources included in drymass.
-                            //Debug.Log($"[Drymass Debug]  - dryMass now: {dMass} - res: {res.info.name}; resAmount: {res.amount} ; density: {res.info.density}");
-                        }
-                    }
-                }
-            */
-            dMass -= EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r.info).ToHashSet().Where(res => vesselResourceIDs.Contains(res.id)).Select(res => { EditorLogic.fetch.ship.GetConnectedResourceTotals(res.id, true, out double fuelCurrent, out double fuelMax); return (float)fuelCurrent * res.density; }).Sum();
+            WLRatioWet = totalMass * 1000 / totalLiftArea;
+            float dMass = totalMass - EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r).Where(res => vesselResourceIDs.Contains(res.info.id)).Select(res => (float)res.amount * res.info.density).Sum();
+
             wingLoadingDry = totalLift / dMass;
             WLRatioDry = (dMass * 1000) / totalLiftArea;
             CalculateTotalLiftStacking();
