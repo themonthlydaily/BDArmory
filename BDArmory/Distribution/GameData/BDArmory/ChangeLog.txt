@@ -1,4 +1,10 @@
-﻿1.7.0.0
+﻿IMPROVEMENTS / FIXES
+- Armor:
+	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
+- Competition:
+	- Auto-generated tournaments use the last used world.
+
+1.7.0.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fixes for post-build event instructions on Windows to allow for different 7zip executables.

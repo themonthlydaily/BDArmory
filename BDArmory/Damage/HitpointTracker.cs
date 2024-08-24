@@ -296,6 +296,11 @@ namespace BDArmory.Damage
                 }
                 Hitpoints = maxHitPoints_;
                 if (!ArmorSet) overrideArmorSetFromConfig();
+                if (BDArmorySettings.MAX_ARMOR_LIMIT >= 0)
+                {
+                    maxSupportedArmor = Mathf.Min(BDArmorySettings.MAX_ARMOR_LIMIT, maxSupportedArmor);
+                    Armor = Mathf.Min(Armor, maxSupportedArmor);
+                }
 
                 previousHitpoints = maxHitPoints_;
                 part.RefreshAssociatedWindows();
