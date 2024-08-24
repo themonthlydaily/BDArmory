@@ -670,10 +670,12 @@ namespace BDArmory.GameModes
             asteroids = null; // Clear the current array of asteroids.
             if (asteroidPool != null)
             {
+                var preRange = PhysicsRangeExtender.GetPRERange();
                 foreach (var asteroid in asteroidPool)
                 {
                     if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
+                    if (asteroid.transform.position.sqrMagnitude > preRange * preRange) { Destroy(asteroid); } // Destroy asteroids beyond the PRE range as they don't reset properly.
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
                 if (destroyAsteroids) { asteroidPool.Clear(); }
