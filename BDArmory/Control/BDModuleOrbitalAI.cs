@@ -1621,6 +1621,21 @@ namespace BDArmory.Control
             }
 
             fc.RCSVector = inputVec;
+            for (int i = 0; i < rcsEngines.Count; i++)
+            {
+                float giveThrust = 0;
+                giveThrust = Vector3.Project(-inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
+
+                if (giveThrust > 0.13f)
+                {
+                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
+                }
+                else
+                {
+                    //rcsEngines[i].independentThrottlePercentage = 0;
+                    rcsEngines[i].thrustPercentage = 0;
+                }
+            }
         }
 
         private void UpdateBurnAlignmentTolerance()
@@ -1737,8 +1752,9 @@ namespace BDArmory.Control
                     if (engine.MaxThrustOutputVac(true) > 0) //just in case someone has mounted jets to the side of their space cruiser for some reason
                     {
                         engine.Activate();
-                        engine.independentThrottle = true;
-                        engine.independentThrottlePercentage = 0; //activate and set to 0 thrust so they're ready when needed
+                        if (!engine.independentThrottle) engine.independentThrottle = true;
+                        engine.thrustPercentage = 0; //activate and set to 0 thrust so they're ready when needed
+                        if (engine.independentThrottlePercentage == 0) engine.independentThrottlePercentage = 100;
                     }
                 }
             }
@@ -1915,31 +1931,30 @@ namespace BDArmory.Control
                 Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
                 Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
                 Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
-
+ 
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 float giveThrust = 0;
-                Vector3 ctrlVector = (Vector3.Cross(-vessel.ReferenceTransform.forward, -vessel.ReferenceTransform.up) * steerPitch) + (-vessel.ReferenceTransform.forward * steerYaw); //not concerning oourselves w/ roll atm
+                Vector3 ctrlVector = (-vessel.ReferenceTransform.right * steerPitch) + (-vessel.ReferenceTransform.forward * steerYaw); //not concerning oourselves w/ roll atm
                 bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0;
 
-                giveThrust = Vector3.Project(-ctrlVector, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, ctrlVector));
+                //giveThrust = Vector3.Project(-ctrlVector, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, ctrlVector));
+                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, ctrlVector);
                 //else //invert thrust of sideways engines behind CoM to provide rotational, rather than translational, force.
-                //giveThrust = Vector3.Project(inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
+                //change to Vector3.Dot for 1 to -1 clamping?
                 if (frontMount) giveThrust *= -1;
 
-                Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
+                //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
                 if (giveThrust > 0.13f)
                 {
-                    rcsEngines[i].independentThrottlePercentage = (1 - Mathf.Clamp01(giveThrust)) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
+                    rcsEngines[i].thrustPercentage = (1.13f - Mathf.Clamp01(giveThrust)) * 100;
+                    //rcsEngines[i].independentThrottlePercentage = (1 - Mathf.Clamp01(giveThrust)) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
                     //also probably needs PID plugin
-                }
-                if (giveThrust > 0.95f)
-                {
-                    rcsEngines[i].independentThrottlePercentage = 0;
                 }
                 else
                 {
-                    rcsEngines[i].independentThrottlePercentage = 0;
+                    //rcsEngines[i].independentThrottlePercentage = 0;
+                    rcsEngines[i].thrustPercentage = 0;
                 }
             }
 
