@@ -2093,7 +2093,9 @@ namespace BDArmory.Radar
             {
                 Vector3 relV = missile.vessel.Velocity() - mf.vessel.Velocity();
                 bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-                bool teammate = (VesselModuleRegistry.GetMissileFire(missile.SourceVessel).team == mf.team) && (missile.targetVessel != null ? missile.targetVessel != mf.vessel : true); // Missile is fired from teammate and not locked onto us
+                bool teammate = false; // Missile isn't coming from teammate
+                if (missile.SourceVessel != null && VesselModuleRegistry.GetMissileFire(missile.SourceVessel) != null)
+                    teammate = (VesselModuleRegistry.GetMissileFire(missile.SourceVessel).team == mf.team) && (missile.targetVessel != null ? missile.targetVessel != mf.vessel : true); // Missile is fired from teammate and not locked onto us
                 bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar && !teammate) ?
                     (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
                 var missileBlastRadiusSqr = teammate ? mf.vessel.GetRadius() : 3f * Mathf.Max(missile.GetBlastRadius(), mf.vessel.GetRadius()); // Blast radius or self radius, whichever is larger (use self radius if missile is from teammate)
