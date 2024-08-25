@@ -2154,7 +2154,7 @@ namespace BDArmory.Weapons
                                         part.rb.AddForceAtPosition(-fireTransform.forward * ((S6R5dynamicRecoil * 2) / (roundsPerMinute / 60)),
                                         fireTransform.position, ForceMode.Impulse);
                                     else
-                                        //doesn't take propellant gass mass into account; GAU-8 should be 44kN, yields 29.9; Vulc should be 14.2, yields ~10.4; GAU-22 16.5, yields 11.9
+                                        //doesn't take propellant gas mass into account; GAU-8 should be 44kN, yields 29.9; Vulc should be 14.2, yields ~10.4; GAU-22 16.5, yields 11.9
                                         //Adding a mult of 1.4 brings the GAU8 to 41.8, Vulc to 14.5, GAU-22 to 16.6; not exact, but a reasonably close approximation that looks to scale consistantly across ammos
                                         part.rb.AddForceAtPosition((-fireTransform.forward * (bulletVelocity * (bulletMass * ProjectileCount) / 1000) * 1.4f * BDArmorySettings.RECOIL_FACTOR * recoilReduction),
                                             fireTransform.position, ForceMode.Impulse);
@@ -3240,18 +3240,21 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.INFINITE_AMMO) return true;
             if (secondaryAmmoPerShot != 0)
             {
-                vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
-                if (EcCurrent > secondaryAmmoPerShot * (electricResource ? 0.95f : 1) || (electricResource && CheatOptions.InfiniteElectricity))
+                if (!(electricResource && CheatOptions.InfiniteElectricity)) //else skip to main ammo as EC is accounted for
                 {
-                    part.RequestResource(ECID, secondaryAmmoPerShot, ResourceFlowMode.ALL_VESSEL);
-                    if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
+                    vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
+                    if (EcCurrent > secondaryAmmoPerShot * (electricResource ? 0.95f : 1))
+                    {
+                        part.RequestResource(ECID, secondaryAmmoPerShot, electricResource ? ResourceFlowMode.ALL_VESSEL : ResourceFlowMode.STACK_PRIORITY_SEARCH);
+                        if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
+                    }
+                    else
+                    {
+                        if (part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(secondaryAmmoName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        return false;
+                    }
+                    //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
                 }
-                else
-                {
-                    if (part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage($"{part.partInfo.title} {StringUtils.Localize("#autoLOC_244332")} {PartResourceLibrary.Instance.GetDefinition(secondaryAmmoName).displayName}", 5.0f, ScreenMessageStyle.UPPER_CENTER);
-                    return false;
-                }
-                //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
             vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
             ammoCount = ammoCurrent;
