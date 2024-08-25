@@ -674,6 +674,7 @@ namespace BDArmory.GameModes
                 {
                     if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
+                    if (asteroid.mainBody != FlightGlobals.currentMainBody) { Destroy(asteroid); } // Destroy asteroids that have changes SoI as they don't reset properly.
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
                 if (destroyAsteroids) { asteroidPool.Clear(); }

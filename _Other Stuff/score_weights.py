@@ -15,6 +15,7 @@
 #   Total: 352 rounds, 800 heats.
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -24,44 +25,15 @@ parser.add_argument('-f', '--full', action='store_true', help="Use the full comp
 parser.add_argument('-sw', '--show-weights', action='store_true', help="Show the weights, then quit.")
 args = parser.parse_args()
 
-weights = list({
-  'wins':                 1.0,
-  'survivedCount':        0.0,
-  'miaCount':             0.0,
-  'deathCount':           -1.0,
-  'deathOrder':           1.0,
-  'deathTime':            0.002,
-  'cleanKills':           3.0,
-  'assists':              1.5,
-  'hits':                 0.004,
-  'hitsTaken':            0.0,
-  'bulletDamage':         0.0001,
-  'bulletDamageTaken':    4e-05,
-  'rocketHits':           0.035,
-  'rocketHitsTaken':      0.0,
-  'rocketPartsHit':       0.0006,
-  'rocketPartsHitTaken':  0.0,
-  'rocketDamage':         0.00015,
-  'rocketDamageTaken':    5e-05,
-  'missileHits':          0.15,
-  'missileHitsTaken':     0.0,
-  'missilePartsHit':      0.002,
-  'missilePartsHitTaken': 0.0,
-  'missileDamage':        3e-05,
-  'missileDamageTaken':   1.5e-05,
-  'ramScore':             0.075,
-  'ramScoreTaken':        0.0,
-  'battleDamage':         0.0,
-  'partsLostToAsteroids': 0.0,
-  'HPremaining':          0.0,
-  'accuracy':             0.0,
-  'rocket_accuracy':      0.0,
-  'waypointCount':        10.0,
-  'waypointTime':         -1.0,
-  'waypointDeviation':    -1.0
-}.values())
+if len(args.filenames) == 0:
+  print(f"Please provide some tournament folders, e.g., Tournament*")
+  exit(0)
+
+with open(Path(args.filenames[0]) / 'summary.json', 'r') as f:
+  meta = json.load(f)
+weights = list(meta['meta']['score weights'].values())  # Read the weights used to parse the first tournament and assume that it's the same for all.
 wIndex = {0: 0, 3: 3, 12: 6, 17: 7, 18: 8, 20: 10, 21: 11, 22: 12, 24: 14, 26: 16, 27: 17, 28: 18, 30: 20, 32: 22, 33: 23, 34: 24}  # Convert between summary.csv indexing and score parser weight indexing.
-entries = {'wins':0, 'deaths': 3, 'kills': 12, 'assists': 17, 'hit': 18, 'dmg': 20, 'dmgIn': 21, 'Rstr': 22, 'Rhit': 24, 'Rdmg': 26, 'RdmgIn': 27, 'Mstr': 28, 'Mhit': 30, 'Mdmg': 32, 'MdmgIn': 33, 'ram': 34}
+entries = {'wins': 0, 'deaths': 3, 'kills': 12, 'assists': 17, 'hit': 18, 'dmg': 20, 'dmgIn': 21, 'Rstr': 22, 'Rhit': 24, 'Rdmg': 26, 'RdmgIn': 27, 'Mstr': 28, 'Mhit': 30, 'Mdmg': 32, 'MdmgIn': 33, 'ram': 34}
 
 if args.show_weights:
   for k, v in entries.items():
@@ -75,7 +47,8 @@ for filename in args.filenames:
     scores = [[float(v) for v in row.strip().split(',')[2:-8]] for row in data[1:craft_count + 1]]
     rnds = len([l for l in data if "Per Round" in l][0].strip().split(',')) - 1
   prop = {k: [] for k in entries}
-  for score in scores[:len(scores) // (1 if args.full else 2)]:  # Only take the top half (unless specified not to), assuming that the lower half has poor statistics due to low counts in the various fields. Including fewer increases the ratios and vice-versa.
+  # Only take the top half (unless specified not to), assuming that the lower half has poor statistics due to low counts in the various fields. Including fewer increases the ratios and vice-versa.
+  for score in scores[:len(scores) // (1 if args.full else 2)]:
     for k, v in entries.items():
       prop[k].append(score[v] * weights[wIndex[v]] / rnds)
   proposed[filename] = {k: round(sum(v) / len(v), 2) for k, v in prop.items()}
@@ -85,5 +58,5 @@ for filename in proposed:
   proposed[filename]['wkda'] = round(sum(proposed[filename][k] for k in ('wins', 'kills', 'deaths', 'assists')), 3)
   proposed[filename]['hd'] = round(sum(proposed[filename][k] for k in ('hit', 'dmg', 'dmgIn', 'Rstr', 'Rhit', 'Rdmg', 'RdmgIn', 'Mstr', 'Mhit', 'Mdmg', 'MdmgIn', 'ram')), 3)
   proposed[filename]['wkda/hd'] = proposed[filename]['wkda'] / proposed[filename]['hd']
-print(f"\nAverage wkda / hd: {sum(proposed[filename]['wkda/hd'] for filename in proposed)/len(proposed):.3f}")
+print(f"\nAverage wkda / hd: {sum(proposed[filename]['wkda/hd'] for filename in proposed) / len(proposed):.3f}")
 print("\n".join(f"{v['wkda']:4g} / {v['hd']:4g} = {v['wkda/hd']:6.4g} : {k}" for k, v in proposed.items()))

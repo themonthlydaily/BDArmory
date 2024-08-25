@@ -196,6 +196,10 @@ namespace BDArmory.VesselSpawning
                     spawnPoint = hit.point + (float)spawnConfig.altitude * hit.normal;
                 }
             }
+            else
+            {
+                yield return waitForFixedUpdate; // Wait a frame so that the floating origin shift has time to do its thing.
+            }
         }
         #endregion
 
