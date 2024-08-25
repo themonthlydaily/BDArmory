@@ -1752,7 +1752,7 @@ namespace BDArmory.Control
                     if (engine.MaxThrustOutputVac(true) > 0) //just in case someone has mounted jets to the side of their space cruiser for some reason
                     {
                         engine.Activate();
-                        if (!engine.independentThrottle) engine.independentThrottle = true;
+                        if (!engine.independentThrottle) engine.independentThrottle = true; //using independent throttle so these can fire while main engines are off but not shudown
                         engine.thrustPercentage = 0; //activate and set to 0 thrust so they're ready when needed
                         if (engine.independentThrottlePercentage == 0) engine.independentThrottlePercentage = 100;
                     }
@@ -1802,6 +1802,28 @@ namespace BDArmory.Control
                 foreach (var engine in forwardEngines)
                     engine.Shutdown();
                 currentForwardThrust = false;
+            }
+            if (!PIDActive) //technically should be in the UpdateSAS section of Airspeed control, but all the lists and vectors are here
+            {
+                for (int i = 0; i < rcsEngines.Count; i++)
+                {
+                    float giveThrust = 0;
+                    bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0;
+                    giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, fc.attitude);
+                    if (frontMount) giveThrust *= -1;
+
+                    //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
+                    if (giveThrust > 0.13f)
+                    {
+                        rcsEngines[i].thrustPercentage = (1.13f - Mathf.Clamp01(giveThrust)) * 100; //decrease thrust as we come on-target
+                        //should probably have some sort of maxRotPerSec clamp to prevent the RCS engines from continuously firing
+                        //and making the vessel massively overshoot
+                    }
+                    else
+                    {
+                        rcsEngines[i].thrustPercentage = 0;
+                    }
+                }
             }
         }
 
@@ -1941,7 +1963,7 @@ namespace BDArmory.Control
                 //giveThrust = Vector3.Project(-ctrlVector, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, ctrlVector));
                 giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, ctrlVector);
                 //else //invert thrust of sideways engines behind CoM to provide rotational, rather than translational, force.
-                //change to Vector3.Dot for 1 to -1 clamping?
+                //change to Vector3.Dot for 1 to -1 clamping
                 if (frontMount) giveThrust *= -1;
 
                 //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
