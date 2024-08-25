@@ -1621,7 +1621,7 @@ namespace BDArmory.Control
             }
 
             fc.RCSVector = inputVec;
-            for (int i = 0; i < rcsEngines.Count; i++)  //this is working nicely, at least
+            for (int i = 0; i < rcsEngines.Count; i++) 
             {
                 float giveThrust = 0;
                 giveThrust = Vector3.Project(-inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
@@ -1927,8 +1927,6 @@ namespace BDArmory.Control
             Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
             Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
             Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
-
-            
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
