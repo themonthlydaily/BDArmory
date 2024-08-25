@@ -1045,23 +1045,7 @@ namespace BDArmory.FX
                                 }
                                 // Update scoring structures
                                 //damage = Mathf.Clamp(damage, 0, part.Damage()); //if we want to clamp overkill score inflation
-                                var aName = eventToExecute.SourceVesselName; // Attacker
-                                var tName = part.vessel.GetName(); // Target
-                                switch (ExplosionSource)
-                                {
-                                    case ExplosionSourceType.Bullet:
-                                        BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.Rocket:
-                                        BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.Missile:
-                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.BattleDamage:
-                                        BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
-                                        break;
-                                }
+                                ProjectileUtils.ApplyScore(part, eventToExecute.SourceVesselName, 0, damage, null, ExplosionSource);
                             }
                         }
                     }

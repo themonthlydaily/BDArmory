@@ -162,6 +162,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
         [BDAPersistentSettingsField] public static float HP_THRESHOLD = 2000;                    //HP above this value will be scaled to a logarithmic value
         [BDAPersistentSettingsField] public static float HP_CLAMP = 0;                           //HP will be clamped to this value
+        [BDAPersistentSettingsField] public static float MAX_ARMOR_LIMIT = -1;                   //Armor will be clamped to this limit if non-negative.
         [BDAPersistentSettingsField] public static bool PWING_EDGE_LIFT = true;                  //Toggle lift on PWing edges for balance with stock wings/remove edge abuse
         [BDAPersistentSettingsField] public static bool PWING_THICKNESS_AFFECT_MASS_HP = false;  //pWing thickness contributes to its mass calc instead of a static LiftArea derived value
         [BDAPersistentSettingsField] public static float MAX_PWING_LIFT = 4.54f;                //Clamp pWing lift to this amount

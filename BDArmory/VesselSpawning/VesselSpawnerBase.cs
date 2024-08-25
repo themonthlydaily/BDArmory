@@ -149,7 +149,7 @@ namespace BDArmory.VesselSpawning
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(spawnConfig.latitude, spawnConfig.longitude, terrainAltitude + spawnConfig.altitude);
             FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0), which should hopefully help with collider detection.
 
-            if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
+            if (terrainAltitude > 0 && spawnConfig.altitude < 10000) // Not over the ocean or on a surfaceless body and spawning at less than 10k altitude.
             {
                 // Wait for the terrain to load in before continuing.
                 Ray ray;
@@ -698,7 +698,7 @@ namespace BDArmory.VesselSpawning
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                 FlightCamera.fetch.SetDistance(50);
             }
-            
+
             // Lower vessel to the ground or activate them in the air.
             if (vessel.radarAltitude >= 0 && !spawnAirborne)
             {
