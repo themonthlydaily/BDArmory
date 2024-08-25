@@ -526,7 +526,7 @@ namespace BDArmory.Control
             UpdateBody();
             UpdateEngineLists();
             CalculateAngularAcceleration();
-            maxAcceleration = GetMaxAcceleration(vessel);
+            maxAcceleration = GetMaxAcceleration();
             fc.alignmentToleranceforBurn = 7.5f;
             if (fc.throttle > 0)
                 lastFiringSolution = Vector3.zero; // Forget prior firing solution if we recently used engines
@@ -962,7 +962,7 @@ namespace BDArmory.Control
         void UpdateStatus()
         {
             // Update propulsion and weapon status
-            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout);
+            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout) || rcsEngines.Count > 0;
             hasPropulsion = hasRCS ||
                 VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational)) ||
                 VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
@@ -1702,16 +1702,16 @@ namespace BDArmory.Control
             }
         }
 
-        public float GetMaxAcceleration(Vessel v)
+        private float GetMaxAcceleration()
         {
-            maxThrust = GetMaxThrust(v);
-            return maxThrust / v.GetTotalMass();
+            maxThrust = GetMaxThrust();
+            return maxThrust / vessel.GetTotalMass();
         }
 
-        public static float GetMaxThrust(Vessel v)
+        private float GetMaxThrust()
         {
-            float thrust = VesselModuleRegistry.GetModuleEngines(v).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.MaxThrustOutputVac(true));
-            thrust += VesselModuleRegistry.GetModules<ModuleRCS>(v).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
+            float thrust = VesselModuleRegistry.GetModuleEngines(vessel).Where(e => e != null && e.EngineIgnited && e.isOperational && !rcsEngines.Contains(e)).Sum(e => e.MaxThrustOutputVac(true));
+            thrust += VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
             return thrust;
         }
         private void UpdateEngineLists(bool forceUpdate = false)
@@ -1726,12 +1726,12 @@ namespace BDArmory.Control
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
             {
                 if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
-                if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0.1f)
+                if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0.1f && engine.MaxThrustOutputVac(true)  > 0)
                 {
                     forwardEngines.Add(engine);
                     forwardThrust += engine.MaxThrustOutputVac(true);
                 }
-                else if (Vector3.Dot(-engine.thrustTransforms[0].forward, -vesselTransform.up) > 0.1f)
+                else if (Vector3.Dot(-engine.thrustTransforms[0].forward, -vesselTransform.up) > 0.1f && engine.MaxThrustOutputVac(true) > 0)
                 {
                     reverseEngines.Add(engine);
                     reverseThrust += engine.MaxThrustOutputVac(true);
@@ -1820,7 +1820,7 @@ namespace BDArmory.Control
         }
 
         //Controller Integral
-        Vector3 directionIntegral;
+        Vector2 directionIntegral;
         float pitchIntegral;
         float yawIntegral;
         float rollIntegral;
@@ -1905,10 +1905,10 @@ namespace BDArmory.Control
             float rollDamping = steerDamping * -localAngVel.y;
 
             // For the integral, we track the vector of the pitch and yaw in the 2D plane of the vessel's forward pointing vector so that the pitch and yaw components translate between the axes when the vessel rolls.
-            directionIntegral = (directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.deltaTime).ProjectOnPlanePreNormalized(vesselTransform.up);
+            directionIntegral = (directionIntegral + (pitchError * Vector2.up + yawError * Vector2.right) * Time.deltaTime);
             if (directionIntegral.sqrMagnitude > 1f) directionIntegral = directionIntegral.normalized;
-            pitchIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, -vesselTransform.forward);
-            yawIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, vesselTransform.right);
+            pitchIntegral = steerKiAdjust * directionIntegral.y;
+            yawIntegral = steerKiAdjust * directionIntegral.x;
             rollIntegral = steerKiAdjust * Mathf.Clamp(rollIntegral + rollError * Time.deltaTime, -1f, 1f);
 
             var steerPitch = pitchProportional + pitchIntegral - pitchDamping;
@@ -1924,25 +1924,9 @@ namespace BDArmory.Control
             }
 
             SetFlightControlState(s,
-                Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
-                Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
-                Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
-
-            Vector3 rcsDirection = (vessel.ReferenceTransform.up + (steerPitch * -vessel.ReferenceTransform.forward + steerYaw * vessel.ReferenceTransform.right));
-            for (int i = 0; i < rcsEngines.Count; i++)
-            {
-                float giveThrust = 0;
-                bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0; //to invert thrust for rear mounted engines so the ship will rotate, not translate
-                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsDirection);
-                if (frontMount) giveThrust *= -1;
-
-                //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
-                if (giveThrust > 0.13f)
-                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
-                else
-                    rcsEngines[i].thrustPercentage = 0; //TODO: figure out how to interface with BattleDaamge, since that also uses thrustPercentage.
-                                                        // thrustPercentage * rcsEngine[i].GetHealthPercent()?
-            }
+            Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
+            Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
+            Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
