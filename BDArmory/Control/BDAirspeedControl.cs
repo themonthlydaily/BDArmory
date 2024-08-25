@@ -586,7 +586,11 @@ namespace BDArmory.Control
 
         void UpdateRCS(FlightCtrlState s)
         {
-            if (RCSVector == Vector3.zero) return;
+            if (RCSVector == Vector3.zero) 
+            {
+                RCSEngineControl(s);
+                return;
+            }
 
             if (RCSVectorLerped == Vector3.zero)
                 RCSVectorLerped = RCSVector;
@@ -610,6 +614,7 @@ namespace BDArmory.Control
                 Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1),
                 Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1));
 
+            RCSEngineControl(s);
         }
 
         void UpdateSAS(FlightCtrlState s)
@@ -636,26 +641,42 @@ namespace BDArmory.Control
             }
 
             ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
+        }
 
-            Vector3 halfAttitude = vessel.vesselTransform.up + attitude; //get halfway point between target direction and current direction so we know when to turn over RCS thrust and cancel accel/momentum and arrive at a 0-0 rest at targetDirection
+        public void RCSEngineControl(FlightCtrlState s)
+        {
+            // Control engines perpendicular to longitudinal axis to act as RCS thrusters using FlightCtrlState s.pitch/s.yaw/s.yaw/s.X/s.Y/s.Z inputs
+            // Call this last of all control methods so FlightCtrlState is finalized
+            Vector3 rcsTranslation = s.X * right + s.Y * up + s.Z * forward;
+            Vector3 rcsRotation = (vessel.ReferenceTransform.up + (s.pitch * -vessel.ReferenceTransform.forward + s.yaw * vessel.ReferenceTransform.right));
+            Vector3 halfAttitude = rcsRotation;
+            float vesselRad = vessel.GetRadius();
 
-            for (int i = 0; i < rcsEngines.Count; i++) //works, though could use some better lerp/scaling of thrust to taper it off and rpevent overshoot
+            for (int i = 0; i < rcsEngines.Count; i++)
             {
                 float giveThrust = 0;
-                bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vessel.vesselTransform.position, vessel.vesselTransform.up) < 0;
-                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, halfAttitude);
-                if (frontMount) giveThrust *= -1;
+                float forwardDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.up);
+                bool rearMount = forwardDist < 0;
+                float lateralDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.right);
+                bool rightMount = lateralDist > 0;
+                
+                // RCS rotation
+                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsRotation);
+                if (rearMount) giveThrust *= -1;
+                giveThrust = Mathf.Abs(forwardDist) < 0.1f ? 0f : Mathf.Clamp01(giveThrust) * Mathf.Clamp01(Mathf.Abs(2f * forwardDist / vesselRad));
+
+                // RCS roll
+                giveThrust += Mathf.Abs(lateralDist) < 0.1f ? 0f : Mathf.Clamp01((rightMount ? s.roll : -s.roll) * 
+                    Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, -vessel.ReferenceTransform.forward)) *
+                     Mathf.Clamp01(Mathf.Abs(2f * lateralDist / vesselRad));
+
+                // RCS translation
+                giveThrust += Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation));
 
                 //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
-                if (giveThrust > 0.25f)
-                {
-                    //rcsEngines[i].thrustPercentage = (1.13f - Mathf.Clamp01(giveThrust)) * 100; //decrease thrust as we come on-target
+
+                if (giveThrust > 0.13f)
                     rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
-                    //should probably have some sort of maxRotPerSec clamp to prevent the RCS engines from continuously firing
-                    //and making the vessel massively overshoot
-                    //figure out how the RCS code does it with firing opposite thruster to counter accel
-                    //rotation rate -> timeToOntarget -> at 1/2 TTOT invert giveThrust to fire opposing thrusters?
-                }
                 else
                     rcsEngines[i].thrustPercentage = 0;
             }
