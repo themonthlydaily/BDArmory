@@ -1928,7 +1928,7 @@ namespace BDArmory.Control
                 Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
                 Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
 
-            Vector3 halfTargetDirection = vesselTransform.up + targetDirection;
+            Vector3 halfTargetDirection = (vessel.ReferenceTransform.up + (steerPitch * -vessel.ReferenceTransform.forward + steerYaw * vessel.ReferenceTransform.right));
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 float giveThrust = 0;

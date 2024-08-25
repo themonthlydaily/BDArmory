@@ -637,13 +637,15 @@ namespace BDArmory.Control
 
             ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
 
-            Vector3 halfAttitude = vessel.vesselTransform.up + attitude; //get halfway point between target direction and current direction so we know when to turn over RCS thrust and cancel accel/momentum and arrive at a 0-0 rest at targetDirection
-
-            for (int i = 0; i < rcsEngines.Count; i++) //works, though could use some better lerp/scaling of thrust to taper it off and rpevent overshoot
+            //Vector3 halfAttitude = vessel.vesselTransform.up + attitude; //get halfway point between target direction and current direction so we know when to turn over RCS thrust and cancel accel/momentum and arrive at a 0-0 rest at targetDirection
+            //better, but still needs refinement.
+            Vector3 rcsRotation = (vessel.ReferenceTransform.up + (s.pitch * -vessel.ReferenceTransform.forward + s.yaw * vessel.ReferenceTransform.right));
+            //this needs to be static or similar, so when it gets passed 
+            for (int i = 0; i < rcsEngines.Count; i++) //works, though could use some better lerp/scaling of thrust to taper it off and prevent overshoot
             {
                 float giveThrust = 0;
                 bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vessel.vesselTransform.position, vessel.vesselTransform.up) < 0;
-                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, halfAttitude);
+                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsRotation);
                 if (frontMount) giveThrust *= -1;
 
                 //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
