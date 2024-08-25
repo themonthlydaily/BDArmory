@@ -1621,7 +1621,7 @@ namespace BDArmory.Control
             }
 
             fc.RCSVector = inputVec;
-            for (int i = 0; i < rcsEngines.Count; i++)  //this is working nicely, at least
+            for (int i = 0; i < rcsEngines.Count; i++) 
             {
                 float giveThrust = 0;
                 giveThrust = Vector3.Project(-inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
@@ -1928,35 +1928,20 @@ namespace BDArmory.Control
                 Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
                 Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
 
-            Vector3 halfTargetDirection = (vessel.ReferenceTransform.up + (steerPitch * -vessel.ReferenceTransform.forward + steerYaw * vessel.ReferenceTransform.right));
+            Vector3 rcsDirection = (vessel.ReferenceTransform.up + (steerPitch * -vessel.ReferenceTransform.forward + steerYaw * vessel.ReferenceTransform.right));
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 float giveThrust = 0;
-                //Vector3 ctrlVector = (-vessel.ReferenceTransform.right * steerPitch) + (-vessel.ReferenceTransform.forward * steerYaw); //not concerning ourselves w/ roll atm
-                //doublecheck this is the correct vector!
-                // This seems to be messed up, compared to the SAS !PIDEnabled rcsEngine functionality
-                bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0;
-
-                //giveThrust = Vector3.Project(-ctrlVector, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, ctrlVector));
-                //giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, ctrlVector);
-                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, halfTargetDirection);
-                //else //invert thrust of sideways engines behind CoM to provide rotational, rather than translational, force.
-                //change to Vector3.Dot for 1 to -1 clamping
+                bool frontMount = Vector3.Dot(rcsEngines[i].transform.position - vesselTransform.position, vesselTransform.up) < 0; //to invert thrust for rear mounted engines so the ship will rotate, not translate
+                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsDirection);
                 if (frontMount) giveThrust *= -1;
 
                 //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
                 if (giveThrust > 0.13f)
-                {
-                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100; //might be a mistake; seeking to not have the Ai get stuck in near-uncontrollable spins
-                    //rcsEngines[i].independentThrottlePercentage = (1 - Mathf.Clamp01(giveThrust)) * 100; //lerp scalar for when near on-target/get other side to fire to counter vel?
-                    //also probably needs PID plugin
-                }
+                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
                 else
-                {
-                    //rcsEngines[i].independentThrottlePercentage = 0;
-                    rcsEngines[i].thrustPercentage = 0;
-                }
-                //noticing in testing Ai likes to lock pitch/yaw to full (positive or negative/port/starbd, doesn't matter) and hold it there, even if it means spinning past desired target heading and it should switch to inverse control input
+                    rcsEngines[i].thrustPercentage = 0; //TODO: figure out how to interface with BattleDaamge, since that also uses thrustPercentage.
+                                                        // thrustPercentage * rcsEngine[i].GetHealthPercent()?
             }
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
