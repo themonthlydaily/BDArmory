@@ -32,6 +32,7 @@ namespace BDArmory.Settings
 				{"DISABLE_RAMMING", false},
 				{"HACK_INTAKES", true},
 				{"HP_THRESHOLD", 2000},
+				{"MAX_ARMOR_LIMIT", 10},
 				{"INFINITE_AMMO", false},
 				{"INFINITE_ORDINANCE", false}, // Note: don't set inf fuel or inf EC as those are used during autotuning and are handled differently in order to sync with the cheats menu.
 				{"MAX_SAS_TORQUE", 30},
@@ -154,6 +155,7 @@ namespace BDArmory.Settings
 				{"VESSEL_SPAWN_ALTITUDE", 50000},
 				{"VESSEL_SPAWN_DISTANCE", 8500},
 				{"VESSEL_RELATIVE_BULLET_CHECKS", true},
+				{"MAX_ARMOR_LIMIT", 50},
 			}},
 		};
 		public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
