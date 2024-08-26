@@ -787,7 +787,7 @@ namespace BDArmory.GameModes
                             factor = 0.25f + 3f * R * (1f - R); // 0.25 at 0m, 1 at 707m, 0 at 1.038km (for 1km Rscale) (reduced attraction at close range to avoid inescapable asteroids).
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 70) // Punish immobile turrets
                             {
-                                float twr = VesselModuleRegistry.GetModuleEngines(weaponManager.vessel).Where(e => e != null && e.allowRestart && !e.flameout).Sum(e => e.MaxThrustOutputVac(true)) / (weaponManager.vessel.GetTotalMass() * (float)PhysicsGlobals.GravitationalAcceleration);
+                                float twr = VesselModuleRegistry.GetModuleEngines(weaponManager.vessel).Where(e => e != null && e.allowRestart && !e.flameout && !e.independentThrottle).Sum(e => e.MaxThrustOutputVac(true)) / (weaponManager.vessel.GetTotalMass() * (float)PhysicsGlobals.GravitationalAcceleration);
                                 factor *= 1f / Mathf.Clamp(twr, 0.01f, 1f);
                             }
                             if (factor > 0) anomalousAttraction += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
