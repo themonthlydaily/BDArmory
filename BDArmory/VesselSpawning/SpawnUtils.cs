@@ -413,7 +413,7 @@ namespace BDArmory.VesselSpawning
             if (spawnProbe != null) // If the spawnProbe is null, then just try to kill everything anyway.
             {
                 spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
-                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed) && Time.time - tic < 30);
                 // Switch to the spawn probe. Give up after 30s.
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe && Time.time - tic < 30)
                 {
