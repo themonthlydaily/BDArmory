@@ -222,6 +222,7 @@ namespace BDArmory.Utils
         {
             var aName = sourceVessel;//.GetName();
             var tName = hitPart.vessel.GetName();
+            
             switch (ExplosionSource)
             {
                 case ExplosionSourceType.Bullet:
@@ -554,6 +555,8 @@ namespace BDArmory.Utils
                 {
                     //armorArea = hitPart.Modules.GetModule<HitpointTracker>().armorVolume * 10000;
                     armorArea = (Armor.armorMass / (Armor.Density / 1000)) / (Armor.Armor / 1000); //mass / density / thickness to get surface area, m2
+                    if (double.IsNaN(armorArea) || Armor.Armor <= 0) 
+                        return false; //no armor to stop explosion
                     spallArea = Mathf.Min(armorArea, radius * radius * 1.5f); //clamp based on max size of explosion, m2
                 }
                 else
@@ -583,6 +586,11 @@ namespace BDArmory.Utils
                 if (distance < radius / 3) spallArea /= 4;
                 if (distance < 0.5) spallArea = Mathf.Clamp(spallArea, 0.1f, 1 * blowthroughFactor * ductility); //contact detonations against armor scaled by how much excess energy the blast has after penning armor, modded by material ductility
                 // high energy blasts vs more strtchy material will result in larger, but sill localized holes
+                if (spallArea >= armorArea) thickness = hitPart.GetArmorThickness(); //if armor larger than blast area, use max thickness to ensure currect armor reduction from HE hits (siming plate thickness reduction as more localized cratering
+                                                                                    //than the entire panel delaminating layers of armor)
+                                                                                    //if blast area encompasses entire plate, then max thickness is whatever the current thickness is, 
+                                                                                    //tl;dr 'thickness' at present is really more accurately 'average thickness'. Should probably refactor armor at somepoint to maintain a constant thickness
+                                                                                    //and have armor degredation solely represented by armor integrity.
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + Armor.Armor + "mm; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
