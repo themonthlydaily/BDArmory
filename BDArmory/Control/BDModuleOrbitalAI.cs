@@ -1820,7 +1820,7 @@ namespace BDArmory.Control
         }
 
         //Controller Integral
-        Vector2 directionIntegral;
+        Vector3 directionIntegral;
         float pitchIntegral;
         float yawIntegral;
         float rollIntegral;
@@ -1905,10 +1905,10 @@ namespace BDArmory.Control
             float rollDamping = steerDamping * -localAngVel.y;
 
             // For the integral, we track the vector of the pitch and yaw in the 2D plane of the vessel's forward pointing vector so that the pitch and yaw components translate between the axes when the vessel rolls.
-            directionIntegral = (directionIntegral + (pitchError * Vector2.up + yawError * Vector2.right) * Time.deltaTime);
+            directionIntegral = (directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.deltaTime).ProjectOnPlanePreNormalized(vesselTransform.up);
             if (directionIntegral.sqrMagnitude > 1f) directionIntegral = directionIntegral.normalized;
-            pitchIntegral = steerKiAdjust * directionIntegral.y;
-            yawIntegral = steerKiAdjust * directionIntegral.x;
+            pitchIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, -vesselTransform.forward);
+            yawIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, vesselTransform.right);
             rollIntegral = steerKiAdjust * Mathf.Clamp(rollIntegral + rollError * Time.deltaTime, -1f, 1f);
 
             var steerPitch = pitchProportional + pitchIntegral - pitchDamping;
