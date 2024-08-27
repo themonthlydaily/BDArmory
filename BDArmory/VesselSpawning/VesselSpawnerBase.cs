@@ -198,7 +198,8 @@ namespace BDArmory.VesselSpawning
             }
             else
             {
-                yield return waitForFixedUpdate; // Wait a frame so that the floating origin shift has time to do its thing.
+                yield return waitForFixedUpdate; // Wait a couple of frames so that the floating origin shift has time to do its thing.
+                yield return waitForFixedUpdate;
             }
         }
         #endregion
