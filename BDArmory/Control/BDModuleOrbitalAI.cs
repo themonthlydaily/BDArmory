@@ -110,12 +110,16 @@ namespace BDArmory.Control
         public float steerMult = 14;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SteerKi"), //Steer Ki
-            UI_FloatRange(minValue = 0.01f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float steerKiAdjust = 0.1f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SteerDamping"),//Steer Damping
             UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float steerDamping = 5;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SteerMaxError"),//Steer Max Error
+            UI_FloatRange(minValue = 25f, maxValue = 180f, stepIncrement = 5f, scene = UI_Scene.All)]
+        public float steerMaxError = 45f;
         #endregion
 
         #region Combat
@@ -1621,16 +1625,6 @@ namespace BDArmory.Control
             }
 
             fc.RCSVector = inputVec;
-            for (int i = 0; i < rcsEngines.Count; i++) 
-            {
-                float giveThrust = 0;
-                giveThrust = Vector3.Project(-inputVec, rcsEngines[i].thrustTransforms[0].forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, inputVec));
-
-                if (giveThrust > 0.13f)
-                    rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
-                else
-                    rcsEngines[i].thrustPercentage = 0;
-            }
         }
 
         private void UpdateBurnAlignmentTolerance()
@@ -1882,12 +1876,12 @@ namespace BDArmory.Control
             }
 
             Vector3 localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
-            float rotationPerFrame = (currentStatusMode == StatusMode.Firing && Vector3.Dot(vesselTransform.up, targetDirection) > 0.94) ? 25f : 45f; // Reduce rotation rate if firing and within ~20 deg of target
+            float rotationPerFrame = (currentStatusMode == StatusMode.Firing && Vector3.Dot(vesselTransform.up, targetDirection) > 0.94) ? 25f : steerMaxError; // Reduce rotation rate if firing and within ~20 deg of target
             localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, rotationPerFrame * Mathf.Deg2Rad, 0);
 
             float pitchError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
             float yawError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.forward), Vector3.right);
-            float rollError = BDAMath.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
+            float rollError = Mathf.Clamp(BDAMath.SignedAngle(currentRoll, rollTarget, vesselTransform.right), -steerMaxError, steerMaxError);
 
             Vector3 localAngVel = vessel.angularVelocity;
             Vector3 targetAngVel = Vector3.Cross(prevTargetDir, targetDirection) / Time.fixedDeltaTime;
@@ -1927,7 +1921,7 @@ namespace BDArmory.Control
             Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
             Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
             Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
-
+            
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine(string.Format("rollError: {0,7:F4}, pitchError: {1,7:F4}, yawError: {2,7:F4}", rollError, pitchError, yawError));

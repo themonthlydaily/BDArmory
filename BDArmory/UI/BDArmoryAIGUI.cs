@@ -591,6 +591,7 @@ namespace BDArmory.UI
                             nameof(AI.steerMult),
                             nameof(AI.steerKiAdjust),
                             nameof(AI.steerDamping),
+                            nameof(AI.steerMaxError),
                             nameof(AI.MinEngagementRange),
                             nameof(AI.ManeuverSpeed),
                             nameof(AI.minFiringSpeed),
@@ -1915,6 +1916,7 @@ namespace BDArmory.UI
                                     line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.steerMult, nameof(AI.steerMult), "SteerPower", $"{AI.steerMult:0.0}", true);
                                     line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.steerKiAdjust, nameof(AI.steerKiAdjust), "SteerKi", $"{AI.steerKiAdjust:0.00}", true);
                                     line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.steerDamping, nameof(AI.steerDamping), "SteerDamping", $"{AI.steerDamping:0.0}", true);
+                                    line = ContentEntry(ContentType.FloatSlider, line, contentWidth, ref AI.steerMaxError, nameof(AI.steerMaxError), "SteerMaxError", $"{AI.steerMaxError:0.0}", true);
 
                                     GUI.EndGroup();
                                     sectionHeights[Section.PID] = Mathf.Lerp(sectionHeight, line, 0.15f);
