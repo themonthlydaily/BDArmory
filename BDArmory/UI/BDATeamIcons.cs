@@ -497,7 +497,7 @@ namespace BDArmory.UI
             }
             if (forceUpdate || BDTISettings.ICONSCALE != oldIconScale)
             {
-                textScale = Mathf.Min(10, Mathf.CeilToInt(10 * BDTISettings.ICONSCALE)); //Would BD_UI_SCALE make more sense here?
+                textScale = Mathf.Max(10, Mathf.CeilToInt(10 * BDTISettings.ICONSCALE)); //Would BD_UI_SCALE make more sense here?
                 oldIconScale = BDTISettings.ICONSCALE;
 
                 IconUIStyle.fontSize = textScale;
