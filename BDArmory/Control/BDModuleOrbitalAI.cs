@@ -139,6 +139,10 @@ namespace BDArmory.Control
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float MinEngagementRange = 100;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ForceFiringRange"),//Force firing range
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
+        public float ForceFiringRange = 100f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_AllowRamming", advancedTweakable = true, //Toggle Allow Ramming
             groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_AI_Ramming", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
@@ -350,12 +354,14 @@ namespace BDArmory.Control
         {
             if (firingSpeed < minFiringSpeed) { firingSpeed = minFiringSpeed; } // Enforce min < max for firing speeds.
             if (ManeuverSpeed < firingSpeed) { ManeuverSpeed = firingSpeed; } // Enforce firing < maneuver for firing/maneuver speeds.
+            if (ForceFiringRange < MinEngagementRange) { ForceFiringRange = MinEngagementRange; } // Enforce MinEngagementRange < ForceFiringRange
         }
 
         public void OnMaxUpdated(BaseField field = null, object obj = null)
         {
             if (minFiringSpeed > firingSpeed) { minFiringSpeed = firingSpeed; }  // Enforce min < max for firing speeds.
             if (firingSpeed > ManeuverSpeed) { firingSpeed = ManeuverSpeed; }  // Enforce firing < maneuver for firing/maneuver speeds.
+            if (MinEngagementRange > ForceFiringRange) { MinEngagementRange = ForceFiringRange; } // Enforce MinEngagementRange < ForceFiringRange
         }
         #endregion
 
@@ -368,6 +374,7 @@ namespace BDArmory.Control
             SetChooseOptions();
             SetSliderPairClamps("minFiringSpeed", "firingSpeed");
             SetSliderPairClamps("firingSpeed", "ManeuverSpeed");
+            SetSliderPairClamps("MinEngagementRange", "ForceFiringRange");
             if (HighLogic.LoadedSceneIsFlight)
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
             CalculateAvailableTorque(vessel);
@@ -980,7 +987,14 @@ namespace BDArmory.Control
 
             // Update intercept ranges and time to CPA
             interceptRanges = InterceptionRanges(); //.x = minRange, .y = maxRange, .z = interceptRange
-            if (targetVessel != null) timeToCPA = vessel.TimeToCPA(targetVessel);
+            float targetSqrDist = 0f;
+            float forceFiringRangeSqr = Mathf.Min(ForceFiringRange, interceptRanges.y);
+            forceFiringRangeSqr *= forceFiringRangeSqr;
+            if (targetVessel != null)
+            {
+                timeToCPA = vessel.TimeToCPA(targetVessel);
+                targetSqrDist = FromTo(vessel, targetVessel).sqrMagnitude;
+            }
 
             // Prioritize safe orbits over combat outside of weapon range
             bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrectionDueTo != OrbitCorrectionReason.None) && currentStatusMode != StatusMode.Ramming;
@@ -1020,7 +1034,10 @@ namespace BDArmory.Control
                 else if (targetVessel != null && hasWeapons)
                 {
                     if (hasPropulsion)
-                        currentStatusMode = StatusMode.Maneuvering;
+                        if (targetSqrDist < MinEngagementRange * MinEngagementRange || targetSqrDist > forceFiringRangeSqr)
+                            currentStatusMode = StatusMode.Maneuvering; // Maneuver if outside MinEngagementRange - ForceFiringRange
+                        else
+                            currentStatusMode = StatusMode.Firing; // Else fire with zero throttle (thrust evasion can override this)
                     else
                         currentStatusMode = StatusMode.Stranded;
                 }
@@ -1278,7 +1295,7 @@ namespace BDArmory.Control
         {
             Vector3 interceptRanges = Vector3.zero;
             float minRange = MinEngagementRange;
-            float maxRange = minRange * 1.2f;
+            float maxRange = Mathf.Max(minRange * 1.2f, ForceFiringRange);
             bool usingProjectile = true;
             if (weaponManager != null)
             {
