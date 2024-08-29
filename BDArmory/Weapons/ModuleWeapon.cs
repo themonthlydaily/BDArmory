@@ -2589,7 +2589,7 @@ namespace BDArmory.Weapons
                                 if (hitPart != null) // Don't ignore terrain hits.
                                 {
                                     if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
-                                    hitPartVelocity = hitPart.vessel.Velocity();
+                                    hitPartVelocity = hitPart.vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
                                 }
                                 break;
                             }
