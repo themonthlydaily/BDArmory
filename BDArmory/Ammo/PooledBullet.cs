@@ -1396,7 +1396,7 @@ namespace BDArmory.Bullets
             if (!partsHit.Contains(hitPart)) partsHit.Add(hitPart);
             //bullet should not go any further if moving too slowly after hit
             //smaller caliber rounds would be too deformed to do any further damage
-            if (currentVelocity.magnitude <= 100 && hasPenetrated)
+            if (hasPenetrated && (currentVelocity - hitPartVelocity).sqrMagnitude < 1e4f)
             {
                 if (BDArmorySettings.DEBUG_WEAPONS)
                 {

@@ -653,6 +653,7 @@ namespace BDArmory.Control
 
             for (int i = 0; i < rcsEngines.Count; i++)
             {
+                if (rcsEngines[i] == null) continue;
                 float giveThrust = 0;
                 float forwardDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.up);
                 bool rearMount = forwardDist < 0;
