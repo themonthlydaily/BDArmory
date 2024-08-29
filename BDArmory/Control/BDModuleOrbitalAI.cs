@@ -12,6 +12,7 @@ using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Guidances;
 using BDArmory.Weapons.Missiles;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -1281,7 +1282,15 @@ namespace BDArmory.Control
             Vector3 cpa = vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA) - targetVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA);
             float interceptRange = interceptRanges.z;
             float interceptRangeTolSqr = (interceptRange * (tolerance + 1f)) * (interceptRange * (tolerance + 1f));
-            return cpa.sqrMagnitude < interceptRangeTolSqr && Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
+            
+            bool speedWithinLimits = Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
+            if (!speedWithinLimits)
+            {
+                BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
+                    if (targetAI != null)
+                        speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && targetVessel.obt_speed > vessel.obt_speed; // Target is targeting us and set to maneuver faster and is faster
+            }
+             return cpa.sqrMagnitude < interceptRangeTolSqr && speedWithinLimits;
         }
 
         private Vector3 Intercept(Vector3 relPos, Vector3 relVel)
