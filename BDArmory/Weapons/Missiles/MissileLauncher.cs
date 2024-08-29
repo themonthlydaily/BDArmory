@@ -210,7 +210,7 @@ namespace BDArmory.Weapons.Missiles
         KSPParticleEmitter downRCS;
         KSPParticleEmitter leftRCS;
         KSPParticleEmitter rightRCS;
-        KSPParticleEmitter forwardRCS;
+        List<KSPParticleEmitter> forwardRCS;
         float rcsAudioMinInterval = 0.2f;
 
         private AudioSource audioSource;
@@ -478,6 +478,7 @@ namespace BDArmory.Weapons.Missiles
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
             boostGaplessEmitters = new List<BDAGaplessParticleEmitter>();
+            if (hasRCS) forwardRCS = new List<KSPParticleEmitter>();
 
             Fields["maxOffBoresight"].guiActive = false;
             Fields["maxOffBoresight"].guiActiveEditor = false;
@@ -663,12 +664,12 @@ namespace BDArmory.Weapons.Missiles
                             else if (pe.Current.gameObject.name == "rcsDown") downRCS = pe.Current;
                             else if (pe.Current.gameObject.name == "rcsLeft") leftRCS = pe.Current;
                             else if (pe.Current.gameObject.name == "rcsRight") rightRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsForward") forwardRCS = pe.Current;
+                            else if (pe.Current.gameObject.name.Contains("rcsForward")) forwardRCS.Add(pe.Current);
                         }
 
                         if (!pe.Current.gameObject.name.Contains("rcs") && !pe.Current.useWorldSpace)
                         {
-                            pe.Current.sizeGrow = 99999;
+                            //pe.Current.sizeGrow = 99999;
                         }
                     }
 
@@ -690,8 +691,6 @@ namespace BDArmory.Weapons.Missiles
                     hasAmmo = true;
                 }
             }
-
-            SetFields();
 
             if (deployAnimationName != "")
             {
@@ -780,7 +779,7 @@ namespace BDArmory.Weapons.Missiles
                 break; // Break if a valid module is found.
             }
             if (warheadType == WarheadTypes.Kinetic && blastPower > 0) warheadType = WarheadTypes.Legacy;
-            Debug.Log($"DEBUG {part.partInfo.name} has warhead type {warheadType}"); // FIXME To be removed before merging into dev.
+            SetFields();
             smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
@@ -1005,6 +1004,16 @@ namespace BDArmory.Weapons.Missiles
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: OnStart missile {shortName}: setting default locktrackcurve with maxrange/minrcs: {activeRadarLockTrackCurve.maxTime}/{RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS}");
             }
+
+            // Don't show detonation distance settings for kinetic warheads
+            if (warheadType == WarheadTypes.Kinetic)
+            {
+                Fields["DetonationDistance"].guiActive = false;
+                Fields["DetonationDistance"].guiActiveEditor = false;
+                Fields["DetonateAtMinimumDistance"].guiActive = false;
+                Fields["DetonateAtMinimumDistance"].guiActiveEditor = false;
+            }
+
             GUIUtils.RefreshAssociatedWindows(part);
         }
 
@@ -1085,13 +1094,18 @@ namespace BDArmory.Weapons.Missiles
             if (downRCS) EffectBehaviour.RemoveParticleEmitter(downRCS);
             if (leftRCS) EffectBehaviour.RemoveParticleEmitter(leftRCS);
             if (rightRCS) EffectBehaviour.RemoveParticleEmitter(rightRCS);
-            if (forwardRCS) EffectBehaviour.RemoveParticleEmitter(forwardRCS);
+            if (forwardRCS != null)
+                foreach (var pe in forwardRCS)
+                    if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             if (pEmitters != null)
                 foreach (var pe in pEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             if (gaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
                 foreach (var gpe in gaplessEmitters)
                     if (gpe is not null) Destroy(gpe);
+            if (boostGaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
+                foreach (var bgpe in boostGaplessEmitters)
+                    if (bgpe is not null) Destroy(bgpe);
             if (boostEmitters != null)
                 foreach (var pe in boostEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
@@ -1962,7 +1976,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = heatTarget.position;
                             TargetVelocity = heatTarget.velocity;
                             TargetAcceleration = heatTarget.acceleration;
-                            //targetVessel = heatTarget.targetInfo;
+                            //targetVessel = heatTarget.targetInfo; will mess with AI MissilesAway and potentially result in ripplefired IR missiles against an enemy actively flaring and decoying heaters.
                             lockFailTimer = -1; // ensures proper entry into UpdateHeatTarget()
 
                             // Disable terminal guidance and switch to regular heat guidance for next update
@@ -2270,11 +2284,11 @@ namespace BDArmory.Weapons.Missiles
                     while (emitter.MoveNext())
                     {
                         if (emitter.Current == null) continue;
-                        if (!hasRCS)
-                        {
-                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
-                        }
-                        if (Throttle == 0)
+                        //if (!hasRCS)
+                        //{
+                        //    emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
+                        //}
+                        if (Throttle == 0 || thrust == 0)
                             emitter.Current.emit = false;
                         else
                             emitter.Current.emit = true;
@@ -2286,8 +2300,13 @@ namespace BDArmory.Weapons.Missiles
                         if (gpe.Current == null) continue;
                         if ((!vessel.InVacuum() && Throttle > 0) && weaponClass != WeaponClasses.SLW || (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) < 0)) //#710
                         {
-                            gpe.Current.emit = true;
-                            gpe.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence;
+                            if (Throttle == 0 || thrust == 0)
+                                gpe.Current.emit = false;
+                            else
+                            {
+                                gpe.Current.emit = true;
+                                gpe.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence;
+                            }
                         }
                         else
                         {
@@ -2320,12 +2339,15 @@ namespace BDArmory.Weapons.Missiles
             }
             audioSource.volume = Throttle;
 
-            using (var light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
-                while (light.MoveNext())
-                {
-                    if (light.Current == null) continue;
-                    light.Current.intensity = 1.5f;
-                }
+            if (BDArmorySettings.LightFX)
+            {
+                using (var light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
+                    while (light.MoveNext())
+                    {
+                        if (light.Current == null) continue;
+                        light.Current.intensity = 1.5f;
+                    }
+            }
 
             if (!spoolEngine)
             {
@@ -2336,7 +2358,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 boostEmitters = pEmitters;
                 if (hasRCS && rcsTransforms != null) boostEmitters.RemoveAll(pe => rcsTransforms.Contains(pe));
-                if (hasRCS && forwardRCS && !boostEmitters.Contains(forwardRCS)) boostEmitters.Add(forwardRCS);
+                if (hasRCS && forwardRCS.Any())
+                    foreach (var pe in forwardRCS)
+                        if (!boostEmitters.Contains(pe)) boostEmitters.Add(pe);
                 boostGaplessEmitters = gaplessEmitters;
             }
 
@@ -2434,15 +2458,19 @@ namespace BDArmory.Weapons.Missiles
                     while (emitter.MoveNext())
                     {
                         if (emitter.Current == null) continue;
+                        /*
                         if (!hasRCS)
                         {
-                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
+                            emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime); //uh, why? this turns reasonable missileFX into giant doom plumes
                         }
-
                         emitter.Current.maxSize = Mathf.Clamp01(Throttle / Mathf.Clamp((float)vessel.atmDensity, 0.2f, 1f));
+                        */
                         if (weaponClass != WeaponClasses.SLW || (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) < 0)) //#710
                         {
-                            emitter.Current.emit = true;
+                            if (Throttle == 0 || cruiseThrust == 0)
+                                emitter.Current.emit = false;
+                            else
+                                emitter.Current.emit = true;
                         }
                         else
                         {
@@ -2456,9 +2484,14 @@ namespace BDArmory.Weapons.Missiles
                         if (gpe.Current == null) continue;
                         if (weaponClass != WeaponClasses.SLW || (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) < 0)) //#710
                         {
-                            gpe.Current.pEmitter.maxSize = Mathf.Clamp01(Throttle / Mathf.Clamp((float)vessel.atmDensity, 0.2f, 1f));
-                            gpe.Current.emit = true;
-                            gpe.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence;
+                            if (Throttle == 0 || cruiseThrust == 0)
+                                gpe.Current.emit = false;
+                            else
+                            {
+                                //gpe.Current.pEmitter.maxSize = Mathf.Clamp01(Throttle / Mathf.Clamp((float)vessel.atmDensity, 0.2f, 1f));
+                                gpe.Current.emit = true;
+                                gpe.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence;
+                            }
                         }
                         else
                         {
@@ -2504,7 +2537,8 @@ namespace BDArmory.Weapons.Missiles
                 }
 
             if (!hasRCS) return;
-            forwardRCS.emit = false;
+            foreach (var pe in forwardRCS)
+                pe.emit = false;
             audioSource.Stop();
         }
 
@@ -2545,6 +2579,7 @@ namespace BDArmory.Weapons.Missiles
             float fadeoutStartTime = Time.time;
             while (Time.time - fadeoutStartTime < 5)
             {
+                /*
                 using (var pe = pEmitters.GetEnumerator())
                     while (pe.MoveNext())
                     {
@@ -2552,18 +2587,19 @@ namespace BDArmory.Weapons.Missiles
                         pe.Current.maxEmission = Mathf.FloorToInt(pe.Current.maxEmission * 0.8f);
                         pe.Current.minEmission = Mathf.FloorToInt(pe.Current.minEmission * 0.8f);
                     }
-
+                */
                 using (var gpe = gaplessEmitters.GetEnumerator())
                     while (gpe.MoveNext())
                     {
                         if (gpe.Current == null) continue;
-                        gpe.Current.pEmitter.maxSize = Mathf.MoveTowards(gpe.Current.pEmitter.maxSize, 0, 0.005f);
-                        gpe.Current.pEmitter.minSize = Mathf.MoveTowards(gpe.Current.pEmitter.minSize, 0, 0.008f);
+                        //gpe.Current.pEmitter.maxSize = Mathf.MoveTowards(gpe.Current.pEmitter.maxSize, 0, 0.005f);
+                        //gpe.Current.pEmitter.minSize = Mathf.MoveTowards(gpe.Current.pEmitter.minSize, 0, 0.008f);
                         gpe.Current.pEmitter.worldVelocity = ParticleTurbulence.Turbulence;
                     }
                 yield return new WaitForFixedUpdate();
             }
 
+            yield return new WaitForFixedUpdate();
             using (var pe2 = pEmitters.GetEnumerator())
                 while (pe2.MoveNext())
                 {
@@ -3108,6 +3144,14 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else // Kill relative velocity to target
                     relV = TargetVelocity - vessel.Velocity();
+
+                // Adjust for gravity if no aero or in near vacuum
+                if (!aero || vessel.InNearVacuum())
+                {
+                    Vector3 toBody = (part.transform.position - vessel.orbit.referenceBody.position);
+                    float bodyGravity = (float)vessel.orbit.referenceBody.gravParameter / toBody.sqrMagnitude;
+                    relV += -bodyGravity * vessel.up;
+                }
 
                 for (int i = 0; i < 4; i++)
                 {

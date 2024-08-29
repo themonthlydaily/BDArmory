@@ -758,6 +758,7 @@ namespace BDArmory.Competition
                     }
                 }
             }
+
             //wait till the leaders are ready to engage (airborne for PilotAI)
             while (true)
             {
@@ -2798,7 +2799,7 @@ namespace BDArmory.Competition
                             var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
                             var vtolAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel); // Get the VTOL AI if the vessel has one.
                             var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel); // Get the Orbital AI if the vessel has one.
-                            if ((pilotAI == null && surfaceAI == null && vtolAI == null && orbitalAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !(pilotAI != null && pilotAI.allowRamming)))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
+                            if ((pilotAI == null && surfaceAI == null && vtolAI == null && orbitalAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !((pilotAI != null && pilotAI.allowRamming) || (orbitalAI != null && orbitalAI.allowRamming))))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
                                 mf.guardMode = false;
                         }
                     }

@@ -1045,23 +1045,7 @@ namespace BDArmory.FX
                                 }
                                 // Update scoring structures
                                 //damage = Mathf.Clamp(damage, 0, part.Damage()); //if we want to clamp overkill score inflation
-                                var aName = eventToExecute.SourceVesselName; // Attacker
-                                var tName = part.vessel.GetName(); // Target
-                                switch (ExplosionSource)
-                                {
-                                    case ExplosionSourceType.Bullet:
-                                        BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.Rocket:
-                                        BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.Missile:
-                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
-                                        break;
-                                    case ExplosionSourceType.BattleDamage:
-                                        BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
-                                        break;
-                                }
+                                ProjectileUtils.ApplyScore(part, eventToExecute.SourceVesselName, 0, damage, null, ExplosionSource);
                             }
                         }
                     }
@@ -1082,7 +1066,7 @@ namespace BDArmory.FX
                         AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
                 }
             }
-            if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange) //check shrapnel damage
+            if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange) //check shrapnel damage of stuff in shrapnel range
             {
                 float anglemultiplier = Mathf.Abs(Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal));
                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);

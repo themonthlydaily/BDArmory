@@ -293,11 +293,14 @@ namespace BDArmory.Damage
                 {
                     Fields["Hitpoints"].guiActive = false;
                     Fields["Hitpoints"].guiActiveEditor = false;
-                    Fields["HullTypeNum"].guiActive = false;
-                    Fields["HullTypeNum"].guiActiveEditor = false;
                 }
                 Hitpoints = maxHitPoints_;
                 if (!ArmorSet) overrideArmorSetFromConfig();
+                if (BDArmorySettings.MAX_ARMOR_LIMIT >= 0)
+                {
+                    maxSupportedArmor = Mathf.Min(BDArmorySettings.MAX_ARMOR_LIMIT, maxSupportedArmor);
+                    Armor = Mathf.Min(Armor, maxSupportedArmor);
+                }
 
                 previousHitpoints = maxHitPoints_;
                 part.RefreshAssociatedWindows();
@@ -1110,7 +1113,7 @@ namespace BDArmory.Damage
                 return;
             }
 
-            partdamage = Mathf.Max(partdamage, 0f) * -1;
+            partdamage = -Mathf.Max(partdamage, 0f);
             Hitpoints += (partdamage / defenseMutator); //why not just go -= partdamage?
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_PART_STRENGTH)
             {
@@ -1138,7 +1141,7 @@ namespace BDArmory.Damage
 
         public void AddDamageToKerbal(KerbalEVA kerbal, float damage)
         {
-            damage = Mathf.Max(damage, 0f) * -1;
+            damage = -Mathf.Max(damage, 0f);
             Hitpoints += damage;
 
             if (Hitpoints <= 0)
@@ -1155,9 +1158,10 @@ namespace BDArmory.Damage
         {
             if (BDArmorySettings.DEBUG_ARMOR)
             {
-                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) * BDArmorySettings.ARMOR_MASS_MOD + "kg"); //g/m3
+                Debug.Log("[HPTracker] armor mass: " + armorMass * 1000 + "kg; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) * BDArmorySettings.ARMOR_MASS_MOD + "kg"); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
+            if (armorMass < reduceMass) reduceMass = armorMass; //shouldn't be happening, but just in case
             if (totalArmorQty > 0)
             {
                 //Armor -= ((reduceMass * 2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
@@ -1179,13 +1183,13 @@ namespace BDArmory.Damage
                     Armour = Armor;
                 }
             }
-            Debug.Log("[HPTracker] Debug: current Armor: " + Armor + "; ArmorRemaining: " + ArmorRemaining + "; ArmorPanel: " + ArmorPanel);
+            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[HPTracker] Debug: current Armor: " + Armor + "; ArmorRemaining: " + ArmorRemaining + "; ArmorPanel: " + ArmorPanel);
             if (ArmorPanel)
             {
                 Hitpoints = ArmorRemaining; // * armorVolume * 10;
                 if (Armor <= 0)
                 {
-                    Debug.Log("[HPTracker] Debug: Armor integrety reduced to 0! Destroying panel");
+                    Debug.Log("[HPTracker] Debug: Armor integrity reduced to 0! Destroying panel");
                     DestroyPart();
                 }
             }
@@ -1555,7 +1559,7 @@ namespace BDArmory.Damage
             part.breakingForce = maxForce;
             maxTorque = part.partInfo.partPrefab.breakingTorque * hullInfo.ImpactMod;
             part.breakingTorque = maxTorque;
-            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod; //isWeapon/isMissile? or have those be breakable by G-forces?
+            maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
             hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;

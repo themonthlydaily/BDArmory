@@ -82,6 +82,7 @@ namespace BDArmory.Extensions
                 }
             }
             */
+            if (Utils.ProjectileUtils.IsArmorPart(p)) return 0; //Armor panels don't have HP, so don't score/deal HP damage
             float damage_ = 0f;
             //////////////////////////////////////////////////////////
             // Explosive Hitpoints
@@ -169,6 +170,7 @@ namespace BDArmory.Extensions
                 }
             }
             */
+            if (Utils.ProjectileUtils.IsArmorPart(p)) return 0; //Armor panels don't have HP, so don't score/deal HP damage
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
             //////////////////////////////////////////////////////////

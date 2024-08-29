@@ -220,7 +220,7 @@ namespace BDArmory.UI
         static GameParameters.AdvancedParams advancedParams;
 
         //competition mode
-        string compDistGui;
+        public string compDistGui;
         string compIntraTeamSeparationBase;
         string compIntraTeamSeparationPerMember;
 
@@ -2620,19 +2620,19 @@ namespace BDArmory.UI
                         //     for (int i = 0; i < N; ++i)
                         //     {
                         //         for (int j = 0; j < debug_numRaycasts; ++j)
-                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir - relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir + relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
                         //         var job = RaycastCommand.ScheduleBatch(proximityRaycastCommands, proximityRaycastHits, 1, default(Unity.Jobs.JobHandle));
                         //         job.Complete(); // Wait for the job to complete.
                         //     }
                         //     watch.Stop();
-                        //     Debug.Log($"Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     Debug.Log($"DEBUG Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                         //     RaycastHit rayHit;
                         //     watch.Reset(); watch.Start();
                         //     for (int i = 0; i < N; ++i)
                         //         for (int j = 0; j < debug_numRaycasts; ++j)
                         //             Physics.Raycast(new Ray(vesselPosition, (vesselSrfVelDir + relativeVelocityDownDirection).normalized), out rayHit, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
                         //     watch.Stop();
-                        //     Debug.Log($"{debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     Debug.Log($"DEBUG {debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                         //     proximityRaycastCommands.Dispose();
                         //     proximityRaycastHits.Dispose();
                         // }
@@ -2891,6 +2891,29 @@ namespace BDArmory.UI
                         // {
                         //     foreach (var body in FlightGlobals.Bodies) Debug.Log($"DEBUG Min Safe Altitude for {body.GetName()} is {body.MinSafeAltitude()}m");
                         // }
+                        // if (HighLogic.LoadedSceneIsEditor && GUI.Button(SLineRect(++line), "Test GetConnectedResourceTotals"))
+                        // {
+                        //     EditorLogic.fetch.ship.UpdateResourceSets();
+                        //     float dMass = 0;
+                        //     foreach (var res in EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r.info).ToHashSet()) // Unique resource infos on the ship.
+                        //     {
+                        //         EditorLogic.fetch.ship.GetConnectedResourceTotals(res.id, true, out double fuelCurrent, out double fuelMax);
+                        //         dMass -= (float)fuelCurrent * res.density;
+                        //         Debug.Log($"DEBUG res {res.name}, ID: {res.id}, current: {fuelCurrent}, max: {fuelMax}, mass: {(float)fuelCurrent * res.density}");
+                        //     }
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = -EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r.info).ToHashSet().Select(res => { EditorLogic.fetch.ship.GetConnectedResourceTotals(res.id, true, out double fuelCurrent, out double fuelMax); return (float)fuelCurrent * res.density; }).Sum();
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = 0;
+                        //     foreach (var part in EditorLogic.fetch.ship.parts)
+                        //         foreach (var res in part.Resources)
+                        //         {
+                        //             dMass -= (float)res.amount * res.info.density;
+                        //         }
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        //     dMass = -EditorLogic.fetch.ship.parts.SelectMany(p => p.Resources, (p, r) => r).Select(res => (float)res.amount * res.info.density).Sum();
+                        //     Debug.Log($"DEBUG dMass: {dMass}");
+                        // }
                     }
 #endif
                 }
@@ -3121,6 +3144,11 @@ namespace BDArmory.UI
                 }
                 GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_HP_Clamp")}:  {(BDArmorySettings.HP_CLAMP >= 100 ? (BDArmorySettings.HP_CLAMP.ToString()) : "Unclamped")}", leftLabel); // HP Scaling Threshold
                 if (BDArmorySettings.HP_CLAMP != (BDArmorySettings.HP_CLAMP = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HP_CLAMP, 0, 25000), 250)))
+                {
+                    if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                }
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_Max_Armor_Limit")}:  {(BDArmorySettings.MAX_ARMOR_LIMIT >= 0 ? $"{BDArmorySettings.MAX_ARMOR_LIMIT:0}" : "Unclamped")}", leftLabel); // Armor Limit
+                if (BDArmorySettings.MAX_ARMOR_LIMIT != (BDArmorySettings.MAX_ARMOR_LIMIT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_ARMOR_LIMIT, -1, 100))))
                 {
                     if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }

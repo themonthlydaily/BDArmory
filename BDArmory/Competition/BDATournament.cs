@@ -1976,6 +1976,7 @@ namespace BDArmory.Competition
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load scene."); yield break; }
             if (!(resumingEvolution || resumingTournament || resumingContinuousSpawn)) yield break; // Just load to the KSC.
+            var lastUsedWorldIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX; // Store the last used world index as it gets reset when entering flight mode.
 
             // Switch to flight mode.
             sceneLoaded = false;
@@ -2002,6 +2003,7 @@ namespace BDArmory.Competition
                 {
                     yield return new WaitWhile(() => (BDATournament.Instance == null && Time.time - tic < 10)); // Wait for the BDATournament instance to be started or time out.
                     if (BDATournament.Instance == null) yield break;
+                    BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = lastUsedWorldIndex;
                     BDATournament.Instance.SetupTournament(
                         BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION,
                         BDArmorySettings.TOURNAMENT_ROUNDS,

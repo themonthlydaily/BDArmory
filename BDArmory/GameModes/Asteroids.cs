@@ -674,6 +674,7 @@ namespace BDArmory.GameModes
                 {
                     if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
+                    if (asteroid.mainBody != FlightGlobals.currentMainBody) { Destroy(asteroid); } // Destroy asteroids that have changes SoI as they don't reset properly.
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
                 if (destroyAsteroids) { asteroidPool.Clear(); }
@@ -722,11 +723,11 @@ namespace BDArmory.GameModes
         {
             var wait = new WaitForFixedUpdate();
             yield return new WaitForEndOfFrame(); // Give the message a chance to show.
-            yield return wait;
-            FloatingOrigin.SetOffset(spawnPoint);
+            yield return wait; // And wait for the next update before doing anything.
+            FloatingOrigin.SetOffset(spawnPoint); // Re-centre the origin on the spawn point.
+            yield return wait; // Wait once more to let KSP update stuff for the origin shift.
             SetupAsteroidPool(numberOfAsteroids);
-            while (cleaningInProgress > 0) // Wait until the asteroid pool is finished being set up.
-            { yield return wait; }
+            yield return new WaitWhileFixed(() => cleaningInProgress > 0); // Wait until the asteroid pool is finished being set up.
             UpdateSpawnPoint(); // Refresh the spawn point as it could have drifted significantly in orbit while we were waiting.
             asteroids = new Vessel[numberOfAsteroids];
             for (int i = 0; i < asteroids.Length; ++i)
@@ -766,6 +767,7 @@ namespace BDArmory.GameModes
             Vector3 averagePosition;
             float factor = 0;
             float repulseTimer = Time.time;
+            float Rscale = 0.04f * radius * radius; // 20% of the field radius.
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
@@ -780,7 +782,14 @@ namespace BDArmory.GameModes
                         {
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                            factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
+                            // factor = 1f - (float)offset.sqrMagnitude / 1e6f; // 1-(r/1000)^2 attraction, i.e., asteroids within 1km.
+                            var R = (float)offset.sqrMagnitude / Rscale;
+                            factor = 0.25f + 3f * R * (1f - R); // 0.25 at 0m, 1 at 707m, 0 at 1.038km (for 1km Rscale) (reduced attraction at close range to avoid inescapable asteroids).
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 70) // Punish immobile turrets
+                            {
+                                float twr = VesselModuleRegistry.GetModuleEngines(weaponManager.vessel).Where(e => e != null && e.allowRestart && !e.flameout && !e.independentThrottle).Sum(e => e.MaxThrustOutputVac(true)) / (weaponManager.vessel.GetTotalMass() * (float)PhysicsGlobals.GravitationalAcceleration);
+                                factor *= 1f / Mathf.Clamp(twr, 0.01f, 1f);
+                            }
                             if (factor > 0) anomalousAttraction += factor * attractionFactors[asteroids[i].vesselName] * offset.normalized;
                         }
                         anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH;
@@ -1106,7 +1115,7 @@ namespace BDArmory.GameModes
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
-                Debug.Log($"DEBUG {asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()} and is {(asteroidPool[i].gameObject.activeInHierarchy?"active":"inactive")} at distance {(asteroidPool[i].transform.position - spawnPoint).magnitude}m from the spawn point.");
+                Debug.Log($"DEBUG {asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()} and is {(asteroidPool[i].gameObject.activeInHierarchy ? "active" : "inactive")} at distance {(asteroidPool[i].transform.position - spawnPoint).magnitude}m from the spawn point.");
                 if (asteroidPool[i].gameObject != null)
                 {
                     if (asteroidPool[i].gameObject.activeInHierarchy)
