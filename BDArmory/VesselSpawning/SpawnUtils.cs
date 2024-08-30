@@ -370,8 +370,7 @@ namespace BDArmory.VesselSpawning
             {
                 if (vessel.vesselType == VesselType.SpaceObject)
                 {
-                    if ((BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel))
-                        || (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel))) // Don't remove asteroids when we're using them.
+                    if (AsteroidUtils.IsManagedAsteroid(vessel)) // Don't remove asteroids when we're using them.
                     {
                         --removeVesselsPending;
                         yield break;

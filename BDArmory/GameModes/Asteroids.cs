@@ -122,6 +122,9 @@ namespace BDArmory.GameModes
                 UnityEngine.Object.Destroy(modResource);
             }
         }
+
+        public static bool IsManagedAsteroid(Vessel asteroid) =>
+            (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(asteroid)) || (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(asteroid));
     }
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -768,6 +771,7 @@ namespace BDArmory.GameModes
             float factor = 0;
             float repulseTimer = Time.time;
             float Rscale = 0.04f * radius * radius; // 20% of the field radius.
+            Vector3d rVelLimit = 1500 * Vector3d.one;
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
@@ -813,7 +817,13 @@ namespace BDArmory.GameModes
                         if (vesselCount > 0)
                         {
                             var relVel = asteroids[i].Velocity() - averageVelocity;
-                            force -= (0.1f + 4e-7f * relVel.sqrMagnitude) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
+                            var relVelSqr = relVel.sqrMagnitude;
+                            if (relVelSqr < 2250000) // 1500^2
+                                force -= (0.1 + 4e-7 * relVelSqr) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
+                            else // Don't apply so much force as to yeet the asteroid (hopefully).
+                            {
+                                force -= 2.8 * (relVel - rVelLimit) + rVelLimit;
+                            }
                         }
                     }
                     else
