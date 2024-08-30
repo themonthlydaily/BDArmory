@@ -823,7 +823,7 @@ namespace BDArmory.GameModes
                                 force -= (0.1 + 4e-7 * relVelSqr) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
                             else // Don't apply so much force as to yeet the asteroid (hopefully).
                             {
-                                force -= 2.8 * (relVel - rVelLimit) + rVelLimit;
+                                force -= relVel;
                             }
                         }
                     }
