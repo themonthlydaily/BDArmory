@@ -1445,7 +1445,11 @@ namespace BDArmory.Control
 
         private float KillVelocityTargetSpeed()
         {
-            return Mathf.Clamp(maxAcceleration * 0.15f, FiringTargetSpeed(), firingSpeed);
+            float speedTarget = maxAcceleration * 0.15f;
+            BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
+            if (targetAI != null && targetAI.targetVessel == vessel && targetAI.firingSpeed < firingSpeed)
+                speedTarget = Mathf.Min(1.05f * targetAI.ManeuverSpeed, Mathf.Max(speedTarget, Mathf.Abs(firingSpeed - minFiringSpeed) * 0.75f + minFiringSpeed)); // if our target is targeting us and has a lower firing speed, let them do the hard work of slowing down
+            return Mathf.Clamp(speedTarget, FiringTargetSpeed(), firingSpeed);
         }
 
         private float FiringTargetSpeed()
