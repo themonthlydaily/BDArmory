@@ -12,7 +12,6 @@ using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Guidances;
 using BDArmory.Weapons.Missiles;
-using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
