@@ -819,12 +819,7 @@ namespace BDArmory.GameModes
                         {
                             var relVel = asteroids[i].Velocity() - averageVelocity;
                             var relVelSqr = relVel.sqrMagnitude;
-                            if (relVelSqr < 2250000) // 1500^2
-                                force -= (0.1 + 4e-7 * relVelSqr) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
-                            else // Don't apply so much force as to yeet the asteroid (hopefully).
-                            {
-                                force -= relVel;
-                            }
+                            force -= Math.Min(0.1 + 4e-7 * relVelSqr, 1) * relVel; // Reduce motion to average velocity of vessels (0.1 + 4e-7 v^2 should be stable below 1500m/s).
                         }
                     }
                     else
