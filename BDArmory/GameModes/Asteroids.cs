@@ -770,7 +770,8 @@ namespace BDArmory.GameModes
             Vector3 averagePosition;
             float factor = 0;
             float repulseTimer = Time.time;
-            float Rscale = 0.04f * radius * radius; // 20% of the field radius.
+            float radiusSqr = radius * radius;
+            float Rscale = 0.04f * radiusSqr; // 20% of the field radius.
             Vector3d rVelLimit = 1500 * Vector3d.one;
             while (floating)
             {
@@ -856,9 +857,9 @@ namespace BDArmory.GameModes
                         if (vesselCount > 0)
                         {
                             // Attract to vessel centroid if in the outer region (90%) of the asteroid field.
-                            if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > 0.81f * radius * radius)
+                            if ((asteroids[i].transform.position - averagePosition).sqrMagnitude > 0.81f * radiusSqr)
                             {
-                                float centroidFactor = TimeWarp.CurrentRate * ((asteroids[i].transform.position - averagePosition).sqrMagnitude - 0.81f * radius * radius) * 5e-7f;
+                                float centroidFactor = TimeWarp.CurrentRate * Mathf.Min((asteroids[i].transform.position - averagePosition).sqrMagnitude - 0.81f * radiusSqr, radiusSqr) * 5e-7f;
                                 Vector3 radialDir = asteroids[i].transform.position - averagePosition;
                                 Vector3 radialVel = asteroids[i].Velocity() - averageVelocity;
                                 if (Vector3.Dot(radialDir, radialVel) < 0) centroidFactor *= 0.25f; // Less of a push when heading towards the centroid to avoid pinballing.
