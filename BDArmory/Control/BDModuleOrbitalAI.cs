@@ -1288,7 +1288,7 @@ namespace BDArmory.Control
             {
                 BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
                     if (targetAI != null)
-                        speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && targetVessel.obt_speed > vessel.obt_speed; // Target is targeting us and set to maneuver faster and is faster
+                        speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && RelVel(targetVessel, vessel).sqrMagnitude > ManeuverSpeed * ManeuverSpeed; // Target is targeting us, set to maneuver faster, and is maneuvering faster
             }
              return cpa.sqrMagnitude < interceptRangeTolSqr && speedWithinLimits;
         }
@@ -1446,9 +1446,19 @@ namespace BDArmory.Control
         private float KillVelocityTargetSpeed()
         {
             float speedTarget = maxAcceleration * 0.15f;
+            float speedTargetHigh = Mathf.Abs(firingSpeed - minFiringSpeed) * 0.75f + minFiringSpeed;
+
+            // If below speedTargetHigh and enemy is still decelerating, set the speed target as speedTargetHigh
+            if (speedTarget < speedTargetHigh && targetVessel.acceleration_immediate.sqrMagnitude > 0.1f && 
+                Vector3.Dot(targetVessel.acceleration_immediate, FromTo(vessel, targetVessel)) > 0 && 
+                RelVel(targetVessel, vessel).sqrMagnitude < speedTargetHigh * speedTargetHigh)
+                speedTarget = speedTargetHigh;
+
+            // If our target is targeting us and is maneuvering at a speed slower than our fire speed, set speed target as slighly above their maneuver speed
             BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
-            if (targetAI != null && targetAI.targetVessel == vessel && targetAI.firingSpeed < firingSpeed)
-                speedTarget = Mathf.Min(1.05f * targetAI.ManeuverSpeed, Mathf.Max(speedTarget, Mathf.Abs(firingSpeed - minFiringSpeed) * 0.75f + minFiringSpeed)); // if our target is targeting us and has a lower firing speed, let them do the hard work of slowing down
+            if (targetAI != null && targetAI.targetVessel == vessel && targetAI.ManeuverSpeed < firingSpeed)
+                speedTarget = Mathf.Max(1.05f * targetAI.ManeuverSpeed, speedTarget); 
+
             return Mathf.Clamp(speedTarget, FiringTargetSpeed(), firingSpeed);
         }
 
