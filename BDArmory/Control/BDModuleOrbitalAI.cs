@@ -1116,7 +1116,7 @@ namespace BDArmory.Control
             evadingGunfire = false;
 
             // Return if evading missile or ramming
-            if (currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.Ramming)
+            if (weaponManager == null || currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.Ramming)
             {
                 evasiveTimer = 0;
                 return;
@@ -1124,7 +1124,7 @@ namespace BDArmory.Control
 
             // Check if we should be evading gunfire, missile evasion is handled separately
             float threatRating = evasionThreshold + 1f; // Don't evade by default
-            if (weaponManager != null && weaponManager.underFire)
+            if (weaponManager.underFire)
             {
                 if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
                     threatRating = weaponManager.incomingMissDistance;
