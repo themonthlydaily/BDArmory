@@ -214,7 +214,7 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 67 && pinataAlive && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
                             {
                                 double hpPercent = 1;
-                                float DmgTaken = (Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum() + +Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromMissiles.Values.Sum());
+                                float DmgTaken = Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromGuns.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromRockets.Values.Sum() + Scores.ScoreData[BDArmorySettings.PINATA_NAME].damageFromMissiles.Values.Sum();
                                 hpPercent = Mathf.Clamp((BDArmorySettings.MAX_ACTIVE_RADAR_RANGE - DmgTaken) / BDArmorySettings.MAX_ACTIVE_RADAR_RANGE, 0, 1);
                                 if (hpPercent > 0)
                                 {
