@@ -763,7 +763,7 @@ namespace BDArmory.Control
                     {
                         Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
 
-                        TimeSpan t = TimeSpan.FromSeconds(Mathf.Max(timeToCPA, 24*60*60f)); // Clamp at one day
+                        TimeSpan t = TimeSpan.FromSeconds(Mathf.Min(timeToCPA, 24*60*60f)); // Clamp at one day
                         timeToCPAString = string.Format((t.Hours > 0 ? "{0:D2}h:" : "") + (t.Minutes > 0 ? "{1:D2}m:" : "") + "{2:D2}s", t.Hours, t.Minutes, t.Seconds);
 
                         float minRange = interceptRanges.x;
