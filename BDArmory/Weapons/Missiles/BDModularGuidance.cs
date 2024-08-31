@@ -1059,7 +1059,6 @@ namespace BDArmory.Weapons.Missiles
 
             HasMissed = true;
             guidanceActive = false;
-            TargetMf = null;
             isTimed = true;
             detonationTime = TimeIndex + 1.5f;
             if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && vessel.isActiveVessel) LoadedVesselSwitcher.Instance.TriggerSwitchVessel();
@@ -1075,7 +1074,6 @@ namespace BDArmory.Weapons.Missiles
             StagesNumber = 1;
             _nextStage = 1;
             TargetAcquired = false;
-            TargetMf = null;
             TimeFired = -1;
             _missileIgnited = false;
             lockFailTimer = -1;
@@ -1113,7 +1111,6 @@ namespace BDArmory.Weapons.Missiles
 
                 HasMissed = true;
                 guidanceActive = false;
-                TargetMf = null;
                 isTimed = true;
                 detonationTime = TimeIndex + 1.5f;
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && vessel.isActiveVessel) LoadedVesselSwitcher.Instance.TriggerSwitchVessel();
