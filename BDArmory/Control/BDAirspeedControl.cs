@@ -657,28 +657,20 @@ namespace BDArmory.Control
                 float giveThrust = 0;
                 float forwardDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.up);
                 bool rearMount = forwardDist < 0;
-                float lateralDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.right);
-                float dorsalDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, -vessel.ReferenceTransform.forward);
-                bool rightMount = lateralDist > 0;
-                bool dorsalMount = dorsalDist < 0;
-                
+
                 // RCS rotation
                 giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsRotation);
                 if (rearMount) giveThrust *= -1;
                 giveThrust = Mathf.Abs(forwardDist) < 0.1f ? 0f : Mathf.Clamp01(giveThrust) * Mathf.Clamp01(Mathf.Abs(2f * forwardDist / vesselRad));
 
-                // RCS roll
-                giveThrust += Mathf.Abs(lateralDist) < 0.1f ? 0f : Mathf.Clamp01((rightMount ? s.roll : -s.roll) *
-                    Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, -vessel.ReferenceTransform.forward)) *
-                     Mathf.Clamp01(Mathf.Abs(2f * lateralDist / vesselRad));
-                giveThrust += Mathf.Abs(dorsalDist) < 0.1f ? 0f : Mathf.Clamp01((dorsalMount ? s.roll : -s.roll) *
-                    Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, vessel.ReferenceTransform.right)) *
-                     Mathf.Clamp01(Mathf.Abs(2f * lateralDist / vesselRad));
+                // RCS Rotation using Moments (Pitch/Yaw not currently working- TO DO - FIXME later)
+                float pitchMoment = 0f; // Mathf.Clamp01(s.pitch * Vector3.Dot(-vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)));
+                float yawMoment = 0f; // Mathf.Clamp01(s.yaw * Vector3.Dot(vessel.ReferenceTransform.forward, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)));
+                float rollMoment = Mathf.Clamp01(s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)));
+                giveThrust += Mathf.Clamp01(pitchMoment + yawMoment + rollMoment);
 
                 // RCS translation
-                giveThrust += Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation));
-
-                //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
+                giveThrust += Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation)); ;
 
                 if (giveThrust > (PIDActive ? 0.13f : 0.25f))
                     rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;

@@ -1388,7 +1388,7 @@ namespace BDArmory.Control
                 return relVelSqrMag < speedTarget * speedTarget;
             }
             else
-                return relVelSqrMag < firingSpeed * firingSpeed;
+                return minFiringSpeed * minFiringSpeed < relVelSqrMag && relVelSqrMag < firingSpeed * firingSpeed;
         }
         private Vector3 GunFiringSolution(ModuleWeapon weapon)
         {
