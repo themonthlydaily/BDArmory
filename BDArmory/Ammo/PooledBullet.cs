@@ -41,9 +41,10 @@ namespace BDArmory.Bullets
             {
                 // Perform the various stages that pooled bullets go through in blocks to hopefully reduce physics sync delays.
                 // Bullets should get removed from activeBullets if they die.
-                foreach (var bullet in activeBullets.ToList()) bullet.PreCollisions();
-                foreach (var bullet in activeBullets.ToList()) bullet.DoCollisions(); // All the Physics calls occur here.
-                foreach (var bullet in activeBullets.ToList()) bullet.PostCollisions();
+                var bullets = activeBullets.ToList(); // Pre-convert to a list and skip null bullets. This avoids moving subprojectiles from flak rounds.
+                foreach (var bullet in bullets) if (bullet != null) bullet.PreCollisions();
+                foreach (var bullet in bullets) if (bullet != null) bullet.DoCollisions(); // All the Physics calls occur here.
+                foreach (var bullet in bullets) if (bullet != null) bullet.PostCollisions();
             }
             catch (Exception e) { Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}"); } // This shouldn't happen, but if it does, some active bullets may get out of sync.
         }
@@ -216,7 +217,6 @@ namespace BDArmory.Bullets
 
         void OnEnable()
         {
-            PooledBulletManager.AddBullet(this);
             currentPosition = transform.position; // In case something sets transform.position instead of currentPosition.
             previousPosition = currentPosition;
             startPosition = currentPosition;
@@ -352,6 +352,7 @@ namespace BDArmory.Bullets
             {
                 BDATargetManager.FiredBullets.Add(this);
             }
+            PooledBulletManager.AddBullet(this);
         }
 
         void OnDisable()
@@ -1650,7 +1651,7 @@ namespace BDArmory.Bullets
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                     PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                    pBullet.transform.position = currentPosition;
+                    pBullet.currentPosition = currentPosition;
 
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = subProjVelocity;
