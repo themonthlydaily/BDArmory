@@ -603,6 +603,7 @@ namespace BDArmory.Bullets
                 return CheckBulletCollision(period);
         }
 
+        readonly List<Vessel> vesselsInRange = [];
         /// <summary>
         /// This performs checks using the relative velocity to each vessel within the range of the movement of the bullet.
         /// This is particularly relevant at high velocities (e.g., in orbit) where the sideways velocity of co-moving objects causes a complete miss.
@@ -622,7 +623,7 @@ namespace BDArmory.Bullets
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
 
-            List<Vessel> nearbyVessels = [];
+            vesselsInRange.Clear();
             using (var hitsEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
                 while (hitsEnu.MoveNext())
@@ -634,7 +635,7 @@ namespace BDArmory.Bullets
                         if (partHit == null) continue;
                         if (partHit.vessel == sourceVessel) continue;
                         if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        if (partHit.vessel != null && !nearbyVessels.Contains(partHit.vessel)) nearbyVessels.Add(partHit.vessel);
+                        if (partHit.vessel != null && !vesselsInRange.Contains(partHit.vessel)) vesselsInRange.Add(partHit.vessel);
                     }
                     catch (Exception e) // ignored
                     {
@@ -642,7 +643,7 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            foreach (var vessel in nearbyVessels.OrderBy(v => (v.CoM - currentPosition).sqrMagnitude))
+            foreach (var vessel in vesselsInRange.OrderBy(v => (v.CoM - currentPosition).sqrMagnitude))
             {
                 CheckBulletCollisionWithVessel(period, vessel);
             }
@@ -657,15 +658,15 @@ namespace BDArmory.Bullets
         {
             float maxRelSpeedSqr = 0, relVelSqr;
             Vector3 relativeVelocity;
-            using (var v = FlightGlobals.Vessels.GetEnumerator())
-                while (v.MoveNext())
-                {
-                    if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
-                    relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
-                    if (Vector3.Dot(relativeVelocity, v.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
-                    relVelSqr = relativeVelocity.sqrMagnitude;
-                    if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
-                }
+            using var v = FlightGlobals.Vessels.GetEnumerator();
+            while (v.MoveNext())
+            {
+                if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
+                relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                if (Vector3.Dot(relativeVelocity, v.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                relVelSqr = relativeVelocity.sqrMagnitude;
+                if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+            }
             return 100f + period * BDAMath.Sqrt(maxRelSpeedSqr); // Craft of radius <100m that could collide within the period.
         }
 
