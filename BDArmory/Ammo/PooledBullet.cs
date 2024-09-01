@@ -18,6 +18,38 @@ using BDArmory.Weapons;
 
 namespace BDArmory.Bullets
 {
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    public class PooledBulletManager : MonoBehaviour
+    {
+        public static PooledBulletManager Instance;
+        readonly HashSet<PooledBullet> activeBullets = [];
+
+        public static void AddBullet(PooledBullet bullet) { Instance.activeBullets.Add(bullet); }
+        public static void RemoveBullet(PooledBullet bullet) { Instance.activeBullets.Remove(bullet); }
+
+        void Awake()
+        {
+            if (Instance != null) Destroy(Instance);
+            Instance = this;
+            activeBullets.Clear();
+        }
+
+        void FixedUpdate()
+        {
+            if (activeBullets.Count == 0) return;
+            try
+            {
+                // Perform the various stages that pooled bullets go through in blocks to hopefully reduce physics sync delays.
+                // Bullets should get removed from activeBullets if they die.
+                var bullets = activeBullets.ToList(); // Pre-convert to a list and skip null bullets. This avoids moving subprojectiles from flak rounds.
+                foreach (var bullet in bullets) if (bullet != null) bullet.PreCollisions();
+                foreach (var bullet in bullets) if (bullet != null) bullet.DoCollisions(); // All the Physics calls occur here.
+                foreach (var bullet in bullets) if (bullet != null) bullet.PostCollisions();
+            }
+            catch (Exception e) { Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}"); } // This shouldn't happen, but if it does, some active bullets may get out of sync.
+        }
+    }
+
     public class PooledBullet : MonoBehaviour
     {
         #region Declarations
@@ -159,6 +191,7 @@ namespace BDArmory.Bullets
         static Collider[] overlapSphereColliders;
         static List<RaycastHit> allHits;
         static Dictionary<Vessel, float> rayLength;
+        static List<Vessel> vesselsInRange;
         private Vector3[] linePositions = new Vector3[2];
         private Vector3[] smokePositions = new Vector3[5];
 
@@ -174,11 +207,12 @@ namespace BDArmory.Bullets
 
         void Awake()
         {
-            if (hits == null) { hits = new RaycastHit[100]; }
-            if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
-            if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[1000]; }
-            if (allHits == null) { allHits = new List<RaycastHit>(); }
-            if (rayLength == null) { rayLength = new Dictionary<Vessel, float>(); }
+            hits ??= new RaycastHit[100];
+            reverseHits ??= new RaycastHit[100];
+            overlapSphereColliders ??= new Collider[1000];
+            allHits ??= [];
+            vesselsInRange ??= [];
+            rayLength ??= [];
         }
 
         void OnEnable()
@@ -318,10 +352,12 @@ namespace BDArmory.Bullets
             {
                 BDATargetManager.FiredBullets.Add(this);
             }
+            PooledBulletManager.AddBullet(this);
         }
 
         void OnDisable()
         {
+            PooledBulletManager.RemoveBullet(this);
             sourceVessel = null;
             sourceWeapon = null;
             CurrentPart = null;
@@ -365,20 +401,9 @@ namespace BDArmory.Bullets
             }
         }
 
-        void FixedUpdate()
+        void Update()
         {
-            if (!gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            //floating origin and velocity offloading corrections
-            if (BDKrakensbane.IsActive)
-            {
-                currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-            }
-            previousPosition = currentPosition;
+            if (!gameObject.activeInHierarchy) return;
 
             if (fadeColor)
             {
@@ -393,6 +418,21 @@ namespace BDArmory.Bullets
                 bulletTrail[1].material.SetTextureOffset("_MainTex", new Vector2(-timeAlive / 3, 0));
                 if (fade <= 0.05f) bulletTrail[1].enabled = false;
             }
+        }
+
+        /// <summary>
+        /// These functions replace FixedUpdate and are called by PooledBulletManager to try to group all the Physics calls together to reduce the need for physics sync calls.
+        /// It seems to be slightly faster for large numbers of bullets.
+        /// </summary>
+        public void PreCollisions()
+        {
+            //floating origin and velocity offloading corrections
+            if (BDKrakensbane.IsActive)
+            {
+                currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+            }
+            previousPosition = currentPosition;
             timeAlive += TimeWarp.fixedDeltaTime;
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
@@ -424,7 +464,7 @@ namespace BDArmory.Bullets
                 if (HEType != PooledBulletTypes.Slug)
                     ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? ExplosionFx.WarheadTypes.ShapedCharge : ExplosionFx.WarheadTypes.Standard, null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1, sourceVelocity: currentVelocity);
                 if (nuclear)
-                    NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+                    NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "", sourceVelocity: currentVelocity);
                 if (beehive)
                     BeehiveDetonation();
                 hasDetonated = true;
@@ -432,9 +472,13 @@ namespace BDArmory.Bullets
                 return;
             }
             SetTracerPosition(); // Set tracers after proximity detonation check.
-
-            if (CheckBulletCollisions(TimeWarp.fixedDeltaTime)) return;
-
+        }
+        public void DoCollisions()
+        {
+            CheckBulletCollisions(TimeWarp.fixedDeltaTime);
+        }
+        public void PostCollisions()
+        {
             if (!hasRicocheted) MoveBullet(TimeWarp.fixedDeltaTime); // Ricochets perform movement internally.
 
             if (BDArmorySettings.BULLET_WATER_DRAG)
@@ -498,6 +542,126 @@ namespace BDArmory.Bullets
                 return;
             }
         }
+
+        // void FixedUpdate()
+        // {
+        //     if (!gameObject.activeInHierarchy) return;
+
+        //     //floating origin and velocity offloading corrections
+        //     if (BDKrakensbane.IsActive)
+        //     {
+        //         currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+        //         startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+        //     }
+        //     previousPosition = currentPosition;
+        //     timeAlive += TimeWarp.fixedDeltaTime;
+
+        //     if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
+        //     {
+        //         KillBullet();
+        //         if (isAPSprojectile)
+        //         {
+        //             if (HEType != PooledBulletTypes.Explosive && tntMass > 0)
+        //                 ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, true, sourceVelocity: currentVelocity);
+        //         }
+        //         return;
+        //     }
+        //     /*
+        //     if (fuzeTriggered)
+        //     {
+        //         if (!hasDetonated)
+        //         {
+        //             ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+        //             hasDetonated = true;
+        //             KillBullet();
+        //             return;
+        //         }
+        //     }
+        //     */
+
+        //     if (ProximityAirDetonation(true)) // Pre-move proximity detonation check.
+        //     {
+        //         //detonate
+        //         if (HEType != PooledBulletTypes.Slug)
+        //             ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? ExplosionFx.WarheadTypes.ShapedCharge : ExplosionFx.WarheadTypes.Standard, null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1, sourceVelocity: currentVelocity);
+        //         if (nuclear)
+        //             NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+        //         if (beehive)
+        //             BeehiveDetonation();
+        //         hasDetonated = true;
+        //         KillBullet();
+        //         return;
+        //     }
+        //     SetTracerPosition(); // Set tracers after proximity detonation check.
+
+        //     if (CheckBulletCollisions(TimeWarp.fixedDeltaTime))
+        //     {
+        //         return;
+        //     }
+
+        //     if (!hasRicocheted) MoveBullet(TimeWarp.fixedDeltaTime); // Ricochets perform movement internally.
+
+        //     if (BDArmorySettings.BULLET_WATER_DRAG)
+        //     {
+        //         if (startsUnderwater && !underwater) // Bullets that start underwater can exit the water if fired close enough to the surface.
+        //         {
+        //             startsUnderwater = false;
+        //         }
+        //         if (!startsUnderwater && underwater) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about. Except large caliber naval shells.
+        //         {
+        //             if (caliber < 75f)
+        //             {
+        //                 if (HEType != PooledBulletTypes.Slug)
+        //                     ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, false, bulletMass, -1, dmgMult);
+        //                 if (nuclear)
+        //                     NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+        //                 hasDetonated = true;
+
+        //                 KillBullet();
+        //                 return;
+        //             }
+        //             else
+        //             {
+        //                 if (HEType != PooledBulletTypes.Slug)
+        //                 {
+        //                     if (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating)
+        //                     {
+        //                         fuzeTriggered = true;
+        //                         StartCoroutine(DelayedDetonationRoutine());
+        //                     }
+        //                     else //if (fuzeType != BulletFuzeTypes.None)
+        //                     {
+        //                         if (HEType != PooledBulletTypes.Slug)
+        //                             ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, false, bulletMass, -1, dmgMult);
+        //                         if (nuclear)
+        //                             NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+        //                         hasDetonated = true;
+        //                         if (BDArmorySettings.waterHitEffect) FXMonger.Splash(currentPosition, caliber / 2);
+        //                         KillBullet();
+        //                         return;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     //////////////////////////////////////////////////
+        //     //Flak Explosion (air detonation/proximity fuse)
+        //     //////////////////////////////////////////////////
+
+        //     if (ProximityAirDetonation(false)) // Post-move proximity (end-of-life) detonation check
+        //     {
+        //         //detonate
+        //         if (HEType != PooledBulletTypes.Slug)
+        //             ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? ExplosionFx.WarheadTypes.ShapedCharge : ExplosionFx.WarheadTypes.Standard, null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1, sourceVelocity: currentVelocity);
+        //         if (nuclear)
+        //             NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "", sourceVelocity: currentVelocity);
+        //         if (beehive)
+        //             BeehiveDetonation();
+        //         hasDetonated = true;
+        //         KillBullet();
+        //         return;
+        //     }
+        // }
 
         /// <summary>
         /// Move the bullet for the period of time, tracking distance traveled and accounting for drag and gravity.
@@ -612,10 +776,8 @@ namespace BDArmory.Bullets
         public void CheckBulletCollisionWithVessels(float period)
         {
             if (!BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) return;
-            List<Vessel> nearbyVessels = new List<Vessel>();
 
             const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
-
             var overlapSphereRadius = GetOverlapSphereRadius(period); // OverlapSphere of sufficient size to catch all potential craft of <100m radius.
             var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, overlapSphereRadius, overlapSphereColliders, layerMask);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
@@ -624,6 +786,7 @@ namespace BDArmory.Bullets
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
 
+            vesselsInRange.Clear();
             using (var hitsEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
                 while (hitsEnu.MoveNext())
@@ -635,7 +798,7 @@ namespace BDArmory.Bullets
                         if (partHit == null) continue;
                         if (partHit.vessel == sourceVessel) continue;
                         if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        if (partHit.vessel != null && !nearbyVessels.Contains(partHit.vessel)) nearbyVessels.Add(partHit.vessel);
+                        if (partHit.vessel != null && !vesselsInRange.Contains(partHit.vessel)) vesselsInRange.Add(partHit.vessel);
                     }
                     catch (Exception e) // ignored
                     {
@@ -643,9 +806,9 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - currentPosition).sqrMagnitude))
+            foreach (var vessel in vesselsInRange.OrderBy(v => (v.CoM - currentPosition).sqrMagnitude))
             {
-                CheckBulletCollisionWithVessel(period, vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
+                CheckBulletCollisionWithVessel(period, vessel);
             }
         }
 
@@ -658,15 +821,15 @@ namespace BDArmory.Bullets
         {
             float maxRelSpeedSqr = 0, relVelSqr;
             Vector3 relativeVelocity;
-            using (var v = FlightGlobals.Vessels.GetEnumerator())
-                while (v.MoveNext())
-                {
-                    if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
-                    relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
-                    if (Vector3.Dot(relativeVelocity, v.Current.transform.position - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
-                    relVelSqr = relativeVelocity.sqrMagnitude;
-                    if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
-                }
+            using var v = FlightGlobals.Vessels.GetEnumerator();
+            while (v.MoveNext())
+            {
+                if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
+                relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                if (Vector3.Dot(relativeVelocity, v.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                relVelSqr = relativeVelocity.sqrMagnitude;
+                if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+            }
             return 100f + period * BDAMath.Sqrt(maxRelSpeedSqr); // Craft of radius <100m that could collide within the period.
         }
 
@@ -1488,7 +1651,7 @@ namespace BDArmory.Bullets
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                     PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                    pBullet.transform.position = currentPosition;
+                    pBullet.currentPosition = currentPosition;
 
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = subProjVelocity;
@@ -1619,7 +1782,7 @@ namespace BDArmory.Bullets
                         if (loadedVessels.Current == sourceVessel) continue;
                         Vector3 relativeVelocity = loadedVessels.Current.Velocity() - currentVelocity;
                         if (Vector3.Dot(relativeVelocity, loadedVessels.Current.CoM - currentPosition) >= 0) continue; // Ignore craft that aren't approaching.
-                        float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(average:true); // Detonate when the (average) outermost part of the vessel is within the detonateRange.
+                        float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(average: true); // Detonate when the (average) outermost part of the vessel is within the detonateRange.
                         float detRangeTime = TimeWarp.fixedDeltaTime + 2 * localDetonationRange / Mathf.Max(1f, relativeVelocity.magnitude); // Time for this frame's movement plus the relative separation to change by twice the detonation range + the vessel's radius (within reason). This is more than the worst-case time needed for the bullet to reach the CPA (ignoring relative acceleration, technically we should be solving x=v*t+1/2*a*t^2 for t).
                         var timeToCPA = loadedVessels.Current.TimeToCPA(currentPosition, currentVelocity, bulletAcceleration, detRangeTime);
                         if (timeToCPA > 0 && timeToCPA < detRangeTime) // Going to reach the CPA within the detRangeTime
@@ -1635,7 +1798,7 @@ namespace BDArmory.Bullets
                                 {
                                     currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
                                     iTime = TimeWarp.fixedDeltaTime - timeToCPA;
-                                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius(average:true)}m");
+                                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - loadedVessels.Current.PredictPosition(timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius(average: true)}m");
                                     currentPosition -= timeToCPA * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
                                     return true;
                                 }

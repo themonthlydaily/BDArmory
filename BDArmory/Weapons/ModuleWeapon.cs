@@ -2364,14 +2364,20 @@ namespace BDArmory.Weapons
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }
                                 }
-                                //heat
 
+                                //heat
                                 heat += heatPerShot;
-                                //EC
+
                                 RoundsRemaining++;
                                 if (BurstOverride)
                                 {
                                     autofireShotCount++;
+                                }
+
+                                // APS
+                                if (isAPS && (tgtShell != null || tgtRocket != null))
+                                {
+                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                                 }
                             }
                             else
@@ -2413,10 +2419,6 @@ namespace BDArmory.Weapons
                         isRippleFiring = true;
                         //need to know what next weapon in ripple sequence is, and have firedelay be set to whatever it's RPM is, not this weapon's or a generic average
                     }
-                }
-                if (isAPS && (tgtShell != null || tgtRocket != null))
-                {
-                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                 }
             }
             else
@@ -5180,7 +5182,7 @@ namespace BDArmory.Weapons
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
                 }
-				
+
                 //legacy or visual range guard targeting
                 if (aiControlled && visualTargetVessel && visRange)
                 {
@@ -5492,7 +5494,7 @@ namespace BDArmory.Weapons
                         ExplosionFx.CreateExplosion(shell.transform.position, shell.tntMass, shell.explModelPath, shell.explSoundPath, ExplosionSourceType.Bullet, shell.caliber, null, shell.sourceVesselName, null, null, default, -1, false, shell.bulletMass, -1, 1, sourceVelocity: shell.currentVelocity);
                         shell.KillBullet();
                         tgtShell = null;
-                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Detonated Incoming Projectile!");
+                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Detonated Incoming Projectile!");
                     }
                     else
                     {
@@ -5500,7 +5502,7 @@ namespace BDArmory.Weapons
                         {
                             shell.KillBullet();
                             tgtShell = null;
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Vaporized Incoming Projectile!");
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Vaporized Incoming Projectile!");
                         }
                         else
                         {
@@ -5517,7 +5519,7 @@ namespace BDArmory.Weapons
                             {
                                 shell.KillBullet();
                                 tgtShell = null;
-                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Exploded Incoming Projectile!");
+                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Exploded Incoming Projectile!");
                             }
                         }
                     }
