@@ -673,6 +673,7 @@ namespace BDArmory.FX
             string flashModel = "", string shockModel = "", string blastModel = "", string plumeModel = "", string debrisModel = "", string ModelPath = "", string soundPath = "",
             Part nukePart = null, Part hitPart = null, Vector3 sourceVelocity = default)
         {
+            if (blastRadius < 100) blastRadius = 100;
             SetupPool(ModelPath, soundPath, blastRadius);
 
             Quaternion rotation;
