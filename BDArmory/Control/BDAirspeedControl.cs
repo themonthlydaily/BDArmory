@@ -652,6 +652,7 @@ namespace BDArmory.Control
                 (vessel.vesselSize.y + vessel.vesselSize.z) / 4f, // Pitch: average of height and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.z) / 4f, // Yaw: average of width and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.y) / 4f); // Roll: average of width and height, halved    
+            float giveThrustMin = Mathf.Lerp(0.13f, 0.01f, Mathf.Clamp01(Vector3.Dot(attitude, vessel.ReferenceTransform.up)));
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 if (rcsEngines[i] == null) continue;
@@ -665,7 +666,7 @@ namespace BDArmory.Control
                 float rollMoment = s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.z;
                 giveThrust += pitchMoment + yawMoment + rollMoment; // Modify any translation to allow rotation
 
-                if (giveThrust > (PIDActive ? 0.13f : 0.25f))
+                if (giveThrust >= giveThrustMin)
                     rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
                 else
                     rcsEngines[i].thrustPercentage = 0;
