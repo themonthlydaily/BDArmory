@@ -652,7 +652,7 @@ namespace BDArmory.Control
                 (vessel.vesselSize.y + vessel.vesselSize.z) / 4f, // Pitch: average of height and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.z) / 4f, // Yaw: average of width and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.y) / 4f); // Roll: average of width and height, halved    
-            float giveThrustMin = Mathf.Lerp(0.13f, 0.01f, Mathf.Clamp01(Vector3.Dot(attitude, vessel.ReferenceTransform.up)));
+            float giveThrustMin = Mathf.Lerp(0.13f, 0f, Mathf.Clamp01(Vector3.Dot(attitude, vessel.ReferenceTransform.up)));
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 if (rcsEngines[i] == null) continue;
