@@ -3737,7 +3737,11 @@ namespace BDArmory.Weapons.Missiles
 
         static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
         {
-            CreateExhaustPool(prefabPath);
+            if (!CreateExhaustPool(prefabPath))
+            {
+                Debug.LogError($"[BDArmory.MissileLauncher]: Failed to get model {prefabPath} for {missileLauncher.part.partInfo.name}. Check that the file exists!");
+                return;
+            }
             var exhaustPrefab = exhaustPrefabPool[prefabPath].GetPooledObject();
             exhaustPrefab.SetActive(true);
             using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
@@ -3755,22 +3759,18 @@ namespace BDArmory.Weapons.Missiles
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " added to " + missileLauncher.shortName + " on " + (missileLauncher.vessel != null ? missileLauncher.vessel.vesselName : "unknown"));
         }
 
-        static void CreateExhaustPool(string prefabPath)
+        static bool CreateExhaustPool(string prefabPath)
         {
             if (exhaustPrefabPool == null)
             { exhaustPrefabPool = new Dictionary<string, ObjectPool>(); }
             if (!exhaustPrefabPool.ContainsKey(prefabPath) || exhaustPrefabPool[prefabPath] == null || exhaustPrefabPool[prefabPath].poolObject == null)
             {
                 var exhaustPrefabTemplate = GameDatabase.Instance.GetModel(prefabPath);
-                if (exhaustPrefabTemplate == null)
-                {
-                    Debug.LogWarning("[BDArmory.MissileLauncher]: Exhaust prefab " + prefabPath + " does not exist, please fix your .cfg. Prefab replaced with default model");
-                    prefabPath = "BDArmory/Models/exhaust/smallExhaust";
-                    exhaustPrefabTemplate = GameDatabase.Instance.GetModel(prefabPath);
-                }
+                if (exhaustPrefabTemplate == null) return false;
                 exhaustPrefabTemplate.SetActive(false);
                 exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(exhaustPrefabTemplate, 1, true, true);
             }
+            return true;
         }
 
         void DetachExhaustPrefabs()
