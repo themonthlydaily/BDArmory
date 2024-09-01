@@ -1647,6 +1647,12 @@ namespace BDArmory.Bullets
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
                 float subProjVelocity = GetDragAdjustedVelocity().magnitude + sBullet.bulletVelocity;
+                float pelletDetRange = 0;
+                bool isSabot = ((sBullet.bulletMass * 1000 / (sBullet.caliber * sBullet.caliber * Mathf.PI / 400 * 19) + 1) * 10) > sBullet.caliber * 4; //moving these here do they don't need to be re-calced 20 times per beehive det
+                if (sBullet.tntMass > 0)
+                {
+                    pelletDetRange = sBullet.nuclear? sBullet.tntMass * 200 : BlastPhysicsUtils.CalculateBlastRange(sBullet.tntMass) * 0.66f;
+                }
                 for (int s = 0; s < count * sBullet.projectileCount; s++) //this does mean that setting a subMunitionType to, say, shotgun shells and then setting a sMT projectile count of, say, 5, would have only 5 shotgun pellets spawn, even if the shutgun shell projectileCount = 30. Could always have it be count * subMunitiontype.projectileCount if you want shotshells as an allowable submunition
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1701,14 +1707,14 @@ namespace BDArmory.Bullets
                                     break;
                             }
                         }
-                        pBullet.detonationRange = sBullet.nuclear ? sBullet.tntMass * 200 : BlastPhysicsUtils.CalculateBlastRange(sBullet.tntMass) * 0.66f;
+                        pBullet.detonationRange = pelletDetRange;
                         pBullet.defaultDetonationRange = defaultDetonationRange;
                         pBullet.fuzeType = sFuze;
                     }
                     else
                     {
                         pBullet.fuzeType = BulletFuzeTypes.None;
-                        pBullet.sabot = ((sBullet.bulletMass * 1000 / (sBullet.caliber * sBullet.caliber * Mathf.PI / 400 * 19) + 1) * 10) > sBullet.caliber * 4;
+                        pBullet.sabot = isSabot;
                         pBullet.HEType = PooledBulletTypes.Slug;
                     }
                     pBullet.EMP = sBullet.EMP;
