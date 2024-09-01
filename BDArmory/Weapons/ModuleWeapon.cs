@@ -5180,7 +5180,7 @@ namespace BDArmory.Weapons
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
                 }
-				
+
                 //legacy or visual range guard targeting
                 if (aiControlled && visualTargetVessel && visRange)
                 {
