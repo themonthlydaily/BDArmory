@@ -160,11 +160,12 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Part Material blacklist: " + string.Join(", ", materialsBlacklist));
             }
-            return ProjectileUtils.materialsBlacklist.Contains(Part.partInfo.name);
+            return materialsBlacklist.Contains(Part.partInfo.name);
         }
         static HashSet<string> reportingWeaponList;
-        public static bool isReportingWeapon(Part Part)
+        public static bool isReportingWeapon(Part part)
         {
+            if (part == null) return false;
             if (reportingWeaponList == null)
             {
                 reportingWeaponList = new HashSet<string> { };
@@ -186,7 +187,7 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Weapon Reporting List: " + string.Join(", ", reportingWeaponList));
             }
-            return ProjectileUtils.reportingWeaponList.Contains(Part.partInfo.name);
+            return reportingWeaponList.Contains(part.partInfo.name);
         }
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {
@@ -206,15 +207,16 @@ namespace BDArmory.Utils
             damage = hitPart.AddBallisticDamage(projmass, caliber, multiplier, penetrationfactor, DmgMult, impactVelocity, explosionSource);
             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + hitPart.name + ": " + damage);
 
+            string sourceVesselName = sourceVessel != null ? sourceVessel.GetName() : null;
             if (BDArmorySettings.BATTLEDAMAGE)
             {
-                BattleDamageHandler.CheckDamageFX(hitPart, caliber, penetrationfactor, explosive, incendiary, sourceVessel.GetName(), hit, partAlreadyHit, cockpitPen);
+                BattleDamageHandler.CheckDamageFX(hitPart, caliber, penetrationfactor, explosive, incendiary, sourceVesselName, hit, partAlreadyHit, cockpitPen);
             }
 
             // Update scoring structures
             //if (firstHit)
             //{
-            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, firstHit);
+            ApplyScore(hitPart, sourceVesselName, distanceTraveled, damage, name, explosionSource, firstHit);
             //}
             ResourceUtils.StealResources(hitPart, sourceVessel);
         }
@@ -222,7 +224,7 @@ namespace BDArmory.Utils
         {
             var aName = sourceVessel;//.GetName();
             var tName = hitPart.vessel.GetName();
-            
+
             switch (ExplosionSource)
             {
                 case ExplosionSourceType.Bullet:
@@ -555,7 +557,7 @@ namespace BDArmory.Utils
                 {
                     //armorArea = hitPart.Modules.GetModule<HitpointTracker>().armorVolume * 10000;
                     armorArea = (Armor.armorMass / (Armor.Density / 1000)) / (Armor.Armor / 1000); //mass / density / thickness to get surface area, m2
-                    if (double.IsNaN(armorArea) || Armor.Armor <= 0) 
+                    if (double.IsNaN(armorArea) || Armor.Armor <= 0)
                         return false; //no armor to stop explosion
                     spallArea = Mathf.Min(armorArea, radius * radius * 1.5f); //clamp based on max size of explosion, m2
                 }
@@ -567,7 +569,7 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: part: " + hitPart + " armorArea: " + armorArea + "m2; expl. radius: " + radius + "m2; spallArea: " + spallArea +"m2");
+                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: part: " + hitPart + " armorArea: " + armorArea + "m2; expl. radius: " + radius + "m2; spallArea: " + spallArea + "m2");
 
                     if (double.IsNaN(hitPart.radiativeArea))
                         Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: radiative area of part " + hitPart + " was NaN, using approximate area " + hitPart.GetArea() + "m2 instead.");
@@ -587,10 +589,10 @@ namespace BDArmory.Utils
                 if (distance < 0.5) spallArea = Mathf.Clamp(spallArea, 0.1f, 1 * blowthroughFactor * ductility); //contact detonations against armor scaled by how much excess energy the blast has after penning armor, modded by material ductility
                 // high energy blasts vs more strtchy material will result in larger, but sill localized holes
                 if (spallArea >= armorArea) thickness = hitPart.GetArmorThickness(); //if armor larger than blast area, use max thickness to ensure currect armor reduction from HE hits (siming plate thickness reduction as more localized cratering
-                                                                                    //than the entire panel delaminating layers of armor)
-                                                                                    //if blast area encompasses entire plate, then max thickness is whatever the current thickness is, 
-                                                                                    //tl;dr 'thickness' at present is really more accurately 'average thickness'. Should probably refactor armor at somepoint to maintain a constant thickness
-                                                                                    //and have armor degredation solely represented by armor integrity.
+                                                                                     //than the entire panel delaminating layers of armor)
+                                                                                     //if blast area encompasses entire plate, then max thickness is whatever the current thickness is, 
+                                                                                     //tl;dr 'thickness' at present is really more accurately 'average thickness'. Should probably refactor armor at somepoint to maintain a constant thickness
+                                                                                     //and have armor degredation solely represented by armor integrity.
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + Armor.Armor + "mm; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
@@ -709,7 +711,7 @@ namespace BDArmory.Utils
                             if (ductility < 0.05f) //should really have this modified by thickness/blast force
                             {
                                 var volumeToReduce = Mathf.CeilToInt(spallArea / 0.25f) * 2500 * (thickness / 10);//total failue of 50x50cm armor tile(s)
-                                     // m2 - > 50x50cm tiles -> cm2 -> cm3            
+                                                                                                                  // m2 - > 50x50cm tiles -> cm2 -> cm3            
                                 if (hardness > 500)
                                 {
                                     spallMass = volumeToReduce * (Density / 1000000) * BDArmorySettings.ARMOR_MASS_MOD; //kg
@@ -1159,7 +1161,7 @@ namespace BDArmory.Utils
             }
             else
             {
-                probability = Utils.BDAMath.RangedProbability(new[] { 50f, 25f, 20f, 2f });
+                probability = BDAMath.RangedProbability(new[] { 50f, 25f, 20f, 2f });
             }
 
             if (fuelPct == 1f || fuelPct == 0f)

@@ -593,6 +593,7 @@ namespace BDArmory.UI
                             nameof(AI.steerDamping),
                             nameof(AI.steerMaxError),
                             nameof(AI.MinEngagementRange),
+                            nameof(AI.ForceFiringRange),
                             nameof(AI.ManeuverSpeed),
                             nameof(AI.minFiringSpeed),
                             nameof(AI.firingSpeed),
@@ -1945,7 +1946,24 @@ namespace BDArmory.UI
                                         AI.rollTowards = RollModeTypes[rollTowards].ToString();
                                         AI.ChooseOptionsUpdated(null, null);
                                     }
+
+                                    var oldMinEngagementRange = AI.MinEngagementRange;
                                     line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.MinEngagementRange, nameof(AI.MinEngagementRange), "MinEngagementRange", $"{AI.MinEngagementRange:0}m");
+                                    if (AI.MinEngagementRange != oldMinEngagementRange)
+                                    {
+                                        AI.OnMinUpdated(null, null);
+                                        var field = inputFields["ForceFiringRange"];
+                                        field.SetCurrentValue(AI.ForceFiringRange);
+                                    }
+
+                                    var oldForceFiringRange = AI.ForceFiringRange;
+                                    line = ContentEntry(ContentType.SemiLogSlider, line, contentWidth, ref AI.ForceFiringRange, nameof(AI.ForceFiringRange), "ForceFiringRange", $"{AI.ForceFiringRange:0}m");
+                                    if (AI.ForceFiringRange != oldForceFiringRange)
+                                    {
+                                        AI.OnMaxUpdated(null, null);
+                                        var field = inputFields["MinEngagementRange"];
+                                        field.SetCurrentValue(AI.MinEngagementRange);
+                                    }
 
                                     AI.allowRamming = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.allowRamming,
                                         StringUtils.Localize("#LOC_BDArmory_AI_AllowRamming"), AI.allowRamming ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Allow Ramming"

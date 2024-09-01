@@ -139,6 +139,10 @@ namespace BDArmory.Control
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float MinEngagementRange = 100;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ForceFiringRange"),//Force firing range
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
+        public float ForceFiringRange = 100f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_AllowRamming", advancedTweakable = true, //Toggle Allow Ramming
             groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_AI_Ramming", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
@@ -350,12 +354,14 @@ namespace BDArmory.Control
         {
             if (firingSpeed < minFiringSpeed) { firingSpeed = minFiringSpeed; } // Enforce min < max for firing speeds.
             if (ManeuverSpeed < firingSpeed) { ManeuverSpeed = firingSpeed; } // Enforce firing < maneuver for firing/maneuver speeds.
+            if (ForceFiringRange < MinEngagementRange) { ForceFiringRange = MinEngagementRange; } // Enforce MinEngagementRange < ForceFiringRange
         }
 
         public void OnMaxUpdated(BaseField field = null, object obj = null)
         {
             if (minFiringSpeed > firingSpeed) { minFiringSpeed = firingSpeed; }  // Enforce min < max for firing speeds.
             if (firingSpeed > ManeuverSpeed) { firingSpeed = ManeuverSpeed; }  // Enforce firing < maneuver for firing/maneuver speeds.
+            if (MinEngagementRange > ForceFiringRange) { MinEngagementRange = ForceFiringRange; } // Enforce MinEngagementRange < ForceFiringRange
         }
         #endregion
 
@@ -368,6 +374,7 @@ namespace BDArmory.Control
             SetChooseOptions();
             SetSliderPairClamps("minFiringSpeed", "firingSpeed");
             SetSliderPairClamps("firingSpeed", "ManeuverSpeed");
+            SetSliderPairClamps("MinEngagementRange", "ForceFiringRange");
             if (HighLogic.LoadedSceneIsFlight)
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
             CalculateAvailableTorque(vessel);
@@ -756,7 +763,7 @@ namespace BDArmory.Control
                     {
                         Vector3 toTarget = FromTo(vessel, targetVessel).normalized;
 
-                        TimeSpan t = TimeSpan.FromSeconds(timeToCPA);
+                        TimeSpan t = TimeSpan.FromSeconds(Mathf.Min(timeToCPA, 86400f)); // Clamp at one day 24*60*60s
                         timeToCPAString = string.Format((t.Hours > 0 ? "{0:D2}h:" : "") + (t.Minutes > 0 ? "{1:D2}m:" : "") + "{2:D2}s", t.Hours, t.Minutes, t.Seconds);
 
                         float minRange = interceptRanges.x;
@@ -980,7 +987,14 @@ namespace BDArmory.Control
 
             // Update intercept ranges and time to CPA
             interceptRanges = InterceptionRanges(); //.x = minRange, .y = maxRange, .z = interceptRange
-            if (targetVessel != null) timeToCPA = vessel.TimeToCPA(targetVessel);
+            float targetSqrDist = 0f;
+            float forceFiringRangeSqr = Mathf.Min(ForceFiringRange, interceptRanges.y);
+            forceFiringRangeSqr *= forceFiringRangeSqr;
+            if (targetVessel != null)
+            {
+                timeToCPA = vessel.TimeToCPA(targetVessel);
+                targetSqrDist = FromTo(vessel, targetVessel).sqrMagnitude;
+            }
 
             // Prioritize safe orbits over combat outside of weapon range
             bool fixOrbitNow = hasPropulsion && (CheckOrbitDangerous() || ongoingOrbitCorrectionDueTo != OrbitCorrectionReason.None) && currentStatusMode != StatusMode.Ramming;
@@ -1020,7 +1034,10 @@ namespace BDArmory.Control
                 else if (targetVessel != null && hasWeapons)
                 {
                     if (hasPropulsion)
-                        currentStatusMode = StatusMode.Maneuvering;
+                        if (targetSqrDist < MinEngagementRange * MinEngagementRange || targetSqrDist > forceFiringRangeSqr)
+                            currentStatusMode = StatusMode.Maneuvering; // Maneuver if outside MinEngagementRange - ForceFiringRange
+                        else
+                            currentStatusMode = StatusMode.Firing; // Else fire with zero throttle (thrust evasion can override this)
                     else
                         currentStatusMode = StatusMode.Stranded;
                 }
@@ -1116,7 +1133,7 @@ namespace BDArmory.Control
             evadingGunfire = false;
 
             // Return if evading missile or ramming
-            if (currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.Ramming)
+            if (weaponManager == null || currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.Ramming)
             {
                 evasiveTimer = 0;
                 return;
@@ -1124,7 +1141,7 @@ namespace BDArmory.Control
 
             // Check if we should be evading gunfire, missile evasion is handled separately
             float threatRating = evasionThreshold + 1f; // Don't evade by default
-            if (weaponManager != null && weaponManager.underFire)
+            if (weaponManager.underFire)
             {
                 if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
                     threatRating = weaponManager.incomingMissDistance;
@@ -1264,7 +1281,15 @@ namespace BDArmory.Control
             Vector3 cpa = vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA) - targetVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA);
             float interceptRange = interceptRanges.z;
             float interceptRangeTolSqr = (interceptRange * (tolerance + 1f)) * (interceptRange * (tolerance + 1f));
-            return cpa.sqrMagnitude < interceptRangeTolSqr && Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
+            
+            bool speedWithinLimits = Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
+            if (!speedWithinLimits)
+            {
+                BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
+                    if (targetAI != null)
+                        speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && RelVel(targetVessel, vessel).sqrMagnitude > ManeuverSpeed * ManeuverSpeed; // Target is targeting us, set to maneuver faster, and is maneuvering faster
+            }
+             return cpa.sqrMagnitude < interceptRangeTolSqr && speedWithinLimits;
         }
 
         private Vector3 Intercept(Vector3 relPos, Vector3 relVel)
@@ -1278,7 +1303,7 @@ namespace BDArmory.Control
         {
             Vector3 interceptRanges = Vector3.zero;
             float minRange = MinEngagementRange;
-            float maxRange = minRange * 1.2f;
+            float maxRange = Mathf.Max(minRange * 1.2f, ForceFiringRange);
             bool usingProjectile = true;
             if (weaponManager != null)
             {
@@ -1363,7 +1388,7 @@ namespace BDArmory.Control
                 return relVelSqrMag < speedTarget * speedTarget;
             }
             else
-                return relVelSqrMag < firingSpeed * firingSpeed;
+                return minFiringSpeed * minFiringSpeed < relVelSqrMag && relVelSqrMag < firingSpeed * firingSpeed;
         }
         private Vector3 GunFiringSolution(ModuleWeapon weapon)
         {
@@ -1419,7 +1444,25 @@ namespace BDArmory.Control
 
         private float KillVelocityTargetSpeed()
         {
-            return Mathf.Clamp(maxAcceleration * 0.15f, FiringTargetSpeed(), firingSpeed);
+            float speedTarget = maxAcceleration * 0.15f;
+
+            if (targetVessel != null)
+            {
+                float speedTargetHigh = Mathf.Abs(firingSpeed - minFiringSpeed) * 0.75f + minFiringSpeed;
+
+                // If below speedTargetHigh and enemy is still decelerating, set the speed target as speedTargetHigh
+                if (speedTarget < speedTargetHigh && targetVessel.acceleration_immediate.sqrMagnitude > 0.1f &&
+                    Vector3.Dot(targetVessel.acceleration_immediate, FromTo(vessel, targetVessel)) > 0 &&
+                    RelVel(targetVessel, vessel).sqrMagnitude < speedTargetHigh * speedTargetHigh)
+                    speedTarget = speedTargetHigh;
+
+                // If our target is targeting us and is maneuvering at a speed slower than our fire speed, set speed target as slighly above their maneuver speed
+                BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
+                if (targetAI != null && targetAI.targetVessel == vessel && targetAI.ManeuverSpeed < firingSpeed)
+                    speedTarget = Mathf.Max(1.05f * targetAI.ManeuverSpeed, speedTarget);
+            }
+
+            return Mathf.Clamp(speedTarget, FiringTargetSpeed(), firingSpeed);
         }
 
         private float FiringTargetSpeed()

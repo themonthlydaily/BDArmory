@@ -648,37 +648,22 @@ namespace BDArmory.Control
             // Control engines perpendicular to longitudinal axis to act as RCS thrusters using FlightCtrlState s.pitch/s.yaw/s.yaw/s.X/s.Y/s.Z inputs
             // Call this last of all control methods so FlightCtrlState is finalized
             Vector3 rcsTranslation = s.X * right + s.Y * up + s.Z * forward;
-            Vector3 rcsRotation = (vessel.ReferenceTransform.up + (s.pitch * -vessel.ReferenceTransform.forward + s.yaw * vessel.ReferenceTransform.right));
-            float vesselRad = vessel.GetRadius();
-
+            Vector3 vesselRad = new( // vesselSize is width, height, length
+                (vessel.vesselSize.y + vessel.vesselSize.z) / 4f, // Pitch: average of height and length, halved
+                (vessel.vesselSize.x + vessel.vesselSize.z) / 4f, // Yaw: average of width and length, halved
+                (vessel.vesselSize.x + vessel.vesselSize.y) / 4f); // Roll: average of width and height, halved    
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 if (rcsEngines[i] == null) continue;
-                float giveThrust = 0;
-                float forwardDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.up);
-                bool rearMount = forwardDist < 0;
-                float lateralDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, vessel.ReferenceTransform.right);
-                float dorsalDist = Vector3.Dot(rcsEngines[i].transform.position - vessel.CoM, -vessel.ReferenceTransform.forward);
-                bool rightMount = lateralDist > 0;
-                bool dorsalMount = dorsalDist < 0;
-
-                // RCS rotation
-                giveThrust = Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsRotation);
-                if (rearMount) giveThrust *= -1;
-                giveThrust = Mathf.Abs(forwardDist) < 0.1f ? 0f : Mathf.Clamp01(giveThrust) * Mathf.Clamp01(Mathf.Abs(2f * forwardDist / vesselRad));
-
-                // RCS roll
-                giveThrust += Mathf.Abs(lateralDist) < 0.1f ? 0f : Mathf.Clamp01((rightMount ? s.roll : -s.roll) *
-                    Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, -vessel.ReferenceTransform.forward)) *
-                     Mathf.Clamp01(Mathf.Abs(2f * lateralDist / vesselRad));
-                giveThrust += Mathf.Abs(dorsalDist) < 0.1f ? 0f : Mathf.Clamp01((dorsalMount ? s.roll : -s.roll) *
-                    Vector3.Dot(rcsEngines[i].thrustTransforms[0].forward, vessel.ReferenceTransform.right)) *
-                     Mathf.Clamp01(Mathf.Abs(2f * lateralDist / vesselRad));
 
                 // RCS translation
-                giveThrust += Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation));
+                float giveThrust = Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation)); ;
 
-                //Debug.Log($"[rcsEngine[{i}]] giveThrust = {giveThrust}, frontMount = {frontMount}; RCSVector ({ctrlVector.x},{ctrlVector.y},{ctrlVector.z}); engine vec({rcsEngines[i].thrustTransforms[0].forward.x},{rcsEngines[i].thrustTransforms[0].forward.y},{rcsEngines[i].thrustTransforms[0].forward.z})");
+                // RCS Rotation using Moments
+                float pitchMoment = s.pitch * Vector3.Dot(vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.x;
+                float yawMoment = s.yaw * Vector3.Dot(vessel.ReferenceTransform.forward, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.y;
+                float rollMoment = s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.z;
+                giveThrust += pitchMoment + yawMoment + rollMoment; // Modify any translation to allow rotation
 
                 if (giveThrust > (PIDActive ? 0.13f : 0.25f))
                     rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
