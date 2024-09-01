@@ -648,7 +648,10 @@ namespace BDArmory.Control
             // Control engines perpendicular to longitudinal axis to act as RCS thrusters using FlightCtrlState s.pitch/s.yaw/s.yaw/s.X/s.Y/s.Z inputs
             // Call this last of all control methods so FlightCtrlState is finalized
             Vector3 rcsTranslation = s.X * right + s.Y * up + s.Z * forward;
-            float vesselRad = vessel.GetRadius();
+            Vector3 vesselRad = new( // vesselSize is width, height, length
+                (vessel.vesselSize.y + vessel.vesselSize.z) / 4f, // Pitch: average of height and length, halved
+                (vessel.vesselSize.x + vessel.vesselSize.z) / 4f, // Yaw: average of width and length, halved
+                (vessel.vesselSize.x + vessel.vesselSize.y) / 4f); // Roll: average of width and height, halved    
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 if (rcsEngines[i] == null) continue;
@@ -657,9 +660,9 @@ namespace BDArmory.Control
                 float giveThrust = Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation)); ;
 
                 // RCS Rotation using Moments
-                float pitchMoment = s.pitch * Vector3.Dot(vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / (vesselRad);
-                float yawMoment = s.yaw * Vector3.Dot(vessel.ReferenceTransform.forward, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / (vesselRad);
-                float rollMoment = s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / (vesselRad);
+                float pitchMoment = s.pitch * Vector3.Dot(vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.x;
+                float yawMoment = s.yaw * Vector3.Dot(vessel.ReferenceTransform.forward, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.y;
+                float rollMoment = s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.z;
                 giveThrust += pitchMoment + yawMoment + rollMoment; // Modify any translation to allow rotation
 
                 if (giveThrust > (PIDActive ? 0.13f : 0.25f))
