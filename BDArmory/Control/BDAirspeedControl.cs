@@ -524,6 +524,7 @@ namespace BDArmory.Control
         private Vector3 RCSThrust;
         private Vector3 up, right, forward;
         private float RCSThrottle;
+        private float lastEpsilon = 0.05f;
 
         //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
 
@@ -586,6 +587,15 @@ namespace BDArmory.Control
 
         void UpdateRCS(FlightCtrlState s)
         {
+            // When firing, adjust the minimum RCS thrust based on angle to target to allow minute adjustments using RCS
+            float rcsEpsilon = lerpAttitude == false ? 0.05f : Mathf.Lerp(0.05f, 0.01f, Mathf.Clamp01((Vector3.Dot(attitude, vessel.ReferenceTransform.up) - 0.999f) / 0.001f)); // 0.05 at greater than ~2.5 deg, 0.01 at 0 deg, default Epsilon is 0.05f
+            if (rcsEpsilon != lastEpsilon)
+            {
+                foreach (ModuleRCS thruster in VesselModuleRegistry.GetModules<ModuleRCS>(vessel))
+                    thruster.EPSILON = rcsEpsilon;
+                lastEpsilon = rcsEpsilon;
+            }
+
             if (RCSVector == Vector3.zero) 
             {
                 RCSEngineControl(s);
