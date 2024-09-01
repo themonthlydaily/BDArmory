@@ -410,7 +410,7 @@ namespace BDArmory.Bullets
                 FadeColor();
                 bulletTrail[0].material.SetColor("_TintColor", currentColor * (tracerLuminance > 0 ? tracerLuminance : 0.5f));
             }
-            if (tracerLuminance > 1)
+            if (bulletTrail[1].enabled && tracerLuminance > 1)
             {
                 float fade = Mathf.Lerp(0.75f, 0.05f, 0.07f);
                 smokeColor.a = fade;
