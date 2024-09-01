@@ -982,7 +982,7 @@ namespace BDArmory.FX
                                                 WarheadTypes.Kinetic => ImpactSpeed,
                                                 _ => ExplosionVelocity
                                             },
-                                            SourceVesselName, ExplosionSourceType.Missile, type);
+                                            SourceVesselName, ExplosionSource, type);
                                     }
                                 }
                                 else
@@ -1001,7 +1001,7 @@ namespace BDArmory.FX
                                             WarheadTypes.Kinetic => ImpactSpeed,
                                             _ => ExplosionVelocity
                                         },
-                                        ExplosionSourceType.Missile);
+                                        ExplosionSource);
                                 }
 
                                 if (penetrationFactor > 1 && warheadType != WarheadTypes.Kinetic)
