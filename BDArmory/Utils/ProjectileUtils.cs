@@ -160,11 +160,12 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Part Material blacklist: " + string.Join(", ", materialsBlacklist));
             }
-            return ProjectileUtils.materialsBlacklist.Contains(Part.partInfo.name);
+            return materialsBlacklist.Contains(Part.partInfo.name);
         }
         static HashSet<string> reportingWeaponList;
-        public static bool isReportingWeapon(Part Part)
+        public static bool isReportingWeapon(Part part)
         {
+            if (part == null) return false;
             if (reportingWeaponList == null)
             {
                 reportingWeaponList = new HashSet<string> { };
@@ -186,7 +187,7 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Weapon Reporting List: " + string.Join(", ", reportingWeaponList));
             }
-            return ProjectileUtils.reportingWeaponList.Contains(Part.partInfo.name);
+            return reportingWeaponList.Contains(part.partInfo.name);
         }
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {
@@ -1159,7 +1160,7 @@ namespace BDArmory.Utils
             }
             else
             {
-                probability = Utils.BDAMath.RangedProbability(new[] { 50f, 25f, 20f, 2f });
+                probability = BDAMath.RangedProbability(new[] { 50f, 25f, 20f, 2f });
             }
 
             if (fuelPct == 1f || fuelPct == 0f)
