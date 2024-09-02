@@ -1673,7 +1673,7 @@ namespace BDArmory.Control
                 fc.rcsLerpRate = 5f;
                 fc.rcsRotate = false;
             }
-            
+
             fc.RCSVector = inputVec;
 
             // Update engine RCS
@@ -1773,6 +1773,7 @@ namespace BDArmory.Control
             float reverseThrust = 0f;
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
             {
+                if (engine.throttleLocked || !engine.allowShutdown || !engine.allowRestart) continue; // Ignore engines that can't be throttled, shutdown, or restart
                 if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
                 if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0.1f && engine.MaxThrustOutputVac(true)  > 0)
                 {
@@ -1975,7 +1976,7 @@ namespace BDArmory.Control
             Mathf.Clamp(steerPitch, -maxSteer, maxSteer), // pitch
             Mathf.Clamp(steerYaw, -maxSteer, maxSteer), // yaw
             Mathf.Clamp(steerRoll, -maxSteer, maxSteer)); // roll
-            
+
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine(string.Format("rollError: {0,7:F4}, pitchError: {1,7:F4}, yawError: {2,7:F4}", rollError, pitchError, yawError));
