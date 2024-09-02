@@ -1784,7 +1784,7 @@ namespace BDArmory.Control
                     reverseEngines.Add(engine);
                     reverseThrust += engine.MaxThrustOutputVac(true);
                 }
-                else
+                else if (EngineRCSRotation || EngineRCSTranslation)
                 {
                     if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) > 0.5f ||
                         Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) < -0.5f ||
