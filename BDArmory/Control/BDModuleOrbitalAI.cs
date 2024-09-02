@@ -143,8 +143,7 @@ namespace BDArmory.Control
             UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
         public float ForceFiringRange = 100f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_AllowRamming", advancedTweakable = true, //Toggle Allow Ramming
-            groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_AI_Ramming", groupStartCollapsed = true),
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_AllowRamming", advancedTweakable = true), //Toggle Allow Ramming
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool allowRamming = true; // Allow switching to ramming mode.
         #endregion
@@ -161,6 +160,14 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ReverseEngines"),//Use reverse engines
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool ReverseThrust = true;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_EngineRCSRotation"),//Use engines as RCS for rotation
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool EngineRCSRotation = true;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_EngineRCSTranslation"),//Use engines as RCS for translation
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool EngineRCSTranslation = true;
         #endregion
 
         #region Speeds
@@ -1666,8 +1673,12 @@ namespace BDArmory.Control
                 fc.rcsLerpRate = 5f;
                 fc.rcsRotate = false;
             }
-
+            
             fc.RCSVector = inputVec;
+
+            // Update engine RCS
+            fc.engineRCSTranslation = EngineRCSTranslation;
+            fc.engineRCSRotation = EngineRCSRotation;
         }
 
         private void UpdateBurnAlignmentTolerance()
@@ -1773,9 +1784,9 @@ namespace BDArmory.Control
                     reverseEngines.Add(engine);
                     reverseThrust += engine.MaxThrustOutputVac(true);
                 }
-                else 
+                else
                 {
-                    if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) > 0.5f || 
+                    if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) > 0.5f ||
                         Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.right) < -0.5f ||
                         Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.forward) > 0.5f ||
                         Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.forward) < -0.5f)
