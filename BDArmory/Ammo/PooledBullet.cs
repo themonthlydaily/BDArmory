@@ -37,16 +37,23 @@ namespace BDArmory.Bullets
         void FixedUpdate()
         {
             if (activeBullets.Count == 0) return;
+            var autoSync = Physics.autoSyncTransforms;
             try
             {
                 // Perform the various stages that pooled bullets go through in blocks to hopefully reduce physics sync delays.
                 // Bullets should get removed from activeBullets if they die.
                 var bullets = activeBullets.ToList(); // Pre-convert to a list and skip null bullets. This avoids moving subprojectiles from flak rounds.
                 foreach (var bullet in bullets) if (bullet != null) bullet.PreCollisions();
+                Physics.SyncTransforms(); Physics.autoSyncTransforms = false; // Sync the physics, then prevent any auto-syncing while we run our collision checks.
                 foreach (var bullet in bullets) if (bullet != null) bullet.DoCollisions(); // All the Physics calls occur here.
+                Physics.autoSyncTransforms = autoSync; // Re-enable auto-syncing.
                 foreach (var bullet in bullets) if (bullet != null) bullet.PostCollisions();
             }
-            catch (Exception e) { Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}"); } // This shouldn't happen, but if it does, some active bullets may get out of sync.
+            catch (Exception e)
+            { // This shouldn't happen, but if it does, some active bullets may get out of sync.
+                Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}");
+                Physics.autoSyncTransforms = autoSync;
+            }
         }
     }
 
