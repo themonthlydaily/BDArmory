@@ -511,9 +511,10 @@ namespace BDArmory.FX
                         {
                             if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastImpulse, realDistance, SourceVesselName, eventToExecute.Hit, ExplosionSource, thermalRadius - realDistance)) //false = armor blowthrough
                             {
-                                damage = part.AddExplosiveDamage(blastDamage, 1, ExplosionSource, 1);
+                                damage = ProjectileUtils.IsArmorPart(part) ? blastDamage : part.AddExplosiveDamage(blastDamage, 1, ExplosionSource, 1); //armor panels return damage = 0, so adding exception so they still score properly
+                                // no damage reduction from very thick armor, but no multiplier from damage type, either, should balance out. And any comp that allows nukes probably isn't going to be weighting DamageIn...
                             }
-                            if (damage > 0 || ProjectileUtils.IsArmorPart(part)) //armor panels return damage = 0, so adding exception so they still score properly
+                            if (damage > 0) 
                             {
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
