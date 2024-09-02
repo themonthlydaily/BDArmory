@@ -496,7 +496,7 @@ namespace BDArmory.FX
                     if (lastValidAtmDensity > 0.1)
                         blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot; // * (radiativeArea / 3f); pascals/m isn't going to increase if a larger surface area, it's still going go be same force
                     else
-                        blastImpulse = (nukeMass * 15295.74) / (4 * Math.PI * Math.Pow(realDistance, 2.0)) * (part.radiativeArea / 3.0);
+                        blastImpulse = (nukeMass * 15295.74) / (4 * Math.PI * Math.Pow(realDistance, 2.0));// * (part.radiativeArea / 3.0);
                     if (blastImpulse > 0)
                     {
                         float damage = 0;

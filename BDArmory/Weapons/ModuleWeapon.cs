@@ -2211,7 +2211,7 @@ namespace BDArmory.Weapons
 
                                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = iTime;
                                     // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
-                                    pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, maxEffectiveDistance) / bulletVelocity * 1.1f + Time.time;
+                                    pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f + Time.time;
 
                                     timeFired = Time.time - iTime;
                                     if (isRippleFiring && weaponManager.barrageStagger > 0) // Add variability to fired time to cause variability in reload time.
@@ -2265,7 +2265,7 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        pBullet.defaultDetonationRange = defaultDetonationRange;
+                                        //pBullet.defaultDetonationRange = defaultDetonationRange; deprecated, Timed fuze rounds use timeToDetonation now
                                         pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
