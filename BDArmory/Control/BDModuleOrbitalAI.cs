@@ -1428,7 +1428,7 @@ namespace BDArmory.Control
             {
                 recentFiringSolution = Vector3.zero;
             }
-            else if (weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
+            else if (weaponManager && weaponManager.previousGun != null) // If we had a gun recently selected, use it to continue pointing toward target
             {
                 recentFiringSolution = GunFiringSolution(weaponManager.previousGun);
                 validRecentSolution = true;
