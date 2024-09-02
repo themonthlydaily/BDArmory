@@ -513,7 +513,7 @@ namespace BDArmory.FX
                             {
                                 damage = part.AddExplosiveDamage(blastDamage, 1, ExplosionSource, 1);
                             }
-                            if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
+                            if (damage > 0 || ProjectileUtils.IsArmorPart(part)) //armor panels return damage = 0, so adding exception so they still score properly
                             {
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
@@ -544,7 +544,7 @@ namespace BDArmory.FX
                                 switch (ExplosionSource)
                                 {
                                     case ExplosionSourceType.Missile:
-                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
+                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage); //FIXME/TODO - damage should probably correlate in some way to armor mass lost/damage to armor, instead of '0'
                                         break;
                                     case ExplosionSourceType.BattleDamage:
                                         BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
