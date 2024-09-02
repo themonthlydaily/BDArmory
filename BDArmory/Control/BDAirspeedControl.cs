@@ -524,6 +524,7 @@ namespace BDArmory.Control
         private Vector3 RCSThrust;
         private Vector3 up, right, forward;
         private float RCSThrottle;
+        private float lastEpsilon = 0.05f;
 
         //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
 
@@ -586,6 +587,15 @@ namespace BDArmory.Control
 
         void UpdateRCS(FlightCtrlState s)
         {
+            // When firing, adjust the minimum RCS thrust based on angle to target to allow minute adjustments using RCS
+            float rcsEpsilon = lerpAttitude == false ? 0.05f : Mathf.Lerp(0.05f, 0.01f, Mathf.Clamp01((Vector3.Dot(attitude, vessel.ReferenceTransform.up) - 0.999f) / 0.001f)); // 0.05 at greater than ~2.5 deg, 0.01 at 0 deg, default Epsilon is 0.05f
+            if (rcsEpsilon != lastEpsilon)
+            {
+                foreach (ModuleRCS thruster in VesselModuleRegistry.GetModules<ModuleRCS>(vessel))
+                    thruster.EPSILON = rcsEpsilon;
+                lastEpsilon = rcsEpsilon;
+            }
+
             if (RCSVector == Vector3.zero) 
             {
                 RCSEngineControl(s);
@@ -652,12 +662,13 @@ namespace BDArmory.Control
                 (vessel.vesselSize.y + vessel.vesselSize.z) / 4f, // Pitch: average of height and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.z) / 4f, // Yaw: average of width and length, halved
                 (vessel.vesselSize.x + vessel.vesselSize.y) / 4f); // Roll: average of width and height, halved    
+            float giveThrustMin = Mathf.Lerp(0.13f, 0f, Mathf.Clamp01(Vector3.Dot(attitude, vessel.ReferenceTransform.up)));
             for (int i = 0; i < rcsEngines.Count; i++)
             {
                 if (rcsEngines[i] == null) continue;
 
                 // RCS translation
-                float giveThrust = Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation)); ;
+                float giveThrust = Mathf.Clamp(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation), -1f, 1f);
 
                 // RCS Rotation using Moments
                 float pitchMoment = s.pitch * Vector3.Dot(vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.x;
@@ -665,7 +676,7 @@ namespace BDArmory.Control
                 float rollMoment = s.roll * Vector3.Dot(vessel.ReferenceTransform.up, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.z;
                 giveThrust += pitchMoment + yawMoment + rollMoment; // Modify any translation to allow rotation
 
-                if (giveThrust > (PIDActive ? 0.13f : 0.25f))
+                if (giveThrust >= giveThrustMin)
                     rcsEngines[i].thrustPercentage = Mathf.Clamp01(giveThrust) * 100;
                 else
                     rcsEngines[i].thrustPercentage = 0;
