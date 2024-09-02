@@ -668,7 +668,7 @@ namespace BDArmory.Control
                 if (rcsEngines[i] == null) continue;
 
                 // RCS translation
-                float giveThrust = Mathf.Clamp01(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation)); ;
+                float giveThrust = Mathf.Clamp(Vector3.Dot(-rcsEngines[i].thrustTransforms[0].forward, rcsTranslation), -1f, 1f);
 
                 // RCS Rotation using Moments
                 float pitchMoment = s.pitch * Vector3.Dot(vessel.ReferenceTransform.right, Vector3.Cross(rcsEngines[i].transform.position - vessel.CoM, rcsEngines[i].thrustTransforms[0].forward)) / vesselRad.x;
