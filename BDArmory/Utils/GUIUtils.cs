@@ -491,32 +491,33 @@ namespace BDArmory.Utils
         /// <param name="maxValue"></param>
         /// <param name="sigFig"></param>
         /// <param name="withZero"></param>
+        /// <param name="reducedPrecisionAtMin"></param>
         /// <param name="cache">A cache of tuples to avoid needlessly recalculating semi-log values. Can initially be null.</param>
         /// <returns></returns>
-        public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, float sigFig, bool withZero, ref (float, float)[] cache)
+        public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, float sigFig, bool withZero, bool reducedPrecisionAtMin, ref (float, float)[] cache)
         {
             if (cache == null || cache.Length != 3)
             {
                 cache = [
-                    (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero)),
-                    (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1),
-                    (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero))
+                    (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero, reducedPrecisionAtMin)),
+                    (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero, reducedPrecisionAtMin) : 1),
+                    (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero, reducedPrecisionAtMin))
                 ];
             }
             else
             {
-                if (value != cache[0].Item1) cache[0] = (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero));
-                if (minValue != cache[1].Item1) cache[1] = (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1);
-                if (maxValue != cache[2].Item1) cache[2] = (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero));
+                if (value != cache[0].Item1) cache[0] = (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero, reducedPrecisionAtMin));
+                if (minValue != cache[1].Item1) cache[1] = (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero, reducedPrecisionAtMin) : 1);
+                if (maxValue != cache[2].Item1) cache[2] = (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero, reducedPrecisionAtMin));
             }
             float sliderValue = cache[0].Item2;
             if (sliderValue != (sliderValue = GUI.HorizontalSlider(rect, sliderValue, cache[1].Item2, cache[2].Item2)))
             {
                 cache[0] = (value, sliderValue);
-                return UI_FloatSemiLogRange.FromSliderValue(sliderValue, minValue, sigFig, withZero);
+                return UI_FloatSemiLogRange.FromSliderValue(sliderValue, minValue, sigFig, withZero, reducedPrecisionAtMin);
             }
             else return value;
-            // return UI_FloatSemiLogRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero)), minValue, sigFig, withZero);
+            // return UI_FloatSemiLogRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero, reducedPrecisionAtMin), withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero, reducedPrecisionAtMin) : 1, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero, reducedPrecisionAtMin)), minValue, sigFig, withZero, reducedPrecisionAtMin);
         }
 
         /// <summary>

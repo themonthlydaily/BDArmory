@@ -37,16 +37,23 @@ namespace BDArmory.Bullets
         void FixedUpdate()
         {
             if (activeBullets.Count == 0) return;
+            var autoSync = Physics.autoSyncTransforms;
             try
             {
                 // Perform the various stages that pooled bullets go through in blocks to hopefully reduce physics sync delays.
-                // Bullets should get removed from activeBullets if they die.
+                // Bullets should get deactivated and removed from activeBullets if they die.
                 var bullets = activeBullets.ToList(); // Pre-convert to a list and skip null bullets. This avoids moving subprojectiles from flak rounds.
-                foreach (var bullet in bullets) if (bullet != null) bullet.PreCollisions();
-                foreach (var bullet in bullets) if (bullet != null) bullet.DoCollisions(); // All the Physics calls occur here.
-                foreach (var bullet in bullets) if (bullet != null) bullet.PostCollisions();
+                foreach (var bullet in bullets) if (bullet != null && bullet.isActiveAndEnabled) bullet.PreCollisions();
+                Physics.SyncTransforms(); Physics.autoSyncTransforms = false; // Sync the physics, then prevent any auto-syncing while we run our collision checks.
+                foreach (var bullet in bullets) if (bullet != null && bullet.isActiveAndEnabled) bullet.DoCollisions(); // All the Physics calls occur here.
+                Physics.autoSyncTransforms = autoSync; // Re-enable auto-syncing.
+                foreach (var bullet in bullets) if (bullet != null && bullet.isActiveAndEnabled) bullet.PostCollisions();
             }
-            catch (Exception e) { Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}"); } // This shouldn't happen, but if it does, some active bullets may get out of sync.
+            catch (Exception e)
+            { // This shouldn't happen, but if it does, some active bullets may get out of sync.
+                Debug.LogError($"[BDArmory.PooledBulletManager]: DEBUG {e.Message}\n{e.StackTrace}");
+                Physics.autoSyncTransforms = autoSync;
+            }
         }
     }
 
@@ -232,7 +239,18 @@ namespace BDArmory.Bullets
             {
                 HERatio = 0;
             }
-            if (nuclear)
+            bool hasNuclearSubMunitions = false;
+            if (beehive)
+            {
+                try
+                {
+                    string projType = subMunitionType.Split([';'])[0];
+                    if (BulletInfo.bulletNames.Contains(projType))
+                        hasNuclearSubMunitions = BulletInfo.bullets[projType].nuclear;
+                }
+                catch { } // Ignored, non-nuclear submunitions.
+            }
+            if (nuclear && !isSubProjectile || hasNuclearSubMunitions) // Sub-projectiles get these set from the parent shell during beehive detonation.
             {
                 var nuke = sourceWeapon.FindModuleImplementing<BDModuleNuke>();
                 if (nuke == null)
@@ -1647,6 +1665,7 @@ namespace BDArmory.Bullets
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
                 float subProjVelocity = GetDragAdjustedVelocity().magnitude + sBullet.bulletVelocity;
+                float subDetonationRange = BlastPhysicsUtils.CalculateBlastRange(sBullet.tntMass) * (sBullet.nuclear ? 2f : 0.666f); // The default for BDExplosivePart, unless also nuclear, in which case double the tnt blast radius? FIXME What's a better detonation range for these?
                 for (int s = 0; s < count * sBullet.projectileCount; s++) //this does mean that setting a subMunitionType to, say, shotgun shells and then setting a sMT projectile count of, say, 5, would have only 5 shotgun pellets spawn, even if the shutgun shell projectileCount = 30. Could always have it be count * subMunitiontype.projectileCount if you want shotshells as an allowable submunition
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1698,9 +1717,14 @@ namespace BDArmory.Bullets
                                 pBullet.HEType = PooledBulletTypes.Shaped;
                                 break;
                         }
-                        pBullet.detonationRange = detonationRange;
-                        pBullet.defaultDetonationRange = defaultDetonationRange;
+                        pBullet.defaultDetonationRange = subDetonationRange;
+                        pBullet.detonationRange = subDetonationRange; // FIXME Use the default for now, maybe add a customisable value later?
                         pBullet.fuzeType = sFuze;
+                        pBullet.timeToDetonation = sFuze switch
+                        {
+                            BulletFuzeTypes.Flak => detonationRange / pBullet.bulletVelocity + Time.fixedDeltaTime, // Detonate at expected impact time for flak (plus 1 frame to allow proximity detection).
+                            _ => pBullet.timeToLiveUntil - Time.time // Otherwise detonate at the TTL.
+                        };
                     }
                     else
                     {
@@ -1710,6 +1734,16 @@ namespace BDArmory.Bullets
                     }
                     pBullet.EMP = sBullet.EMP;
                     pBullet.nuclear = sBullet.nuclear;
+                    if (pBullet.nuclear) // Inherit the parent shell's nuke models.
+                    {
+                        pBullet.flashModelPath = flashModelPath;
+                        pBullet.shockModelPath = shockModelPath;
+                        pBullet.blastModelPath = blastModelPath;
+                        pBullet.plumeModelPath = plumeModelPath;
+                        pBullet.debrisModelPath = debrisModelPath;
+                        pBullet.blastSoundPath = blastSoundPath;
+                    }
+                    pBullet.beehive = false; // No sub-sub-munitions.
                     //pBullet.beehive = subMunitionType.beehive;
                     //pBullet.subMunitionType = BulletInfo.bullets[subMunitionType.subMunitionType]
                     //pBullet.homing = BulletInfo.homing;
