@@ -239,7 +239,18 @@ namespace BDArmory.Bullets
             {
                 HERatio = 0;
             }
-            if (nuclear)
+            bool hasNuclearSubMunitions = false;
+            if (beehive)
+            {
+                try
+                {
+                    string projType = subMunitionType.Split([';'])[0];
+                    if (BulletInfo.bulletNames.Contains(projType))
+                        hasNuclearSubMunitions = BulletInfo.bullets[projType].nuclear;
+                }
+                catch { } // Ignored, non-nuclear submunitions.
+            }
+            if (nuclear && !isSubProjectile || hasNuclearSubMunitions) // Sub-projectiles get these set from the parent shell during beehive detonation.
             {
                 var nuke = sourceWeapon.FindModuleImplementing<BDModuleNuke>();
                 if (nuke == null)
@@ -1717,6 +1728,15 @@ namespace BDArmory.Bullets
                     }
                     pBullet.EMP = sBullet.EMP;
                     pBullet.nuclear = sBullet.nuclear;
+                    if (pBullet.nuclear) // Inherit the parent shell's nuke models.
+                    {
+                        pBullet.flashModelPath = flashModelPath;
+                        pBullet.shockModelPath = shockModelPath;
+                        pBullet.blastModelPath = blastModelPath;
+                        pBullet.plumeModelPath = plumeModelPath;
+                        pBullet.debrisModelPath = debrisModelPath;
+                        pBullet.blastSoundPath = blastSoundPath;
+                    }
                     //pBullet.beehive = subMunitionType.beehive;
                     //pBullet.subMunitionType = BulletInfo.bullets[subMunitionType.subMunitionType]
                     //pBullet.homing = BulletInfo.homing;
