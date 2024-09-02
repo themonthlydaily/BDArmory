@@ -1,6 +1,8 @@
 ﻿IMPROVEMENTS / FIXES
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
+- Detectors / Countermeasures:
+	- Allow higher precision for CM intervals and delays in the WM right-click menu.
 - Competition:
 	- Auto-generated tournaments use the last used world.
 	- Disable waiting for terrain to settle if the spawn altitude is >10km.
