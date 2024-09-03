@@ -986,10 +986,9 @@ namespace BDArmory.Control
         {
             // Update propulsion and weapon status
             hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout) || (rcsEngines.Count > 0 && rcsEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout));
-            hasPropulsion = VesselModuleRegistry.GetModuleEngines(vessel).Any(e => e.EngineIgnited && e.isOperational && !e.flameout) ||
-                VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
-                (ReverseThrust && (forwardEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout) ||
-                    reverseEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout)));
+            hasPropulsion = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
+                forwardEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout) ||
+                reverseEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout);
             vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
             hasEC = EcCurrent > 0 || CheatOptions.InfiniteElectricity;
             hasWeapons = (weaponManager != null) && weaponManager.HasWeaponsAndAmmo();
