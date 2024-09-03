@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.7.1.0
+IMPROVEMENTS / FIXES
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
 - UI:
