@@ -55,6 +55,7 @@ namespace BDArmory.Control
         private List<ModuleEngines> reverseEngines = new List<ModuleEngines>();
         private List<ModuleEngines> rcsEngines = new List<ModuleEngines>();
         private bool currentForwardThrust;
+        private bool engineListsRequireUpdating = true;
 
         private Vector3 maxAngularAcceleration;
         private float maxAngularAccelerationMag;
@@ -383,7 +384,10 @@ namespace BDArmory.Control
             SetSliderPairClamps("firingSpeed", "ManeuverSpeed");
             SetSliderPairClamps("MinEngagementRange", "ForceFiringRange");
             if (HighLogic.LoadedSceneIsFlight)
+            {
                 GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
+                GameEvents.onVesselPartCountChanged.Add(CheckEngineLists);
+            }
             CalculateAvailableTorque(vessel);
             ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id; // This should always be found.
         }
@@ -391,6 +395,7 @@ namespace BDArmory.Control
         protected override void OnDestroy()
         {
             GameEvents.onVesselPartCountChanged.Remove(CalculateAvailableTorque);
+            GameEvents.onVesselPartCountChanged.Remove(CheckEngineLists);
             base.OnDestroy();
         }
 
@@ -980,7 +985,7 @@ namespace BDArmory.Control
         void UpdateStatus()
         {
             // Update propulsion and weapon status
-            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout) || rcsEngines.Count > 0;
+            hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout) || (rcsEngines.Count > 0 && rcsEngines.Any(e => e != null && e.EngineIgnited && e.isOperational));
             hasPropulsion = hasRCS ||
                 VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational)) ||
                 VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
@@ -1288,15 +1293,15 @@ namespace BDArmory.Control
             Vector3 cpa = vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA) - targetVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime() + timeToCPA);
             float interceptRange = interceptRanges.z;
             float interceptRangeTolSqr = (interceptRange * (tolerance + 1f)) * (interceptRange * (tolerance + 1f));
-            
+
             bool speedWithinLimits = Mathf.Abs(relVel.magnitude - ManeuverSpeed) < ManeuverSpeed * tolerance;
             if (!speedWithinLimits)
             {
                 BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(targetVessel);
-                    if (targetAI != null)
-                        speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && RelVel(targetVessel, vessel).sqrMagnitude > ManeuverSpeed * ManeuverSpeed; // Target is targeting us, set to maneuver faster, and is maneuvering faster
+                if (targetAI != null)
+                    speedWithinLimits = targetAI.ManeuverSpeed > ManeuverSpeed && targetAI.targetVessel == vessel && RelVel(targetVessel, vessel).sqrMagnitude > ManeuverSpeed * ManeuverSpeed; // Target is targeting us, set to maneuver faster, and is maneuvering faster
             }
-             return cpa.sqrMagnitude < interceptRangeTolSqr && speedWithinLimits;
+            return cpa.sqrMagnitude < interceptRangeTolSqr && speedWithinLimits;
         }
 
         private Vector3 Intercept(Vector3 relPos, Vector3 relVel)
@@ -1750,6 +1755,16 @@ namespace BDArmory.Control
             }
         }
 
+        private void CheckEngineLists(Vessel v)
+        {
+            if (v != vessel) return;
+            if (
+                rcsEngines.Any(e => e == null || e.vessel != vessel) ||
+                reverseEngines.Any(e => e == null || e.vessel != vessel) ||
+                forwardEngines.Any(e => e == null || e.vessel != vessel)
+            ) engineListsRequireUpdating = true;
+        }
+
         private float GetMaxAcceleration()
         {
             maxThrust = GetMaxThrust();
@@ -1764,8 +1779,9 @@ namespace BDArmory.Control
         }
         private void UpdateEngineLists(bool forceUpdate = false)
         {
-            // Update lists of engines that can provide forward and reverse thrust
-            if (!ReverseThrust && !forceUpdate) return;
+            // Update lists of engines that can provide forward, reverse and rcs thrust
+            if (!(engineListsRequireUpdating || forceUpdate)) return;
+            engineListsRequireUpdating = false;
             forwardEngines.Clear();
             reverseEngines.Clear();
             rcsEngines.Clear();
@@ -1775,7 +1791,7 @@ namespace BDArmory.Control
             {
                 if (engine.throttleLocked || !engine.allowShutdown || !engine.allowRestart) continue; // Ignore engines that can't be throttled, shutdown, or restart
                 if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
-                if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0.1f && engine.MaxThrustOutputVac(true)  > 0)
+                if (Vector3.Dot(-engine.thrustTransforms[0].forward, vesselTransform.up) > 0.1f && engine.MaxThrustOutputVac(true) > 0)
                 {
                     forwardEngines.Add(engine);
                     forwardThrust += engine.MaxThrustOutputVac(true);
@@ -1813,6 +1829,9 @@ namespace BDArmory.Control
             }
             else
                 reverseForwardThrustRatio = (forwardThrust == 0) ? 1 : reverseThrust / forwardThrust;
+            // Debug.Log($"DEBUG {vessel.vesselName} has forward engines: {string.Join(", ", forwardEngines.Select(e => e.part.partInfo.name))}");
+            // Debug.Log($"DEBUG {vessel.vesselName} has reverse engines: {string.Join(", ", reverseEngines.Select(e => e.part.partInfo.name))}");
+            // Debug.Log($"DEBUG {vessel.vesselName} has rcs engines: {string.Join(", ", rcsEngines.Select(e => e.part.partInfo.name))}");
         }
 
         private void AlignEnginesWithThrust(bool forceUpdate = false)
