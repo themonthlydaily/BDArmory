@@ -8,6 +8,8 @@
 		-Adds ability to use sidemounted engiens as RCS thrusters.
 		-Adds Zero-throttle firing range setting that will override maneuvering orientation in favor of pointing ship in attack Vector direction within set distance.
 		-AI now takes target acceleration/velocity into account when accelerating to engagement speed/killing velocity.
+- Detectors / Countermeasures:
+	- Allow higher precision for CM intervals and delays in the WM right-click menu.
 - Competition:
 	- Auto-generated tournaments use the last used world.
 	- Disable waiting for terrain to settle if the spawn altitude is >10km.
