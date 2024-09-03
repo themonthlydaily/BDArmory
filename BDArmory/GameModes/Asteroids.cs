@@ -641,6 +641,7 @@ namespace BDArmory.GameModes
         // Pooling of asteroids
         List<Vessel> asteroidPool = [];
         int lastPoolIndex = 0;
+        int maxPoolSize = int.MaxValue;
         HashSet<string> asteroidNames = [];
         readonly Dictionary<string, float> attractionFactors = [];
         #endregion
@@ -755,6 +756,7 @@ namespace BDArmory.GameModes
                     StartCoroutine(SetInitialRotation(asteroid));
                     asteroids[i] = asteroid;
                 }
+                else Debug.LogWarning($"[BDArmory.Asteroids]: Failed to spawn asteroid {i + 1} of {asteroids.Length}.");
             }
             floatingCoroutine = StartCoroutine(Float());
         }
@@ -967,6 +969,7 @@ namespace BDArmory.GameModes
                 { StartCoroutine(CleanAsteroid(asteroid)); }
             }
             // Finally, add more if needed.
+            maxPoolSize = 2 * count; // If we need more than this, then something has broken.
             if (count > asteroidPool.Count) { AddAsteroidsToPool(count - asteroidPool.Count); }
         }
 
@@ -1056,7 +1059,8 @@ namespace BDArmory.GameModes
                 }
             }
 
-            var size = (int)(asteroidPool.Count * 1.1) + 1; // Grow by 10% + 1
+            if (asteroidPool.Count >= maxPoolSize) return null; // Something is going wrong with adding asteroids to the pool, don't keep trying to add more.
+            var size = Math.Min((int)(asteroidPool.Count * 1.1) + 1, maxPoolSize); // Grow by 10% + 1
             AddAsteroidsToPool(size - asteroidPool.Count);
 
             return asteroidPool[asteroidPool.Count - 1]; // Return the last entry in the pool

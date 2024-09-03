@@ -148,7 +148,6 @@ namespace BDArmory.Bullets
 
         Vector3 startPosition;
         public float detonationRange = 5f;
-        //public float defaultDetonationRange = 3500f;
         public float timeToDetonation;
         float armingTime;
         float randomWidthScale = 1;
@@ -1727,7 +1726,6 @@ namespace BDArmory.Bullets
                             }
                         }
                         pBullet.detonationRange = subDetonationRange;
-                        //pBullet.defaultDetonationRange = defaultDetonationRange; //Deprecated legacy value functions have been spun off to TimeToDetonation/TimeToLive
                         pBullet.fuzeType = sFuze;
                         pBullet.timeToDetonation = sFuze switch
                         {

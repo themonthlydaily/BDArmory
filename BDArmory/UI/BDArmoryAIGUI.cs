@@ -329,15 +329,15 @@ namespace BDArmory.UI
         /// <param name="gAI">The AI.</param>
         /// <param name="fieldName">The name of the field to look at.</param>
         /// <returns>value, minValue, maxValue, (rounding, sigFig, withZero)</returns>
-        (float, float, float, (float, float, bool)) GetAIFieldLimits(ActiveAIType aiType, BDGenericAIBase gAI, string fieldName)
+        (float, float, float, (float, float, bool, bool)) GetAIFieldLimits(ActiveAIType aiType, BDGenericAIBase gAI, string fieldName)
         {
             float value = 0, minValue = 0, maxValue = 0, rounding = 0, sigFig = 0;
-            bool withZero = false;
+            bool withZero = false, reducedPrecisionAtMin = false;
             try
             {
-                (float, float, float, float, bool) GetLimits(UI_FloatRange uic)
+                (float, float, float, float, bool, bool) GetLimits(UI_FloatRange uic)
                 {
-                    if (uic is UI_FloatSemiLogRange) (minValue, maxValue, rounding, sigFig, withZero) = (uic as UI_FloatSemiLogRange).GetLimits();
+                    if (uic is UI_FloatSemiLogRange) (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin) = (uic as UI_FloatSemiLogRange).GetLimits();
                     else if (uic is UI_FloatPowerRange) (minValue, maxValue, rounding, sigFig) = (uic as UI_FloatPowerRange).GetLimits();
                     else
                     {
@@ -345,7 +345,7 @@ namespace BDArmory.UI
                         maxValue = uic.maxValue;
                         rounding = uic.stepIncrement;
                     }
-                    return (minValue, maxValue, rounding, sigFig, withZero);
+                    return (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin);
                 }
                 switch (aiType)
                 {
@@ -353,7 +353,7 @@ namespace BDArmory.UI
                         {
                             var AI = gAI as BDModulePilotAI;
                             var uic = (HighLogic.LoadedSceneIsFlight ? AI.Fields[fieldName].uiControlFlight : AI.Fields[fieldName].uiControlEditor) as UI_FloatRange;
-                            (minValue, maxValue, rounding, sigFig, withZero) = GetLimits(uic);
+                            (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin) = GetLimits(uic);
                             value = (float)typeof(BDModulePilotAI).GetField(fieldName).GetValue(AI);
                         }
                         break;
@@ -361,7 +361,7 @@ namespace BDArmory.UI
                         {
                             var AI = gAI as BDModuleSurfaceAI;
                             var uic = (HighLogic.LoadedSceneIsFlight ? AI.Fields[fieldName].uiControlFlight : AI.Fields[fieldName].uiControlEditor) as UI_FloatRange;
-                            (minValue, maxValue, rounding, sigFig, withZero) = GetLimits(uic);
+                            (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin) = GetLimits(uic);
                             value = (float)typeof(BDModuleSurfaceAI).GetField(fieldName).GetValue(AI);
                         }
                         break;
@@ -369,7 +369,7 @@ namespace BDArmory.UI
                         {
                             var AI = gAI as BDModuleVTOLAI;
                             var uic = (HighLogic.LoadedSceneIsFlight ? AI.Fields[fieldName].uiControlFlight : AI.Fields[fieldName].uiControlEditor) as UI_FloatRange;
-                            (minValue, maxValue, rounding, sigFig, withZero) = GetLimits(uic);
+                            (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin) = GetLimits(uic);
                             value = (float)typeof(BDModuleVTOLAI).GetField(fieldName).GetValue(AI);
                         }
                         break;
@@ -377,7 +377,7 @@ namespace BDArmory.UI
                         {
                             var AI = gAI as BDModuleOrbitalAI;
                             var uic = (HighLogic.LoadedSceneIsFlight ? AI.Fields[fieldName].uiControlFlight : AI.Fields[fieldName].uiControlEditor) as UI_FloatRange;
-                            (minValue, maxValue, rounding, sigFig, withZero) = GetLimits(uic);
+                            (minValue, maxValue, rounding, sigFig, withZero, reducedPrecisionAtMin) = GetLimits(uic);
                             value = (float)typeof(BDModuleOrbitalAI).GetField(fieldName).GetValue(AI);
                         }
                         break;
@@ -391,7 +391,7 @@ namespace BDArmory.UI
 #endif
                 Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to retrieve field limits from {fieldName} on AI of type {aiType}: {errorMsg}");
             }
-            return (value, minValue, maxValue, (rounding, sigFig, withZero));
+            return (value, minValue, maxValue, (rounding, sigFig, withZero, reducedPrecisionAtMin));
         }
 
         /// <summary>
@@ -400,11 +400,11 @@ namespace BDArmory.UI
         /// </summary>
         /// <param name="fieldName"></param>
         /// <returns>minValue, maxValue, rounding, sig.fig., with zero</returns>
-        (float, float, float, float, bool) GetFieldLimits(string fieldName)
+        (float, float, float, float, bool, bool) GetFieldLimits(string fieldName)
         {
-            if (!inputFields.ContainsKey(fieldName)) return (0, 0, 0, 0, false);
+            if (!inputFields.ContainsKey(fieldName)) return (0, 0, 0, 0, false, false);
             var field = inputFields[fieldName];
-            return ((float)field.minValue, (float)field.maxValue, field.rounding, field.sigFig, field.withZero);
+            return ((float)field.minValue, (float)field.maxValue, field.rounding, field.sigFig, field.withZero, field.reducedPrecisionAtMin);
         }
 
         /// <summary>
@@ -813,7 +813,7 @@ namespace BDArmory.UI
                         GUI.Label(SettinglabelRect(line), StringUtils.Localize($"#LOC_BDArmory_AIWindow_{baseLOC}") + ": " + formattedValue, Label);
                         if (!NumFieldsEnabled)
                         {
-                            var (min, max, rounding, _, _) = GetFieldLimits(fieldName);
+                            var (min, max, rounding, _, _, _) = GetFieldLimits(fieldName);
                             if (fieldName == "firingSpeed") Debug.Log($"DEBUG min: {min}, max: {max}, rounding: {rounding}");
                             if (value != (value = GUI.HorizontalSlider(SettingSliderRect(line, width), value, min, max)) && rounding > 0)
                                 value = BDAMath.RoundToUnit(value, rounding);
@@ -841,10 +841,10 @@ namespace BDArmory.UI
                         GUI.Label(SettinglabelRect(line), StringUtils.Localize($"#LOC_BDArmory_AIWindow_{baseLOC}") + ": " + formattedValue, Label);
                         if (!NumFieldsEnabled)
                         {
-                            var (min, max, rounding, sigFig, withZero) = GetFieldLimits(fieldName);
+                            var (min, max, rounding, sigFig, withZero, reducedPrecisionAtMin) = GetFieldLimits(fieldName);
                             if (!cacheSemiLogLimits.ContainsKey(fieldName)) { cacheSemiLogLimits[fieldName] = null; }
                             var cache = cacheSemiLogLimits[fieldName];
-                            if (value != (value = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(line, width), value, min, max, sigFig, withZero, ref cache)) && rounding > 0)
+                            if (value != (value = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(line, width), value, min, max, sigFig, withZero, reducedPrecisionAtMin, ref cache)) && rounding > 0)
                                 value = BDAMath.RoundToUnit(value, rounding);
                         }
                         else
@@ -2050,6 +2050,24 @@ namespace BDArmory.UI
                                     if (contextTipsEnabled)
                                     {
                                         GUI.Label(ContextLabelRect(line++), StringUtils.Localize("#LOC_BDArmory_AIWindow_ReverseEngines_Context"), contextLabel);
+                                    }
+
+                                    AI.EngineRCSRotation = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.EngineRCSRotation,
+                                        StringUtils.Localize("#LOC_BDArmory_AIWindow_EngineRCSRotation") + " : " + (AI.EngineRCSRotation ? StringUtils.Localize("#LOC_BDArmory_Enabled") : StringUtils.Localize("#LOC_BDArmory_Disabled")),
+                                        AI.EngineRCSRotation ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                    line += 1.25f;
+                                    if (contextTipsEnabled)
+                                    {
+                                        GUI.Label(ContextLabelRect(line++), StringUtils.Localize("#LOC_BDArmory_AIWindow_EngineRCSRotation_Context"), contextLabel);
+                                    }
+
+                                    AI.EngineRCSTranslation = GUI.Toggle(ToggleButtonRect(line, contentWidth), AI.EngineRCSTranslation,
+                                        StringUtils.Localize("#LOC_BDArmory_AIWindow_EngineRCSTranslation") + " : " + (AI.EngineRCSTranslation ? StringUtils.Localize("#LOC_BDArmory_Enabled") : StringUtils.Localize("#LOC_BDArmory_Disabled")),
+                                        AI.EngineRCSTranslation ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                    line += 1.25f;
+                                    if (contextTipsEnabled)
+                                    {
+                                        GUI.Label(ContextLabelRect(line++), StringUtils.Localize("#LOC_BDArmory_AIWindow_EngineRCSTranslation_Context"), contextLabel);
                                     }
 
                                     GUI.EndGroup();

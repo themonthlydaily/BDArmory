@@ -3257,19 +3257,16 @@ namespace BDArmory.Competition
         // Initialise the rammingInformation dictionary with the required vessels.
         public void InitialiseRammingInformation()
         {
-            double currentTime = Planetarium.GetUniversalTime();
             rammingInformation = new Dictionary<string, RammingInformation>();
             var pilots = GetAllPilots();
             foreach (var pilot in pilots)
             {
-                var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(pilot.vessel); // Get the pilot AI if the vessel has one.
-                if (pilotAI == null) continue;
+                if (pilot as BDModulePilotAI == null && pilot as BDModuleOrbitalAI == null) continue; // Ignore those without valid AIs.
                 var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();
                 foreach (var otherPilot in pilots)
                 {
                     if (otherPilot == pilot) continue; // Don't include same-vessel information.
-                    var otherPilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(otherPilot.vessel); // Get the pilot AI if the vessel has one.
-                    if (otherPilotAI == null) continue;
+                    if (otherPilot as BDModulePilotAI == null && otherPilot as BDModuleOrbitalAI == null) continue; // Ignore those without valid AIs.
                     targetRammingInformation.Add(otherPilot.vessel.vesselName, new RammingTargetInformation { vessel = otherPilot.vessel });
                 }
                 rammingInformation.Add(pilot.vessel.vesselName, new RammingInformation
@@ -3281,6 +3278,15 @@ namespace BDArmory.Competition
                     targetInformation = targetRammingInformation,
                 });
             }
+        }
+
+        bool GetAIRammingState(IBDAIControl AI)
+        {
+            var pilotAI = AI as BDModulePilotAI;
+            if (pilotAI != null) return pilotAI.ramming;
+            var orbitalAI = AI as BDModuleOrbitalAI;
+            if (orbitalAI != null) return orbitalAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Ramming;
+            return false; // The other AIs don't have ramming modes currently.
         }
 
         /// <summary>
@@ -3335,13 +3341,13 @@ namespace BDArmory.Competition
             foreach (var vesselName in rammingInformation.Keys)
             {
                 var vessel = rammingInformation[vesselName].vessel;
-                var pilotAI = vessel != null ? VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel) : null; // Get the pilot AI if the vessel has one.
+                var AI = vessel != null ? VesselModuleRegistry.GetIBDAIControl(vessel) : null; // Get the pilot AI if the vessel has one.
 
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                    var otherPilotAI = otherVessel != null ? VesselModuleRegistry.GetModule<BDModulePilotAI>(otherVessel) : null; // Get the pilot AI if the vessel has one.
-                    if (pilotAI == null || otherPilotAI == null) // One of the vessels or pilot AIs has been destroyed.
+                    var otherAI = otherVessel != null ? VesselModuleRegistry.GetIBDAIControl(otherVessel) : null; // Get the pilot AI if the vessel has one.
+                    if (AI == null || otherAI == null) // One of the vessels or pilot AIs has been destroyed.
                     {
                         rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
                         rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
@@ -3466,10 +3472,10 @@ namespace BDArmory.Competition
                                 rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollisionDetectionTime = currentTime;
 
                                 // Register intent to ram.
-                                var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
-                                rammingInformation[vesselName].targetInformation[otherVesselName].ramming |= (pilotAI != null && pilotAI.ramming); // Pilot AI is alive and trying to ram.
-                                var otherPilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(otherVessel);
-                                rammingInformation[otherVesselName].targetInformation[vesselName].ramming |= (otherPilotAI != null && otherPilotAI.ramming); // Other pilot AI is alive and trying to ram.
+                                var AI = VesselModuleRegistry.GetIBDAIControl(vessel);
+                                rammingInformation[vesselName].targetInformation[otherVesselName].ramming |= GetAIRammingState(AI); // The AI is alive and trying to ram.
+                                var otherAI = VesselModuleRegistry.GetIBDAIControl(otherVessel);
+                                rammingInformation[otherVesselName].targetInformation[vesselName].ramming |= GetAIRammingState(otherAI); // The other AI is alive and trying to ram.
                             }
                         }
                     }
@@ -3705,23 +3711,23 @@ namespace BDArmory.Competition
                     if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
                     {
                         var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                        var pilotAI = vessel != null ? VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel) : null;
-                        var otherPilotAI = otherVessel != null ? VesselModuleRegistry.GetModule<BDModulePilotAI>(otherVessel) : null;
+                        var AI = vessel != null ? VesselModuleRegistry.GetIBDAIControl(vessel) : null;
+                        var otherAI = otherVessel != null ? VesselModuleRegistry.GetIBDAIControl(otherVessel) : null;
 
                         // Count the number of parts lost.
-                        var rammedPartsLost = (otherPilotAI == null) ? rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision : rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision - otherVessel.parts.Count;
-                        var rammingPartsLost = (pilotAI == null) ? rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision : rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision - vessel.parts.Count;
+                        var rammedPartsLost = (otherAI == null) ? rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision : rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision - otherVessel.parts.Count;
+                        var rammingPartsLost = (AI == null) ? rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision : rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision - vessel.parts.Count;
                         if (rammedPartsLost < 0 || rammingPartsLost < 0) // BUG! A plane involved in two collisions close together apparently can cause this?
                         {
                             Debug.LogWarning($"[BDArmory.BDACompetitionMode]: Negative parts lost in ram! Clamping to 0.");
                             if (rammedPartsLost < 0)
                             {
-                                Debug.LogWarning($"[BDArmory.BDACompetitionMode]: {otherVesselName} had {rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision} parts and lost {rammedPartsLost} parts (current part count: {(otherPilotAI == null ? "none" : $"{otherVessel.parts.Count}")})");
+                                Debug.LogWarning($"[BDArmory.BDACompetitionMode]: {otherVesselName} had {rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision} parts and lost {rammedPartsLost} parts (current part count: {(otherAI == null ? "none" : $"{otherVessel.parts.Count}")})");
                                 rammedPartsLost = 0;
                             }
                             if (rammingPartsLost < 0)
                             {
-                                Debug.LogWarning($"[BDArmory.BDACompetitionMode]: {vesselName} had {rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision} parts and lost {rammingPartsLost} parts (current part count: {(pilotAI == null ? "none" : $"{vessel.parts.Count}")})");
+                                Debug.LogWarning($"[BDArmory.BDACompetitionMode]: {vesselName} had {rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision} parts and lost {rammingPartsLost} parts (current part count: {(AI == null ? "none" : $"{vessel.parts.Count}")})");
                                 rammingPartsLost = 0;
                             }
                         }

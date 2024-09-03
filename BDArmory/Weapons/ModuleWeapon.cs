@@ -2265,7 +2265,6 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        //pBullet.defaultDetonationRange = defaultDetonationRange; deprecated, Timed fuze rounds use timeToDetonation now
                                         pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
