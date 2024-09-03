@@ -1,5 +1,7 @@
 ﻿v1.7.1.0
 IMPROVEMENTS / FIXES
+- General:
+	- Add a SimpleRepaint MM patch to ignore incompatible parts.
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
 - UI:
@@ -24,6 +26,7 @@ IMPROVEMENTS / FIXES
 	- Fix APS going rapid-fire when running out of ammo.
 	- Fix HEAT bullets being reported as Missile damage in the Score parser.
 	- Fix issue with velocity calc that would result in penetrating rounds slowly drifing away from a hit ship in space.
+	- Update the KKV model with fixed textures thanks to Stardust.
 
 1.7.0.0
 IMPROVEMENTS / FIXES
