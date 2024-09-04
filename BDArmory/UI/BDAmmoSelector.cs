@@ -6,6 +6,7 @@ using BDArmory.Bullets;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using System.Collections;
 
 namespace BDArmory.UI
 {
@@ -144,7 +145,19 @@ namespace BDArmory.UI
                 }
                 ammoDesc.Add(guiAmmoTypeString);
             }
+        }
 
+        // Doing it this way prevents OnGUI events from below the window from being triggered by the window disappearing.
+        void CloseWindow() => StartCoroutine(CloseWindowAtEndOfFrame());
+        bool waitingForEndOfFrame = false;
+        IEnumerator CloseWindowAtEndOfFrame()
+        {
+            if (waitingForEndOfFrame) yield break;
+            waitingForEndOfFrame = true;
+            yield return new WaitForEndOfFrame();
+            waitingForEndOfFrame = false;
+            open = false;
+            GUIUtils.PreventClickThrough(windowRect, "BDABELTLOCK", true);
         }
 
         string[] applyWeaponGroupTo;
@@ -188,9 +201,8 @@ namespace BDArmory.UI
             if (open)
             {
                 if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, windowRect.position);
-				windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+                windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
-            PreventClickThrough();
         }
         private void SetBeltInfo(ModuleWeapon weapon)
         {
@@ -202,16 +214,17 @@ namespace BDArmory.UI
         }
         private void AmmoSelectorWindow(int id)
         {
+            GUIUtils.PreventClickThrough(windowRect, "BDABELTLOCK");
             float line = 0.5f;
             string labelString = GUIstring.ToString() + countString.ToString();
             GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Setup"), titleStyle);
             if (GUI.Button(new Rect(width - 26, 2, 24, 24), "X", BDArmorySetup.CloseButtonStyle))
             {
-                open = false;
                 beltString = string.Empty;
                 GUIstring = string.Empty;
                 countString = string.Empty;
                 lastGUIstring = string.Empty;
+                CloseWindow();
             }
             line++;
             GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Weapon") + " " + selectedWeapon.part.partInfo.title, labelStyle);
@@ -269,7 +282,7 @@ namespace BDArmory.UI
             if (GUI.Button(new Rect((margin * 5) + ((width - (10 * margin)) / 2), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_save"), BDArmorySetup.ButtonStyle))
             {
                 save = true;
-                open = false;
+                CloseWindow();
             }
             line += 1.5f;
 
@@ -295,38 +308,7 @@ namespace BDArmory.UI
 
         private void OnDestroy()
         {
-            open = false;
+            CloseWindow();
         }
-
-        private void PreventClickThrough()
-        {
-            bool cursorInGUI = false;
-            EditorLogic EdLogInstance = EditorLogic.fetch;
-            if (!EdLogInstance)
-            {
-                return;
-            }
-            if (open)
-            {
-                cursorInGUI = windowRect.Contains(GetMousePos());
-            }
-            if (cursorInGUI)
-            {
-                if (!CameraMouseLook.GetMouseLook())
-                    EdLogInstance.Lock(false, false, false, "BDABELTLOCK");
-                else
-                    EdLogInstance.Unlock("BDABELTLOCK");
-            }
-            else if (!cursorInGUI)
-            {
-                EdLogInstance.Unlock("BDABELTLOCK");
-            }
-        }
-        private Vector3 GetMousePos()
-        {
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.y = Screen.height - mousePos.y;
-            return mousePos;
-        }
-    }
+   }
 }

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
+using System.Collections;
 using UniLinq;
 using UnityEngine;
 
@@ -161,9 +162,37 @@ namespace BDArmory.Utils
         public static void UseMouseEventInRect(Rect rect)
         {
             if (Event.current == null) return;
-            if (GUIUtils.MouseIsInRect(rect) && ((Event.current.isMouse && Event.current.type == EventType.MouseDown) || Event.current.isScrollWheel)) // Don't consume MouseUp events as multiple windows should use these.
+            if (MouseIsInRect(rect) && ((Event.current.isMouse && Event.current.type == EventType.MouseDown) || Event.current.isScrollWheel)) // Don't consume MouseUp events as multiple windows should use these.
             {
                 Event.current.Use();
+            }
+        }
+
+        /// <summary>
+        /// Lock the model if our own window is shown and has cursor focus to prevent click-through.
+        /// Code adapted from FAR Editor GUI
+        /// Only valid in an editor.
+        /// Use forceUnlock to unlock the lockID when hiding a window or when the behaviour is destroyed to avoid leaving orphaned locks.
+        /// </summary>
+        public static void PreventClickThrough(Rect rect, string lockID, bool forceUnlock = false)
+        {
+            EditorLogic EdLogInstance = EditorLogic.fetch;
+            if (!EdLogInstance) return;
+            if (forceUnlock)
+            {
+                EdLogInstance.Unlock(lockID);
+                return;
+            }
+            if (MouseIsInRect(rect))
+            {
+                if (!CameraMouseLook.GetMouseLook())
+                    EdLogInstance.Lock(false, false, false, lockID);
+                else
+                    EdLogInstance.Unlock(lockID);
+            }
+            else
+            {
+                EdLogInstance.Unlock(lockID);
             }
         }
 
@@ -294,7 +323,7 @@ namespace BDArmory.Utils
 
             if (ModIntegration.MouseAimFlight.IsMouseAimActive) return false;
 
-            return GUIUtilsInstance.fetch.mouseIsOnGUI;
+            return GUIUtilsInstance.fetch.MouseIsOnGUI;
         }
 
         static bool _CheckMouseIsOnGui()
@@ -560,13 +589,13 @@ namespace BDArmory.Utils
         [KSPAddon(KSPAddon.Startup.EveryScene, false)]
         internal class GUIUtilsInstance : MonoBehaviour
         {
-            public bool mouseIsOnGUI
+            public bool MouseIsOnGUI
             {
                 get
                 {
                     if (!_mouseIsOnGUICheckedThisFrame)
                     {
-                        _mouseIsOnGUI = GUIUtils._CheckMouseIsOnGui();
+                        _mouseIsOnGUI = _CheckMouseIsOnGui();
                         _mouseIsOnGUICheckedThisFrame = true;
                     }
                     return _mouseIsOnGUI;
@@ -600,7 +629,7 @@ namespace BDArmory.Utils
 
             void Destroy()
             {
-                GUIUtils.EndDisableScrollZoom();
+                EndDisableScrollZoom();
             }
         }
     }

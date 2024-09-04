@@ -108,6 +108,7 @@ namespace BDArmory.UI
         {
             GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
             RadarUtils.CleanupResources();
+            HideToolbarGUI();
 
             if (toolbarButton)
             {
@@ -142,10 +143,18 @@ namespace BDArmory.UI
             takeSnapshot = true;
         }
 
-        public void HideToolbarGUI()
+        // Doing it this way prevents OnGUI events from below the window from being triggered by the window disappearing.
+        public void HideToolbarGUI() => StartCoroutine(HideToolbarGUIAtEndOfFrame());
+        bool waitingForEndOfFrame = false;
+        IEnumerator HideToolbarGUIAtEndOfFrame()
         {
+            if (waitingForEndOfFrame) yield break;
+            waitingForEndOfFrame = true;
+            yield return new WaitForEndOfFrame();
+            waitingForEndOfFrame = false;
             showRcsWindow = false;
             takeSnapshot = false;
+            GUIUtils.PreventClickThrough(windowRect, "BDARCSLOCK", true);
         }
 
         void Dummy()
@@ -158,15 +167,14 @@ namespace BDArmory.UI
                 if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, windowRect.position);
                 windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, WindowRcs, windowTitle, BDArmorySetup.BDGuiSkin.window);
             }
-
-            PreventClickThrough();
         }
 
         void WindowRcs(int windowID)
         {
+            GUIUtils.PreventClickThrough(windowRect, "BDARCSLOCK");
             if (GUI.Button(new Rect(windowRect.width - 18, 2, 16, 16), "X"))
             {
-                HideToolbarGUI();
+                toolbarButton.SetFalse();
             }
 
             GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[0, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[0, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
@@ -277,7 +285,7 @@ namespace BDArmory.UI
         {
             if (GUI.Button(new Rect(windowRect.width - 18, 2, 16, 16), "X"))
             {
-                HideToolbarGUI();
+                toolbarButton.SetFalse();
             }
 
             GUI.Label(new Rect(10, 40, 200, 20), "Frontal", BDArmorySetup.BDGuiSkin.box);
@@ -425,42 +433,6 @@ namespace BDArmory.UI
 
             if (rcsCount > 0)
                 rcsReductionFactor = Mathf.Max((rcsReductionFactor * rcsCount), 0.0f);    //same formula as in VesselECMJInfo must be used here!
-        }
-
-        /// <summary>
-        /// Lock the model if our own window is shown and has cursor focus to prevent click-through.
-        /// Code adapted from FAR Editor GUI
-        /// </summary>
-        private void PreventClickThrough()
-        {
-            bool cursorInGUI = false;
-            EditorLogic EdLogInstance = EditorLogic.fetch;
-            if (!EdLogInstance)
-            {
-                return;
-            }
-            if (showRcsWindow)
-            {
-                cursorInGUI = windowRect.Contains(GetMousePos());
-            }
-            if (cursorInGUI)
-            {
-                if (!CameraMouseLook.GetMouseLook())
-                    EdLogInstance.Lock(false, false, false, "BDARCSLOCK");
-                else
-                    EdLogInstance.Unlock("BDARCSLOCK");
-            }
-            else if (!cursorInGUI)
-            {
-                EdLogInstance.Unlock("BDARCSLOCK");
-            }
-        }
-
-        private Vector3 GetMousePos()
-        {
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.y = Screen.height - mousePos.y;
-            return mousePos;
         }
     } //EditorRCsWindow
 }

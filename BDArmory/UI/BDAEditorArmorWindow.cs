@@ -242,6 +242,7 @@ namespace BDArmory.UI
         private void OnDestroy()
         {
             GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
+            GUIUtils.PreventClickThrough(windowRect, "BDAArmorLOCK", true);
             if (toolbarButton)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(toolbarButton);
@@ -275,8 +276,14 @@ namespace BDArmory.UI
             OnEditorShipModifiedEvent(EditorLogic.fetch.ship); // Trigger updating of stuff.
         }
 
-        public void HideToolbarGUI()
+        public void HideToolbarGUI() => StartCoroutine(HideToolbarGUIAtEndOfFrame());
+        bool waitingForEndOfFrame = false;
+        IEnumerator HideToolbarGUIAtEndOfFrame()
         {
+            if (waitingForEndOfFrame) yield break;
+            waitingForEndOfFrame = true;
+            yield return new WaitForEndOfFrame();
+            waitingForEndOfFrame = false;
             showArmorWindow = false;
             CalcArmor = false;
             Visualizer = false;
@@ -286,6 +293,7 @@ namespace BDArmory.UI
             TreeVisualizer = false;
             if (thicknessField != null && thicknessField.ContainsKey("Thickness")) thicknessField["Thickness"].tryParseValueNow();
             Visualize();
+            GUIUtils.PreventClickThrough(windowRect, "BDAArmorLOCK", true);
         }
 
         void Dummy()
@@ -316,14 +324,14 @@ namespace BDArmory.UI
                         }
                     }
             }
-            PreventClickThrough();
         }
 
         void WindowArmor(int windowID)
         {
+            GUIUtils.PreventClickThrough(windowRect, "BDAArmorLOCK");
             if (GUI.Button(new Rect(windowRect.width - 18, 2, 16, 16), "X"))
             {
-                HideToolbarGUI();
+                toolbarButton.SetFalse();
             }
             if (CalcArmor)
             {
@@ -1110,42 +1118,6 @@ namespace BDArmory.UI
             refreshVisualizer = false;
             refreshHPvisualizer = false;
             refreshHullvisualizer = false;
-        }
-
-        /// <summary>
-        /// Lock the model if our own window is shown and has cursor focus to prevent click-through.
-        /// Code adapted from FAR Editor GUI
-        /// </summary>
-        private void PreventClickThrough()
-        {
-            bool cursorInGUI = false;
-            EditorLogic EdLogInstance = EditorLogic.fetch;
-            if (!EdLogInstance)
-            {
-                return;
-            }
-            if (showArmorWindow)
-            {
-                cursorInGUI = windowRect.Contains(GetMousePos());
-            }
-            if (cursorInGUI)
-            {
-                if (!CameraMouseLook.GetMouseLook())
-                    EdLogInstance.Lock(false, false, false, "BDAArmorLOCK");
-                else
-                    EdLogInstance.Unlock("BDAArmorLOCK");
-            }
-            else if (!cursorInGUI)
-            {
-                EdLogInstance.Unlock("BDAArmorLOCK");
-            }
-        }
-
-        private Vector3 GetMousePos()
-        {
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.y = Screen.height - mousePos.y;
-            return mousePos;
         }
 
         private void CalculateArmorStats()
