@@ -204,8 +204,9 @@ namespace BDArmory.Control
             guiName = "#LOC_BDArmory_AI_FiringSpeedLimit",
             guiUnits = " m/s"),
             UI_FloatSemiLogRange(
-                minValue = 2f,
-                maxValue = 1000f,
+                minValue = 1f,
+                maxValue = 10000f,
+                reducedPrecisionAtMin = true,
                 scene = UI_Scene.All
             )]
         public float firingSpeed = 50f;
