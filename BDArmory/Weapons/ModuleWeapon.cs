@@ -2217,7 +2217,7 @@ namespace BDArmory.Weapons
 
                                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = iTime;
                                     // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
-                                    pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, maxEffectiveDistance) / bulletVelocity * 1.1f + Time.time;
+                                    pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f + Time.time;
 
                                     timeFired = Time.time - iTime;
                                     if (isRippleFiring && weaponManager.barrageStagger > 0) // Add variability to fired time to cause variability in reload time.
@@ -2271,7 +2271,7 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        pBullet.defaultDetonationRange = defaultDetonationRange;
+                                        //pBullet.defaultDetonationRange = defaultDetonationRange; deprecated, Timed fuze rounds use timeToDetonation now
                                         pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
@@ -2344,10 +2344,10 @@ namespace BDArmory.Weapons
                                     }
                                     pBullet.targetVessel = null;
                                     pBullet.guidanceDPS = 0;
-                                    if (visualTargetVessel != null && (targetAcquisitionType == TargetAcquisitionType.Slaved || vessel.name.Contains("S-1")))
+                                    if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
                                     {
                                         pBullet.targetVessel = visualTargetVessel;
-                                        pBullet.guidanceDPS = (shortName == "Freischultz" ? 5f : bulletInfo.guidanceDPS);
+                                        pBullet.guidanceDPS = bulletInfo.guidanceDPS;
                                     }
                                     pBullet.isSubProjectile = false;
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
@@ -2370,14 +2370,20 @@ namespace BDArmory.Weapons
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }
                                 }
-                                //heat
 
+                                //heat
                                 heat += heatPerShot;
-                                //EC
+
                                 RoundsRemaining++;
                                 if (BurstOverride)
                                 {
                                     autofireShotCount++;
+                                }
+
+                                // APS
+                                if (isAPS && (tgtShell != null || tgtRocket != null))
+                                {
+                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                                 }
                             }
                             else
@@ -2419,10 +2425,6 @@ namespace BDArmory.Weapons
                         isRippleFiring = true;
                         //need to know what next weapon in ripple sequence is, and have firedelay be set to whatever it's RPM is, not this weapon's or a generic average
                     }
-                }
-                if (isAPS && (tgtShell != null || tgtRocket != null))
-                {
-                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                 }
             }
             else
@@ -2594,7 +2596,7 @@ namespace BDArmory.Weapons
                                 var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
                                 if (hitPart != null) // Don't ignore terrain hits.
                                 {
-                                    if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                                    hitPartVelocity = hitPart.vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
                                     hitPartVelocity = hitPart.vessel.Velocity();
                                 }
                                 break;
@@ -5186,7 +5188,7 @@ namespace BDArmory.Weapons
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
                 }
-				
+
                 // within visual range and no radar aiming/need precision visual targeting of specific subsystems
                 if (aiControlled && visualTargetVessel && visRange)
                 {
@@ -5498,7 +5500,7 @@ namespace BDArmory.Weapons
                         ExplosionFx.CreateExplosion(shell.transform.position, shell.tntMass, shell.explModelPath, shell.explSoundPath, ExplosionSourceType.Bullet, shell.caliber, null, shell.sourceVesselName, null, null, default, -1, false, shell.bulletMass, -1, 1, sourceVelocity: shell.currentVelocity);
                         shell.KillBullet();
                         tgtShell = null;
-                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Detonated Incoming Projectile!");
+                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Detonated Incoming Projectile!");
                     }
                     else
                     {
@@ -5506,7 +5508,7 @@ namespace BDArmory.Weapons
                         {
                             shell.KillBullet();
                             tgtShell = null;
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Vaporized Incoming Projectile!");
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Vaporized Incoming Projectile!");
                         }
                         else
                         {
@@ -5523,7 +5525,7 @@ namespace BDArmory.Weapons
                             {
                                 shell.KillBullet();
                                 tgtShell = null;
-                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Exploded Incoming Projectile!");
+                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon] {part.partInfo.name} on {vessel.vesselName} Exploded Incoming Projectile!");
                             }
                         }
                     }
@@ -5675,7 +5677,7 @@ namespace BDArmory.Weapons
         {
             guiStatusString = "Reloading";
             hasCharged = false;
-            float netReloadTime = ReloadTime - (roundsPerMinute / 60) - (postFireDecharge && ChargeTime > 0? ChargeTime : 0);
+            float netReloadTime = ReloadTime - (roundsPerMinute / 60) - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
             yield return new WaitForSecondsFixed(roundsPerMinute / 60); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
@@ -5684,10 +5686,10 @@ namespace BDArmory.Weapons
                 fireState[i].enabled = false;
             }
             if (hasChargeAnimation && postFireDecharge)
-			{				
+            {
                 chargeRoutine = StartCoroutine(ChargeRoutine(true));
-				yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
-			}
+                yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
+            }
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
