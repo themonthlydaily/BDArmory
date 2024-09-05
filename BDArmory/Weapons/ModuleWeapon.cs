@@ -2359,6 +2359,7 @@ namespace BDArmory.Weapons
                                             pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                         }
                                         if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                        pBullet.timeAlive = iTime;
                                         pBullet.SetTracerPosition();
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }

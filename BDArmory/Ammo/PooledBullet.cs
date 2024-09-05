@@ -152,7 +152,7 @@ namespace BDArmory.Bullets
         float armingTime;
         float randomWidthScale = 1;
         LineRenderer[] bulletTrail;
-        float timeAlive = 0;
+        public float timeAlive = 0;
         public float timeToLiveUntil;
         Light lightFlash;
         bool wasInitiated;
