@@ -1304,7 +1304,7 @@ namespace BDArmory.Competition
             explodingWM.Remove(vessel);
         }
 
-        IEnumerator DelayedGMKill(Vessel vessel, float delay, string killReason)
+        public IEnumerator DelayedGMKill(Vessel vessel, float delay, string killReason)
         {
             if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
             explodingWM.Add(vessel);

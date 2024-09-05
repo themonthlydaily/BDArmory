@@ -1,4 +1,10 @@
-﻿v1.7.1.0
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Improve prevention of click-through of various windows in the editor.
+- RWP:
+	- For S6R10, GM kill craft that are idle or stranded and significantly beyond the asteroid field radius.
+
+v1.7.1.0
 IMPROVEMENTS / FIXES
 - General:
 	- Add a SimpleRepaint MM patch to ignore incompatible parts.

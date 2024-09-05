@@ -1691,6 +1691,8 @@ namespace BDArmory.Control
             if (!hasEC && !hasRCS)
                 fc.alignmentToleranceforBurn = 180f;
         }
+
+        public bool HasPropulsion => hasPropulsion;
         #endregion
 
         #region Utils
@@ -1853,17 +1855,17 @@ namespace BDArmory.Control
             if (forwardThrust == currentForwardThrust) return; // Don't bother toggling engines if desired direction matches current
             if (forwardThrust) // Activate forward engines, shutdown reverse engines
             {
-                foreach (var engine in forwardEngines)
+                foreach (var engine in forwardEngines.Where(e => e != null))
                     engine.Activate();
-                foreach (var engine in reverseEngines)
+                foreach (var engine in reverseEngines.Where(e => e != null))
                     engine.Shutdown();
                 currentForwardThrust = true;
             }
             else // Activate reverse engines, shutdown forward engines
             {
-                foreach (var engine in reverseEngines)
+                foreach (var engine in reverseEngines.Where(e => e != null))
                     engine.Activate();
-                foreach (var engine in forwardEngines)
+                foreach (var engine in forwardEngines.Where(e => e != null))
                     engine.Shutdown();
                 currentForwardThrust = false;
             }
