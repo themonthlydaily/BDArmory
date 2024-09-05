@@ -35,7 +35,7 @@ namespace BDArmory.UI
 
         private void Start()
         {
-            textScale = Mathf.Min(10, Mathf.CeilToInt(10 * BDTISettings.ICONSCALE));
+            textScale = Mathf.Max(10, Mathf.CeilToInt(10 * BDTISettings.ICONSCALE));
             IconUIStyle = new GUIStyle();
             IconUIStyle.fontStyle = FontStyle.Bold;
             IconUIStyle.fontSize = textScale;

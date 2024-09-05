@@ -1,12 +1,27 @@
 ﻿IMPROVEMENTS / FIXES
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
+- UI:
+	- Team Icon text now scales with icon scale.
+- AI:
+	Orbital AI:
+		-Adds ability to use sidemounted engiens as RCS thrusters.
+		-Adds Zero-throttle firing range setting that will override maneuvering orientation in favor of pointing ship in attack Vector direction within set distance.
+		-AI now takes target acceleration/velocity into account when accelerating to engagement speed/killing velocity.
+- Detectors / Countermeasures:
+	- Allow higher precision for CM intervals and delays in the WM right-click menu.
 - Competition:
 	- Auto-generated tournaments use the last used world.
 	- Disable waiting for terrain to settle if the spawn altitude is >10km.
 - Game Modes:
 	- When resetting asteroid fields, destroy those that have switched SoI as they don't reset properly.
-
+- Weapons:
+	-Optimizations to bullets, should be a slight performance incrase when firing lots of bullets.
+	- Beehive submunitions with proximity/flak fuzes now properly set fuxe distance based on pellet tntMass, not parent shell's.
+	- Fix nuclear/explosive beehive submnitions not inheriting velocity when detonating on space.
+	- Fix APS going rapid-fire when running out of ammo.
+	- Fix HEAT bullets being reported as Missile damage in the Score parser.
+	-Fix issue with velocity calc that would result in penetrating rounds slowly drifing away from a hit ship in space.
 1.7.0.0
 IMPROVEMENTS / FIXES
 - General:
