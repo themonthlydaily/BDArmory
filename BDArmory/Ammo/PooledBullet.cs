@@ -1913,7 +1913,7 @@ namespace BDArmory.Bullets
             var tracerDirection = currentVelocity - ViewerVelocity;
             if (tracerLength == 0)
             {
-                linePositions[1] = currentPosition - tracerDeltaFactor * 0.45f * TimeWarp.fixedDeltaTime * tracerDirection;
+                linePositions[1] = currentPosition - tracerDeltaFactor * 0.45f * Mathf.Min(TimeWarp.fixedDeltaTime, timeAlive) * tracerDirection;
             }
             else
             {
