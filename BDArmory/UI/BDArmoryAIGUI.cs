@@ -98,7 +98,22 @@ namespace BDArmory.UI
 
         public void AddToolbarButton()
         {
+            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return;
             StartCoroutine(ToolbarButtonRoutine());
+        }
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (buttonSetup) // Reconfigure the callbacks to use the current instance.
+            {
+                button.onTrue = ShowAIGUI;
+                button.onFalse = HideAIGUI;
+                yield break;
+            }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_ai", false);
+            button = ApplicationLauncher.Instance.AddModApplication(ShowAIGUI, HideAIGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+            buttonSetup = true;
+            if (windowBDAAIGUIEnabled) button.SetTrue(false);
         }
 
         public void RemoveToolbarButton()
@@ -108,21 +123,6 @@ namespace BDArmory.UI
             ApplicationLauncher.Instance.RemoveModApplication(button);
             button = null;
             buttonSetup = false;
-        }
-
-        IEnumerator ToolbarButtonRoutine()
-        {
-            if (buttonSetup) yield break;
-            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
-
-            if (!buttonSetup)
-            {
-                Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_ai", false);
-                button = ApplicationLauncher.Instance.AddModApplication(ShowAIGUI, HideAIGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
-                buttonSetup = true;
-                if (windowBDAAIGUIEnabled) button.SetTrue(false);
-            }
         }
 
         public void ToggleAIGUI()
@@ -135,8 +135,8 @@ namespace BDArmory.UI
         {
             windowBDAAIGUIEnabled = true;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
-            if (HighLogic.LoadedSceneIsFlight) Instance.GetAI(); // Call via Instance to avoid issue with the toolbar button holding a reference to a null gameobject causing an NRE when starting a coroutine.
-            else Instance.GetAIEditor();
+            if (HighLogic.LoadedSceneIsFlight) GetAI();
+            else GetAIEditor();
             if (button != null) button.SetTrue(false);
         }
 
@@ -149,6 +149,10 @@ namespace BDArmory.UI
             waitingForEndOfFrame = true;
             yield return new WaitForEndOfFrame();
             waitingForEndOfFrame = false;
+            HideAIGUINow();
+        }
+        void HideAIGUINow()
+        {
             windowBDAAIGUIEnabled = false;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             BDAWindowSettingsField.Save(); // Save window settings.
@@ -761,7 +765,7 @@ namespace BDArmory.UI
         }
 
         enum Section { UpToEleven, PID, Altitude, Speed, Control, Evasion, Terrain, Ramming, Combat, Misc, FixedAutoTuneFields, VehicleType }; // Sections and other important toggles.
-        readonly Dictionary<Section, bool> showSection = Enum.GetValues(typeof(Section)).Cast<Section>().ToDictionary(s => s, s => false);
+        static Dictionary<Section, bool> showSection = Enum.GetValues(typeof(Section)).Cast<Section>().ToDictionary(s => s, s => false);
         readonly Dictionary<Section, float> sectionHeights = [];
         const float contentBorder = 0.2f * entryHeight;
         const float contentMargin = 10;

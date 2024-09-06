@@ -38,11 +38,12 @@ namespace BDArmory.UI
 
         void Awake()
         {
+            if (Instance != null) Destroy(Instance);
+            Instance = this;
         }
 
         void Start()
         {
-            Instance = this;
             AddToolbarButton();
 
             RadarUtils.SetupResources();
@@ -108,7 +109,7 @@ namespace BDArmory.UI
         {
             GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
             RadarUtils.CleanupResources();
-            HideToolbarGUI();
+            HideToolbarGUINow();
 
             if (toolbarButton)
             {
@@ -117,24 +118,22 @@ namespace BDArmory.UI
             }
         }
 
-        IEnumerator ToolbarButtonRoutine()
-        {
-            if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
-
-            AddToolbarButton();
-        }
-
         void AddToolbarButton()
         {
-            if (HighLogic.LoadedSceneIsEditor)
+            if (!HighLogic.LoadedSceneIsEditor) return;
+            StartCoroutine(ToolbarButtonRoutine());
+        }
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (toolbarButton) // Update the callbacks for the current instance.
             {
-                if (toolbarButton == null)
-                {
-                    Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_rcs", false);
-                    toolbarButton = ApplicationLauncher.Instance.AddModApplication(ShowToolbarGUI, HideToolbarGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
-                }
+                toolbarButton.onTrue = ShowToolbarGUI;
+                toolbarButton.onFalse = HideToolbarGUI;
+                yield break;
             }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_rcs", false);
+            toolbarButton = ApplicationLauncher.Instance.AddModApplication(ShowToolbarGUI, HideToolbarGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
         }
 
         public void ShowToolbarGUI()
@@ -152,6 +151,10 @@ namespace BDArmory.UI
             waitingForEndOfFrame = true;
             yield return new WaitForEndOfFrame();
             waitingForEndOfFrame = false;
+            HideToolbarGUINow();
+        }
+        void HideToolbarGUINow()
+        {
             showRcsWindow = false;
             takeSnapshot = false;
             GUIUtils.PreventClickThrough(windowRect, "BDARCSLOCK", true);
@@ -189,14 +192,14 @@ namespace BDArmory.UI
             GUI.DrawTexture(new Rect(220, 70, 200, 200), RadarUtils.GetTexture2, ScaleMode.StretchToFill);
             GUI.DrawTexture(new Rect(430, 70, 200, 200), RadarUtils.GetTexture3, ScaleMode.StretchToFill);
 
-            float editorUIRCS0 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[0, 2] : (RadarUtils.editorRCSAspects[0, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal *  Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
+            float editorUIRCS0 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[0, 2] : (RadarUtils.editorRCSAspects[0, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal * Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
             float editorUIRCS1 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[1, 2] : (RadarUtils.editorRCSAspects[1, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal * Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
             float editorUIRCS2 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[2, 2] : (RadarUtils.editorRCSAspects[2, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal * Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
 
             GUI.Label(new Rect(10, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS0) + " m^2", BDArmorySetup.BDGuiSkin.label);
             GUI.Label(new Rect(220, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS1) + " m^2", BDArmorySetup.BDGuiSkin.label);
             GUI.Label(new Rect(430, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS2) + " m^2", BDArmorySetup.BDGuiSkin.label);
-            
+
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
             style.fontStyle = FontStyle.Bold;

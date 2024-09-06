@@ -156,6 +156,10 @@ namespace BDArmory.UI
             waitingForEndOfFrame = true;
             yield return new WaitForEndOfFrame();
             waitingForEndOfFrame = false;
+            CloseWindowNow();
+        }
+        void CloseWindowNow()
+        {
             open = false;
             GUIUtils.PreventClickThrough(windowRect, "BDABELTLOCK", true);
         }
@@ -300,15 +304,14 @@ namespace BDArmory.UI
 
         private void Awake()
         {
-            if (Instance)
-                Destroy(Instance);
+            if (Instance) Destroy(Instance);
             Instance = this;
             windowRect = new Rect((Screen.width / 2) - (width / 2), (Screen.height / 2) - (height / 2), width, height);
         }
 
         private void OnDestroy()
         {
-            CloseWindow();
+            CloseWindowNow();
         }
-   }
+    }
 }

@@ -98,11 +98,12 @@ namespace BDArmory.UI
         Dictionary<string, NumericInputField> thicknessField;
         void Awake()
         {
+            if (Instance != null) Destroy(Instance);
+            Instance = this;
         }
 
         void Start()
         {
-            Instance = this;
             AddToolbarButton();
             thicknessField = new Dictionary<string, NumericInputField>
             {
@@ -242,7 +243,7 @@ namespace BDArmory.UI
         private void OnDestroy()
         {
             GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
-            GUIUtils.PreventClickThrough(windowRect, "BDAArmorLOCK", true);
+            HideToolbarGUINow();
             if (toolbarButton)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(toolbarButton);
@@ -250,24 +251,22 @@ namespace BDArmory.UI
             }
         }
 
-        IEnumerator ToolbarButtonRoutine()
-        {
-            if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
-
-            AddToolbarButton();
-        }
-
         void AddToolbarButton()
         {
-            if (HighLogic.LoadedSceneIsEditor && !BDArmorySettings.LEGACY_ARMOR)
+            if (!HighLogic.LoadedSceneIsEditor || BDArmorySettings.LEGACY_ARMOR) return;
+            StartCoroutine(ToolbarButtonRoutine());
+        }
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (toolbarButton) // Update the callbacks for the current instance.
             {
-                if (toolbarButton == null)
-                {
-                    Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_Armor", false);
-                    toolbarButton = ApplicationLauncher.Instance.AddModApplication(ShowToolbarGUI, HideToolbarGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
-                }
+                toolbarButton.onTrue = ShowToolbarGUI;
+                toolbarButton.onFalse = HideToolbarGUI;
+                yield break;
             }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_Armor", false);
+            toolbarButton = ApplicationLauncher.Instance.AddModApplication(ShowToolbarGUI, HideToolbarGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
         }
 
         public void ShowToolbarGUI()
@@ -284,6 +283,10 @@ namespace BDArmory.UI
             waitingForEndOfFrame = true;
             yield return new WaitForEndOfFrame();
             waitingForEndOfFrame = false;
+            HideToolbarGUINow();
+        }
+        void HideToolbarGUINow()
+        {
             showArmorWindow = false;
             CalcArmor = false;
             Visualizer = false;
