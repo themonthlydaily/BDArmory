@@ -1802,6 +1802,8 @@ namespace BDArmory.Control
                 {
                     reverseEngines.Add(engine);
                     reverseThrust += engine.MaxThrustOutputVac(true);
+                    var gimbal = engine.part.FindModuleImplementing<ModuleGimbal>();
+                    if (gimbal != null) gimbal.gimbalLock = true; // Disable gimbal on reverse/RCS engines since they don't work for directions other than forward
                 }
                 else if (EngineRCSRotation || EngineRCSTranslation)
                 {
@@ -1818,6 +1820,8 @@ namespace BDArmory.Control
                         engine.thrustPercentage = 0; //activate and set to 0 thrust so they're ready when needed
                         if (engine.independentThrottlePercentage == 0) engine.independentThrottlePercentage = 100;
                     }
+                    var gimbal = engine.part.FindModuleImplementing<ModuleGimbal>();
+                    if (gimbal != null) gimbal.gimbalLock = true; // Disable gimbal on reverse/RCS engines since they don't work for directions other than forward
                     fc.rcsEngines = rcsEngines;
                 }
             }
