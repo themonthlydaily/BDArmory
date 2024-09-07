@@ -204,8 +204,9 @@ namespace BDArmory.Control
             guiName = "#LOC_BDArmory_AI_FiringSpeedLimit",
             guiUnits = " m/s"),
             UI_FloatSemiLogRange(
-                minValue = 2f,
-                maxValue = 1000f,
+                minValue = 1f,
+                maxValue = 10000f,
+                reducedPrecisionAtMin = true,
                 scene = UI_Scene.All
             )]
         public float firingSpeed = 50f;
@@ -986,10 +987,9 @@ namespace BDArmory.Control
         {
             // Update propulsion and weapon status
             hasRCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout) || (rcsEngines.Count > 0 && rcsEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout));
-            hasPropulsion = hasRCS ||
-                VesselModuleRegistry.GetModuleEngines(vessel).Any(e => e.EngineIgnited && e.isOperational && !e.flameout) ||
-                VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
-                (ReverseThrust && (forwardEngines.Count + reverseEngines.Count > 0));
+            hasPropulsion = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle) ||
+                forwardEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout) ||
+                reverseEngines.Any(e => e != null && e.EngineIgnited && e.isOperational && !e.flameout);
             vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
             hasEC = EcCurrent > 0 || CheatOptions.InfiniteElectricity;
             hasWeapons = (weaponManager != null) && weaponManager.HasWeaponsAndAmmo();
@@ -1691,6 +1691,8 @@ namespace BDArmory.Control
             if (!hasEC && !hasRCS)
                 fc.alignmentToleranceforBurn = 180f;
         }
+
+        public bool HasPropulsion => hasPropulsion;
         #endregion
 
         #region Utils
@@ -1853,17 +1855,17 @@ namespace BDArmory.Control
             if (forwardThrust == currentForwardThrust) return; // Don't bother toggling engines if desired direction matches current
             if (forwardThrust) // Activate forward engines, shutdown reverse engines
             {
-                foreach (var engine in forwardEngines)
+                foreach (var engine in forwardEngines.Where(e => e != null))
                     engine.Activate();
-                foreach (var engine in reverseEngines)
+                foreach (var engine in reverseEngines.Where(e => e != null))
                     engine.Shutdown();
                 currentForwardThrust = true;
             }
             else // Activate reverse engines, shutdown forward engines
             {
-                foreach (var engine in reverseEngines)
+                foreach (var engine in reverseEngines.Where(e => e != null))
                     engine.Activate();
-                foreach (var engine in forwardEngines)
+                foreach (var engine in forwardEngines.Where(e => e != null))
                     engine.Shutdown();
                 currentForwardThrust = false;
             }

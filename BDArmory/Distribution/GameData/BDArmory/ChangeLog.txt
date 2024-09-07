@@ -1,25 +1,49 @@
 ﻿IMPROVEMENTS / FIXES
+- UI:
+	- Improve prevention of click-through of various windows in the editor.
+	- Open sections of the AI GUI now remain open when switching between flight and editor.
+- Weapons:
+	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
+	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
+- RWP:
+	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
+
+v1.7.1.0
+IMPROVEMENTS / FIXES
+- General:
+	- Add a SimpleRepaint MM patch to ignore incompatible parts.
+	- Fix typos and duplicates in the changelog.
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
 - UI:
 	- Team Icon text now scales with icon scale.
 - AI:
 	Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount.
-	Orbital AI:
-		-Adds ability to use sidemounted engiens as RCS thrusters.
-		-Adds Zero-throttle firing range setting that will override maneuvering orientation in favor of pointing ship in attack Vector direction within set distance.
-		-AI now takes target acceleration/velocity into account when accelerating to engagement speed/killing velocity.
+	- Orbital AI:
+		- Adds ability to use controllable sidemounted engines as RCS thrusters.
+		- Add toggles to disable use of RCS for translation and rotation.
+		- Adds Zero-throttle firing range setting that will override maneuvering orientation in favor of pointing ship in attack Vector direction within set distance.
+		- AI now takes target acceleration/velocity into account when accelerating to engagement speed/killing velocity.
+		- Adjustments to the hasPropulsion check to properly detect when a vessel no longer has propulsion.
 - Detectors / Countermeasures:
 	- Allow higher precision for CM intervals and delays in the WM right-click menu.
+	- Fix invalid C# syntax in the TWS radar .cfg file.
 - Competition:
 	- Auto-generated tournaments use the last used world.
-	- Disable waiting for terrain to settle if the spawn altitude is >10km.
+	- Fix ramming scoring to also work for orbital AI.
 - Game Modes:
-	- When resetting asteroid fields, destroy those that have switched SoI as they don't reset properly.
+	- Sanitise the waypoint course index in the vessel spawner window in case the course list has changed.
+	- Asteroid Field:
+		- When resetting asteroid fields, destroy those that have switched SoI as they don't reset properly.
+		- Adjust the asteroid attraction to be 20% of the field radius instead of hard-coded to 1km.
+		- Fix asteroids not spawning at the correct location in orbit.
+		- Limit motion-reduction force applied to asteroids to a linear function above 1500m/s and the maximum centroidFactor for re-centering asteroids to avoid yeeting them when the average velocity suddenly changes due to vessels dying.
+		- Limit growth of the asteroid pool to twice the requested field size to prevent infinitely growing pool size when there are issues generating new asteroids.
 - Weapons:
-	-Optimizations to bullets, should be a slight performance incrase when firing lots of bullets.
+	- Optimizations to bullets, should be a slight performance increase when firing lots of bullets.
 	- Beehive submunitions with proximity/flak fuzes now properly set fuxe distance based on pellet tntMass, not parent shell's.
-	- Fix nuclear/explosive beehive submnitions not inheriting velocity when detonating on space.
+	- Fix nuclear/explosive beehive submunitions not inheriting velocity when detonating on space.
+	- Fix beehive ammo with nuclear submunitions not being able to get the explosion models.
 	- Fix APS going rapid-fire when running out of ammo.
 	- Fix HEAT bullets being reported as Missile damage in the Score parser.
 	- Fix issue with velocity calc that would result in penetrating rounds slowly drifing away from a hit ship in space.
@@ -27,9 +51,18 @@
 	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differeing starting ammo amounts due to floating point errors.
 	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
 	- Fix weapons with reload animations adding an extra 1-20s to the reload time, absed on fire anim length.
-	- Add new 'postFireDecharge' field for weaposn with charge animations to specify if the animation should play in reverse to uncharge the weapon after firing.
+	- Add new 'postFireDecharge' field for weaposn with charge animations to specify if the animation should play in reverse to uncharge the weapon after firing.	
+	- Fix laser hit position not accounting for Krakensbane.
+	- Fix EC usage requirements not appearing in infocards when weapons are using deprecated ECPerShot.
 	- Missiles:
-		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+		- Update the KKV model with fixed textures thanks to Stardust.
+		- Don't evade missiles fired from teammates unless the missile is locked on to craft or craft is in the flight path of the missile.
+		- Log an error if the missile exhaust prefab doesn't exist without breaking OnStart.
+    - Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+- Spawning:
+	- Disable waiting for terrain to settle if the spawn altitude is >10km.
+	- Add a couple of 30s timeouts to spawning initialisation to avoid a potential soft-lock.
+  
 1.7.0.0
 IMPROVEMENTS / FIXES
 - General:

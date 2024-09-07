@@ -2271,7 +2271,6 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        //pBullet.defaultDetonationRange = defaultDetonationRange; deprecated, Timed fuze rounds use timeToDetonation now
                                         pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
@@ -2366,6 +2365,7 @@ namespace BDArmory.Weapons
                                             pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                         }
                                         if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                        pBullet.timeAlive = iTime;
                                         pBullet.SetTracerPosition();
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }
@@ -6452,7 +6452,6 @@ namespace BDArmory.Weapons
         private static GUIStyle overfull;
 
         private static WeaponGroupWindow instance;
-        private static Vector3 mousePos = Vector3.zero;
 
         private bool ActionGroupMode;
 
@@ -6472,6 +6471,17 @@ namespace BDArmory.Weapons
 
         public static void HideGUI()
         {
+            // Doing it this way prevents OnGUI events from below the window from being triggered by the window disappearing.
+            if (instance != null) instance.StartCoroutine(instance.HideGUIAtEndOfFrame());
+            else GUIUtils.PreventClickThrough(default, "BD_MN_GUILock", true);
+        }
+        bool waitingForEndOfFrame = false;
+        IEnumerator HideGUIAtEndOfFrame()
+        {
+            if (waitingForEndOfFrame) yield break;
+            waitingForEndOfFrame = true;
+            yield return new WaitForEndOfFrame();
+            waitingForEndOfFrame = false;
             if (instance != null && instance.WPNmodule != null)
             {
                 instance.WPNmodule.WeaponDisplayName = instance.WPNmodule.shortName;
@@ -6479,9 +6489,7 @@ namespace BDArmory.Weapons
                 instance.applyWeaponGroupTo = null;
                 instance.UpdateGUIState();
             }
-            EditorLogic editor = EditorLogic.fetch;
-            if (editor != null)
-                editor.Unlock("BD_MN_GUILock");
+            GUIUtils.PreventClickThrough(default, "BD_MN_GUILock", true);
         }
 
         public static void ShowGUI(ModuleWeapon WPNmodule)
@@ -6498,9 +6506,6 @@ namespace BDArmory.Weapons
         private void UpdateGUIState()
         {
             enabled = WPNmodule != null;
-            EditorLogic editor = EditorLogic.fetch;
-            if (!enabled && editor != null)
-                editor.Unlock("BD_MN_GUILock");
         }
 
         private IEnumerator<YieldInstruction> CheckActionGroupEditor()
@@ -6548,6 +6553,7 @@ namespace BDArmory.Weapons
         private void OnDestroy()
         {
             instance = null;
+            GUIUtils.PreventClickThrough(guiWindowRect, "BD_MN_GUILock", true);
         }
 
         public void OnGUI()
@@ -6563,9 +6569,6 @@ namespace BDArmory.Weapons
             {
                 return;
             }
-            bool cursorInGUI = false; // nicked the locking code from Ferram
-            mousePos = Input.mousePosition; //Mouse location; based on Kerbal Engineer Redux code
-            mousePos.y = Screen.height - mousePos.y;
 
             int posMult = 0;
             if (offsetGUIPos != -1)
@@ -6578,7 +6581,7 @@ namespace BDArmory.Weapons
                 {
                     guiWindowRect = new Rect(430 * posMult, 365, 438, 50);
                 }
-                new Rect(guiWindowRect.xMin + 440, mousePos.y - 5, 300, 20);
+                new Rect(guiWindowRect.xMin + 440, Screen.height - Input.mousePosition.y - 5, 300, 20);
             }
             else
             {
@@ -6587,18 +6590,7 @@ namespace BDArmory.Weapons
                     //guiWindowRect = new Rect(Screen.width - 8 - 430 * (posMult + 1), 365, 438, (Screen.height - 365));
                     guiWindowRect = new Rect(Screen.width - 8 - 430 * (posMult + 1), 365, 438, 50);
                 }
-                new Rect(guiWindowRect.xMin - (230 - 8), mousePos.y - 5, 220, 20);
-            }
-            cursorInGUI = guiWindowRect.Contains(mousePos);
-            if (cursorInGUI)
-            {
-                editor.Lock(false, false, false, "BD_MN_GUILock");
-                //if (EditorTooltip.Instance != null)
-                //    EditorTooltip.Instance.HideToolTip();
-            }
-            else
-            {
-                editor.Unlock("BD_MN_GUILock");
+                new Rect(guiWindowRect.xMin - (230 - 8), Screen.height - Input.mousePosition.y - 5, 220, 20);
             }
             if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, guiWindowRect.position);
             guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, StringUtils.Localize("#LOC_BDArmory_WeaponGroup"), Styles.styleEditorPanel);
@@ -6609,6 +6601,7 @@ namespace BDArmory.Weapons
         int _applyWeaponGroupToIndex = 0;
         public void GUIWindow(int windowID)
         {
+            GUIUtils.PreventClickThrough(guiWindowRect, "BD_MN_GUILock");
             InitializeStyles();
 
             GUILayout.BeginVertical();

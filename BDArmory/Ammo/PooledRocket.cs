@@ -1169,7 +1169,6 @@ namespace BDArmory.Bullets
                                 break;
                         }
                         pBullet.detonationRange = detonationRange;
-                        //pBullet.defaultDetonationRange = 1000;
                         pBullet.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
                         pBullet.fuzeType = sFuze;
                     }
