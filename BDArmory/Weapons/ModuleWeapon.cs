@@ -1947,7 +1947,7 @@ namespace BDArmory.Weapons
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
-                    gauge.UpdateAmmoMeter((float)(ammoCount / ammoMaxCount));
+                    gauge.UpdateAmmoMeter((float)((ammoCount > requestResourceAmount ? ammoCount : 0) / ammoMaxCount));
 
                     if (showReloadMeter)
                     {
@@ -3266,21 +3266,12 @@ namespace BDArmory.Weapons
             }
             vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
             ammoCount = ammoCurrent;
-            if (ammoCount >= AmmoPerShot)
+            if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
+            // TODO?? Change code to some sort of list of ammoboxes to only draw from box with current highest resouce amount to do proper integer reductions?
             {
-                if (externalAmmo)
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, externalAmmo ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.NO_FLOW) > 0) //for guns with internal ammo supplies and no external, only draw from the weapon part
                 {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STACK_PRIORITY_SEARCH) > 0)
-                    {
-                        return true;
-                    }
-                }
-                else //for guns with internal ammo supplies and no external, only draw from the weapon part
-                {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
@@ -5677,8 +5668,8 @@ namespace BDArmory.Weapons
         {
             guiStatusString = "Reloading";
             hasCharged = false;
-            float netReloadTime = ReloadTime - (roundsPerMinute / 60) - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
-            yield return new WaitForSecondsFixed(roundsPerMinute / 60); //wait for fire anim to finish.
+            float netReloadTime = ReloadTime - (60 / roundsPerMinute) - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
+            yield return new WaitForSecondsFixed(60 / roundsPerMinute); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
                 fireState[i].normalizedTime = 0;
