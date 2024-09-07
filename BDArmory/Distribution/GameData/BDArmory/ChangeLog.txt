@@ -26,6 +26,8 @@
 	- Weapons will now properly report Ammo Depleted when ammo remaining is less than amount required to fire.
 	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differeing starting ammo amounts due to floating point errors.
 	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
+	- Fix weapons with reload animations adding an extra 1-20s to the reload time, absed on fire anim length.
+	- Add new 'postFireDecharge' field for weaposn with charge animations to specify if the animation should play in reverse to uncharge the weapon after firing.
 	- Missiles:
 		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 1.7.0.0
