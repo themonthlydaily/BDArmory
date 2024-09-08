@@ -411,6 +411,7 @@
     <None Include="Distribution\GameData\BDArmory\MMPatches\BDA_TweakScale.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\bdmk22_cockpit.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\Explode_Mode_Squad_Tanks.cfg" />
+    <None Include="Distribution\GameData\BDArmory\MMPatches\SimpleRepaint.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\StructPWing.cfg" />
     <None Include="Distribution\GameData\BDArmory\Models\bulletDecal\BulletDecal1.mu" />
     <None Include="Distribution\GameData\BDArmory\Models\bulletDecal\BulletDecal2.mu" />
