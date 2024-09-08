@@ -547,7 +547,7 @@ namespace BDArmory.Weapons
         [KSPField]
         public bool ChargeEachShot = true;
         [KSPField]
-        public bool postFireDecharge = false;
+        public bool postFireChargeAnim = false;
         bool hasCharged = false;
         [KSPField]
         public float chargeHoldLength = 1;
@@ -1747,9 +1747,12 @@ namespace BDArmory.Weapons
                         if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             foreach (var pe in part.FindModelComponents<KSPParticleEmitter>())
                 if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
-            for (int i = 0; i < laserRenderers.Length; i++)
+            if (laserRenderers != null)
             {
-                laserRenderers[i].enabled = false;
+                for (int i = 0; i < laserRenderers.Length; i++)
+                {
+                    laserRenderers[i].enabled = false;
+                }
             }
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
@@ -5668,9 +5671,9 @@ namespace BDArmory.Weapons
         {
             guiStatusString = "Reloading";
             hasCharged = false;
-            float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate
+            float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate;
             float netReloadTime = ReloadTime - timeGap - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
-            yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
+            yield return new WaitForSecondsFixed(Mathf.Min(timeGap, hasFireAnimation ? fireState[0].length / fireAnimSpeed : 0)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
                 fireState[i].normalizedTime = 0;

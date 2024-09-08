@@ -1,10 +1,20 @@
-﻿IMPROVEMENTS / FIXES
+﻿- AI:
+	Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
+- Weapons:
+	- Weapons will now properly report Ammo Depleted when ammo remaining is less than amount required to fire.
+	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differing starting ammo amounts due to floating point errors.
+	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
+	- Fix weapons with reload animations adding an extra 1-20s to the reload time, based on fire anim length.
+	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
+	- Missiles:
+		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+
+IMPROVEMENTS / FIXES
 - Armor:
 	- Add a max armor limit slider (under General Slider Settings) to limit the max thickness of armor. Default: unclamped.
 - UI:
 	- Team Icon text now scales with icon scale.
 - AI:
-	Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount.
 	Orbital AI:
 		-Adds ability to use sidemounted engiens as RCS thrusters.
 		-Adds Zero-throttle firing range setting that will override maneuvering orientation in favor of pointing ship in attack Vector direction within set distance.
@@ -17,19 +27,12 @@
 - Game Modes:
 	- When resetting asteroid fields, destroy those that have switched SoI as they don't reset properly.
 - Weapons:
-	-Optimizations to bullets, should be a slight performance incrase when firing lots of bullets.
+	- Optimizations to bullets, should be a slight performance increase when firing lots of bullets.
 	- Beehive submunitions with proximity/flak fuzes now properly set fuxe distance based on pellet tntMass, not parent shell's.
 	- Fix nuclear/explosive beehive submnitions not inheriting velocity when detonating on space.
 	- Fix APS going rapid-fire when running out of ammo.
 	- Fix HEAT bullets being reported as Missile damage in the Score parser.
 	- Fix issue with velocity calc that would result in penetrating rounds slowly drifing away from a hit ship in space.
-	- Weapons will now properly report Ammo Depleted when ammo remaining is less than amount required to fire.
-	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differeing starting ammo amounts due to floating point errors.
-	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
-	- Fix weapons with reload animations adding an extra 1-20s to the reload time, absed on fire anim length.
-	- Add new 'postFireDecharge' field for weaposn with charge animations to specify if the animation should play in reverse to uncharge the weapon after firing.
-	- Missiles:
-		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 1.7.0.0
 IMPROVEMENTS / FIXES
 - General:
