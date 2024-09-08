@@ -1150,7 +1150,7 @@ namespace BDArmory.Bullets
 
                     if (sBullet.tntMass > 0)// || sBullet.beehive)
                     {
-                        pBullet.explModelPath = explModelPath;
+                        pBullet.explModelPath = sBullet.tntMass > 0.5f ? explModelPath : "BDArmory/Models/explosion/30mmExplosion";
                         pBullet.explSoundPath = explSoundPath;
                         pBullet.tntMass = sBullet.tntMass;
                         string HEtype = sBullet.explosive;
@@ -1179,7 +1179,16 @@ namespace BDArmory.Bullets
                         pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
                     }
                     pBullet.EMP = sBullet.EMP;
-                    pBullet.nuclear = sBullet.nuclear;
+                    if (pBullet.nuclear) // Inherit the parent shell's nuke models.
+                    {
+                        pBullet.flashModelPath = flashModelPath;
+                        pBullet.shockModelPath = shockModelPath;
+                        pBullet.blastModelPath = blastModelPath;
+                        pBullet.plumeModelPath = plumeModelPath;
+                        pBullet.debrisModelPath = debrisModelPath;
+                        pBullet.blastSoundPath = blastSoundPath;
+                    }
+                    pBullet.beehive = false; // No sub-sub-munitions.
                     //pBullet.beehive = sBullet.beehive;
                     //pBullet.subMunitionType = BulletInfo.bullets[sBullet.subMunitionType]; //submunitions of submunitions is a bit silly, and they'd be detonating immediately, due to inherited detonationRange
                     //pBullet.homing = BulletInfo.homing;

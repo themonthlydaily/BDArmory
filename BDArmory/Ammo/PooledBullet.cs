@@ -1585,7 +1585,7 @@ namespace BDArmory.Bullets
 
                     if (sBullet.tntMass > 0)// || sBullet.beehive)
                     {
-                        pBullet.explModelPath = explModelPath;
+                        pBullet.explModelPath = sBullet.tntMass > 0.5f ? explModelPath : "BDArmory/Models/explosion/30mmExplosion";
                         pBullet.explSoundPath = explSoundPath;
                         pBullet.tntMass = sBullet.tntMass;
                         if (!sBullet.nuclear)

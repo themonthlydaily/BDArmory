@@ -546,6 +546,8 @@ namespace BDArmory.Weapons
         bool isCharging = false;
         [KSPField]
         public bool ChargeEachShot = true;
+        [KSPField]
+        public bool postFireChargeAnim = false;
         bool hasCharged = false;
         [KSPField]
         public float chargeHoldLength = 1;
@@ -1745,6 +1747,13 @@ namespace BDArmory.Weapons
                         if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             foreach (var pe in part.FindModelComponents<KSPParticleEmitter>())
                 if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
+            if (laserRenderers != null)
+            {
+                for (int i = 0; i < laserRenderers.Length; i++)
+                {
+                    laserRenderers[i].enabled = false;
+                }
+            }
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
             WeaponNameWindow.OnActionGroupEditorClosed.Remove(OnActionGroupEditorClosed);
@@ -1941,7 +1950,7 @@ namespace BDArmory.Weapons
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
-                    gauge.UpdateAmmoMeter((float)(ammoCount / ammoMaxCount));
+                    gauge.UpdateAmmoMeter((float)((ammoCount > requestResourceAmount ? ammoCount : 0) / ammoMaxCount));
 
                     if (showReloadMeter)
                     {
@@ -2590,8 +2599,8 @@ namespace BDArmory.Weapons
                                 var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
                                 if (hitPart != null) // Don't ignore terrain hits.
                                 {
-                                    if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
                                     hitPartVelocity = hitPart.vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
+                                    hitPartVelocity = hitPart.vessel.Velocity();
                                 }
                                 break;
                             }
@@ -3260,21 +3269,12 @@ namespace BDArmory.Weapons
             }
             vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
             ammoCount = ammoCurrent;
-            if (ammoCount >= AmmoPerShot)
+            if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
+            // TODO?? Change code to some sort of list of ammoboxes to only draw from box with current highest resouce amount to do proper integer reductions?
             {
-                if (externalAmmo)
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, externalAmmo ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.NO_FLOW) > 0) //for guns with internal ammo supplies and no external, only draw from the weapon part
                 {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STACK_PRIORITY_SEARCH) > 0)
-                    {
-                        return true;
-                    }
-                }
-                else //for guns with internal ammo supplies and no external, only draw from the weapon part
-                {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
@@ -4785,13 +4785,13 @@ namespace BDArmory.Weapons
                     {
                         chargeState.enabled = true;
                         chargeState.speed = 0;
-                        chargeState.normalizedTime = 1; //else use final frame of he chargeAnim if no hold anim, so weapon doesn't immediately revert to default state moment firing stops
+                        chargeState.normalizedTime = 1; //else use final frame of the chargeAnim if no hold anim, so weapon doesn't immediately revert to default state moment firing stops
                     }
 
-                    if (ChargeTime > 0 && timeSinceFired > chargeHoldLength)
+                    if (ChargeTime > 0 && timeSinceFired > chargeHoldLength && !isReloading)
                     {
                         hasCharged = false;
-                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(true));
+                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                     }
                 }
             }
@@ -4999,7 +4999,7 @@ namespace BDArmory.Weapons
                 isOverheated = true;
                 autoFire = false;
                 hasCharged = false;
-                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(true));
+                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
@@ -5017,10 +5017,10 @@ namespace BDArmory.Weapons
         {
             if (isReloading)
             {
-                ReloadTimer = Mathf.Min(ReloadTimer + TimeWarp.fixedDeltaTime / (hasReloadAnim ? ReloadTime + fireAnimSpeed : ReloadTime), 1);
+                ReloadTimer = Mathf.Min(ReloadTimer + TimeWarp.fixedDeltaTime / ReloadTime, 1);
                 if (hasDeployAnim)
                 {
-                    AnimTimer = Mathf.Min(AnimTimer + TimeWarp.fixedDeltaTime / (hasReloadAnim ? ReloadTime + fireAnimSpeed : ReloadTime), 1);
+                    AnimTimer = Mathf.Min(AnimTimer + TimeWarp.fixedDeltaTime / (ReloadTime - deployState.length), 1);
                 }
             }
             if ((RoundsRemaining >= RoundsPerMag && !isReloading) && (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO))
@@ -5183,7 +5183,7 @@ namespace BDArmory.Weapons
                     return;
                 }
 
-                //legacy or visual range guard targeting
+                // within visual range and no radar aiming/need precision visual targeting of specific subsystems
                 if (aiControlled && visualTargetVessel && visRange)
                 {
                     //targetRadius = visualTargetVessel.GetRadius();
@@ -5650,7 +5650,7 @@ namespace BDArmory.Weapons
             if (hasCharged)
             {
                 if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
             }
             if (hasDeployAnim)
             {
@@ -5670,15 +5670,21 @@ namespace BDArmory.Weapons
         IEnumerator ReloadRoutine()
         {
             guiStatusString = "Reloading";
-            yield return new WaitForSecondsFixed(fireAnimSpeed); //wait for fire anim to finish.
+            hasCharged = false;
+            float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate;
+            float netReloadTime = ReloadTime - timeGap - (postFireChargeAnim && ChargeTime > 0 ? ChargeTime : 0);
+            if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
                 fireState[i].normalizedTime = 0;
                 fireState[i].speed = 0;
-                fireState[i].enabled = false;
+                fireState[i].enabled = false;                
             }
-            if (hasChargeAnimation)
-                yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
+            if (hasChargeAnimation && postFireChargeAnim)
+            {
+                chargeRoutine = StartCoroutine(ChargeRoutine(true));
+                yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
+            }
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
@@ -5686,7 +5692,7 @@ namespace BDArmory.Weapons
             }
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
-            reloadState.speed = (reloadState.length / ReloadTime);//ensure reload anim is not longer than reload time
+            reloadState.speed = (reloadState.length / netReloadTime);//ensure reload anim is not longer than reload time
             yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1); //wait for animation here
             reloadState.normalizedTime = 1;
             reloadState.speed = 0;
@@ -5712,7 +5718,7 @@ namespace BDArmory.Weapons
             {
                 chargeState.normalizedTime = discharge ? 1 : 0;
                 chargeState.enabled = true;
-                chargeState.speed = (chargeState.length / ChargeTime) * (discharge ? -1 : 1);//ensure relaod anim is not longer than reload time
+                chargeState.speed = (chargeState.length / ChargeTime) * (discharge ? -1 : 1);//ensure reload anim is not longer than reload time
                 yield return new WaitWhileFixed(() => discharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
                 chargeState.normalizedTime = discharge ? 0 : 1;
                 chargeState.speed = 0;

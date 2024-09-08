@@ -1,5 +1,6 @@
-﻿IMPROVEMENTS / FIXES
+﻿﻿IMPROVEMENTS / FIXES
 - AI:
+	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
@@ -7,8 +8,16 @@
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
+	- Weapons will now properly report Ammo Depleted when ammo remaining is less than amount required to fire.
+	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differing starting ammo amounts due to floating point errors.
+	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
+	- Fix weapons with reload animations adding an extra 1-20s to the reload time, based on fire anim length.
+	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
+	- Missiles:
+		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
+	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES
@@ -57,7 +66,7 @@ IMPROVEMENTS / FIXES
 - Spawning:
 	- Disable waiting for terrain to settle if the spawn altitude is >10km.
 	- Add a couple of 30s timeouts to spawning initialisation to avoid a potential soft-lock.
-
+  
 1.7.0.0
 IMPROVEMENTS / FIXES
 - General:
