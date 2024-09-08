@@ -4791,7 +4791,7 @@ namespace BDArmory.Weapons
                     if (ChargeTime > 0 && timeSinceFired > chargeHoldLength && !isReloading)
                     {
                         hasCharged = false;
-                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                     }
                 }
             }
@@ -4999,7 +4999,7 @@ namespace BDArmory.Weapons
                 isOverheated = true;
                 autoFire = false;
                 hasCharged = false;
-                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
@@ -5650,7 +5650,7 @@ namespace BDArmory.Weapons
             if (hasCharged)
             {
                 if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
             }
             if (hasDeployAnim)
             {
@@ -5672,15 +5672,15 @@ namespace BDArmory.Weapons
             guiStatusString = "Reloading";
             hasCharged = false;
             float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate;
-            float netReloadTime = ReloadTime - timeGap - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
-            yield return new WaitForSecondsFixed(Mathf.Min(timeGap, hasFireAnimation ? fireState[0].length / fireAnimSpeed : 0)); //wait for fire anim to finish.
+            float netReloadTime = ReloadTime - timeGap - (postFireChargeAnim && ChargeTime > 0 ? ChargeTime : 0);
+            if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
                 fireState[i].normalizedTime = 0;
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;                
             }
-            if (hasChargeAnimation && postFireDecharge)
+            if (hasChargeAnimation && postFireChargeAnim)
             {
                 chargeRoutine = StartCoroutine(ChargeRoutine(true));
                 yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
