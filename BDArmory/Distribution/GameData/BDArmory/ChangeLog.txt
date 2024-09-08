@@ -1,4 +1,6 @@
 ﻿﻿IMPROVEMENTS / FIXES
+- General:
+	- Adjust fuel leak FX to work better in space and low atmospheric density.
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).

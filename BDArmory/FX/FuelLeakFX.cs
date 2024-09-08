@@ -34,6 +34,7 @@ namespace BDArmory.FX
         ModuleEngines engine;
         private bool isSRB = false;
         KSPParticleEmitter[] pEmitters;
+        Vector3 force;
 
         void OnEnable()
         {
@@ -56,22 +57,37 @@ namespace BDArmory.FX
             BDArmorySetup.numberOfParticleEmitters++;
             startTime = Time.time;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-            Vector3 Gravity = FlightGlobals.getGeeForceAtPosition(transform.position);
-            using (var pe = pEmitters.AsEnumerable().GetEnumerator())
-                while (pe.MoveNext())
-                {
-                    if (pe.Current == null) continue;
+            bool useWorldSpace = !parentPart.vessel.InVacuum();
+            Vector3 localVelocity = Mathf.Lerp(10, 0, (float)parentPart.vessel.atmDensity) * Vector3.up; // 10f in vacuum (from boil-off pressure), 0f at Kerbin sea level and denser
+            force = GetGForce();
+            var localForce = Quaternion.Inverse(transform.rotation) * force;
+            using var pe = pEmitters.AsEnumerable().GetEnumerator();
+            while (pe.MoveNext())
+            {
+                if (pe.Current == null) continue;
+                pe.Current.emit = true;
+                _highestEnergy = pe.Current.maxEnergy;
+                pe.Current.useWorldSpace = useWorldSpace; // FIXME These should use the same useWorldSpace to avoid a discontinuity when reaching 0 atmo, otherwise localVelocity should be adjusted to compensate in one or the other cases. But adding the velocity to localVelocity doesn't seem to work properly. In any case, it's good enough for now.
+                pe.Current.localVelocity = localVelocity;
+                pe.Current.force = localForce; // Align force to local reference frame of emitter.
+                pe.Current.SetDirty();
+                EffectBehaviour.AddParticleEmitter(pe.Current);
+            }
+        }
 
-                    pe.Current.emit = true;
-                    _highestEnergy = pe.Current.maxEnergy;
-                    pe.Current.force = Gravity;
-                    if (parentPart.vessel.InVacuum())
-                    {
-                        pe.Current.localVelocity = new Vector3(0, (float)parentPart.vessel.obt_speed, 0);
-                        pe.Current.force = Vector3.zero;
-                    }
-                    EffectBehaviour.AddParticleEmitter(pe.Current);
-                }
+        /// <summary>
+        /// Combination of gravity and centripetal force.
+        /// </summary>
+        /// <returns>The overall force in the local reference frame.</returns>
+        Vector3 GetGForce()
+        {
+            // Calculate whether gravity is placing a force based on ratio of centripetal acceleration to body gravity (code below avoids Gravity.magnitude)
+            var vessel = parentPart.vessel;
+            float r = (float)(vessel.altitude + vessel.orbit.referenceBody.Radius);
+            float bodyGravity = (float)vessel.orbit.referenceBody.gravParameter / (r * r);
+            float centripetalAccel = (float)(vessel.obt_speed * vessel.obt_speed / r);
+            Vector3 force = FlightGlobals.getGeeForceAtPosition(vessel.CoM);
+            return Vector3.Lerp(force, Vector3.zero, Mathf.Clamp01(centripetalAccel / bodyGravity)); // Full force of gravity outside of orbital conditions, no gravity in orbit, somewhere in-between for sub-orbital
         }
 
         void OnDisable()
@@ -98,9 +114,16 @@ namespace BDArmory.FX
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
             {
                 return;
-            }           
-            if (parentPart.vessel.InVacuum()) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
-            else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            }
+            if (force != default)
+            {
+                var localForce = Quaternion.Inverse(transform.rotation) * force;
+                foreach (var pe in pEmitters.Where(pe => pe != null))
+                {
+                    pe.force = localForce; // Update the force direction for moving parts.
+                    pe.SetDirty();
+                }
+            }
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             if (disableTime < 0) //only have fire do its stuff while burning and not during FX timeout
             {
@@ -180,7 +203,7 @@ namespace BDArmory.FX
             // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
-            transform.rotation = (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL) ? Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized) : Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
