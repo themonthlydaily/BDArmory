@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- AI:
+	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
