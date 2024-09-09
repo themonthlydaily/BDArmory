@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.23.2"
+VERSION = "1.23.3"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -119,7 +119,8 @@ def encode_names(log_lines: List[str]) -> Tuple[Dict[str, str], List[str]]:
             craft_names.add(entry)
         if field == 'ALIVE':
             craft_names.add(entry)
-    craft_names.update({json.dumps(name)[1:-1] for name in craft_names})
+    craft_names.update({json.dumps(name)[1:-1] for name in craft_names})  # Handle manually encoded DEADTEAMS.
+    craft_names.update({name.replace("\"","\\\"") for name in craft_names})  # For names that break JSON encoding but still have quotes.
     craft_names = {cn: b64encode(cn.encode()) for cn in craft_names}
     sorted_craft_names = list(sorted(craft_names, key=lambda k: len(k), reverse=True))  # Sort the craft names from longest to shortest to avoid accidentally replacing substrings.
     for i in range(1, len(log_lines)):  # The first line doesn't contain craft names
