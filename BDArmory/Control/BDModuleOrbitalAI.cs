@@ -427,7 +427,12 @@ namespace BDArmory.Control
                 fc.Deactivate();
                 fc = null;
             }
-
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
+            {
+                if (engine.throttleLocked || !engine.allowShutdown || !engine.allowRestart) continue; // Ignore engines that can't be throttled, shutdown, or restart
+                if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
+                engine.independentThrottlePercentage = 0f; // Set all independent engines to zero throttle
+            }
             evadingGunfire = false;
             SetStatus("");
         }

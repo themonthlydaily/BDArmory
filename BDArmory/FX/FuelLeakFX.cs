@@ -90,6 +90,18 @@ namespace BDArmory.FX
             return Vector3.Lerp(force, Vector3.zero, Mathf.Clamp01(centripetalAccel / bodyGravity)); // Full force of gravity outside of orbital conditions, no gravity in orbit, somewhere in-between for sub-orbital
         }
 
+        /// <summary>
+        /// Computes leak velocity based on atmospheric density and temperature and the resource density
+        /// </summary>
+        /// <returns>The leak velocity as a float.</returns>
+        float GetLeakVelocity(float resourceDensity = 5f) // fuel and oxidizer are 5 kg/l, monopropellant is 4 kg/l (close enough to 5 for FX)
+        {
+            float tankPressure = 1f; // in atmospheres
+            float outsidePressure = Mathf.Clamp((float)parentPart.vessel.atmDensity * (float)parentPart.vessel.atmosphericTemperature * 287.053f / 101325f, 0f, tankPressure); // p = rho * R * T, in atmospheres
+            float velocity = BDAMath.Sqrt(2f * (tankPressure - outsidePressure) * 101.325f / resourceDensity); // Incompressible bernoulli flow, returns value in m/s (0 at 1 atm, 6.37 m/s in vacuum for 5 fuel/oxidizer)
+            return velocity;
+        }
+
         void OnDisable()
         {
             if (pEmitters != null) // Getting enabled when the parent part is null immediately disables it again before setting any of this up.
@@ -127,6 +139,7 @@ namespace BDArmory.FX
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             if (disableTime < 0) //only have fire do its stuff while burning and not during FX timeout
             {
+                float impulse = 0f;
                 if (engine != null)
                 {
                     if (engine.EngineIgnited && !isSRB)
@@ -149,9 +162,12 @@ namespace BDArmory.FX
                         {
                             //part.RequestResource("LiquidFuel", ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime);
                             //This draining from across vessel?  Trying alt method
-                            fuel.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.fixedDeltaTime;
+                            double amount = ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.fixedDeltaTime;
+                            fuel.amount -= amount;
                             fuel.amount = Mathf.Clamp((float)fuel.amount, 0, (float)fuel.maxAmount);
                             fuelLeft++;
+                            float density = 5f; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
+                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
                         }
                     }
                     ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
@@ -161,9 +177,12 @@ namespace BDArmory.FX
                         {
                             //part.RequestResource("Oxidizer", ((double)drainRate * Mathf.Clamp((float)ox.amount, 40, 400) / Mathf.Clamp((float)ox.maxAmount, 400, (float)ox.maxAmount) ) *  Time.deltaTime);
                             //more fuel = higher pressure, clamped at 400 since flow rate is constrained by outlet aperture, not fluid pressure
-                            ox.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.fixedDeltaTime;
+                            double amount = ((double)drainRate * Mathf.Clamp((float)ox.amount, 40, 400) / Mathf.Clamp((float)ox.maxAmount, 400, (float)ox.maxAmount)) * Time.fixedDeltaTime;
+                            ox.amount -= amount;
                             ox.amount = Mathf.Clamp((float)ox.amount, 0, (float)ox.maxAmount);
                             fuelLeft++;
+                            float density = 5f; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
+                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
                         }
                     }
                     mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
@@ -172,14 +191,18 @@ namespace BDArmory.FX
                         if (mp.amount >= 0)
                         {
                             //part.RequestResource("MonoPropellant", ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.deltaTime);
-                            mp.amount -= ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.fixedDeltaTime;
+                            double amount = ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.fixedDeltaTime;
+                            mp.amount -= amount;
                             mp.amount = Mathf.Clamp((float)mp.amount, 0, (float)mp.maxAmount);
                             fuelLeft++;
+                            float density = 4f; // PartResourceLibrary.Instance.GetDefinition("MonoPropellant").density; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
+                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
                         }
                     }
                 }
-                //if we want a vacuum BattleDamage option to produce (small amounts of) thrust from leaking tanks
-                //if (disableTime < 0 && (fuelLeft > 0 && (lifeTime >= 0 && Time.time - startTime < lifeTime))) parentPart.Rigidbody.AddForce(transform.up * (drainRate / 5), ForceMode.Acceleration); //needs a quaternion to reverse per-frame rotation to face prograde/gravity
+                // Add thrust to leaking tanks based on drain rate (mass flow rate) and leak velocity (F = m_dot * v)
+                if (disableTime < 0 && (fuelLeft > 0 && (lifeTime >= 0 && Time.time - startTime < lifeTime)))
+                    parentPart.Rigidbody.AddForce(impulse * transform.up, ForceMode.Impulse); //needs a quaternion to reverse per-frame rotation to face prograde/gravity
             }
 
             if (disableTime < 0 && (fuelLeft <= 0 || (lifeTime >= 0 && Time.time - startTime > lifeTime)))
