@@ -56,6 +56,7 @@ namespace BDArmory.Control
         private List<ModuleEngines> rcsEngines = new List<ModuleEngines>();
         private bool currentForwardThrust;
         private bool engineListsRequireUpdating = true;
+        private Dictionary<uint, Tuple<bool, float, float>> engineIndependentThrottleState = new Dictionary<uint, Tuple<bool, float, float>>();
 
         private Vector3 maxAngularAcceleration;
         private float maxAngularAccelerationMag;
@@ -415,6 +416,13 @@ namespace BDArmory.Control
                 fc.throttleLerpRate = 3;
             }
             fc.Activate();
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel)) // Save indepedent throttle settings
+            {
+                if (engine.throttleLocked || !engine.allowShutdown || !engine.allowRestart) continue; // Ignore engines that can't be throttled, shutdown, or restart
+                if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
+                if (engineIndependentThrottleState.ContainsKey(engine.part.persistentId)) continue; // don't re-add engines
+                engineIndependentThrottleState.Add(engine.part.persistentId, new (engine.independentThrottle, engine.independentThrottlePercentage, engine.thrustPercentage));
+            }
             UpdateEngineLists(true); // Update engine list, turn off reverse engines if active
         }
 
@@ -427,12 +435,18 @@ namespace BDArmory.Control
                 fc.Deactivate();
                 fc = null;
             }
-            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel)) // Restore indepedent throttle settings
             {
                 if (engine.throttleLocked || !engine.allowShutdown || !engine.allowRestart) continue; // Ignore engines that can't be throttled, shutdown, or restart
                 if (VesselSpawning.SpawnUtils.IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
-                engine.independentThrottlePercentage = 0f; // Set all independent engines to zero throttle
+                if (engineIndependentThrottleState.ContainsKey(engine.part.persistentId))
+                {
+                    engine.independentThrottle = engineIndependentThrottleState[engine.part.persistentId].Item1;
+                    engine.independentThrottlePercentage = engineIndependentThrottleState[engine.part.persistentId].Item2;
+                    engine.thrustPercentage = engineIndependentThrottleState[engine.part.persistentId].Item3;
+                }
             }
+            engineIndependentThrottleState.Clear();
             evadingGunfire = false;
             SetStatus("");
         }
