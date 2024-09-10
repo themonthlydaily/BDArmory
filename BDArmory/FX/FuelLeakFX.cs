@@ -58,7 +58,7 @@ namespace BDArmory.FX
             startTime = Time.time;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
             bool useWorldSpace = !parentPart.vessel.InVacuum();
-            Vector3 localVelocity = Mathf.Lerp(10, 0, (float)parentPart.vessel.atmDensity) * Vector3.up; // 10f in vacuum (from boil-off pressure), 0f at Kerbin sea level and denser
+            Vector3 localVelocity = GetLeakVelocity() * Vector3.up; // ~6.4 m/s in vacuum, 0 m/s at Kerbin sea level and denser
             force = GetGForce();
             var localForce = Quaternion.Inverse(transform.rotation) * force;
             using var pe = pEmitters.AsEnumerable().GetEnumerator();
@@ -166,8 +166,7 @@ namespace BDArmory.FX
                             fuel.amount -= amount;
                             fuel.amount = Mathf.Clamp((float)fuel.amount, 0, (float)fuel.maxAmount);
                             fuelLeft++;
-                            float density = 5f; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
-                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
+                            impulse += (float)amount * fuel.info.density / 1000f * GetLeakVelocity(fuel.info.density); // m * v
                         }
                     }
                     ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
@@ -182,7 +181,7 @@ namespace BDArmory.FX
                             ox.amount = Mathf.Clamp((float)ox.amount, 0, (float)ox.maxAmount);
                             fuelLeft++;
                             float density = 5f; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
-                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
+                            impulse += (float)amount * ox.info.density / 1000f * GetLeakVelocity(ox.info.density); // m * v
                         }
                     }
                     mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
@@ -195,8 +194,7 @@ namespace BDArmory.FX
                             mp.amount -= amount;
                             mp.amount = Mathf.Clamp((float)mp.amount, 0, (float)mp.maxAmount);
                             fuelLeft++;
-                            float density = 4f; // PartResourceLibrary.Instance.GetDefinition("MonoPropellant").density; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
-                            impulse += (float)amount * density / 1000f * GetLeakVelocity(density); // m * v
+                            impulse += (float)amount * mp.info.density / 1000f * GetLeakVelocity(mp.info.density); // m * v
                         }
                     }
                 }
