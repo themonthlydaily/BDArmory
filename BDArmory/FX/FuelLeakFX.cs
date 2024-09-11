@@ -180,7 +180,6 @@ namespace BDArmory.FX
                             ox.amount -= amount;
                             ox.amount = Mathf.Clamp((float)ox.amount, 0, (float)ox.maxAmount);
                             fuelLeft++;
-                            float density = 5f; // 5 kg/l for fuel/oxidizer, 4 kg/l for monopropellant
                             impulse += (float)amount * ox.info.density / 1000f * GetLeakVelocity(ox.info.density); // m * v
                         }
                     }
@@ -200,7 +199,7 @@ namespace BDArmory.FX
                 }
                 // Add thrust to leaking tanks based on drain rate (mass flow rate) and leak velocity (F = m_dot * v)
                 if (disableTime < 0 && (fuelLeft > 0 && (lifeTime >= 0 && Time.time - startTime < lifeTime)))
-                    parentPart.Rigidbody.AddForce(impulse * transform.up, ForceMode.Impulse); //needs a quaternion to reverse per-frame rotation to face prograde/gravity
+                    parentPart.Rigidbody.AddForce(impulse * transform.up, ForceMode.Impulse);
             }
 
             if (disableTime < 0 && (fuelLeft <= 0 || (lifeTime >= 0 && Time.time - startTime > lifeTime)))
