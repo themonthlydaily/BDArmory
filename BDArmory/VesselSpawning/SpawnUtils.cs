@@ -257,6 +257,10 @@ namespace BDArmory.VesselSpawning
                 };
                 if (count > 0) message += (count > 1 ? " are" : " is") + " not attached to its root part";
             }
+            if (!(vessel.rootPart.IsKerbalSeat() || vessel.rootPart.protoModuleCrew.Any(crew => crew != null)))
+            {
+                message += $"{(message.Length > 0 ? " and its" : "'s")} cockpit isn't the root part";
+            }
 
             if (!string.IsNullOrEmpty(message))
             {
