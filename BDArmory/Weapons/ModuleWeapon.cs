@@ -2600,7 +2600,6 @@ namespace BDArmory.Weapons
                                 if (hitPart != null) // Don't ignore terrain hits.
                                 {
                                     hitPartVelocity = hitPart.vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
-                                    hitPartVelocity = hitPart.vessel.Velocity();
                                 }
                                 break;
                             }
