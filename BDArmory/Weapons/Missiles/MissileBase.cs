@@ -325,7 +325,7 @@ namespace BDArmory.Weapons.Missiles
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Kinetic, Standard, ContinuousRod, EMP, Nuke, Legacy, Launcher }
+        public enum WarheadTypes { Kinetic, Standard, ContinuousRod, Custom, CustomStandard, CustomContinuous, EMP, Nuke, Legacy, Launcher }
 
         public WarheadTypes warheadType = WarheadTypes.Kinetic;
         public bool HasFired { get; set; } = false;
@@ -581,6 +581,9 @@ namespace BDArmory.Weapons.Missiles
 
             var emp = p.FindModuleImplementing<ModuleEMP>();
             if (emp != null) emp.Armed = false;
+
+            var customWarhead = p.FindModuleImplementing<BDCustomWarhead>();
+            if (explosive != null) customWarhead.Armed = false;
         }
 
         protected void SetupExplosive(Part p)
@@ -600,6 +603,13 @@ namespace BDArmory.Weapons.Missiles
 
             var emp = p.FindModuleImplementing<ModuleEMP>();
             if (emp != null) emp.Armed = true;
+
+            var customWarhead = p.FindModuleImplementing<BDCustomWarhead>();
+            if (customWarhead != null)
+            {
+                customWarhead.Armed = true;
+                customWarhead.detonateAtMinimumDistance = DetonateAtMinimumDistance;
+            }
         }
 
         public abstract void Detonate();

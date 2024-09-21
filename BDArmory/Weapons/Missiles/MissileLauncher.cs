@@ -714,10 +714,24 @@ namespace BDArmory.Weapons.Missiles
                     case "BDExplosivePart":
                         ((BDExplosivePart)partModule).ParseWarheadType();
                         if (((BDExplosivePart)partModule).warheadReportingName == "Continuous Rod")
-                            warheadType = WarheadTypes.ContinuousRod;
+                            if (warheadType == WarheadTypes.Custom)
+                                warheadType = WarheadTypes.CustomContinuous;
+                            else
+                                warheadType = WarheadTypes.ContinuousRod;
                         else
-                            warheadType = WarheadTypes.Standard;
+                            if (warheadType == WarheadTypes.Custom)
+                                warheadType = WarheadTypes.CustomStandard;
+                            else
+                                warheadType = WarheadTypes.Standard;
                         continue; //EMPs sometimes have BDExplosivePart modules for FX, so keep going
+                    case "BDCustomWarhead":
+                        if (warheadType == WarheadTypes.ContinuousRod)
+                            warheadType = WarheadTypes.CustomContinuous;
+                        else if (warheadType == WarheadTypes.Standard)
+                            warheadType = WarheadTypes.CustomStandard;
+                        else
+                            warheadType = WarheadTypes.Custom;
+                        continue;
                     case "ClusterBomb":
                         clusterbomb = ((ClusterBomb)partModule).submunitions.Count;
                         break; //CBs destroy the part on deployment, doesn't support other modules, break
@@ -740,10 +754,24 @@ namespace BDArmory.Weapons.Missiles
                                             case "BDExplosivePart":
                                                 ((BDExplosivePart)subModule).ParseWarheadType();
                                                 if (((BDExplosivePart)subModule).warheadReportingName == "Continuous Rod")
-                                                    warheadType = WarheadTypes.ContinuousRod;
+                                                    if (warheadType == WarheadTypes.Custom)
+                                                        warheadType = WarheadTypes.CustomContinuous;
+                                                    else
+                                                        warheadType = WarheadTypes.ContinuousRod;
+                                                else
+                                                    if (warheadType == WarheadTypes.Custom)
+                                                    warheadType = WarheadTypes.CustomStandard;
                                                 else
                                                     warheadType = WarheadTypes.Standard;
-                                                break;
+                                                continue; //EMPs sometimes have BDExplosivePart modules for FX, so keep going
+                                            case "BDCustomWarhead":
+                                                if (warheadType == WarheadTypes.ContinuousRod)
+                                                    warheadType = WarheadTypes.CustomContinuous;
+                                                else if (warheadType == WarheadTypes.Standard)
+                                                    warheadType = WarheadTypes.CustomStandard;
+                                                else
+                                                    warheadType = WarheadTypes.Custom;
+                                                continue;
                                             case "ClusterBomb":
                                                 clusterbomb = ((ClusterBomb)subModule).submunitions.Count; //No bomb check, since I guess you could have a missile with a clusterbomb module, for some reason...?
                                                 if (clusterbomb > 1) clusterbomb *= (int)((MultiMissileLauncher)partModule).salvoSize;
@@ -3013,14 +3041,30 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
+                if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod ||
+                    warheadType == WarheadTypes.Custom ||
+                    warheadType == WarheadTypes.CustomStandard || warheadType == WarheadTypes.CustomContinuous)
                 {
-                    var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                    tnt.DetonateIfPossible();
-                    FuseFailed = tnt.fuseFailed;
-                    guidanceActive = false;
-                    if (FuseFailed)
-                        HasExploded = false;
+                    if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod ||
+                    warheadType == WarheadTypes.CustomStandard || warheadType == WarheadTypes.CustomContinuous)
+                    {
+                        var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                        tnt.DetonateIfPossible();
+                        FuseFailed = tnt.fuseFailed;
+                        guidanceActive = false;
+                        if (FuseFailed)
+                            HasExploded = false;
+                    }
+
+                    if (warheadType == WarheadTypes.Custom || warheadType == WarheadTypes.CustomStandard || warheadType == WarheadTypes.CustomContinuous)
+                    {
+                        var warhead = part.FindModuleImplementing<BDCustomWarhead>();
+                        warhead.DetonateIfPossible();
+                        FuseFailed = warhead.fuseFailed;
+                        guidanceActive = false;
+                        if (FuseFailed)
+                            HasExploded = false;
+                    }
                 }
                 else if (warheadType == WarheadTypes.Nuke)
                 {
