@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using KSP.UI;
 using KSP.UI.Screens;
@@ -26,6 +27,8 @@ namespace BDArmory.UI
         public const string BDACategoryKey = "bdacategory";
         public const string AutoBDACategoryKey = "autobdacategory";
         public const int SubcategoryGroup = 412440121;
+
+        static readonly string customCategoriesConfigURL = "GameData/BDArmory/PluginData/CustomCategories.cfg";
 
         /// <summary>
         /// Adding to this dictionary before the category buttons are created will add more bda categories.
@@ -89,6 +92,7 @@ namespace BDArmory.UI
         private void Awake()
         {
             Instance = this;
+            LoadCustomCategories();
             bool partsDetected = false;
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
@@ -200,6 +204,34 @@ namespace BDArmory.UI
         private void OnDestroy()
         {
             GameEvents.onGUIEditorToolbarReady.Remove(LoadBDArmoryCategory);
+        }
+
+        void LoadCustomCategories()
+        {
+            var configURL = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, customCategoriesConfigURL));
+            var fileNode = ConfigNode.Load(configURL);
+            if (fileNode == null)
+            {
+                fileNode = new ConfigNode();
+                if (!Directory.GetParent(configURL).Exists)
+                { Directory.GetParent(configURL).Create(); }
+            }
+            if (!fileNode.HasNode("CustomCategories"))
+            {
+                fileNode.AddNode("CustomCategories");
+            }
+            string customCategoriesComment = "Add custom BDA subcategories using the format: CategoryName = CategoryIconPath (e.g., Misc = BDArmory/Textures/Misc). Only non-preexisting categories will be added. Empty categories won't be shown.";
+            ConfigNode customCategories = fileNode.GetNode("CustomCategories");
+            customCategories.comment = customCategoriesComment;
+            foreach (ConfigNode.Value category in customCategories.values)
+            {
+                // Note: we use CategoryIcons for the check as Categories gets pared down depending on the parts actually available.
+                if (CategoryIcons.ContainsKey(category.name)) continue;
+                Categories.Add(category.name);
+                if (!File.Exists(Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, category.value)))) category.value = "BDArmory/Textures/icon";
+                CategoryIcons.Add(category.name, category.value);
+            }
+            fileNode.Save(configURL);
         }
 
         public static string GetTexturePath(string category)
