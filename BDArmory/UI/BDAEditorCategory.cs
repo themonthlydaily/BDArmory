@@ -210,11 +210,13 @@ namespace BDArmory.UI
         {
             var configURL = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, customCategoriesConfigURL));
             var fileNode = ConfigNode.Load(configURL);
-            if (fileNode == null)
+            if (fileNode == null) // If the file doesn't exist, create it, but don't overwrite it if it does exist.
             {
                 fileNode = new ConfigNode();
                 if (!Directory.GetParent(configURL).Exists)
                 { Directory.GetParent(configURL).Create(); }
+                fileNode.AddNode("CustomCategories");
+                fileNode.Save(configURL);
             }
             if (!fileNode.HasNode("CustomCategories"))
             {
@@ -228,10 +230,14 @@ namespace BDArmory.UI
                 // Note: we use CategoryIcons for the check as Categories gets pared down depending on the parts actually available.
                 if (CategoryIcons.ContainsKey(category.name)) continue;
                 Categories.Add(category.name);
-                if (!File.Exists(Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, category.value)))) category.value = "BDArmory/Textures/icon";
+                if (!GameDatabase.Instance.ExistsTexture(category.value))
+                {
+                    Debug.LogWarning($"[BDArmory.BDAEditorCategory]: Icon for {category.name} not found at {category.value}. Using default icon.");
+                    category.value = "BDArmory/Textures/icon";
+                }
+                Debug.Log($"[BDArmory.BDAEditorCategory]: Adding category {category.name} with icon {category.value}.");
                 CategoryIcons.Add(category.name, category.value);
             }
-            fileNode.Save(configURL);
         }
 
         public static string GetTexturePath(string category)
