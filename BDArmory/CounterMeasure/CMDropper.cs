@@ -41,7 +41,7 @@ namespace BDArmory.CounterMeasure
         public float priority = 0;
         public int Priority => (int)priority;
 
-        [KSPField] public string ejectTransformName;
+        [KSPField] public string ejectTransformName = "cmTransform";
         Transform ejectTransform;
 
         [KSPField] public string effectsTransformName = string.Empty;
@@ -401,7 +401,7 @@ namespace BDArmory.CounterMeasure
         IEnumerator BubbleRoutine()
         {
             yield return new WaitForSecondsFixed(0.2f);
-            GameObject bubbleCMObject = decoyPool.GetPooledObject();
+            GameObject bubbleCMObject = bubblePool.GetPooledObject();
             CMBubble smoke = bubbleCMObject.GetComponent<CMBubble>();
             smoke.velocity = part.rb.velocity + (ejectVelocity * transform.up) +
                              (UnityEngine.Random.Range(-3f, 3f) * transform.forward) +
