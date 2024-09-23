@@ -40,7 +40,7 @@ namespace BDArmory.CounterMeasure
             audio *= UnityEngine.Random.Range(audioMinMult, Mathf.Max(BDArmorySettings.FLARE_FACTOR, 0f) - audioMinMult + 0.8f);
 
             if (BDArmorySettings.DEBUG_OTHER)
-                Debug.Log("[BDArmory.CMFlare]: New decoy generated from " + sourceVessel.GetName() + ":" + acousticSig.ToString("0.0") + ", decoy sig: " + audio.ToString("0.0"));
+                Debug.Log("[BDArmory.CMDecoy]: New decoy generated from " + sourceVessel.GetName() + ":" + acousticSig.ToString("0.0") + ", decoy sig: " + audio.ToString("0.0"));
         }
 
         void OnEnable()
@@ -112,7 +112,7 @@ namespace BDArmory.CounterMeasure
                     }
                     catch (NullReferenceException e)
                     {
-                        Debug.LogWarning("[BDArmory.CMFlare]: NRE setting worldVelocity: " + e.Message);
+                        Debug.LogWarning("[BDArmory.CMDecoy]: NRE setting worldVelocity: " + e.Message);
                     }
 
                     try
@@ -124,7 +124,7 @@ namespace BDArmory.CounterMeasure
                     }
                     catch (NullReferenceException e)
                     {
-                        Debug.LogWarning("[BDArmory.CMFlare]: NRE checking density: " + e.Message);
+                        Debug.LogWarning("[BDArmory.CMDecoy]: NRE checking density: " + e.Message);
                     }
                 }
             //
