@@ -1748,7 +1748,7 @@ namespace BDArmory.Control
                                 if (vesselRadarData)
                                 {
                                     TargetSignatureData targetData = TargetSignatureData.noTarget;
-                                    if (_radarsEnabled)
+                                    if (_radarsEnabled || ml.GetWeaponClass() == WeaponClasses.SLW && _sonarsEnabled)
                                     {
                                         if (vesselRadarData.locked)
                                             targetData = vesselRadarData.lockedTargetData.targetData;
@@ -2565,10 +2565,18 @@ namespace BDArmory.Control
                                     //yield return new WaitForSecondsFixed(2f);
                                     if (vessel == null || targetVessel == null) break;
                                 }
-                                if (_radarsEnabled)
-                                    INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
-                                if (!INSTarget.exists && _irstsEnabled)
-                                    INSTarget = vesselRadarData.activeIRTarget(null, this); //how about IRST?
+                                if (ml.GetWeaponClass() == WeaponClasses.SLW)
+                                {
+                                    if (_sonarsEnabled)
+                                        INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
+                                }
+                                else
+                                {
+                                    if (_radarsEnabled)
+                                        INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
+                                    if (!INSTarget.exists && _irstsEnabled)
+                                        INSTarget = vesselRadarData.activeIRTarget(null, this); //how about IRST?
+                                }
 
                                 float attemptStartTime = Time.time;
                                 float attemptLockTime = Time.time;

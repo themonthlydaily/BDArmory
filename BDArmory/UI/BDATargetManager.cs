@@ -648,7 +648,9 @@ namespace BDArmory.UI
                     {
                         if (engines.Current == null) continue;
                         if (!engines.Current.EngineIgnited) continue;
-                        float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                        // Props don't generate thrust above Mach 1--will catch props that don't use Firespitter
+                        float thisScore = engines.Current.GetCurrentThrust(); //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                        //if (engines.Current.velCurve.Evaluate(1.1f) <= 0 && v.horizontalSrfSpeed > ) //Propellers cause cavitation, noisy
                         noiseScore = Mathf.Max(noiseScore, thisScore);
                     }
             }
@@ -696,6 +698,7 @@ namespace BDArmory.UI
                 }
                 Part closestPart = null;
                 Transform thrustTransform = null;
+                bool propEngine = false;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
@@ -813,7 +816,9 @@ namespace BDArmory.UI
                         continue;
 
                     float score = GetVesselAcousticSignature(vessel, missileVessel.CoM);
-                    score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m //TODO value scaling may need tweaking
+                    if (missileVessel.altitude > -100)
+                        score *= Mathf.Pow(0.8f, (vessel.CoM - ray.origin).magnitude / 1450); //some reflection losses at surface, using 0.8 as arbitrary value. technically should take depth/seafloor depth into account
+                    // else // //below thermocline, subject to Deep Sound Channel and basically 0 propagation loss
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorNoiseScore > 0f) && (angle < scanRadius))
@@ -837,6 +842,7 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score);
                         }
                     }
+                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[GetAcousticTarget] soundScore of {vessel.GetName()} at angle {angle}° is {score}");
                 }
             }
 

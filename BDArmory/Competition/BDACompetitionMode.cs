@@ -18,6 +18,7 @@ using BDArmory.Utils;
 using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Weapons;
+using UnityEngine.UIElements;
 
 namespace BDArmory.Competition
 {
@@ -262,22 +263,25 @@ namespace BDArmory.Competition
             int shadowOffset = 2;
             if (BDArmorySetup.GAME_UI_ENABLED)
             {
-                clockRect = new Rect(10, 42, 100, 30);
-                dateRect = new Rect(100, 38, 100, 20);
-                versionRect = new Rect(200, 46, 100, 20);
-                statusRect = new Rect(30, 80, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
-                statusStyle.fontSize = 22;
-                dateStyle.fontSize = 14;
+                float rectOffset = Mathf.Max(100, Mathf.CeilToInt(100 * BDArmorySettings.UI_SCALE));
+                clockRect = new Rect(10, 42, rectOffset, 30);
+                dateRect = new Rect(rectOffset, 38, rectOffset, 20);
+                versionRect = new Rect(rectOffset * 2, 46, rectOffset, 20);
+                statusRect = new Rect(30, 60 + rectOffset / 5, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
+                statusStyle.fontSize = Mathf.Max(22, Mathf.CeilToInt(22 * BDArmorySettings.UI_SCALE));
+                dateStyle.fontSize = Mathf.Max(14, Mathf.CeilToInt(14 * BDArmorySettings.UI_SCALE));
             }
             else
             {
-                clockRect = new Rect(10, 6, 80, 20);
-                dateRect = new Rect(10, 26, 100, 20);
-                versionRect = new Rect(10, 48, 100, 20);
-                statusRect = new Rect(80, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
+                float RectLength = Mathf.Max(100, Mathf.CeilToInt(100 * BDArmorySettings.UI_SCALE));
+                float RectHeight = Mathf.Max(20, Mathf.CeilToInt(20 * BDArmorySettings.UI_SCALE));
+                clockRect = new Rect(10, 6, RectLength, RectHeight);
+                dateRect = new Rect(10, RectHeight + 6, RectLength, RectHeight);
+                versionRect = new Rect(10, (RectHeight * 2) + 8, RectLength, RectHeight);
+                statusRect = new Rect(RectLength, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
                 shadowOffset = 1;
-                statusStyle.fontSize = 14;
-                dateStyle.fontSize = 10;
+                statusStyle.fontSize = Mathf.Max(14, Mathf.CeilToInt(14 * BDArmorySettings.UI_SCALE));
+                dateStyle.fontSize = Mathf.Max(10, Mathf.CeilToInt(10 * BDArmorySettings.UI_SCALE));
             }
             clockRectShadow = new Rect(clockRect);
             clockRectShadow.x += shadowOffset;
