@@ -698,7 +698,6 @@ namespace BDArmory.UI
                 }
                 Part closestPart = null;
                 Transform thrustTransform = null;
-                bool propEngine = false;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
