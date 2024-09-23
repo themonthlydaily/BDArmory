@@ -3772,6 +3772,14 @@ namespace BDArmory.Weapons.Missiles
                                 output.AppendLine($" - Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModule).caliber > 0 ? ((BDExplosivePart)partModule).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModule).tntMass * 0.0555f, ((BDExplosivePart)partModule).apMod):F2} mm");
                             continue; //in case there's also an EMP module
                         }
+                    case "BDCustomWarhead":
+                        {
+                            warheadType = WarheadTypes.Custom;
+                            //warheadType = WarheadTypes.Standard; // Also, cts rod. 
+                            ((BDCustomWarhead)partModule).ParseWarheadType();
+                            output.AppendLine($"- {((BDCustomWarhead)partModule).warheadReportingName} warhead");
+                            continue; //in case there's also an EMP module
+                        }
                     case "ModuleEMP":
                         {
                             warheadType = WarheadTypes.EMP;

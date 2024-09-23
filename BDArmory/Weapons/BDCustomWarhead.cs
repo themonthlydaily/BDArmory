@@ -2,13 +2,9 @@ using KSP.Localization;
 using System.Linq;
 using UnityEngine;
 
-using BDArmory.Control;
 using BDArmory.Extensions;
-using BDArmory.FX;
 using BDArmory.Settings;
 using BDArmory.Utils;
-using BDArmory.Weapons.Missiles;
-using BDArmory.Competition;
 using BDArmory.Bullets;
 using static BDArmory.Bullets.PooledBullet;
 using static BDArmory.Weapons.ModuleWeapon;
@@ -40,6 +36,10 @@ namespace BDArmory.Weapons
         public void ParseWarheadType()
         {
             _warheadType = BulletInfo.bullets[warheadType];
+            if (_warheadType.DisplayName != "Default Bullet")
+                warheadReportingName = _warheadType.DisplayName;
+            else
+                warheadReportingName = _warheadType.name;
         }
 
         private void FireProjectile(float detRange = -1, float detTime = -1)
@@ -167,6 +167,15 @@ namespace BDArmory.Weapons
                 }
                 pBullet.EMP = _warheadType.EMP;
                 pBullet.nuclear = _warheadType.nuclear;
+                if (pBullet.nuclear) // Inherit the parent shell's nuke models.
+                {
+                    pBullet.flashModelPath = BDModuleNuke.defaultflashModelPath;
+                    pBullet.shockModelPath = BDModuleNuke.defaultShockModelPath;
+                    pBullet.blastModelPath = BDModuleNuke.defaultBlastModelPath;
+                    pBullet.plumeModelPath = BDModuleNuke.defaultPlumeModelPath;
+                    pBullet.debrisModelPath = BDModuleNuke.defaultDebrisModelPath;
+                    pBullet.blastSoundPath = BDModuleNuke.defaultBlastSoundPath;
+                }
                 pBullet.beehive = _warheadType.beehive;
                 if (_warheadType.beehive)
                 {

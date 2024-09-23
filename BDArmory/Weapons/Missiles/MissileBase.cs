@@ -583,7 +583,7 @@ namespace BDArmory.Weapons.Missiles
             if (emp != null) emp.Armed = false;
 
             var customWarhead = p.FindModuleImplementing<BDCustomWarhead>();
-            if (explosive != null) customWarhead.Armed = false;
+            if (customWarhead != null) customWarhead.Armed = false;
         }
 
         protected void SetupExplosive(Part p)
@@ -1361,13 +1361,13 @@ namespace BDArmory.Weapons.Missiles
             }
             if (TargetAcquired)
             {
+                TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                 if (activeDatalink)
                 {
-                    TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                     TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
                     lockFailTimer = 0;
                 }
-                else
+                else if (gpsUpdates > 0)
                     lockFailTimer += Time.fixedDeltaTime;
             }
             else
