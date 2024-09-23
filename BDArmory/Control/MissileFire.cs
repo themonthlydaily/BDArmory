@@ -1748,7 +1748,7 @@ namespace BDArmory.Control
                                 if (vesselRadarData)
                                 {
                                     TargetSignatureData targetData = TargetSignatureData.noTarget;
-                                    if (_radarsEnabled)
+                                    if (_radarsEnabled || ml.GetWeaponClass() == WeaponClasses.SLW && _sonarsEnabled)
                                     {
                                         if (vesselRadarData.locked)
                                             targetData = vesselRadarData.lockedTargetData.targetData;
@@ -2565,10 +2565,18 @@ namespace BDArmory.Control
                                     //yield return new WaitForSecondsFixed(2f);
                                     if (vessel == null || targetVessel == null) break;
                                 }
-                                if (_radarsEnabled)
-                                    INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
-                                if (!INSTarget.exists && _irstsEnabled)
-                                    INSTarget = vesselRadarData.activeIRTarget(null, this); //how about IRST?
+                                if (ml.GetWeaponClass() == WeaponClasses.SLW)
+                                {
+                                    if (_sonarsEnabled)
+                                        INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
+                                }
+                                else
+                                {
+                                    if (_radarsEnabled)
+                                        INSTarget = vesselRadarData.detectedRadarTarget(targetVessel, this); //detected by radar scan?
+                                    if (!INSTarget.exists && _irstsEnabled)
+                                        INSTarget = vesselRadarData.activeIRTarget(null, this); //how about IRST?
+                                }
 
                                 float attemptStartTime = Time.time;
                                 float attemptLockTime = Time.time;
@@ -6499,16 +6507,17 @@ namespace BDArmory.Control
                                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                         while (rd.MoveNext())
                                         {
-                                            if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.None)
+                                            if (rd.Current != null && ml.GetWeaponClass() != WeaponClasses.SLW ? rd.Current.sonarMode == ModuleRadar.SonarModes.None : rd.Current.sonarMode != ModuleRadar.SonarModes.None)
                                             {
                                                 float scanSpeed = (rd.Current.locked && rd.Current.lockedTarget.vessel == targetVessel) ? rd.Current.multiLockFOV : rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
                                                 if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
                                                 rd.Current.EnableRadar();
-                                                _radarsEnabled = true;
+                                                if (ml.GetWeaponClass() != WeaponClasses.SLW) _radarsEnabled = true;
+                                                else _sonarsEnabled = true;
                                             }
                                         }
                                 }
-                                if (!_radarsEnabled)
+                                if (!_radarsEnabled && ml.GetWeaponClass() != WeaponClasses.SLW)
                                 {
                                     using (List<ModuleIRST>.Enumerator rd = irsts.GetEnumerator())
                                         while (rd.MoveNext())

@@ -402,8 +402,8 @@ namespace BDArmory.CounterMeasure
         {
             yield return new WaitForSecondsFixed(0.2f);
             GameObject bubbleCMObject = bubblePool.GetPooledObject();
-            CMBubble smoke = bubbleCMObject.GetComponent<CMBubble>();
-            smoke.velocity = part.rb.velocity + (ejectVelocity * transform.up) +
+            CMBubble bubble = bubbleCMObject.GetComponent<CMBubble>();
+            bubble.velocity = part.rb.velocity + (ejectVelocity * transform.up) +
                              (UnityEngine.Random.Range(-3f, 3f) * transform.forward) +
                              (UnityEngine.Random.Range(-3f, 3f) * transform.right);
             bubbleCMObject.SetActive(true);
@@ -418,7 +418,6 @@ namespace BDArmory.CounterMeasure
                     if (emitter.Current.maxEnergy > longestLife) longestLife = emitter.Current.maxEnergy;
                 }
 
-            audioSource.PlayOneShot(smokePoofSound);
             yield return new WaitForSecondsFixed(longestLife);
             bubbleCMObject.SetActive(false);
         }

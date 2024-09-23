@@ -32,7 +32,7 @@ namespace BDArmory.CounterMeasure
             Vector3 dragForce = (0.008f * mass) * drag * 0.5f * simSpeedSquared *
                                 ((float)
                                 FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPos),
-                                    FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) * 83) *
+                                    FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) * 10) *
                                 velocity.normalized;
 
             velocity -= (dragForce / mass) * Time.fixedDeltaTime;

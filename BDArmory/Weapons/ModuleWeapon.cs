@@ -3316,7 +3316,7 @@ namespace BDArmory.Weapons
                     }
                     fireState[i].speed = fireAnimSpeed;
                     fireState[i].normalizedTime = Mathf.Repeat(fireState[i].normalizedTime, 1);
-                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
+                    //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
                 }
             }
         }
@@ -5675,9 +5675,10 @@ namespace BDArmory.Weapons
             if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
-                fireState[i].normalizedTime = 0;
+                fireState[i].normalizedTime = 1;
                 fireState[i].speed = 0;
-                fireState[i].enabled = false;                
+                fireState[i].enabled = false;
+                //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: packing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
             }
             if (hasChargeAnimation && postFireChargeAnim)
             {
