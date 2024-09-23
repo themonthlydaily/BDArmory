@@ -1333,12 +1333,13 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else activeDatalink = false;
                 }
+                else TargetAcquired = true;
             }
             if (TargetAcquired)
             {
+                TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                 if (activeDatalink)
                 {
-                    TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                     TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
                     lockFailTimer = 0;
                 }
@@ -1347,7 +1348,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
                 lockFailTimer += Time.fixedDeltaTime;
-            //Debug.Log($"[INSDebug] lockfailTimer {lockFailTimer.ToString("0.00")}; datalink {activeDatalink}");
+            Debug.Log($"[INSDebug] lockfailTimer {lockFailTimer.ToString("0.00")}; datalink {activeDatalink}");
             TargetVelocity = Vector3.zero;
             TargetAcceleration = Vector3.zero;
             TargetPosition += driftSeed * TimeIndex;

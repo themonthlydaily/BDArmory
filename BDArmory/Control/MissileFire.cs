@@ -6507,16 +6507,17 @@ namespace BDArmory.Control
                                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                         while (rd.MoveNext())
                                         {
-                                            if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.None)
+                                            if (rd.Current != null && ml.GetWeaponClass() != WeaponClasses.SLW ? rd.Current.sonarMode == ModuleRadar.SonarModes.None : rd.Current.sonarMode != ModuleRadar.SonarModes.None)
                                             {
                                                 float scanSpeed = (rd.Current.locked && rd.Current.lockedTarget.vessel == targetVessel) ? rd.Current.multiLockFOV : rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
                                                 if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
                                                 rd.Current.EnableRadar();
-                                                _radarsEnabled = true;
+                                                if (ml.GetWeaponClass() != WeaponClasses.SLW) _radarsEnabled = true;
+                                                else _sonarsEnabled = true;
                                             }
                                         }
                                 }
-                                if (!_radarsEnabled)
+                                if (!_radarsEnabled && ml.GetWeaponClass() != WeaponClasses.SLW)
                                 {
                                     using (List<ModuleIRST>.Enumerator rd = irsts.GetEnumerator())
                                         while (rd.MoveNext())
