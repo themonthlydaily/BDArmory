@@ -5055,7 +5055,8 @@ namespace BDArmory.Weapons
                     if (!oneShotSound) audioSource.Stop();
                     if (!string.IsNullOrEmpty(reloadAudioPath))
                     {
-                        audioSource.PlayOneShot(reloadAudioClip);
+                        audioSource2.Stop();
+                        audioSource2.PlayOneShot(reloadAudioClip);
                     }
                 }
             }
@@ -5090,7 +5091,8 @@ namespace BDArmory.Weapons
                 }
                 if (!string.IsNullOrEmpty(reloadCompletePath))
                 {
-                    audioSource.PlayOneShot(reloadCompleteAudioClip);
+                    audioSource2.Stop();
+                    audioSource2.PlayOneShot(reloadCompleteAudioClip);
                 }
             }
         }
@@ -5688,7 +5690,8 @@ namespace BDArmory.Weapons
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
-                audioSource.PlayOneShot(reloadAudioClip);
+                audioSource2.Stop();
+                audioSource2.PlayOneShot(reloadAudioClip);
             }
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
