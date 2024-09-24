@@ -90,6 +90,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistentSettingsField] public static bool CHECK_WATER_TERRAIN = false;
         [BDAPersistentSettingsField] public static bool RADAR_NOTCHING = false;
+        [BDAPersistentSettingsField] public static bool RADAR_ALLOW_SURFACE_WARFARE = true;
         [BDAPersistentSettingsField] public static float RADAR_NOTCHING_FACTOR = 1f;
         [BDAPersistentSettingsField] public static float RADAR_NOTCHING_SCR_FACTOR = 0.01f;
         [BDAPersistentSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
