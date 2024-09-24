@@ -1389,11 +1389,13 @@ namespace BDArmory.Radar
             return modifiedSignature / signature;
         }
 
-        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float terrainRange)
+        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange)
         {
             //terrainRange *= 0.001f; // m to km
             targetRange *= 1000f;
             terrainRange -= targetRange;
+
+            terrainRange = Mathf.Sqrt(0.25f * terrainRange * terrainRange + 0.75f * targetAlt * targetAlt);
 
             if (radar.radarMaxRangeGate < terrainRange || radar.radarMinVelocityGate == float.MaxValue)
                 return 1f;
@@ -1423,11 +1425,13 @@ namespace BDArmory.Radar
             return multiplier;
         }
 
-        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float terrainRange, out float notchMod)
+        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange, out float notchMod)
         {
             //terrainRange *= 0.001f; // m to km
             targetRange *= 1000f;
             terrainRange -= targetRange;
+
+            terrainRange = Mathf.Sqrt(0.25f * terrainRange * terrainRange + 0.75f * targetAlt * targetAlt);
 
             notchMod = 0f;
 
@@ -1475,9 +1479,12 @@ namespace BDArmory.Radar
             return multiplier;
         }
 
-        public static float GetRadarNotchingModifier(MissileBase missile, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float terrainRange, out float notchMod)
+        public static float GetRadarNotchingModifier(MissileBase missile, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange, out float notchMod)
         {
             terrainRange -= targetRange;
+
+            terrainRange = Mathf.Sqrt(0.25f * terrainRange * terrainRange + 0.75f * targetAlt * targetAlt);
+
             //terrainRange *= 0.001f; // m to km
 
             notchMod = 0f;
@@ -1557,7 +1564,7 @@ namespace BDArmory.Radar
                     if (loadedvessels.Current.IsUnderwater() && radar.sonarMode == ModuleRadar.SonarModes.None) //don't detect underwater targets with radar
                         continue;
                     // ignore self, ignore behind ray
-                    Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
+                    Vector3 vectorToTarget = (loadedvessels.Current.CoM - ray.origin);
                     if (((vectorToTarget).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR) ||
                          (Vector3.Dot(vectorToTarget, ray.direction) < 0))
                         continue;
@@ -1579,7 +1586,7 @@ namespace BDArmory.Radar
                                 distance = BDAMath.Sqrt(distance);
                                 if (TerrainCheck(ray.origin, loadedvessels.Current.CoM, FlightGlobals.currentMainBody, (distance * 1000f + radar.radarMaxRangeGate), out terrainR, out terrainAngle, true))
                                     continue;
-                                notchMultiplier = GetRadarNotchingModifier(radar, ray.origin, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, Mathf.Sqrt(0.25f * terrainR * terrainR + 0.75f * (float)(loadedvessels.Current.altitude * loadedvessels.Current.altitude)));
+                                notchMultiplier = GetRadarNotchingModifier(radar, ray.origin, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, (float) loadedvessels.Current.altitude, terrainR);
                             }
                             else
                             {
@@ -1686,7 +1693,7 @@ namespace BDArmory.Radar
                     }
 
                     // ignore self, ignore behind ray
-                    Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
+                    Vector3 vectorToTarget = (loadedvessels.Current.CoM - ray.origin);
                     if (((vectorToTarget).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR) ||
                          (Vector3.Dot(vectorToTarget, ray.direction) < 0))
                         continue;
@@ -1710,7 +1717,7 @@ namespace BDArmory.Radar
                                 distance = BDAMath.Sqrt(distance);
                                 if (TerrainCheck(ray.origin, loadedvessels.Current.CoM, FlightGlobals.currentMainBody, distance + missile.activeRadarRangeFilter, out terrainR, out terrainAngle, true))
                                     continue;
-                                notchMultiplier = GetRadarNotchingModifier(missile, ray.origin, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, Mathf.Sqrt(0.25f * terrainR * terrainR + 0.75f * (float)(loadedvessels.Current.altitude * loadedvessels.Current.altitude)), out notchMod);
+                                notchMultiplier = GetRadarNotchingModifier(missile, ray.origin, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, (float) loadedvessels.Current.altitude, terrainR, out notchMod);
                             }
                             else
                             {
@@ -1866,7 +1873,7 @@ namespace BDArmory.Radar
                                 distance = BDAMath.Sqrt(distance);
                                 if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (distance * 1000f + radar.radarMaxRangeGate), out terrainR, out terrainAngle, true))
                                     continue;
-                                notchMultiplier = GetRadarNotchingModifier(radar, position, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, Mathf.Sqrt(0.25f* terrainR * terrainR + 0.75f * (float) (loadedvessels.Current.altitude * loadedvessels.Current.altitude)));
+                                notchMultiplier = GetRadarNotchingModifier(radar, position, loadedvessels.Current.CoM, loadedvessels.Current.srf_velocity, distance, (float) loadedvessels.Current.altitude, terrainR);
                             }
                             else
                             {
@@ -2008,7 +2015,7 @@ namespace BDArmory.Radar
                         //targetPosition = loadedvessels.Current.transform.position;
 
                         // ignore self, ignore behind ray
-                        Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
+                        Vector3 vectorToTarget = (loadedvessels.Current.CoM - ray.origin);
                         if (((vectorToTarget).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR) ||
                              (Vector3.Dot(vectorToTarget, ray.direction) < 0))
                             continue;
@@ -2029,7 +2036,7 @@ namespace BDArmory.Radar
             // second: track that lock
             if (lockedVessel)
             {
-                targetPosition = lockedVessel.transform.position;
+                targetPosition = lockedVessel.CoM;
 
                 // evaluate range
                 float distance = (lockedVessel.CoM - ray.origin).sqrMagnitude * 0.000001f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
@@ -2050,7 +2057,7 @@ namespace BDArmory.Radar
                         distance = BDAMath.Sqrt(distance);
                         if (TerrainCheck(ray.origin, targetPosition, FlightGlobals.currentMainBody, (distance * 1000f + radar.radarMaxRangeGate), out terrainR, out terrainAngle, true))
                             return false;
-                        notchMultiplier = GetRadarNotchingModifier(radar, ray.origin, lockedVessel.CoM, lockedVessel.srf_velocity, distance, Mathf.Sqrt(0.25f * terrainR * terrainR + 0.75f * (float)(lockedVessel.altitude * lockedVessel.altitude)), out notchMod);
+                        notchMultiplier = GetRadarNotchingModifier(radar, ray.origin, lockedVessel.CoM, lockedVessel.srf_velocity, distance, (float) lockedVessel.altitude, terrainR, out notchMod);
                     }
                     else
                     {
@@ -2148,7 +2155,7 @@ namespace BDArmory.Radar
                     if (loadedvessels.Current.vesselType == VesselType.Debris) continue;
 
                     // ignore too close ones
-                    if ((loadedvessels.Current.transform.position - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
+                    if ((loadedvessels.Current.CoM - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
                         continue;
 
                     Vector3 vesselDirection = (loadedvessels.Current.CoM - position).ProjectOnPlanePreNormalized(upVector);
@@ -2156,7 +2163,7 @@ namespace BDArmory.Radar
                     if (angle < fov / 2f)
                     {
                         // ignore when blocked by terrain
-                        if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
+                        if (TerrainCheck(referenceTransform.position, loadedvessels.Current.CoM))
                             continue;
 
                         // get vessel's heat signature
@@ -2170,7 +2177,7 @@ namespace BDArmory.Radar
                         float signature = IRSig.Item1 * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
                         //signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000); //300 to 6000m - clamping sig past 6km; Commenting out as it makes tuning detection curves much easier
 
-                        signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
+                        signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.CoM - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
                         //ground will mask thermal sig                        
                         signature *= (GetRadarGroundClutterModifier(irst.GroundClutterFactor, position, loadedvessels.Current.CoM, tInfo) * (tInfo.isSplashed ? 12 : 1));
                         //cold ocean on the other hand...
