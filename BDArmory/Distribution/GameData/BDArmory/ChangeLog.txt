@@ -7,6 +7,8 @@
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
 	- Add missing sonar checks for AIs trying to fire torpedoes.
+	- Fix AI not turning on Active sonar when trying to fire INS torpedoes if no passive sonar on vessel.
+	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -15,6 +17,8 @@
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
 	- Fix Bubble Curtain launcher NRE.
+	- 'Infinite Ordinance' now applies to Countermeasure droppers.
+	- Adjust cmThreshold timing for SLW countermeasures to account for torpedoes being substantially slower than missiles.
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
@@ -30,6 +34,7 @@
 		- Tweak acoustic propagation loss rate for passive acoustic torpedoes, should have a bit further effective detection range now.
 		- Fix INS guidance ordinance not configured with a datalink immediately triggering the lost lock condition and self-destructing.
 		- Passive Sonar torpedoes now home in on loudest part, not COM.
+		- Fix Terminal Guidance Passive Sonar torpedoes not entering terminal guidance.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.

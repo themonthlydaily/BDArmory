@@ -1915,6 +1915,7 @@ namespace BDArmory.Radar
                 foundHeatMissile = false,
                 foundRadarMissile = false,
                 foundAntiRadiationMissile = false,
+                foundGPSMissile = false,
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
@@ -2009,6 +2010,10 @@ namespace BDArmory.Radar
                                                 break;
                                             case MissileBase.TargetingModes.AntiRad: //How does one differentiate between a passive IR sensor and a passive AR sensor?
                                                 results.foundAntiRadiationMissile = true; //admittedly, combining the two would result in launching flares at ARMs and turning off radar when having incoming heaters...
+                                                break;
+                                            case MissileBase.TargetingModes.Gps:
+                                            case MissileBase.TargetingModes.Inertial:
+                                                results.foundGPSMissile = true;
                                                 break;
                                         }
                                         if (missileBase.GetWeaponClass() == WeaponClasses.SLW) results.foundTorpedo = true;

@@ -735,25 +735,25 @@ namespace BDArmory.UI
 
                     }
                 }
-                VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
-                if (jammer != null)
-                {
-                    noiseScore += jammer.jammerStrength / 2; //acoustic spam to overload sensor/obsfucate exact position, while effective against *Active* sonar, is going make you light up like a christmas tree on Passive soanr
-                }
-                using (var sonar = VesselModuleRegistry.GetModules<ModuleRadar>(v).GetEnumerator())
-                    while (sonar.MoveNext())
-                    {
-                        if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarMode != ModuleRadar.SonarModes.Active) continue;
-                        float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition) / 1000;
-                        if (ping < sonar.Current.radarMaxDistanceDetect * 2)
-                        {
-                            float sonarMalus = 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
-                            noiseScore += sonarMalus;
-                            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s active sonar contributing {sonarMalus.ToString("0.0")} to noiseScore");
-                        }
-                        break;
-                    }
             }
+            VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
+            if (jammer != null)
+            {
+                noiseScore += jammer.jammerStrength / 2; //acoustic spam to overload sensor/obsfucate exact position, while effective against *Active* sonar, is going make you light up like a christmas tree on Passive soanr
+            }
+            using (var sonar = VesselModuleRegistry.GetModules<ModuleRadar>(v).GetEnumerator())
+                while (sonar.MoveNext())
+                {
+                    if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarMode != ModuleRadar.SonarModes.Active) continue;
+                    float ping = sensorPosition != default(Vector3) ? Vector3.Distance(sonar.Current.transform.position, sensorPosition) / 1000 : 0;
+                    if (ping < sonar.Current.radarMaxDistanceDetect * 2)
+                    {
+                        float sonarMalus = 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
+                        noiseScore += sonarMalus;
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s active sonar contributing {sonarMalus.ToString("0.0")} to noiseScore");
+                    }
+                    break;
+                }
             noiseScore += (ti.radarBaseSignature / 10f) * (float)(v.speed * (v.speed / 15f)); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] final noiseScore for {v.vesselName}: " + noiseScore);
             return new Tuple<float, Part>(noiseScore, NoisePart);
