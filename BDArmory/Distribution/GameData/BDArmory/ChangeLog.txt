@@ -16,10 +16,18 @@
 	- Fix weapons with reload animations adding an extra 1-20s to the reload time, based on fire anim length.
 	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
 	- Missiles:
-		-Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+		- Fixed inertial guidance missiles failing to guide when gpsUpdates = -1
+	- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.
+- Detectors:
+		- Added notching and beaming behavior for both vessel radars and missile radars.
+			- Defaults to off. When toggled on, radars can be notched by an aircraft flying low and at 90° to the radar.
+			- Behavior is configurable using the activeRadarVelocityGate and activeRadarRangeGate floatcurves for missiles and radarVelocityGate and radarRangeGate floatcurves for radars.
+			- Also includes water blocking radars, forcing engagements to consider the horizon.
+				- Surface vessels are permitted to see over the horizon to simplify naval engagements, this option, called "RADAR_ALLOW_SURFACE_WARFARE", can be turned off in the BDArmory/PluginData/Settings.cfg file.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES

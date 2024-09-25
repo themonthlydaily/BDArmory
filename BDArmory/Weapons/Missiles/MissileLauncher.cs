@@ -3779,7 +3779,7 @@ namespace BDArmory.Weapons.Missiles
                             //warheadType = WarheadTypes.Standard; // Also, cts rod. 
                             ((BDCustomWarhead)partModule).ParseWarheadType();
                             output.AppendLine($"- {((BDCustomWarhead)partModule).warheadReportingName} warhead");
-                            output.AppendLine($"- Warhead Deviation: {Mathf.Tan(Mathf.Deg2Rad * ((BDCustomWarhead)partModule).maxDeviation) * 1000 * (1.285f / 2) * 2:F2} mrad, 80% hit");
+                            output.AppendLine($"- Deviation: {Mathf.Tan(Mathf.Deg2Rad * ((BDCustomWarhead)partModule).maxDeviation) * 1000 * (1.285f / 2) * 2:F2} mrad, 80% hit");
 
                             BulletInfo binfo = ((BDCustomWarhead)partModule)._warheadType;
                             if (binfo == null)
@@ -3789,8 +3789,7 @@ namespace BDArmory.Weapons.Missiles
                                 output.AppendLine("");
                                 continue;
                             }
-                            output.AppendLine($"- Warhead type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
-                            output.AppendLine($"- Warhead mass: {Math.Round(binfo.bulletMass, 2)} kg");
+                            output.AppendLine($"- Mass: {Math.Round(binfo.bulletMass, 2)} kg");
                             output.AppendLine($"- Additional velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
                             //output.AppendLine($"Explosive: {binfo.explosive}");
                             if (binfo.projectileCount > 1)
