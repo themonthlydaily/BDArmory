@@ -13,6 +13,7 @@
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
 	- Competition UI text in the upper left corner now properly scales when adjusting UI_SCALE.
+	- Add ability to set teams' Allies to the Team Selector GUI.
 -Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.

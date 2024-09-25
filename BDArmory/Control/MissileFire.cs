@@ -927,6 +927,7 @@ namespace BDArmory.Control
                 if (!BDArmorySetup.Instance.Teams.ContainsKey(value.Name))
                     BDArmorySetup.Instance.Teams.Add(value.Name, value);
                 teamString = value.Name;
+                alliesString = string.Join("; ", value.Allies);
                 team = value.Serialize();
             }
         }
@@ -934,6 +935,10 @@ namespace BDArmory.Control
         // Team name
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Team")]//Team
         public string teamString = "Neutral";
+
+        // Team name
+        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Allies")]//Team
+        public string alliesString = "None";
 
         // Serialized team
         [KSPField(isPersistant = true)]
