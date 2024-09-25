@@ -3779,7 +3779,7 @@ namespace BDArmory.Weapons.Missiles
                             //warheadType = WarheadTypes.Standard; // Also, cts rod. 
                             ((BDCustomWarhead)partModule).ParseWarheadType();
                             output.AppendLine($"- {((BDCustomWarhead)partModule).warheadReportingName} warhead");
-                            output.AppendLine($"Warhead Deviation: {Mathf.Tan(Mathf.Deg2Rad * ((BDCustomWarhead)partModule).maxDeviation) * 1000 * (1.285f / 2) * 2:F2} mrad, 80% hit");
+                            output.AppendLine($"- Warhead Deviation: {Mathf.Tan(Mathf.Deg2Rad * ((BDCustomWarhead)partModule).maxDeviation) * 1000 * (1.285f / 2) * 2:F2} mrad, 80% hit");
 
                             BulletInfo binfo = ((BDCustomWarhead)partModule)._warheadType;
                             if (binfo == null)
@@ -3789,75 +3789,74 @@ namespace BDArmory.Weapons.Missiles
                                 output.AppendLine("");
                                 continue;
                             }
-                            output.AppendLine("");
-                            output.AppendLine($"Warhead type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
-                            output.AppendLine($"Warhead mass: {Math.Round(binfo.bulletMass, 2)} kg");
-                            output.AppendLine($"Additional velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
+                            output.AppendLine($"- Warhead type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
+                            output.AppendLine($"- Warhead mass: {Math.Round(binfo.bulletMass, 2)} kg");
+                            output.AppendLine($"- Additional velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
                             //output.AppendLine($"Explosive: {binfo.explosive}");
                             if (binfo.projectileCount > 1)
                             {
-                                output.AppendLine($"Cannister Warhead");
+                                output.AppendLine($"- Cannister Warhead");
                                 output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                             }
                             bool sabotTemp = (((((binfo.bulletMass * 1000) / ((binfo.caliber * binfo.caliber * Mathf.PI / 400f) * 19f) + 1f) * 10f) > binfo.caliber * 4f)) ? true : false;
 
-                            output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity + optimumAirspeed, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp):F2} mm");
+                            output.AppendLine($"- Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity + optimumAirspeed, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp):F2} mm");
                             if ((binfo.tntMass > 0) && !binfo.nuclear)
                             {
-                                output.AppendLine($"Blast:");
-                                output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
-                                output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
+                                output.AppendLine($"- Blast:");
+                                output.AppendLine($" - tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
+                                output.AppendLine($" - radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
                                 if (binfo.fuzeType.ToLower() == "timed" || binfo.fuzeType.ToLower() == "proximity" || binfo.fuzeType.ToLower() == "flak")
                                 {
-                                    output.AppendLine($"Air detonation: True");
-                                    output.AppendLine($"- auto timing: {(binfo.fuzeType.ToLower() != "proximity")}");
+                                    output.AppendLine($"- Air detonation: True");
+                                    output.AppendLine($" - auto timing: {(binfo.fuzeType.ToLower() != "proximity")}");
                                 }
                                 else
                                 {
-                                    output.AppendLine($"Air detonation: False");
+                                    output.AppendLine($"- Air detonation: False");
                                 }
 
                                 if (binfo.explosive.ToLower() == "shaped")
-                                    output.AppendLine($"Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod):F2} mm");
+                                    output.AppendLine($"- Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod):F2} mm");
                             }
                             if (binfo.nuclear)
                             {
-                                output.AppendLine($"Nuclear Warhead:");
-                                output.AppendLine($"- yield:  {Math.Round(binfo.tntMass, 3)} kT");
+                                output.AppendLine($"- Nuclear Warhead:");
+                                output.AppendLine($" - yield:  {Math.Round(binfo.tntMass, 3)} kT");
                                 if (binfo.EMP)
                                 {
-                                    output.AppendLine($"- generates EMP");
+                                    output.AppendLine($" - generates EMP");
                                 }
                             }
                             if (binfo.EMP && !binfo.nuclear)
                             {
-                                output.AppendLine($"BlueScreen:");
-                                output.AppendLine($"- EMP buildup per hit:{binfo.caliber * Mathf.Clamp(binfo.bulletMass - binfo.tntMass, 0.1f, 100)}");
+                                output.AppendLine($"- BlueScreen:");
+                                output.AppendLine($" - EMP buildup per hit:{binfo.caliber * Mathf.Clamp(binfo.bulletMass - binfo.tntMass, 0.1f, 100)}");
                             }
                             if (binfo.impulse != 0)
                             {
-                                output.AppendLine($"Concussive:");
-                                output.AppendLine($"- Impulse to target:{binfo.impulse}");
+                                output.AppendLine($"- Concussive:");
+                                output.AppendLine($" - Impulse to target:{binfo.impulse}");
                             }
                             if (binfo.massMod != 0)
                             {
-                                output.AppendLine($"Gravitic:");
-                                output.AppendLine($"- weight added per hit:{binfo.massMod * 1000} kg");
+                                output.AppendLine($"- Gravitic:");
+                                output.AppendLine($" - weight added per hit:{binfo.massMod * 1000} kg");
                             }
                             if (binfo.incendiary)
                             {
-                                output.AppendLine($"Incendiary");
+                                output.AppendLine($"- Incendiary");
                             }
                             if (binfo.beehive)
                             {
-                                output.AppendLine($"Beehive Warhead:");
+                                output.AppendLine($"- Beehive Warhead:");
                                 string[] subMunitionData = binfo.subMunitionType.Split(new char[] { ';' });
                                 string projType = subMunitionData[0];
                                 if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
                                 BulletInfo sinfo = BulletInfo.bullets[projType];
-                                output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                                output.AppendLine($" - deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                             }
-                            continue; //in case there's also an EMP module
+                            continue; //in case there's also an HE module
                         }
                     case "ModuleEMP":
                         {
