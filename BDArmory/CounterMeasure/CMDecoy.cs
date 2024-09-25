@@ -34,7 +34,7 @@ namespace BDArmory.CounterMeasure
         public void SetAcoustics(Vessel sourceVessel)
         {
             // generate decoy sound prodile within spectrum of emitting vessel's acoustic signature, but narrow range for low heats
-            acousticSig = BDATargetManager.GetVesselAcousticSignature(sourceVessel, Vector3.zero);
+            acousticSig = BDATargetManager.GetVesselAcousticSignature(sourceVessel, Vector3.zero).Item1;
             audio = acousticSig;
             float audioMinMult = Mathf.Clamp(((0.00093f * acousticSig * acousticSig - 1.4457f * acousticSig + 1141.95f) / 1000f), 0.65f, 0.8f); // Equivalent to above, but uses polynomial for speed
             audio *= UnityEngine.Random.Range(audioMinMult, Mathf.Max(BDArmorySettings.FLARE_FACTOR, 0f) - audioMinMult + 0.8f);

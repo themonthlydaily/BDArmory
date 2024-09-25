@@ -630,7 +630,7 @@ namespace BDArmory.UI
             return seekerBias;
         }
 
-        public static float GetVesselAcousticSignature(Vessel v, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
+        public static Tuple<float, Part> GetVesselAcousticSignature(Vessel v, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
         {
             float noiseScore = 1f;
             Part NoisePart = null;
@@ -638,7 +638,7 @@ namespace BDArmory.UI
             bool hasPumps = false;
             TargetInfo ti = RadarUtils.GetVesselRadarSignature(v);
             hottestPart.Clear();
-            if (!v.Splashed) return 0;
+            if (!v.Splashed) return new Tuple<float, Part>(0, null);
             var engineModules = VesselModuleRegistry.GetModules<ModuleEngines>(v);
             if (engineModules.Count > 0)
             {
@@ -756,13 +756,14 @@ namespace BDArmory.UI
             }
             noiseScore += (ti.radarBaseSignature / 10f) * (float)(v.speed * (v.speed / 15f)); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] final noiseScore for {v.vesselName}: " + noiseScore);
-            return noiseScore;
+            return new Tuple<float, Part>(noiseScore, NoisePart);
         }
 
-        public static TargetSignatureData GetAcousticTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorNoiseTarget, float scanRadius, float highpassThreshold, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
+        public static TargetSignatureData GetAcousticTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorNoiseTarget, float scanRadius, float highpassThreshold, bool targetCoM, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
         {
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
+            Tuple<float, Part> AcousticSig;
             float priorNoiseScore = priorNoiseTarget.signalStrength;
             //if (!sourceVessel.Splashed) return finalData; //technically this should be uncommented, but a hack to allow air-dropped passive acoustic torps
             foreach (Vessel vessel in LoadedVessels)
@@ -813,8 +814,8 @@ namespace BDArmory.UI
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
-
-                    float score = GetVesselAcousticSignature(vessel, missileVessel.CoM);
+                    AcousticSig = GetVesselAcousticSignature(vessel, missileVessel.CoM);
+                    float score = AcousticSig.Item1;
                     if (missileVessel.altitude > -100)
                         score *= Mathf.Pow(0.8f, (vessel.CoM - ray.origin).magnitude / 1450); //some reflection losses at surface, using 0.8 as arbitrary value. technically should take depth/seafloor depth into account
                     // else // //below thermocline, subject to Deep Sound Channel and basically 0 propagation loss
@@ -830,7 +831,7 @@ namespace BDArmory.UI
                         if (Mathf.Abs(score - priorNoiseScore) < Mathf.Abs(finalScore - priorNoiseScore))
                         {
                             finalScore = score;
-                            finalData = new TargetSignatureData(vessel, score);
+                            finalData = new TargetSignatureData(vessel, score, targetCoM ? null : AcousticSig.Item2);
                         }
                     }
                     else // Otherwise, pick the highest noise score
@@ -838,7 +839,7 @@ namespace BDArmory.UI
                         if (score > finalScore)
                         {
                             finalScore = score;
-                            finalData = new TargetSignatureData(vessel, score);
+                            finalData = new TargetSignatureData(vessel, score, targetCoM ? null : AcousticSig.Item2);
                         }
                     }
                     if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[GetAcousticTarget] soundScore of {vessel.GetName()} at angle {angle}° is {score}");
@@ -924,7 +925,7 @@ namespace BDArmory.UI
 
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel).ToString("0.00")}");
+            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel).Item1.ToString("0.00")}");
             debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, forward).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, aft).Item1.ToString("0") + ", Side: " +

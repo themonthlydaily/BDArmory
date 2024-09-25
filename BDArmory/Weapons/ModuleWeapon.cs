@@ -5001,6 +5001,7 @@ namespace BDArmory.Weapons
                 if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
+                if (spinDownAnimation) spinningDown = true;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
@@ -5715,6 +5716,7 @@ namespace BDArmory.Weapons
             }
             if (!string.IsNullOrEmpty(chargeSoundPath) && !discharge)
             {
+                audioSource.Stop();
                 audioSource.PlayOneShot(chargeSound);
             }
             if (hasChargeAnimation)
