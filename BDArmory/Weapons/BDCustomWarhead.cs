@@ -31,7 +31,7 @@ namespace BDArmory.Weapons
         public string bulletTexturePath = "BDArmory/Textures/bullet";
 
         [KSPField]
-        public float maxDeviation = 1;
+        public float maxDeviation = 0f;
 
         public void ParseWarheadType()
         {
