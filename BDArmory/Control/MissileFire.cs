@@ -7170,7 +7170,7 @@ namespace BDArmory.Control
 
                             }
                             ml.targetGPSCoords = designatedINSCoords;
-                            ml.TargetINSCoords = targetVessel.CoM;
+                            ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody);
                             ml.TargetAcquired = true;
                         }
                         designatedINSCoords = Vector3d.zero;
