@@ -1482,19 +1482,19 @@ namespace BDArmory.Radar
             return SCR;
         }
 
-        private static bool RadarTerrainNotchingCheck(bool isSonar, Vector3 position, FloatCurve radarRangeGate, FloatCurve radarVelocityGate, float radarMaxVelocityGate, float radarMaxRangeGate, float radarMinVelocityGate, float radarMinRangeGate, Vessel radarVessel, Vessel targetVessel, Vector3 targetPosition, ref float distance, ref float terrainR, ref float terrainAngle, ref float notchMultiplier, ref float notchMod, bool isMissile = false)
+        private static bool RadarTerrainNotchingCheck(bool isNotSonar, Vector3 position, FloatCurve radarRangeGate, FloatCurve radarVelocityGate, float radarMaxVelocityGate, float radarMaxRangeGate, float radarMinVelocityGate, float radarMinRangeGate, Vessel radarVessel, Vessel targetVessel, Vector3 targetPosition, ref float distance, ref float terrainR, ref float terrainAngle, ref float notchMultiplier, ref float notchMod, bool isMissile = false)
         {
-            if (isSonar)
+            if (isNotSonar)
             {
                 // If radar, then check against water
                 if (BDArmorySettings.RADAR_NOTCHING && (!isMissile || !(BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && (targetVessel.Landed || targetVessel.Splashed) && (radarVessel.Landed || radarVessel.Splashed))) && radarMinRangeGate != float.MaxValue && radarMinVelocityGate != float.MaxValue)
                 {
                     distance = BDAMath.Sqrt(distance);
-                    if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (distance * 1000f + radarMaxRangeGate), out terrainR, out terrainAngle, true))
+                    if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (!isMissile ? 1000f * distance : distance + radarMaxRangeGate), out terrainR, out terrainAngle, true))
                         return false;
                     notchMultiplier = CalculateRadarNotchingModifier(position, targetVessel.CoM, targetVessel.srf_velocity,
                         radarRangeGate, radarVelocityGate, radarMaxVelocityGate, radarMaxRangeGate, radarMinVelocityGate, radarMinRangeGate,
-                        terrainR, distance, (float)targetVessel.radarAltitude, out notchMod);
+                        terrainR, !isMissile ? 1000f * distance : distance, (float)targetVessel.radarAltitude, out notchMod);
                 }
                 else
                 {
