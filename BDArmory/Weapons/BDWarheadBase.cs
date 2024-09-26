@@ -330,7 +330,7 @@ namespace BDArmory.Weapons
                             return detonate = false;
                         }
                     }
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDExplosivePart]: Proxifuze triggered by {partHit.partName} from {partHit.vessel.vesselName}");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDWarheadBase]: Proxifuze triggered by {partHit.partName} from {partHit.vessel.vesselName}");
                     return detonate = true;
                 }
             }

@@ -1305,7 +1305,7 @@ namespace BDArmory.Guidances
 
         public static float GetRaycastRadarAltitude(Vector3 position)
         {
-            Vector3 upDirection = -FlightGlobals.getGeeForceAtPosition(position).normalized;
+            Vector3 upDirection = VectorUtils.GetUpDirection(position); //-FlightGlobals.getGeeForceAtPosition(position).normalized;
 
             float altAtPos = FlightGlobals.getAltitudeAtPos(position);
             if (altAtPos < 0)
