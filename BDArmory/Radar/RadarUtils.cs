@@ -1482,15 +1482,23 @@ namespace BDArmory.Radar
             return SCR;
         }
 
-        private static bool RadarTerrainNotchingCheck(bool isNotSonar, Vector3 position, FloatCurve radarRangeGate, FloatCurve radarVelocityGate, float radarMaxVelocityGate, float radarMaxRangeGate, float radarMinVelocityGate, float radarMinRangeGate, Vessel radarVessel, Vessel targetVessel, Vector3 targetPosition, ref float distance, ref float terrainR, ref float terrainAngle, ref float notchMultiplier, ref float notchMod, bool isMissile = false)
+        private static bool RadarTerrainNotchingCheck(bool isNotSonar, Vector3 position, FloatCurve radarRangeGate, FloatCurve radarVelocityGate,
+            float radarMaxVelocityGate, float radarMaxRangeGate, float radarMinVelocityGate, float radarMinRangeGate,
+            Vessel radarVessel, Vessel targetVessel, Vector3 targetPosition, ref float distance, out float terrainR, out float terrainAngle,
+            out float notchMultiplier, out float notchMod, bool isMissile = false)
         {
+            notchMod = 0f;
+            notchMultiplier = 1f;
+            terrainR = 0f;
+            terrainAngle = 90f;
+
             if (isNotSonar)
             {
                 // If radar, then check against water
                 if (BDArmorySettings.RADAR_NOTCHING && (!isMissile || !(BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && (targetVessel.Landed || targetVessel.Splashed) && (radarVessel.Landed || radarVessel.Splashed))) && radarMinRangeGate != float.MaxValue && radarMinVelocityGate != float.MaxValue)
                 {
                     distance = BDAMath.Sqrt(distance);
-                    if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (!isMissile ? 1000f * distance : distance + radarMaxRangeGate), out terrainR, out terrainAngle, true))
+                    if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (!isMissile ? 1000f * distance : distance) + radarMaxRangeGate, out terrainR, out terrainAngle, true))
                         return false;
                     notchMultiplier = CalculateRadarNotchingModifier(position, targetVessel.CoM, targetVessel.srf_velocity,
                         radarRangeGate, radarVelocityGate, radarMaxVelocityGate, radarMaxRangeGate, radarMinVelocityGate, radarMinRangeGate,
@@ -1500,7 +1508,7 @@ namespace BDArmory.Radar
                 {
                     if (targetVessel.Splashed)
                     {
-                        if (TerrainCheck(position, targetPosition + targetVessel.upAxis * (targetVessel.altitude < 0f ? - targetVessel.altitude + 2f : 0f), FlightGlobals.currentMainBody, !isMissile && BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && (targetVessel.Landed || targetVessel.Splashed) && (radarVessel.Landed || radarVessel.Splashed)))
+                        if (TerrainCheck(position, targetPosition + targetVessel.upAxis * (targetVessel.altitude < 0f ? -targetVessel.altitude + 2f : 0f), FlightGlobals.currentMainBody, !isMissile && BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && (targetVessel.Landed || targetVessel.Splashed) && (radarVessel.Landed || radarVessel.Splashed)))
                             return false;
                     }
                     else
@@ -1593,7 +1601,7 @@ namespace BDArmory.Radar
                         */
                         if (!RadarTerrainNotchingCheck(radar.sonarMode == ModuleRadar.SonarModes.None, ray.origin, radar.radarRangeGate, radar.radarVelocityGate,
                             radar.radarMaxVelocityGate, radar.radarMaxRangeGate, radar.radarMinVelocityGate, radar.radarMinRangeGate, radar.vessel,
-                            loadedvessels.Current, loadedvessels.Current.CoM, ref distance, ref terrainR, ref terrainAngle, ref notchMultiplier, ref notchMod))
+                            loadedvessels.Current, loadedvessels.Current.CoM, ref distance, out terrainR, out terrainAngle, out notchMultiplier, out notchMod))
                             continue;
 
                         // get vessel's radar signature
@@ -1730,7 +1738,7 @@ namespace BDArmory.Radar
                         */
                         if (!RadarTerrainNotchingCheck(missile.GetWeaponClass() != WeaponClasses.SLW, ray.origin, missile.activeRadarRangeGate, missile.activeRadarVelocityGate,
                             missile.activeRadarVelocityFilter, missile.activeRadarRangeFilter, missile.activeRadarVelocityGate.minTime, missile.activeRadarRangeGate.minTime, missile.vessel,
-                            loadedvessels.Current, loadedvessels.Current.CoM, ref distance, ref terrainR, ref terrainAngle, ref notchMultiplier, ref notchMod, true))
+                            loadedvessels.Current, loadedvessels.Current.CoM, ref distance, out terrainR, out terrainAngle, out notchMultiplier, out notchMod, true))
                             continue;
 
                         // get vessel's radar signature
@@ -1893,7 +1901,7 @@ namespace BDArmory.Radar
                         */
                         if (!RadarTerrainNotchingCheck(radar.sonarMode == ModuleRadar.SonarModes.None, position, radar.radarRangeGate, radar.radarVelocityGate, 
                             radar.radarMaxVelocityGate, radar.radarMaxRangeGate, radar.radarMinVelocityGate, radar.radarMinRangeGate, radar.vessel, 
-                            loadedvessels.Current, targetPosition, ref distance, ref terrainR, ref terrainAngle, ref notchMultiplier, ref notchMod))
+                            loadedvessels.Current, targetPosition, ref distance, out terrainR, out terrainAngle, out notchMultiplier, out notchMod))
                             continue;
                         
 
@@ -2083,7 +2091,7 @@ namespace BDArmory.Radar
                 */
                 if (!RadarTerrainNotchingCheck(radar.sonarMode == ModuleRadar.SonarModes.None, ray.origin, radar.radarRangeGate, radar.radarVelocityGate,
                             radar.radarMaxVelocityGate, radar.radarMaxRangeGate, radar.radarMinVelocityGate, radar.radarMinRangeGate, radar.vessel,
-                            lockedVessel, targetPosition, ref distance, ref terrainR, ref terrainAngle, ref notchMultiplier, ref notchMod))
+                            lockedVessel, targetPosition, ref distance, out terrainR, out terrainAngle, out notchMultiplier, out notchMod))
                     return false;
 
                 // get vessel's radar signature
