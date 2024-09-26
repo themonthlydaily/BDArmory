@@ -155,6 +155,10 @@ namespace BDArmory.CounterMeasure
                 return;
             }
             transform.localPosition += velocity * Time.fixedDeltaTime;
+            if (FlightGlobals.getAltitudeAtPos(transform.position) > 0)
+                velocity += FlightGlobals.getGeeForceAtPosition(transform.position) * Time.fixedDeltaTime;
+
+            transform.position += velocity * Time.fixedDeltaTime;
         }
 
         public void EnableEmitters()

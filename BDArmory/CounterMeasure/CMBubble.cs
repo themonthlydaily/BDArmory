@@ -36,7 +36,9 @@ namespace BDArmory.CounterMeasure
                                 velocity.normalized;
 
             velocity -= (dragForce / mass) * Time.fixedDeltaTime;
-            if (FlightGlobals.getAltitudeAtPos(transform.position) < -8) velocity -= (FlightGlobals.getGeeForceAtPosition(transform.position) / 2) * Time.fixedDeltaTime;
+            if (FlightGlobals.getAltitudeAtPos(currPos) < -1)
+                velocity += FlightGlobals.getGeeForceAtPosition(currPos) * Time.fixedDeltaTime;
+
             transform.position += velocity * Time.fixedDeltaTime;
         }
         public static float RaycastBubblescreen(Ray ray)
