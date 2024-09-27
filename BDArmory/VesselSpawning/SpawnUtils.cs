@@ -165,7 +165,7 @@ namespace BDArmory.VesselSpawning
                 }
             }
             FireSpitter.ActivateFSEngines(vessel, activate);
-            foreach (var repulsor in VesselModuleRegistry.GetRepulsorModules(vessel))
+            foreach (var repulsor in VesselModuleRegistry.GetModules<ModuleSpaceFriction>(vessel))
             {
                 repulsor.ToggleRepulsor();
             }
