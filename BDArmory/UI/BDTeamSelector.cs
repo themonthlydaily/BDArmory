@@ -49,8 +49,14 @@ namespace BDArmory.UI
         private void TeamSelectorWindow(int id)
         {
             height = margin;
+            GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_SelectTeam"), BDArmorySetup.BDGuiSkin.label);
+            if (GUI.Button(new Rect(width - 18, 2, 18, 18), "X"))
+            {
+                SetVisible(false);
+            }
+            height += buttonHeight;
             // Team input field
-            newTeamName = GUI.TextField(new Rect(margin, margin, width - buttonGap - 2 * margin - newTeanButtonWidth, buttonHeight), newTeamName, 30);
+            newTeamName = GUI.TextField(new Rect(margin, height, width - buttonGap - 2 * margin - newTeanButtonWidth, buttonHeight), newTeamName, 30);
 
             // New team button
             Rect newTeamButtonRect = new Rect(width - margin - newTeanButtonWidth, height, newTeanButtonWidth, buttonHeight);
@@ -59,7 +65,7 @@ namespace BDArmory.UI
                 if (!string.IsNullOrEmpty(newTeamName.Trim()))
                 {
                     targetWeaponManager.SetTeam(BDTeam.Get(newTeamName.Trim()));
-                    SetVisible(false);
+                    newTeamName = string.Empty;
                 }
             }
 
@@ -81,7 +87,7 @@ namespace BDArmory.UI
                     if (teams.Current == null || !teams.Current.Name.ToLowerInvariant().StartsWith(newTeamName.ToLowerInvariant().Trim())) continue;
 
                     height += buttonGap;
-                    Rect buttonRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
+                    Rect buttonRect = new Rect(margin, height, width - buttonHeight - 4 * margin, buttonHeight);
                     GUIStyle buttonStyle = (teams.Current == targetWeaponManager.Team) ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
                     if (GUI.Button(buttonRect, teams.Current.Name + (teams.Current.Neutral ? (teams.Current.Name != "Neutral" ? "(Neutral)" : "") : ""), buttonStyle))
@@ -94,13 +100,33 @@ namespace BDArmory.UI
                                 break;
                             default:
                                 targetWeaponManager.SetTeam(teams.Current);
-                                SetVisible(false);
+                                if (targetWeaponManager.Team.Allies.Contains(teams.Current.Name)) 
+                                    targetWeaponManager.Team.Allies.Remove(teams.Current.Name);
                                 break;
+                        }
+                    }
+                    if (teams.Current.Name != "Neutral" && teams.Current.Name != "A" && teams.Current.Name != "B" && !teams.Current.Neutral && teams.Current != targetWeaponManager.Team)
+                    {
+                        if (GUI.Button(new Rect(width - buttonHeight, height, buttonHeight - 2 * margin, buttonHeight), "[A]", (targetWeaponManager.Team.Allies.Contains(teams.Current.Name)) ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                        {
+                            switch (Event.current.button)
+                            {
+                                default:
+                                    targetWeaponManager.SetTeam(targetWeaponManager.Team);
+                                    if (targetWeaponManager.Team.Allies.Contains(teams.Current.Name))
+                                        targetWeaponManager.Team.Allies.Remove(teams.Current.Name);
+                                    else targetWeaponManager.Team.Allies.Add(teams.Current.Name);
+                                    break;
+                            }
                         }
                     }
                     height += buttonHeight;
                 }
-
+            GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Allies"));
+            height += buttonHeight + buttonGap;
+            string allies = string.Join("; ", targetWeaponManager.Team.Allies);
+            GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), allies);
+            height += buttonHeight + buttonGap * Mathf.Clamp(Mathf.CeilToInt(allies.Length / 50), 1, 4);
             if (scrollable)
                 GUI.EndScrollView();
 
@@ -110,7 +136,7 @@ namespace BDArmory.UI
                 if ((Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter) && !string.IsNullOrEmpty(newTeamName.Trim()))
                 {
                     targetWeaponManager.SetTeam(BDTeam.Get(newTeamName.Trim()));
-                    SetVisible(false);
+                    newTeamName = string.Empty;
                 }
                 else if (Event.current.keyCode == KeyCode.Escape)
                 {

@@ -2392,6 +2392,7 @@ namespace BDArmory.UI
                 {
                     BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
                     scalingUI = true;
+                    BDACompetitionMode.Instance.UpdateGUIElements();
                 }
 
                 BDArmorySettings.DRAW_AIMERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DRAW_AIMERS, StringUtils.Localize("#LOC_BDArmory_Settings_DrawAimers"));//"Draw Aimers"

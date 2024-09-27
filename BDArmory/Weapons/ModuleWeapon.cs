@@ -547,7 +547,7 @@ namespace BDArmory.Weapons
         [KSPField]
         public bool ChargeEachShot = true;
         [KSPField]
-        public bool postFireDecharge = false;
+        public bool postFireChargeAnim = false;
         bool hasCharged = false;
         [KSPField]
         public float chargeHoldLength = 1;
@@ -1747,9 +1747,12 @@ namespace BDArmory.Weapons
                         if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             foreach (var pe in part.FindModelComponents<KSPParticleEmitter>())
                 if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
-            for (int i = 0; i < laserRenderers.Length; i++)
+            if (laserRenderers != null)
             {
-                laserRenderers[i].enabled = false;
+                for (int i = 0; i < laserRenderers.Length; i++)
+                {
+                    laserRenderers[i].enabled = false;
+                }
             }
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
@@ -1947,7 +1950,7 @@ namespace BDArmory.Weapons
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
-                    gauge.UpdateAmmoMeter((float)(ammoCount / ammoMaxCount));
+                    gauge.UpdateAmmoMeter((float)((ammoCount > requestResourceAmount ? ammoCount : 0) / ammoMaxCount));
 
                     if (showReloadMeter)
                     {
@@ -2271,7 +2274,6 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        //pBullet.defaultDetonationRange = defaultDetonationRange; deprecated, Timed fuze rounds use timeToDetonation now
                                         pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
@@ -2366,6 +2368,7 @@ namespace BDArmory.Weapons
                                             pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                         }
                                         if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                        pBullet.timeAlive = iTime;
                                         pBullet.SetTracerPosition();
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }
@@ -2597,7 +2600,6 @@ namespace BDArmory.Weapons
                                 if (hitPart != null) // Don't ignore terrain hits.
                                 {
                                     hitPartVelocity = hitPart.vessel.Velocity() - BDKrakensbane.FrameVelocityV3f;
-                                    hitPartVelocity = hitPart.vessel.Velocity();
                                 }
                                 break;
                             }
@@ -3266,21 +3268,12 @@ namespace BDArmory.Weapons
             }
             vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
             ammoCount = ammoCurrent;
-            if (ammoCount >= AmmoPerShot)
+            if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
+            // TODO?? Change code to some sort of list of ammoboxes to only draw from box with current highest resouce amount to do proper integer reductions?
             {
-                if (externalAmmo)
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, externalAmmo ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.NO_FLOW) > 0) //for guns with internal ammo supplies and no external, only draw from the weapon part
                 {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STACK_PRIORITY_SEARCH) > 0)
-                    {
-                        return true;
-                    }
-                }
-                else //for guns with internal ammo supplies and no external, only draw from the weapon part
-                {
-                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
@@ -3323,7 +3316,7 @@ namespace BDArmory.Weapons
                     }
                     fireState[i].speed = fireAnimSpeed;
                     fireState[i].normalizedTime = Mathf.Repeat(fireState[i].normalizedTime, 1);
-                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
+                    //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
                 }
             }
         }
@@ -4797,7 +4790,7 @@ namespace BDArmory.Weapons
                     if (ChargeTime > 0 && timeSinceFired > chargeHoldLength && !isReloading)
                     {
                         hasCharged = false;
-                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                     }
                 }
             }
@@ -5005,9 +4998,10 @@ namespace BDArmory.Weapons
                 isOverheated = true;
                 autoFire = false;
                 hasCharged = false;
-                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
+                if (spinDownAnimation) spinningDown = true;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
@@ -5062,7 +5056,8 @@ namespace BDArmory.Weapons
                     if (!oneShotSound) audioSource.Stop();
                     if (!string.IsNullOrEmpty(reloadAudioPath))
                     {
-                        audioSource.PlayOneShot(reloadAudioClip);
+                        audioSource2.Stop();
+                        audioSource2.PlayOneShot(reloadAudioClip);
                     }
                 }
             }
@@ -5097,7 +5092,8 @@ namespace BDArmory.Weapons
                 }
                 if (!string.IsNullOrEmpty(reloadCompletePath))
                 {
-                    audioSource.PlayOneShot(reloadCompleteAudioClip);
+                    audioSource2.Stop();
+                    audioSource2.PlayOneShot(reloadCompleteAudioClip);
                 }
             }
         }
@@ -5656,7 +5652,7 @@ namespace BDArmory.Weapons
             if (hasCharged)
             {
                 if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
             }
             if (hasDeployAnim)
             {
@@ -5677,15 +5673,17 @@ namespace BDArmory.Weapons
         {
             guiStatusString = "Reloading";
             hasCharged = false;
-            float netReloadTime = ReloadTime - (roundsPerMinute / 60) - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
-            yield return new WaitForSecondsFixed(roundsPerMinute / 60); //wait for fire anim to finish.
+            float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate;
+            float netReloadTime = ReloadTime - timeGap - (postFireChargeAnim && ChargeTime > 0 ? ChargeTime : 0);
+            if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
-                fireState[i].normalizedTime = 0;
+                fireState[i].normalizedTime = 1;
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;
+                //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: packing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
             }
-            if (hasChargeAnimation && postFireDecharge)
+            if (hasChargeAnimation && postFireChargeAnim)
             {
                 chargeRoutine = StartCoroutine(ChargeRoutine(true));
                 yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
@@ -5693,7 +5691,8 @@ namespace BDArmory.Weapons
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
-                audioSource.PlayOneShot(reloadAudioClip);
+                audioSource2.Stop();
+                audioSource2.PlayOneShot(reloadAudioClip);
             }
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
@@ -5717,6 +5716,7 @@ namespace BDArmory.Weapons
             }
             if (!string.IsNullOrEmpty(chargeSoundPath) && !discharge)
             {
+                audioSource.Stop();
                 audioSource.PlayOneShot(chargeSound);
             }
             if (hasChargeAnimation)
@@ -6460,7 +6460,6 @@ namespace BDArmory.Weapons
         private static GUIStyle overfull;
 
         private static WeaponGroupWindow instance;
-        private static Vector3 mousePos = Vector3.zero;
 
         private bool ActionGroupMode;
 
@@ -6480,6 +6479,17 @@ namespace BDArmory.Weapons
 
         public static void HideGUI()
         {
+            // Doing it this way prevents OnGUI events from below the window from being triggered by the window disappearing.
+            if (instance != null) instance.StartCoroutine(instance.HideGUIAtEndOfFrame());
+            else GUIUtils.PreventClickThrough(default, "BD_MN_GUILock", true);
+        }
+        bool waitingForEndOfFrame = false;
+        IEnumerator HideGUIAtEndOfFrame()
+        {
+            if (waitingForEndOfFrame) yield break;
+            waitingForEndOfFrame = true;
+            yield return new WaitForEndOfFrame();
+            waitingForEndOfFrame = false;
             if (instance != null && instance.WPNmodule != null)
             {
                 instance.WPNmodule.WeaponDisplayName = instance.WPNmodule.shortName;
@@ -6487,9 +6497,7 @@ namespace BDArmory.Weapons
                 instance.applyWeaponGroupTo = null;
                 instance.UpdateGUIState();
             }
-            EditorLogic editor = EditorLogic.fetch;
-            if (editor != null)
-                editor.Unlock("BD_MN_GUILock");
+            GUIUtils.PreventClickThrough(default, "BD_MN_GUILock", true);
         }
 
         public static void ShowGUI(ModuleWeapon WPNmodule)
@@ -6506,9 +6514,6 @@ namespace BDArmory.Weapons
         private void UpdateGUIState()
         {
             enabled = WPNmodule != null;
-            EditorLogic editor = EditorLogic.fetch;
-            if (!enabled && editor != null)
-                editor.Unlock("BD_MN_GUILock");
         }
 
         private IEnumerator<YieldInstruction> CheckActionGroupEditor()
@@ -6556,6 +6561,7 @@ namespace BDArmory.Weapons
         private void OnDestroy()
         {
             instance = null;
+            GUIUtils.PreventClickThrough(guiWindowRect, "BD_MN_GUILock", true);
         }
 
         public void OnGUI()
@@ -6571,9 +6577,6 @@ namespace BDArmory.Weapons
             {
                 return;
             }
-            bool cursorInGUI = false; // nicked the locking code from Ferram
-            mousePos = Input.mousePosition; //Mouse location; based on Kerbal Engineer Redux code
-            mousePos.y = Screen.height - mousePos.y;
 
             int posMult = 0;
             if (offsetGUIPos != -1)
@@ -6586,7 +6589,7 @@ namespace BDArmory.Weapons
                 {
                     guiWindowRect = new Rect(430 * posMult, 365, 438, 50);
                 }
-                new Rect(guiWindowRect.xMin + 440, mousePos.y - 5, 300, 20);
+                new Rect(guiWindowRect.xMin + 440, Screen.height - Input.mousePosition.y - 5, 300, 20);
             }
             else
             {
@@ -6595,18 +6598,7 @@ namespace BDArmory.Weapons
                     //guiWindowRect = new Rect(Screen.width - 8 - 430 * (posMult + 1), 365, 438, (Screen.height - 365));
                     guiWindowRect = new Rect(Screen.width - 8 - 430 * (posMult + 1), 365, 438, 50);
                 }
-                new Rect(guiWindowRect.xMin - (230 - 8), mousePos.y - 5, 220, 20);
-            }
-            cursorInGUI = guiWindowRect.Contains(mousePos);
-            if (cursorInGUI)
-            {
-                editor.Lock(false, false, false, "BD_MN_GUILock");
-                //if (EditorTooltip.Instance != null)
-                //    EditorTooltip.Instance.HideToolTip();
-            }
-            else
-            {
-                editor.Unlock("BD_MN_GUILock");
+                new Rect(guiWindowRect.xMin - (230 - 8), Screen.height - Input.mousePosition.y - 5, 220, 20);
             }
             if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, guiWindowRect.position);
             guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, StringUtils.Localize("#LOC_BDArmory_WeaponGroup"), Styles.styleEditorPanel);
@@ -6617,6 +6609,7 @@ namespace BDArmory.Weapons
         int _applyWeaponGroupToIndex = 0;
         public void GUIWindow(int windowID)
         {
+            GUIUtils.PreventClickThrough(guiWindowRect, "BD_MN_GUILock");
             InitializeStyles();
 
             GUILayout.BeginVertical();

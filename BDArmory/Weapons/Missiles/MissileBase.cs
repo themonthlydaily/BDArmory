@@ -745,7 +745,7 @@ namespace BDArmory.Weapons.Missiles
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}; heatTarget vessel {(heatTarget.exists && heatTarget.vessel != null ? heatTarget.vessel.name : "null")}");
                 // Update heat target
                 if (activeRadarRange < 0)
-                    heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, lockedSensorFOVBias, lockedSensorVelocityBias,
+                    heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias,
                         (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
                 else
                     heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
@@ -1281,7 +1281,7 @@ namespace BDArmory.Weapons.Missiles
                     bool radarLocked = false;
                     if (weaponManager != null && weaponManager.vesselRadarData)
                     {
-                        INStarget = weaponManager._radarsEnabled ? weaponManager.vesselRadarData.detectedRadarTarget(targetVessel.Vessel, weaponManager) : TargetSignatureData.noTarget; //is the target tracked by radar or ISRT?
+                        INStarget = weaponManager._radarsEnabled || weaponClass == WeaponClasses.SLW && weaponManager._sonarsEnabled ? weaponManager.vesselRadarData.detectedRadarTarget(targetVessel.Vessel, weaponManager) : TargetSignatureData.noTarget; //is the target tracked by radar or ISRT?
                         if (INStarget.exists)
                         {
                             detectedByRadar = true;
@@ -1333,17 +1333,34 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else activeDatalink = false;
                 }
+                else
+                {
+                    TargetAcquired = true;
+                    if (targetVessel != null)
+                    {
+                        float angleToTarget = Vector3.Angle(targetVessel.Vessel.CoM - transform.position, GetForwardTransform());
+
+                        if (angleToTarget > maxOffBoresight * 1.1f)
+                        {
+                            TargetAcquired = false; //technically non-datalink missiles shouldn't know when they've 'Missed' if they're just fired at a point a target is predicted to be at
+                            //but a pilot seeing their missile obviously missing would then fire another, so this frees up the AI to do that if MissilesAway = MaxMissilesPerTarget.
+                        }
+                    }
+                }
             }
             if (TargetAcquired)
             {
+                TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                 if (activeDatalink)
                 {
-                    TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
                     TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody) + driftSeed * TimeIndex, vessel.mainBody);
                     lockFailTimer = 0;
                 }
                 else
-                    lockFailTimer += Time.fixedDeltaTime;
+                {
+                    if (gpsUpdates >= 0f)
+                        lockFailTimer += Time.fixedDeltaTime;
+                }
             }
             else
                 lockFailTimer += Time.fixedDeltaTime;
