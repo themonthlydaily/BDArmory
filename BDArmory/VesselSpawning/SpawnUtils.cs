@@ -165,6 +165,10 @@ namespace BDArmory.VesselSpawning
                 }
             }
             FireSpitter.ActivateFSEngines(vessel, activate);
+            foreach (var repulsor in VesselModuleRegistry.GetRepulsorModules(vessel))
+            {
+                repulsor.ToggleRepulsor();
+            }
         }
 
         public static bool IsModularMissilePart(Part part)

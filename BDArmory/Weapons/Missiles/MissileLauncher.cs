@@ -1865,7 +1865,7 @@ namespace BDArmory.Weapons.Missiles
                         {
                             GuidanceMode = homingModeTerminal;
                             terminalHomingActive = true;
-                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Terminal");
                         }
                     }
                     switch (GuidanceMode)
