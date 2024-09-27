@@ -1949,9 +1949,8 @@ namespace BDArmory.Radar
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
                     float vesselDistanceSqr = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-                    bool seenByRadar = myWpnManager.vesselRadarData && myWpnManager.vesselRadarData.detectedRadarTarget(loadedvessels.Current, myWpnManager).exists;
-                    if (seenByRadar || vesselDistanceSqr < maxRWRDistance * maxRWRDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
-                    {
+                    if (vesselDistanceSqr < maxRWRDistance * maxRWRDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
+                    { //wait, RWR detection is also clamped to visual FOV? Should it be clamped to visual FOV?
                         TargetInfo tInfo;
                         if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
                         {
@@ -1970,23 +1969,22 @@ namespace BDArmory.Radar
                                 {
                                     if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
                                     float sightDistance = maxViewDistance;
+                                    //bool seenByRadar = myWpnManager.vesselRadarData && myWpnManager.vesselRadarData.detectedRadarTarget(loadedvessels.Current, myWpnManager).exists;
+                                    if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY) //missiles tracked visually
+                                    {
+                                        //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
+                                        //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
+                                        sightDistance = maxViewDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
+                                    }
                                     if (RWR != null)
                                     {
                                         if (RWR.omniDetection || (!RWR.omniDetection && missileBase.TargetingMode == MissileBase.TargetingModes.Radar && missileBase.ActiveRadar)) //omniRWR or active radar missile
                                         {
                                             sightDistance = maxRWRDistance; //missile tracked by RWR
                                         }
-                                        else  //non-omniRWR and non-radar missile
-                                        {
-                                            if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY) //missiles tracked visually
-                                            {
-                                                //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
-                                                //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
-                                                sightDistance = maxViewDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
-                                            }
-                                        }
                                     }
-                                    if (!seenByRadar && vesselDistanceSqr > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
+                                    //if (!seenByRadar &&
+                                    if (vesselDistanceSqr > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
                                     if (MissileIsThreat(missileBase, myWpnManager))
                                     {
                                         results.incomingMissiles.Add(new IncomingMissile
@@ -2028,24 +2026,11 @@ namespace BDArmory.Radar
                             }
                             else if (myWpnManager.guardMode) // Only check being under fire when in guard mode (for non-guardmode CMs).
                             {
-                                /*
-                                VesselCloakInfo vesselcamo;
-                                float viewModifier = 1;
-                                if (vesselcamo = loadedvessels.Current.gameObject.GetComponent<VesselCloakInfo>())
-                                {
-                                    if (vesselcamo.cloakEnabled) viewModifier = vesselcamo.opticalReductionFactor;
-                                }
-                                //Can the target be seen?
-                                float visDistance = myWpnManager.guardRange;
-                                if (BDArmorySettings.UNDERWATER_VISION && (myWpnManager.vessel.IsUnderwater() || loadedvessels.Current.IsUnderwater())) visDistance = 100;
-                                visDistance *= viewModifier;
-                                if (vesselDistanceSqr > visDistance * visDistance) continue;
-                                */
-                                //if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
-                                if (!myWpnManager.CanSeeTarget(tInfo, false, false))
-                                {
-                                    continue; //blocked by terrain
-                                }
+                                if (vesselDistanceSqr < maxViewDistance * maxViewDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f)
+                                    if (!myWpnManager.CanSeeTarget(tInfo, false, false))
+                                    {
+                                        continue; //blocked by terrain
+                                    }
 
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
