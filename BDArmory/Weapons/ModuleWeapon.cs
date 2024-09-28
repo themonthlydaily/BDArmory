@@ -2626,27 +2626,32 @@ namespace BDArmory.Weapons
                                     {
                                         if (electroLaser)
                                         {
-                                            if (!VesselModuleRegistry.ignoredVesselTypes.Contains(p.vesselType))
+                                            if (!VesselModuleRegistry.ignoredVesselTypes.Contains(p.vessel.vesselType))
                                             {
-                                                p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                                var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                                if (emp == null)
+                                                {
+                                                    emp = (ModuleDrainEC)p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                                    //Debug.Log($"[BDArmory.ModuleWeapon]: EMP Module added to {p.vessel.GetName()}: {p.vessel.rootPart.partInfo.title}");
+                                                }
+                                                float EMPDamage = 0;
+                                                if (!pulseLaser)
+                                                {
+                                                    //EMPDamage = secondaryAmmoPerShot / 500;
+                                                    EMPDamage = laserDamage * TimeWarp.fixedDeltaTime; //have materials come into play? wooden part not going to conduct electricity as well as aluminium?
+                                                    emp.incomingDamage += EMPDamage;
+                                                }
+                                                else
+                                                {
+                                                    //EMPDamage = secondaryAmmoPerShot / 10;
+                                                    EMPDamage = laserDamage;
+                                                    emp.incomingDamage += EMPDamage;
+                                                }
+                                                emp.softEMP = true;
+                                                damage = EMPDamage;
+                                                if (BDArmorySettings.DEBUG_WEAPONS) 
+                                                    Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                             }
-                                            var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                                            float EMPDamage = 0;
-                                            if (!pulseLaser)
-                                            {
-                                                //EMPDamage = secondaryAmmoPerShot / 500;
-                                                EMPDamage = laserDamage * TimeWarp.fixedDeltaTime;
-                                                emp.incomingDamage += EMPDamage;
-                                            }
-                                            else
-                                            {
-                                                //EMPDamage = secondaryAmmoPerShot / 10;
-                                                EMPDamage = laserDamage;
-                                                emp.incomingDamage += EMPDamage;
-                                            }
-                                            emp.softEMP = true;
-                                            damage = EMPDamage;
-                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                         }
                                         else
                                         {
