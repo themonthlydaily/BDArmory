@@ -9,6 +9,8 @@
 	- Add missing sonar checks for AIs trying to fire torpedoes.
 	- Fix AI not turning on Active sonar when trying to fire INS torpedoes if no passive sonar on vessel.
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
+	- AI visual detection of incoming missiles within visual range no longer requires a RWR. RWR detection of incoming missiles still requires a RWR on the craft.
+	- Tweak AI detection and reaction to incoming GPS/INS missiles, they should detect and react to them a bit more consistantly now.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -17,9 +19,11 @@
 -Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
+	- Acoustic Decoys will no longer defy gravity and fly if launched out of water.
 	- Fix Bubble Curtain launcher NRE.
 	- 'Infinite Ordinance' now applies to Countermeasure droppers.
-	- Adjust cmThreshold timing for SLW countermeasures to account for torpedoes being substantially slower than missiles.
+	- Adjust cmThreshold timing for SLW countermeasures to 5x time set in WM to account for torpedoes being substantially slower than missiles.
+	  This should allow proper CM behavior against both torpedoes and missiles without compromising one or the other.
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
@@ -30,6 +34,7 @@
 	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
 	- Fix weapons with reload sounds using oneShotSound = false immediately stopping the SFX when switching to a different weapon.
 	- Fix weapons with spindown anims when they stop firing that have overheated under AI control not spinning down until they've cooled down.
+	- Fix Electrolaser NRE when firing on a target vessel.
 	- Missiles:
 		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 		- Tweak acoustic propagation loss rate for passive acoustic torpedoes, should have a bit further effective detection range now.
