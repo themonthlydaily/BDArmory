@@ -478,7 +478,12 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendAbortTime", advancedTweakable = true, //Extend Abort Time
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float extendAbortTime = 15f;
+        public float extendAbortTime = 10f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendMinGainRate", advancedTweakable = true, //Extend Min Gain Rate
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
+        public float extendMinGainRate = 10f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
@@ -538,7 +543,7 @@ namespace BDArmory.Control
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SliderResolution", advancedTweakable = true), // Slider Resolution
-            UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
+            UI_ChooseOption(options = ["Low", "Normal", "High", "Insane"], scene = UI_Scene.All)]
         public string sliderResolution = "Normal";
         string previousSliderResolution = "Normal";
 
@@ -964,7 +969,7 @@ namespace BDArmory.Control
         bool extending;
         bool extendParametersSet = false;
         float extendDistance;
-        float lastExtendDistanceSqr = 0;
+        float lastExtendDistance = 0;
         bool extendHorizontally = true; // Measure the extendDistance horizonally (for A2G) or not (for A2A).
         float extendDesiredMinAltitude;
         public string extendingReason = "";
@@ -992,7 +997,7 @@ namespace BDArmory.Control
             extendTarget = null;
             extendRequestMinDistance = 0;
             extendAbortTimer = cooldown ? -5f : 0f;
-            lastExtendDistanceSqr = 0;
+            lastExtendDistance = 0;
             extendForMissile = null;
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
@@ -2956,7 +2961,8 @@ namespace BDArmory.Control
             var extendDistanceSqr = extendVector.sqrMagnitude;
             if (extendDistanceSqr < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
-                if (extendDistanceSqr > lastExtendDistanceSqr) // Gaining distance.
+                var currentExtendDistance = extendVector.magnitude;
+                if (currentExtendDistance > lastExtendDistance + extendMinGainRate * Time.fixedDeltaTime) // Gaining distance fast enough.
                 {
                     if (extendAbortTimer > 0) // Reduce the timer to 0.
                     {
@@ -2964,16 +2970,16 @@ namespace BDArmory.Control
                         if (extendAbortTimer < 0) extendAbortTimer = 0;
                     }
                 }
-                else // Not gaining distance.
+                else // Not gaining distance fast enough.
                 {
                     extendAbortTimer += TimeWarp.fixedDeltaTime;
-                    if (extendAbortTimer > extendAbortTime) // Abort if not gaining distance.
+                    if (extendAbortTimer > extendAbortTime) // Abort if not gaining enough distance.
                     {
                         StopExtending($"extend abort time ({extendAbortTime}s) reached at distance {extendVector.magnitude}m of {extendDistance}m", true);
                         return;
                     }
                 }
-                lastExtendDistanceSqr = extendDistanceSqr;
+                lastExtendDistance = currentExtendDistance;
 
                 Vector3 targetDirection = extendVector.normalized * extendDistance;
                 Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
