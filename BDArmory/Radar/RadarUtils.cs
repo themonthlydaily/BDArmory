@@ -1949,7 +1949,7 @@ namespace BDArmory.Radar
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
                     float vesselDistanceSqr = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-                    if (vesselDistanceSqr < maxRWRDistance * maxRWRDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
+                    if (vesselDistanceSqr < maxRWRDistance * maxRWRDistance)// && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
                     { //wait, RWR detection is also clamped to visual FOV? Should it be clamped to visual FOV?
                         TargetInfo tInfo;
                         if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
@@ -1968,9 +1968,12 @@ namespace BDArmory.Radar
                                 if (missileBase != null)
                                 {
                                     if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
-                                    float sightDistance = maxViewDistance;
-                                    //bool seenByRadar = myWpnManager.vesselRadarData && myWpnManager.vesselRadarData.detectedRadarTarget(loadedvessels.Current, myWpnManager).exists;
-                                    if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY) //missiles tracked visually
+                                    float sightDistance = 0;
+                                    if (Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f)
+                                        sightDistance = maxViewDistance; //if missile outside visual FOV, no sighting.
+
+                                        //bool seenByRadar = myWpnManager.vesselRadarData && myWpnManager.vesselRadarData.detectedRadarTarget(loadedvessels.Current, myWpnManager).exists; //uncomment if we want radar to detect incoming missiles
+                                        if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY) //missiles tracked visually
                                     {
                                         //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
                                         //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
@@ -1978,9 +1981,12 @@ namespace BDArmory.Radar
                                     }
                                     if (RWR != null)
                                     {
-                                        if (RWR.omniDetection || (!RWR.omniDetection && missileBase.TargetingMode == MissileBase.TargetingModes.Radar && missileBase.ActiveRadar)) //omniRWR or active radar missile
+                                        if (Vector3.Angle(vesselProjectedDirection, lookDirection) < RWR.fieldOfView / 2f)
                                         {
-                                            sightDistance = maxRWRDistance; //missile tracked by RWR
+                                            if (RWR.omniDetection || (!RWR.omniDetection && missileBase.TargetingMode == MissileBase.TargetingModes.Radar && missileBase.ActiveRadar)) //omniRWR or active radar missile
+                                            {
+                                                sightDistance = maxRWRDistance; //missile tracked by RWR
+                                            }
                                         }
                                     }
                                     //if (!seenByRadar &&

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using KSP.Localization;
 
 using BDArmory.Control;
 using BDArmory.Damage;
@@ -17,8 +16,6 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
-using BDArmory.Weapons;
-using UnityEngine.UIElements;
 
 namespace BDArmory.Competition
 {
@@ -264,10 +261,11 @@ namespace BDArmory.Competition
             if (BDArmorySetup.GAME_UI_ENABLED)
             {
                 float rectOffset = Mathf.Max(100, Mathf.CeilToInt(100 * BDArmorySettings.UI_SCALE));
-                clockRect = new Rect(10, 42, rectOffset, 30);
-                dateRect = new Rect(rectOffset, 38, rectOffset, 20);
-                versionRect = new Rect(rectOffset * 2, 46, rectOffset, 20);
-                statusRect = new Rect(30, 60 + rectOffset / 5, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
+                clockRect = new Rect(10, Mathf.CeilToInt(42 * GameSettings.UI_SCALE), rectOffset, 30);
+                dateRect = new Rect(rectOffset, Mathf.CeilToInt(38 * GameSettings.UI_SCALE), rectOffset, 20);
+                versionRect = new Rect(rectOffset * 2, Mathf.CeilToInt(46 * GameSettings.UI_SCALE), rectOffset, 20);
+                statusRect = new Rect(30, Mathf.CeilToInt(60 * GameSettings.UI_SCALE) + rectOffset / 5, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
+
                 statusStyle.fontSize = Mathf.Max(22, Mathf.CeilToInt(22 * BDArmorySettings.UI_SCALE));
                 dateStyle.fontSize = Mathf.Max(14, Mathf.CeilToInt(14 * BDArmorySettings.UI_SCALE));
             }

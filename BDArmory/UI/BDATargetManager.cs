@@ -394,7 +394,7 @@ namespace BDArmory.UI
                 float sqrSpacing = (heatSourcePosition - thrustTransform.position).sqrMagnitude;
                 OcclusionFactor += closestPart.mass * (1 - Mathf.Clamp01(sqrSpacing / SpacingConstant));
             }
-            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] occlusion found: " + (1 + OcclusionFactor) + "; " + DebugCount + " occluding parts");
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] occlusion found: " + (1 + OcclusionFactor) + "; " + DebugCount + " occluding parts");
             if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / (1 + OcclusionFactor));
             //if ((OcclusionFactor > 0) || enginePlume || propEngine) heatScore *= frontAspectModifier; // Apply front aspect modifier when heat is being evaluated outside ~50 deg cone of engine exhaust
             if ((OcclusionFactor > 0) || propEngine) heatScore *= frontAspectModifier; //enginePlume getting assigned frontAspectMod regardless of orientation? if outside 50deg exhaust cone would already have an OcclusioNFactor > 0
@@ -583,9 +583,9 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score, targetCoM ? null : IRSig.Item2);
                         }
                     }
-                    // Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
+                    // Debug.Log($"[BDArmory.BDATargetManager.GetHeatTarget] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
                 }
-                // else Debug.Log($"[IR DEBUG] ignoring {vessel.GetName()} at angle {angle}°, which is beyond scanRadius {scanRadius}°");
+                // else Debug.Log($"[BDArmory.BDATargetManager.GetHeatTarget] ignoring {vessel.GetName()} at angle {angle}°, which is beyond scanRadius {scanRadius}°");
             }
             // see if there are flares decoying us:
             bool flareSuccess = false;
@@ -842,7 +842,7 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score, targetCoM ? null : AcousticSig.Item2);
                         }
                     }
-                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[GetAcousticTarget] soundScore of {vessel.GetName()} at angle {angle}° is {score}");
+                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager.GetAcousticTarget] soundScore of {vessel.GetName()} at angle {angle}° is {score}");
                 }
             }
 

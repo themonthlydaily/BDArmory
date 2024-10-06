@@ -321,6 +321,7 @@ namespace BDArmory.UI
         {
             BDArmorySetup.showVesselSwitcherGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
+            if (!visible && BDTeamSelector.Instance) BDTeamSelector.Instance.SetVisible(false);
         }
 
         private void ResizeWindow()
@@ -894,7 +895,7 @@ namespace BDArmory.UI
             {
                 if (Event.current.button == 1)
                 {
-                    BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+                    BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x + 2 * _buttonHeight + _margin, Screen.height - Input.mousePosition.y));
                 }
                 else if (Event.current.button == 2)
                 {
