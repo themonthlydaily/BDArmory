@@ -1022,7 +1022,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), StringUtils.Localize("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version + "_PS102", waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version + "_PS105", waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
@@ -2360,6 +2360,7 @@ namespace BDArmory.UI
         }
 
         (float, float)[] asteroidFieldAltitude;
+        bool FJRTSettings = false;
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.
@@ -3183,6 +3184,8 @@ namespace BDArmory.UI
                         }
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
+                    BDArmorySettings.FJRT_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.FJRT_CONVENIENCE_CHECKS, StringUtils.Localize("FJRT"));
+
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
@@ -3317,6 +3320,52 @@ namespace BDArmory.UI
                             //partloss = false; //- would need special module, but could also be a mutator mode
                             //timebomb = false //same
                             //might be more elegant to simply have this use Mutator framework and load the HoS craft with a select mutator(s) instead... Something to look into later, maybe, but ideally this shouldn't need to be used in the first place.
+                        }
+                    }
+                    if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS)
+                    {
+                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SRightRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) //if we need super-secret stuff
+                        {
+                            switch (CheatCodeGUI)
+                            {
+                                case "FJRTSettings": //until we figure out where to put this
+                                    {
+                                        FJRTSettings = !FJRTSettings;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }                            
+                            }
+                        }
+                        if (FJRTSettings)
+                        {
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.FJRT_EXTEND_TIMOUT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
+                            BDArmorySettings.FJRT_EXTEND_TIMOUT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_EXTEND_TIMOUT, 0, 60));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max Extend Dist")}:  ({BDArmorySettings.FJRT_EXTEND_DIST})", leftLabel);
+                            BDArmorySettings.FJRT_EXTEND_DIST = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_EXTEND_DIST, 0, 30000), 100);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max View Range (1 seat)")}:  ({BDArmorySettings.FJRT_MONOCOCKPIT_VIEWRANGE})", leftLabel);
+                            BDArmorySettings.FJRT_MONOCOCKPIT_VIEWRANGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_MONOCOCKPIT_VIEWRANGE, 0, 30000), 250);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max View Range (2 seat)")}:  ({BDArmorySettings.FJRT_DUALCOCKPIT_VIEWRANGE})", leftLabel);
+                            BDArmorySettings.FJRT_DUALCOCKPIT_VIEWRANGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_DUALCOCKPIT_VIEWRANGE, 0, 30000), 250);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Cockpit FOV (1 seat)")}:  ({BDArmorySettings.FJRT_COCKPIT_FOV})", leftLabel);
+                            BDArmorySettings.FJRT_COCKPIT_FOV = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_COCKPIT_FOV, 1, 360));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid Threshold Min")}:  ({BDArmorySettings.FJRT_AVOID_THRESH})", leftLabel);
+                            BDArmorySettings.FJRT_AVOID_THRESH = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_AVOID_THRESH, 1, 30));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid LookAhead Min")}:  ({BDArmorySettings.FJRT_AVOID_LA})", leftLabel);
+                            BDArmorySettings.FJRT_AVOID_LA = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_AVOID_LA, 0, 3) * 10f) / 10f;
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid Strength Min")}:  ({BDArmorySettings.FJRT_AVOID_STR})", leftLabel);
+                            BDArmorySettings.FJRT_AVOID_STR = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_AVOID_STR, 0, 4) * 10f) / 10f;
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Idle Speed Min")}:  ({BDArmorySettings.FJRT_IDLE_SPEED})", leftLabel);
+                            BDArmorySettings.FJRT_IDLE_SPEED = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FJRT_IDLE_SPEED, 100, 500), 10);
+                            BDArmorySettings.FJRT_DISABLE_SAS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.FJRT_DISABLE_SAS, StringUtils.Localize("Disable non-Cockpit SAS"));
+                            line++;
                         }
                     }
                 }

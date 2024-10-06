@@ -214,6 +214,11 @@ namespace BDArmory.VesselSpawning
         public static void ApplyRWPonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyRWPonNewVessels(enable);
         public static void ApplyRWP(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyRWP(vessel); // Applying RWP can't be undone
         #endregion
+        #region FJRT Stuff
+        public static void ApplyFJRTonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyFJRTonNewVessels(enable);
+        public static void ApplyFJRT(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyFJRT(vessel); // Applying RWP can't be undone
+
+        #endregion
 
         #region HallOfShame
         public static void ApplyHOSOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyHOSOnNewVessels(enable);
@@ -1090,6 +1095,64 @@ namespace BDArmory.VesselSpawning
                             armor.SetupPrefab();
                         }
                     }
+                }
+            }
+        }
+        #endregion
+
+        #region FJRT
+        public void ApplyFJRTonNewVessels(bool enable)
+        {
+            if (enable)
+            {
+                GameEvents.onVesselLoaded.Add(ApplyFJRTEventHandler);
+            }
+            else
+            {
+                GameEvents.onVesselLoaded.Remove(ApplyFJRTEventHandler);
+            }
+        }
+        void ApplyFJRTEventHandler(Vessel vessel) => ApplyFJRT(vessel);
+
+        public void ApplyFJRT(Vessel vessel)
+        {
+            if (vessel == null || !vessel.loaded) return;
+            if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS)
+            {
+                int cockpitSeatCount = 0;
+
+                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        if (BDArmorySettings.FJRT_DISABLE_SAS)
+                        {
+                            if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                            {
+                                ModuleReactionWheel SAS;
+                                SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                if (part.Current.CrewCapacity == 0)
+                                    SAS.authorityLimiter = 0;
+                            }
+                        }
+                        if (part.Current.GetComponent<ModuleCommand>() != null)
+                        {
+                            if (part.Current.CrewCapacity > 0 && part.Current.CrewCapacity > cockpitSeatCount) cockpitSeatCount = part.Current.CrewCapacity;
+                        }
+                    }
+                var AI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
+                if (AI != null)
+                {
+                    AI.extendTargetDist = Mathf.Min(AI.extendTargetDist, BDArmorySettings.FJRT_EXTEND_DIST);
+                    AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, BDArmorySettings.FJRT_AVOID_THRESH);
+                    AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, BDArmorySettings.FJRT_AVOID_LA);
+                    AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, BDArmorySettings.FJRT_AVOID_STR);
+                    AI.idleSpeed = Mathf.Max(AI.idleSpeed, BDArmorySettings.FJRT_IDLE_SPEED);
+                }
+                var WM = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (WM != null)
+                {
+                    WM.guardRange = cockpitSeatCount > 0 ? cockpitSeatCount == 1 ? BDArmorySettings.FJRT_MONOCOCKPIT_VIEWRANGE : BDArmorySettings.FJRT_DUALCOCKPIT_VIEWRANGE : 5000;
+                    WM.guardAngle = cockpitSeatCount > 1 ? 360 : BDArmorySettings.FJRT_COCKPIT_FOV;
                 }
             }
         }
