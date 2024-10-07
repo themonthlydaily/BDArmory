@@ -999,7 +999,7 @@ namespace BDArmory.Control
             extendRequestMinDistance = 0;
             extendAbortTimer = cooldown ? -5f : 0f;
             lastExtendDistance = 0;
-            extensionCutoffF = 0;
+            extensionCutoffFJRT = 0;
             extendForMissile = null;
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
