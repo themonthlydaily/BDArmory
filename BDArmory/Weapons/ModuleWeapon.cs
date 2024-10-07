@@ -448,7 +448,7 @@ namespace BDArmory.Weapons
         public string fireAnimName = "fireAnim";
 
         [KSPField]
-        public float fireAnimOverrideSpeed = 1;
+        public float fireAnimOverrideSpeed = -1;
 
         AnimationState[] fireState = new AnimationState[0];
         //private List<AnimationState> fireState;
