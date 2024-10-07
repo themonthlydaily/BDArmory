@@ -370,7 +370,6 @@ namespace BDArmory.Bullets
                 BDATargetManager.FiredBullets.Add(this);
             }
             PooledBulletManager.AddBullet(this);
-            randomness = UnityEngine.Random.onUnitSphere;
         }
 
         void OnDisable()

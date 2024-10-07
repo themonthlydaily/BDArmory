@@ -484,7 +484,7 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
         public float extendMinGainRate = 10f;
 
-        float extensionCutoffFJRTInummeracyCheck = 0;
+        float extensionCutoffFJRT = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
@@ -999,7 +999,7 @@ namespace BDArmory.Control
             extendRequestMinDistance = 0;
             extendAbortTimer = cooldown ? -5f : 0f;
             lastExtendDistance = 0;
-            extensionCutoffFJRTInummeracyCheck = 0;
+            extensionCutoffF = 0;
             extendForMissile = null;
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
@@ -2963,8 +2963,8 @@ namespace BDArmory.Control
             var extendDistanceSqr = extendVector.sqrMagnitude;
             if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS)
             {
-                extensionCutoffFJRTInummeracyCheck += Time.fixedDeltaTime;
-                if (extensionCutoffFJRTInummeracyCheck > BDArmorySettings.FJRT_EXTEND_TIMOUT)
+                extensionCutoffFJRT += Time.fixedDeltaTime;
+                if (extensionCutoffFJRT > BDArmorySettings.FJRT_EXTEND_TIMOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
                 {
                     StopExtending($"extend time limit exceeded", true);                    
                     return;
