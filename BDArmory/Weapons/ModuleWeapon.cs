@@ -2346,10 +2346,10 @@ namespace BDArmory.Weapons
                                     }
                                     pBullet.targetVessel = null;
                                     pBullet.guidanceDPS = 0;
-                                    if (visualTargetVessel != null && (targetAcquisitionType == TargetAcquisitionType.Slaved || vessel.name.Contains("S-1")))
+                                    if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
                                     {
                                         pBullet.targetVessel = visualTargetVessel;
-                                        pBullet.guidanceDPS = (shortName == "Freischultz" ? 5f : bulletInfo.guidanceDPS);
+                                        pBullet.guidanceDPS = bulletInfo.guidanceDPS;
                                     }
                                     pBullet.isSubProjectile = false;
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
