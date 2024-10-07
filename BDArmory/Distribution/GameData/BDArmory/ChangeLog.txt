@@ -36,6 +36,8 @@
 	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
 	- Fix weapons with reload sounds using oneShotSound = false immediately stopping the SFX when switching to a different weapon.
 	- Fix weapons with spindown anims when they stop firing that have overheated under AI control not spinning down until they've cooled down.
+	- Laser weapons or other weapons using ElectricCharge can now fire if InfiniteElectricity is on, even if Inifite Ammo is not.
+	- Adds fireAnimOverrideSpeed field to set custom fire animation play rate instead of basing it on rate of fire.
 	- Missiles:
 		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 		- Tweak acoustic propagation loss rate for passive acoustic torpedoes, should have a bit further effective detection range now.
