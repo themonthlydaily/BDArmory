@@ -17,7 +17,7 @@ namespace BDArmory.UI
         const float margin = 5;
         const float buttonHeight = 20;
         const float buttonGap = 2;
-        const float newTeanButtonWidth = 40;
+        const float newTeamButtonWidth = 40;
         const float scrollWidth = 20;
 
         private static int guiCheckIndex = -1;
@@ -27,39 +27,52 @@ namespace BDArmory.UI
         private float height;
         private bool scrollable;
         private Vector2 scrollPosition = Vector2.zero;
+        Rect alliesRect;
+        GUIStyle alliesStyle;
 
         private Vector2 windowLocation;
         private MissileFire targetWeaponManager;
         private string newTeamName = string.Empty;
 
         public void Open(MissileFire weaponManager, Vector2 position)
-        {
-            SetVisible(true);
+        {            
             targetWeaponManager = weaponManager;
             newTeamName = string.Empty;
             windowLocation = position;
+            SetVisible(true);
         }
 
-        void SetVisible(bool visible)
+        public void SetVisible(bool visible)
         {
             open = visible;
             GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
+            if (visible)
+            {
+                window = new Rect(
+                 Mathf.Min(windowLocation.x, Screen.width - (scrollable ? width + scrollWidth : width)),
+                 Mathf.Min(windowLocation.y, Screen.height - height),
+                 width,
+                 scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height
+                 );
+                alliesStyle ??= new GUIStyle(BDArmorySetup.BDGuiSkin.label) { wordWrap = true, alignment = TextAnchor.UpperLeft, fixedWidth = width };
+            }
         }
 
         private void TeamSelectorWindow(int id)
         {
             height = margin;
             GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_SelectTeam"), BDArmorySetup.BDGuiSkin.label);
+            GUI.DragWindow(new Rect(margin, margin, width - 2 * margin - buttonHeight, buttonHeight));
             if (GUI.Button(new Rect(width - 18, 2, 18, 18), "X"))
             {
                 SetVisible(false);
             }
             height += buttonHeight;
             // Team input field
-            newTeamName = GUI.TextField(new Rect(margin, height, width - buttonGap - 2 * margin - newTeanButtonWidth, buttonHeight), newTeamName, 30);
+            newTeamName = GUI.TextField(new Rect(margin, height, width - buttonGap - 2 * margin - newTeamButtonWidth, buttonHeight), newTeamName, 30);
 
             // New team button
-            Rect newTeamButtonRect = new Rect(width - margin - newTeanButtonWidth, height, newTeanButtonWidth, buttonHeight);
+            Rect newTeamButtonRect = new Rect(width - margin - newTeamButtonWidth, height, newTeamButtonWidth, buttonHeight);
             if (GUI.Button(newTeamButtonRect, StringUtils.Localize("#LOC_BDArmory_Generic_New"), BDArmorySetup.BDGuiSkin.button))//"New"
             {
                 if (!string.IsNullOrEmpty(newTeamName.Trim()))
@@ -125,8 +138,10 @@ namespace BDArmory.UI
             GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Allies"));
             height += buttonHeight + buttonGap;
             string allies = string.Join("; ", targetWeaponManager.Team.Allies);
-            GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), allies);
-            height += buttonHeight + buttonGap * Mathf.Clamp(Mathf.CeilToInt(allies.Length / 50), 1, 4);
+            alliesRect = new Rect(margin, height, width - 2 * margin, buttonHeight)
+            { height = alliesStyle.CalcHeight(new GUIContent(allies), width) };
+            GUI.Label(alliesRect, allies, alliesStyle);
+            height += alliesRect.height;
             if (scrollable)
                 GUI.EndScrollView();
 
@@ -145,6 +160,7 @@ namespace BDArmory.UI
             }
 
             height += margin;
+            window.height = scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height;
             GUIUtils.RepositionWindow(ref window);
             GUIUtils.UseMouseEventInRect(window);
         }
@@ -162,13 +178,8 @@ namespace BDArmory.UI
 
                 if (open && BDArmorySetup.GAME_UI_ENABLED)
                 {
-                    var clientRect = new Rect(
-                        Mathf.Min(windowLocation.x, Screen.width - (scrollable ? width + scrollWidth : width)),
-                        Mathf.Min(windowLocation.y, Screen.height - height),
-                        width,
-                        scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height);
-                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, clientRect.position);
-                    window = GUI.Window(10591029, clientRect, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, window.position);
+                    window = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), window, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
                     GUIUtils.UpdateGUIRect(window, guiCheckIndex);
                 }
                 else
