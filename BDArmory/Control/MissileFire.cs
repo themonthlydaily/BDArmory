@@ -7441,11 +7441,12 @@ namespace BDArmory.Control
                     StartCoroutine(UnderAttackRoutine());
                     if (results.foundRadarMissile) //have this require an RWR?
                     {
-                        //if (!rwr && incomingMissileDistance <= guardRange * 0.33f) //within ID range?
+                        if (rwr || incomingMissileDistance <= guardRange * 0.33f) //within ID range?
                         //StartCoroutine(UnderAttackRoutine());
-
-                        FireChaff();
-                        FireECM(10);
+                        {
+                            FireChaff();
+                            FireECM(10);
+                        }
                     }
                     //laser missiles
                     if (results.foundAGM) //Assume Laser Warning Receiver regardless of omniDetection? Or move laser missiles to the passive missiles section?
