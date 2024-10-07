@@ -10,6 +10,7 @@
 	- Fix AI not turning on Active sonar when trying to fire INS torpedoes if no passive sonar on vessel.
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
 	- AI can now do non-linear evasion vs long-range targets while aiming missiles.
+	- Add Extend Min Gain Rate slider to set extend abort condition if not gaining distance fast enough.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -17,6 +18,8 @@
 	- Add ability to set teams' Allies to the Team Selector GUI.
 - Detectors:
 	- Fix AI not popping countermeasures for non-radar incoming missiles detected by RWR but outside visual range.
+	- Add fieldOfView setting to RadarWarningReceiver to allow custom RWR FoV.
+	- RWR FoV no longer clamped to visual FOV.
 -Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
@@ -43,6 +46,9 @@
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.
 	- Add craft spawn warning message if craft doesn't have AI/WM on root part, and root isn't a cockpit.
+- FJRT:
+	- Add max Extend time limit clamp to override extend behavior that goes on for longer than time limit.
+	- Add FJRT settings option to GameModes.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES
