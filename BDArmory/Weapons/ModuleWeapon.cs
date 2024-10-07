@@ -447,6 +447,9 @@ namespace BDArmory.Weapons
         [KSPField]
         public string fireAnimName = "fireAnim";
 
+        [KSPField]
+        public float fireAnimOverrideSpeed = 1;
+
         AnimationState[] fireState = new AnimationState[0];
         //private List<AnimationState> fireState;
 
@@ -547,7 +550,7 @@ namespace BDArmory.Weapons
         [KSPField]
         public bool ChargeEachShot = true;
         [KSPField]
-        public bool postFireDecharge = false;
+        public bool postFireChargeAnim = false;
         bool hasCharged = false;
         [KSPField]
         public float chargeHoldLength = 1;
@@ -3312,7 +3315,7 @@ namespace BDArmory.Weapons
                     {
                         lowFramerateFix = (0.02f / Time.deltaTime);
                     }
-                    fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
+                    fireAnimSpeed = fireAnimOverrideSpeed > 0 ? fireAnimOverrideSpeed : Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
                     fireState[i].enabled = true;
                     if (unclampedSpeed == fireAnimSpeed || fireState[i].normalizedTime > 1)
                     {
@@ -4794,7 +4797,7 @@ namespace BDArmory.Weapons
                     if (ChargeTime > 0 && timeSinceFired > chargeHoldLength && !isReloading)
                     {
                         hasCharged = false;
-                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                     }
                 }
             }
@@ -5002,7 +5005,7 @@ namespace BDArmory.Weapons
                 isOverheated = true;
                 autoFire = false;
                 hasCharged = false;
-                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 if (spinDownAnimation) spinningDown = true;
@@ -5656,7 +5659,7 @@ namespace BDArmory.Weapons
             if (hasCharged)
             {
                 if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireDecharge));
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
             }
             if (hasDeployAnim)
             {
@@ -5678,7 +5681,7 @@ namespace BDArmory.Weapons
             guiStatusString = "Reloading";
             hasCharged = false;
             float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate;
-            float netReloadTime = ReloadTime - timeGap - (postFireDecharge && ChargeTime > 0 ? ChargeTime : 0);
+            float netReloadTime = ReloadTime - timeGap - (postFireChargeAnim && ChargeTime > 0 ? ChargeTime : 0);
             if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
@@ -5687,7 +5690,7 @@ namespace BDArmory.Weapons
                 fireState[i].enabled = false;
                 //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: packing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
             }
-            if (hasChargeAnimation && postFireDecharge)
+            if (hasChargeAnimation && postFireChargeAnim)
             {
                 chargeRoutine = StartCoroutine(ChargeRoutine(true));
                 yield return new WaitWhileFixed(() => chargeState.normalizedTime > 0); //wait for animation here
