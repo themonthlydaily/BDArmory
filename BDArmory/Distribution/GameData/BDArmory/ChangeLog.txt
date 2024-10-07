@@ -9,6 +9,7 @@
 	- Add missing sonar checks for AIs trying to fire torpedoes.
 	- Fix AI not turning on Active sonar when trying to fire INS torpedoes if no passive sonar on vessel.
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
+	- AI can now do non-linear evasion vs long-range targets while aiming missiles.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
