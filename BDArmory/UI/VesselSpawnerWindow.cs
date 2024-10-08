@@ -222,7 +222,7 @@ namespace BDArmory.UI
             );
             BDArmorySetup.SetGUIOpacity();
             var guiMatrix = GUI.matrix;
-            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSpawner.position);
+            if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSpawner.position);
             BDArmorySetup.WindowRectVesselSpawner = GUI.Window(
                 GUIUtility.GetControlID(FocusType.Passive),
                 BDArmorySetup.WindowRectVesselSpawner,
@@ -238,7 +238,7 @@ namespace BDArmory.UI
                     ShowObserverWindow(false);
                 else
                 {
-                    if (BDArmorySettings.UI_SCALE != 1) { GUI.matrix = guiMatrix; GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, observerWindowRect.position); }
+                    if (BDArmorySettings._UI_SCALE != 1) { GUI.matrix = guiMatrix; GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, observerWindowRect.position); }
                     observerWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), observerWindowRect, ObserverWindow, StringUtils.Localize("#LOC_BDArmory_ObserverSelection_Title"), BDArmorySetup.BDGuiSkin.window);
                 }
             }
@@ -502,7 +502,7 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SThirdRect(line, 2), StringUtils.Localize("#LOC_BDArmory_Settings_Observers"), BDArmorySetup.BDGuiSkin.button))
                 {
-                    ShowObserverWindow(true, BDArmorySettings.UI_SCALE * Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
+                    ShowObserverWindow(true, BDArmorySettings._UI_SCALE * Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
                 }
                 line += 0.3f;
             }
@@ -1103,7 +1103,7 @@ namespace BDArmory.UI
         {
             if (show)
             {
-                observerWindowRect.position = position + new Vector2(50, -BDArmorySettings.UI_SCALE * observerWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
+                observerWindowRect.position = position + new Vector2(50, -BDArmorySettings._UI_SCALE * observerWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
                 RefreshObservers();
                 bringObserverWindowToFront = true;
             }

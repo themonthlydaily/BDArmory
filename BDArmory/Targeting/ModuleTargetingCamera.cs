@@ -703,7 +703,7 @@ namespace BDArmory.Targeting
                     //window
                     if (activeCam == this && TargetingCamera.ReadyForUse)
                     {
-                        if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectTargetingCam.position);
+                        if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectTargetingCam.position);
                         BDArmorySetup.WindowRectTargetingCam = GUI.Window(125452, BDArmorySetup.WindowRectTargetingCam, WindowTargetCam, "Target Camera", GUI.skin.window);
                         GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectTargetingCam);
                     }
@@ -840,7 +840,7 @@ namespace BDArmory.Targeting
             {
                 if (Mouse.delta.x != 0 || Mouse.delta.y != 0)
                 {
-                    float diff = (Mathf.Abs(Mouse.delta.x) > Mathf.Abs(Mouse.delta.y) ? Mouse.delta.x : Mouse.delta.y) / BDArmorySettings.UI_SCALE;
+                    float diff = (Mathf.Abs(Mouse.delta.x) > Mathf.Abs(Mouse.delta.y) ? Mouse.delta.x : Mouse.delta.y) / BDArmorySettings._UI_SCALE;
                     BDArmorySettings.TARGET_WINDOW_SCALE = Mathf.Clamp(BDArmorySettings.TARGET_WINDOW_SCALE + diff / camImageSize, BDArmorySettings.TARGET_WINDOW_SCALE_MIN, BDArmorySettings.TARGET_WINDOW_SCALE_MAX);
                     ResizeTargetWindow();
                 }

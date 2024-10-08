@@ -2386,12 +2386,16 @@ namespace BDArmory.UI
             if (BDArmorySettings.GRAPHICS_UI_SETTINGS_TOGGLE)
             {
                 line += 0.2f;
-                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScale")}: {BDArmorySettings.UI_SCALE:0.00}x", leftLabel); // UI Scale
-                var previousUIScale = BDArmorySettings.UI_SCALE;
-                if (BDArmorySettings.UI_SCALE != (BDArmorySettings.UI_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.UI_SCALE, 0.5f, 2f), 0.05f)))
+                GUI.Label(SQuarterRect(++line, 0), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScale")}: {BDArmorySettings._UI_SCALE:0.00}x", leftLabel); // UI Scale
+                BDArmorySettings.UI_SCALE_FOLLOWS_STOCK = GUI.Toggle(SQuarterRect(line, 1), BDArmorySettings.UI_SCALE_FOLLOWS_STOCK, $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScaleFollowsStock")}");
+                if (!BDArmorySettings.UI_SCALE_FOLLOWS_STOCK)
                 {
-                    BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
-                    scalingUI = true;
+                    var previousUIScale = BDArmorySettings.UI_SCALE;
+                    if (BDArmorySettings.UI_SCALE != (BDArmorySettings.UI_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.UI_SCALE, 0.5f, 2f), 0.05f)))
+                    {
+                        BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
+                        scalingUI = true;
+                    }
                 }
 
                 BDArmorySettings.DRAW_AIMERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DRAW_AIMERS, StringUtils.Localize("#LOC_BDArmory_Settings_DrawAimers"));//"Draw Aimers"

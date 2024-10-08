@@ -729,7 +729,7 @@ namespace BDArmory.UI
             if (!stylesConfigured) ConfigureStyles();
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity();
             if (resizingWindow && Event.current.type == EventType.MouseUp) { resizingWindow = false; }
-            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectAI.position);
+            if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectAI.position);
             BDArmorySetup.WindowRectAI = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity(false);
         }
@@ -2178,9 +2178,9 @@ namespace BDArmory.UI
 
             if (Event.current.type == EventType.Repaint && resizingWindow)
             {
-                WindowHeight += Mouse.delta.y / BDArmorySettings.UI_SCALE;
+                WindowHeight += Mouse.delta.y / BDArmorySettings._UI_SCALE;
                 WindowHeight = Mathf.Max(WindowHeight, 305);
-                if (BDArmorySettings.DEBUG_OTHER) GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {Mathf.Round(WindowHeight * BDArmorySettings.UI_SCALE)}", Label);
+                if (BDArmorySettings.DEBUG_OTHER) GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {Mathf.Round(WindowHeight * BDArmorySettings._UI_SCALE)}", Label);
             }
             #endregion
 
