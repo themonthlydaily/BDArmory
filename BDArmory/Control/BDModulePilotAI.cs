@@ -4528,14 +4528,14 @@ namespace BDArmory.Control
 
                 flyPos = vessel.ReferenceTransform.position + vectorToFlyPos;
 
-                if (distanceToPos < 400)
-                {
-                    steerMode = SteerModes.Aiming;
-                }
-                else
-                {
-                    steerMode = SteerModes.NormalFlight;
-                }
+                // if (distanceToPos < 400)
+                // {
+                //     steerMode = SteerModes.Aiming;
+                // }
+                // else
+                // {
+                //     steerMode = SteerModes.NormalFlight;
+                // }
 
                 if (distanceToPos < 10)
                 {
@@ -4544,7 +4544,7 @@ namespace BDArmory.Control
             }
             else
             {
-                steerMode = SteerModes.NormalFlight;
+                // steerMode = SteerModes.NormalFlight;
                 flyPos = commandPosition;
             }
 
