@@ -178,8 +178,13 @@ namespace BDArmory.UI
 
                 if (open && BDArmorySetup.GAME_UI_ENABLED)
                 {
-                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, window.position);
-                    window = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), window, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+                    var clientRect = new Rect(
+                        Mathf.Min(windowLocation.x, Screen.width - (scrollable ? width + scrollWidth : width)),
+                        Mathf.Min(windowLocation.y, Screen.height - height),
+                        width,
+                        scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height);
+                    if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, clientRect.position);
+                    window = GUI.Window(10591029, clientRect, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
                     GUIUtils.UpdateGUIRect(window, guiCheckIndex);
                 }
                 else
