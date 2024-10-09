@@ -2,15 +2,20 @@
 - General:
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
 	- Add the ability to add custom sub-categories to the BDA part categorizer.
+- UI:
+	- Improve prevention of click-through of various windows in the editor.
+	- Open sections of the AI GUI now remain open when switching between flight and editor.
+	- Added an option to follow the stock UI scaling instead of BDA's one.
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
 	- The pilot AI now stays in "normal flight" mode when flying in formation for better stability.
 	- Add a 'min gain rate' option to the extending to avoid excessively long extending runs.
-- UI:
-	- Improve prevention of click-through of various windows in the editor.
-	- Open sections of the AI GUI now remain open when switching between flight and editor.
-	- Added an option to follow the stock UI scaling instead of BDA's one.
+- Competition:
+	- Add support for using custom spawn templates with RNG style tournaments.
+		- The number of teams per heat and vessels per team per heat are restricted to at most those in the selected spawn template.
+		- Teams are considered as the per file / per folder option.
+		- Both shuffled and ranked tournaments are supported.
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
