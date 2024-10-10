@@ -1126,8 +1126,9 @@ namespace BDArmory.Competition
                                 npcFiles.Shuffle();
                                 selectedFiles.AddRange(Enumerable.Repeat(npcFiles, Mathf.CeilToInt((float)npcsPerHeat / (float)npcFiles.Count)).SelectMany(x => x).Take(npcsPerHeat));
                             }
-                            circularSpawnConfigTemplate.craftFiles = selectedFiles; // Set the craft file list to the currently selected ones.
-                            rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate)); // Add a copy of the template to the heats.
+                            rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate){
+                                craftFiles = selectedFiles // Set the craft file list to the currently selected ones.
+                            }); // Add a copy of the template to the heats.
                             count += vesselsThisHeat;
                             vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
                             selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
@@ -1136,23 +1137,69 @@ namespace BDArmory.Competition
                     }
                 case TournamentType.Teams:
                     {
-                        int fullHeatCount = teamFiles.Count / teamsPerHeat;
-                        var teamsIndex = scores.GetRankedTeams(teamFiles);
-                        int teamsThisHeat = teamsPerHeat;
-                        int count = 0;
-                        var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
-                        var selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam, fullTeams);
-                        var circularSpawnConfigTemplate = rounds.Values.First().Values.First() as CircularSpawnConfig;
-                        rounds.Add(roundIndex, []); // Extend the rounds by 1.
-                        int heatIndex = 0;
-                        while (selectedTeams.Count > 0)
+                        switch (tournamentStyle)
                         {
-                            circularSpawnConfigTemplate.teamsSpecific = selectedCraft;
-                            rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate)); // Add a copy of the template to the heats.
-                            count += teamsThisHeat;
-                            teamsThisHeat = heatIndex++ < fullHeatCount ? teamsPerHeat : teamsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of teams.
-                            selectedTeams = teamsIndex.Skip(count).Take(teamsThisHeat).ToList();
-                            selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam, fullTeams);
+                            case TournamentStyle.RNG:
+                                {
+                                    int fullHeatCount = teamFiles.Count / teamsPerHeat;
+                                    var teamsIndex = scores.GetRankedTeams(teamFiles);
+                                    int teamsThisHeat = teamsPerHeat;
+                                    int count = 0;
+                                    var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
+                                    var selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam, fullTeams);
+                                    var circularSpawnConfigTemplate = rounds.Values.First().Values.First() as CircularSpawnConfig;
+                                    rounds.Add(roundIndex, []); // Extend the rounds by 1.
+                                    int heatIndex = 0;
+                                    while (selectedTeams.Count > 0)
+                                    {
+                                        rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate)
+                                        {
+                                            teamsSpecific = selectedCraft
+                                        }); // Add a copy of the template to the heats, but use the new set of vessels.
+                                        count += teamsThisHeat;
+                                        teamsThisHeat = heatIndex++ < fullHeatCount ? teamsPerHeat : teamsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of teams.
+                                        selectedTeams = teamsIndex.Skip(count).Take(teamsThisHeat).ToList();
+                                        selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam, fullTeams);
+                                    }
+                                    break;
+                                }
+                            case TournamentStyle.TemplateRNG:
+                                {
+                                    var spawnConfig = CustomTemplateSpawning.customSpawnConfig;
+                                    int fullHeatCount = teamFiles.Count / teamsPerHeat;
+                                    var teamsIndex = scores.GetRankedTeams(teamFiles);
+                                    int teamsThisHeat = teamsPerHeat;
+                                    int count = 0;
+                                    List<int> templateSpawnPointOrder = Enumerable.Range(0, spawnConfig.customVesselSpawnConfigs.Count).ToList();
+                                    templateSpawnPointOrder.Shuffle();
+                                    var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
+                                    var selectedCraft = SelectTeamCraft(
+                                        selectedTeams,
+                                        templateSpawnPointOrder.Select(i => Mathf.Min(vesselsPerTeam, spawnConfig.customVesselSpawnConfigs[i].Count)).ToList(),
+                                        fullTeams);
+                                    var customSpawnConfigTemplate = rounds.Values.First().Values.First() as CustomSpawnConfig;
+                                    rounds.Add(roundIndex, []); // Extend the rounds by 1.
+                                    int heatIndex = 0;
+                                    while (selectedTeams.Count > 0)
+                                    {
+                                        rounds[roundIndex].Add(rounds[roundIndex].Count, new CustomSpawnConfig(customSpawnConfigTemplate)
+                                        {
+                                            teamsSpecific = selectedCraft
+                                        }); // Add a copy of the template to the heats, but use the new set of vessels.
+                                        count += teamsThisHeat;
+                                        teamsThisHeat = heatIndex++ < fullHeatCount ? teamsPerHeat : teamsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of teams.
+                                        selectedTeams = teamsIndex.Skip(count).Take(teamsThisHeat).ToList();
+                                        templateSpawnPointOrder.Shuffle();
+                                        selectedCraft = SelectTeamCraft(
+                                            selectedTeams,
+                                            templateSpawnPointOrder.Select(i => Mathf.Min(vesselsPerTeam, spawnConfig.customVesselSpawnConfigs[i].Count)).ToList(),
+                                            fullTeams);
+                                    }
+                                    break;
+                                }
+                            default:
+                                Debug.LogError($"[BDArmory.BDATournament]: Invalid tournament style for ranked tournaments.");
+                                break;
                         }
                         break;
                     }
