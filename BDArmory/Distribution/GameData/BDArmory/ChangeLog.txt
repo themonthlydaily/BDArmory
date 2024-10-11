@@ -2,13 +2,12 @@
 - General:
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
 	- Add the ability to add custom sub-categories to the BDA part categorizer.
-	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
 	- Competition UI text in the upper left corner now properly scales when adjusting UI_SCALE.
 	- Added an option to follow the stock UI scaling instead of BDA's one.
-	- Add ability to set teams' Allies to the Team Selector GUI.  
+	- Add ability to set teams' Allies to the Team Selector GUI.
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
@@ -24,15 +23,17 @@
 	- Add support for using custom spawn templates with RNG style tournaments.
 		- The number of teams per heat and vessels per team per heat are restricted to at most those in the selected spawn template.
 		- Teams are considered as the per file / per folder option.
+		- The "Re-use Craft To Fill Teams" option applies for teams that lack sufficient craft to fill the spawn template.
 		- Both shuffled and ranked tournaments are supported.
+	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
 - Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
 	- Acoustic Decoys will no longer defy gravity and fly if launched out of water.
 	- Fix Bubble Curtain launcher NRE.
-	- 'Infinite Ordinance' now applies to Countermeasure droppers.
+	- "Infinite Ordinance" now applies to countermeasure droppers.
 	- Adjust cmThreshold timing for SLW countermeasures to 5x time set in WM to account for torpedoes being substantially slower than missiles.
-	  This should allow proper CM behavior against both torpedoes and missiles without compromising one or the other.
+		-	This should allow proper CM behavior against both torpedoes and missiles without compromising one or the other.
 - Detectors:
 	- RWR no longer clamped to visual FOV for detecting incoming missiles.
 	- Add new fieldOfView field to RadarWarningReceiver module to set custom RWR FOV.
@@ -44,12 +45,12 @@
 	- Fix weapons refusing to fire when one shot left when using multiple ammo boxes with differing starting ammo amounts due to floating point errors.
 	- Explosive beehive submunition explosion FX now scaled based on submunition tntMass, not parent HE VFX.
 	- Fix weapons with reload animations adding an extra 1-20s to the reload time, based on fire anim length.
-	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
-	- Fix weapons with reload sounds using oneShotSound = false immediately stopping the SFX when switching to a different weapon.
+	- Add new "postFireChargeAnim" field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
+	- Fix weapons with reload sounds using "oneShotSound = false" immediately stopping the SFX when switching to a different weapon.
 	- Fix weapons with spindown anims when they stop firing that have overheated under AI control not spinning down until they've cooled down.
-	- Fix Electrolaser NRE when firing on a target vessel.
+	- Fix electrolaser NRE when firing on a target vessel.
 	- Missiles:
-		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
+		- Add "cruiseRangeTrigger" field to missiles. Missiles using this will delay firing their cruise motor until within a set distance to the target.
 		- Tweak acoustic propagation loss rate for passive acoustic torpedoes, should have a bit further effective detection range now.
 		- Fix INS guidance ordinance not configured with a datalink immediately triggering the lost lock condition and self-destructing.
 		- Passive Sonar torpedoes now home in on loudest part, not COM. Respects targetCoM override in the .cfg.
@@ -57,7 +58,7 @@
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.
-	- Add craft spawn warning message if craft doesn't have AI/WM on root part, and root isn't a cockpit.
+	- Add craft spawn warning message if craft doesn't have AI/WM on root part and the root part isn't a cockpit.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES
