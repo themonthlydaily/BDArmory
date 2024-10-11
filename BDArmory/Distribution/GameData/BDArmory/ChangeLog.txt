@@ -3,6 +3,12 @@
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
 	- Add the ability to add custom sub-categories to the BDA part categorizer.
 	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
+- UI:
+	- Improve prevention of click-through of various windows in the editor.
+	- Open sections of the AI GUI now remain open when switching between flight and editor.
+	- Competition UI text in the upper left corner now properly scales when adjusting UI_SCALE.
+	- Added an option to follow the stock UI scaling instead of BDA's one.
+	- Add ability to set teams' Allies to the Team Selector GUI.  
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
@@ -13,14 +19,12 @@
 	- Tweak AI detection and reaction to incoming GPS/INS missiles, they should detect and react to them a bit more consistantly now.
   - The pilot AI now stays in "normal flight" mode when flying in formation for better stability.
 	- Add a 'min gain rate' option to the extending to avoid excessively long extending runs.
-- UI:
-	- Improve prevention of click-through of various windows in the editor.
-	- Open sections of the AI GUI now remain open when switching between flight and editor.
-	- Competition UI text in the upper left corner now properly scales when adjusting UI_SCALE.
-  - Added an option to follow the stock UI scaling instead of BDA's one.
-	- Add ability to set teams' Allies to the Team Selector GUI.  
 - Competition:
 	- Fix craft equipped with repulsors breaking ground spawn.
+	- Add support for using custom spawn templates with RNG style tournaments.
+		- The number of teams per heat and vessels per team per heat are restricted to at most those in the selected spawn template.
+		- Teams are considered as the per file / per folder option.
+		- Both shuffled and ranked tournaments are supported.
 - Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
