@@ -44,189 +44,112 @@ namespace BDArmory.Weapons
 
         private void FireProjectile(float detRange = -1, float detTime = -1)
         {
-            if (bulletPool == null)
+            SourceInfo sourceInfo = new SourceInfo(vessel, Team.Name, part, transform.position);
+            GraphicsInfo graphicsInfo = new GraphicsInfo(bulletTexturePath, GUIUtils.ParseColor255(_warheadType.projectileColor), GUIUtils.ParseColor255(_warheadType.startColor),
+                _warheadType.caliber / 300, _warheadType.caliber / 750, 0, 1.75f, 2.65f, smokeTexturePath, explModelPath, explSoundPath);
+            NukeInfo nukeInfo = new NukeInfo(); // Will inherit parent part's models on enable
+            Vector3[] firedVelocities = new Vector3[_warheadType.projectileCount];
+
+            float currentSpeed = (float)vessel.Velocity().magnitude;
+
+            //float incrementVelocity = 1000 / ( + _warheadType.bulletVelocity); //using 1km/s as a reference Unit
+            //float dispersionAngle = _warheadType.subProjectileDispersion > 0 ? _warheadType.subProjectileDispersion : 0.5f; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
+            //float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
+            for (int s = 0; s < _warheadType.projectileCount; s++)
             {
-                GameObject templateBullet = new GameObject("Bullet");
-                templateBullet.AddComponent<PooledBullet>();
-                templateBullet.SetActive(false);
-                bulletPool = ObjectPool.CreateObjectPool(templateBullet, 100, true, true);
+                //firedVelocities[s] = UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
+                firedVelocities[s] = VectorUtils.GaussianDirectionDeviation(transform.forward, (maxDeviation / 2)) * _warheadType.bulletVelocity;
             }
 
-            for (int i = 0; i < _warheadType.projectileCount; i++)
+            BulletFuzeTypes sFuze;
+
+            if (_warheadType.tntMass > 0 || _warheadType.beehive)
             {
-                GameObject firedBullet = bulletPool.GetPooledObject();
-                PooledBullet pBullet = firedBullet.GetComponent<PooledBullet>();
-                if (_warheadType.tntMass > 0)
+                detRange = detRange < 0 ? detonationRange : detRange;
+                detTime = detTime < 0 ? detonationRange / (currentSpeed + _warheadType.bulletVelocity) : detTime;
+                string fuzeTypeS = _warheadType.fuzeType.ToLower();
+                switch (fuzeTypeS)
                 {
-                    switch (_warheadType.explosive.ToLower())
-                    {
-                        case "standard":
-                            pBullet.HEType = PooledBulletTypes.Explosive;
-                            break;
-                        //legacy support for older configs that are still explosive = true
-                        case "true":
-                            pBullet.HEType = PooledBulletTypes.Explosive;
-                            break;
-                        case "shaped":
-                            pBullet.HEType = PooledBulletTypes.Shaped;
-                            break;
-                        default:
-                            pBullet.HEType = PooledBulletTypes.Slug;
-                            break;
-                    }
-                }
-                else
-                {
-                    pBullet.HEType = PooledBulletTypes.Slug;
-                }
-
-                pBullet.currentPosition = transform.position;
-
-                pBullet.caliber = _warheadType.caliber;
-                pBullet.bulletVelocity = _warheadType.bulletVelocity;
-                pBullet.bulletMass = _warheadType.bulletMass;
-                pBullet.incendiary = _warheadType.incendiary;
-                pBullet.apBulletMod = _warheadType.apBulletMod;
-                pBullet.bulletDmgMult = 1f;
-
-                //A = ? x (D / 2)^2
-                float bulletDragArea = Mathf.PI * 0.25f * _warheadType.caliber * _warheadType.caliber;
-
-                //Bc = m/Cd * A
-                float bulletBallisticCoefficient = _warheadType.bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
-
-                //Bc = m/d^2 * i where i = 0.484
-                //bulletBallisticCoefficient = bulletMass / Mathf.Pow(caliber / 1000, 2f) * 0.484f;
-
-                pBullet.ballisticCoefficient = bulletBallisticCoefficient;
-
-                pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = TimeWarp.fixedDeltaTime;
-                // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
-                pBullet.timeToLiveUntil = _warheadType.projectileTTL + (detTime < 0.0f ? 0.0f : detTime) + Time.time;
-
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(transform.forward, (maxDeviation / 2)) * _warheadType.bulletVelocity;
-                pBullet.currentVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f + firedVelocity; // use the real velocity, w/o offloading
-
-                pBullet.sourceWeapon = part;
-                pBullet.sourceVessel = vessel;
-                pBullet.team = Team.Name;
-                pBullet.bulletTexturePath = "BDArmory/Textures/bullet";
-                pBullet.projectileColor = GUIUtils.ParseColor255(_warheadType.projectileColor);
-                pBullet.startColor = GUIUtils.ParseColor255(_warheadType.startColor);
-                pBullet.fadeColor = _warheadType.fadeColor;
-                pBullet.tracerStartWidth = _warheadType.caliber / 300;
-                pBullet.tracerEndWidth = _warheadType.caliber / 750;
-                pBullet.tracerLength = 0;
-                pBullet.tracerLuminance = 1.75f;
-                pBullet.tracerDeltaFactor = 2.65f;
-                if (!string.IsNullOrEmpty(smokeTexturePath)) pBullet.smokeTexturePath = smokeTexturePath;
-                pBullet.bulletDrop = true;
-
-                if (_warheadType.tntMass > 0 || _warheadType.beehive)
-                {
-                    pBullet.explModelPath = explModelPath;
-                    pBullet.explSoundPath = explSoundPath;
-                    pBullet.tntMass = _warheadType.tntMass;
-                    pBullet.detonationRange = detRange < 0 ? detonationRange : detRange;
-                    pBullet.timeToDetonation = detTime < 0 ? detonationRange / Vector3.Magnitude(pBullet.currentVelocity) : detTime;
-                    string fuzeTypeS = _warheadType.fuzeType.ToLower();
-                    switch (fuzeTypeS)
-                    {
-                        //Anti-Air fuzes
-                        case "timed":
-                            pBullet.fuzeType = BulletFuzeTypes.Timed;
-                            break;
-                        case "proximity":
-                            pBullet.fuzeType = BulletFuzeTypes.Proximity;
-                            break;
-                        case "flak":
-                            pBullet.fuzeType = BulletFuzeTypes.Flak;
-                            break;
-                        //Anti-Armor fuzes
-                        case "delay":
-                            pBullet.fuzeType = BulletFuzeTypes.Delay;
-                            break;
-                        case "penetrating":
-                            pBullet.fuzeType = BulletFuzeTypes.Penetrating;
-                            break;
-                        case "impact":
-                            pBullet.fuzeType = BulletFuzeTypes.Impact;
-                            break;
-                        case "none":
-                            pBullet.fuzeType = BulletFuzeTypes.Impact;
-                            break;
-                        default:
-                            pBullet.fuzeType = BulletFuzeTypes.None;
-                            break;
-                    }
-                }
-                else
-                {
-                    pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
-                    pBullet.sabot = ((((_warheadType.bulletMass * 1000) / ((_warheadType.caliber * _warheadType.caliber * Mathf.PI / 400) * 19) + 1) * 10) > _warheadType.caliber * 4);
-                }
-                pBullet.EMP = _warheadType.EMP;
-                pBullet.nuclear = _warheadType.nuclear;
-                if (pBullet.nuclear) // Inherit the parent shell's nuke models.
-                {
-                    pBullet.flashModelPath = BDModuleNuke.defaultflashModelPath;
-                    pBullet.shockModelPath = BDModuleNuke.defaultShockModelPath;
-                    pBullet.blastModelPath = BDModuleNuke.defaultBlastModelPath;
-                    pBullet.plumeModelPath = BDModuleNuke.defaultPlumeModelPath;
-                    pBullet.debrisModelPath = BDModuleNuke.defaultDebrisModelPath;
-                    pBullet.blastSoundPath = BDModuleNuke.defaultBlastSoundPath;
-                }
-                pBullet.beehive = _warheadType.beehive;
-                if (_warheadType.beehive)
-                {
-                    pBullet.subMunitionType = _warheadType.subMunitionType;
-                }
-                //pBullet.homing = BulletInfo.homing;
-                switch (_warheadType.bulletDragTypeName.ToLower())
-                {
+                    //Anti-Air fuzes
+                    case "timed":
+                        sFuze = BulletFuzeTypes.Timed;
+                        break;
+                    case "proximity":
+                        sFuze = BulletFuzeTypes.Proximity;
+                        break;
+                    case "flak":
+                        sFuze = BulletFuzeTypes.Flak;
+                        break;
+                    //Anti-Armor fuzes
+                    case "delay":
+                        sFuze = BulletFuzeTypes.Delay;
+                        break;
+                    case "penetrating":
+                        sFuze = BulletFuzeTypes.Penetrating;
+                        break;
+                    case "impact":
+                        sFuze = BulletFuzeTypes.Impact;
+                        break;
                     case "none":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.None;
+                        sFuze = BulletFuzeTypes.None;
                         break;
-
-                    case "numericalintegration":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.NumericalIntegration;
-                        break;
-
-                    case "analyticestimate":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
-                        break;
-
                     default:
-                        pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                        sFuze = BulletFuzeTypes.Impact;
                         break;
-                }
-
-                pBullet.bullet = BulletInfo.bullets[warheadType];
-                pBullet.stealResources = false;
-                pBullet.dmgMult = 1f;
-                pBullet.targetVessel = null;
-                pBullet.guidanceDPS = 0;
-                pBullet.isSubProjectile = true;
-                pBullet.gameObject.SetActive(true);
-
-                if (!pBullet.CheckBulletCollisions(TimeWarp.fixedDeltaTime)) // Check that the bullet won't immediately hit anything and die.
-                {
-                    // The following gets bullet tracers to line up properly when at orbital velocities.
-                    // It should be consistent with how it's done in Aim().
-                    // Technically, there could be a small gap between the collision check and the start position, but this should be insignificant.
-                    if (!pBullet.hasRicocheted) // Movement is handled internally for ricochets.
-                    {
-                        var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.currentPosition);
-                        pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, firedVelocity, gravity, TimeWarp.fixedDeltaTime);
-                        pBullet.currentVelocity += TimeWarp.fixedDeltaTime * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
-                        pBullet.DistanceTraveled += TimeWarp.fixedDeltaTime * _warheadType.bulletVelocity; // Adjust the distance traveled to account for iTime.
-                    }
-                    if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
-                    pBullet.timeAlive = TimeWarp.fixedDeltaTime;
-                    pBullet.SetTracerPosition();
-                    pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                 }
             }
+            else
+            {
+                sFuze = PooledBullet.BulletFuzeTypes.None;
+            }
+
+            PooledBulletTypes eHEType;
+
+            if (_warheadType.tntMass > 0)
+            {
+                switch (_warheadType.explosive.ToLower())
+                {
+                    case "standard":
+                        eHEType = PooledBulletTypes.Explosive;
+                        break;
+                    //legacy support for older configs that are still explosive = true
+                    case "true":
+                        eHEType = PooledBulletTypes.Explosive;
+                        break;
+                    case "shaped":
+                        eHEType = PooledBulletTypes.Shaped;
+                        break;
+                    default:
+                        eHEType = PooledBulletTypes.Slug;
+                        break;
+                }
+            }
+            else
+            {
+                eHEType = PooledBulletTypes.Slug;
+            }
+
+            PooledBullet.BulletDragTypes eDragType;
+            switch (_warheadType.bulletDragTypeName)
+            {
+                case "None":
+                    eDragType = PooledBullet.BulletDragTypes.None;
+                    break;
+                case "AnalyticEstimate":
+                    eDragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                    break;
+                case "NumericalIntegration":
+                    eDragType = PooledBullet.BulletDragTypes.NumericalIntegration;
+                    break;
+                default:
+                    eDragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                    break;
+            }
+
+            FireBullet(_warheadType, _warheadType.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
+                    _warheadType.projectileTTL + (detTime < 0.0f ? 0.0f : detTime),
+                    TimeWarp.fixedDeltaTime, detRange, detTime, eHEType, sFuze, eDragType,
+                    true, false, null, null, false, 1f, true, currentSpeed);
         }
 
         protected override void WarheadSpecificSetup()

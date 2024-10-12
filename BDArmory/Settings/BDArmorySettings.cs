@@ -50,6 +50,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool PERFORMANCE_OPTIONS = true;
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistentSettingsField] public static bool WATER_HIT_FX = true;
+        [BDAPersistentSettingsField] public static bool WEAPONS_RESPECT_CROSSFEED = true;
         public static bool waterHitEffect => PERFORMANCE_OPTIONS && WATER_HIT_FX;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
         [BDAPersistentSettingsField] public static bool LIGHTFX = true;                       // explosions spawn a LightFX

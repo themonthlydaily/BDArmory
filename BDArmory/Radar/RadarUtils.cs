@@ -1389,34 +1389,6 @@ namespace BDArmory.Radar
             return modifiedSignature / signature;
         }
 
-        /*
-        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange)
-        {
-            //terrainRange *= 0.001f; // m to km
-            targetRange *= 1000f;
-            float notchMod;
-            return CalculateRadarNotchingModifier(position, vesselposition, vesselsrfvel,
-                radar.radarRangeGate, radar.radarVelocityGate, radar.radarMaxVelocityGate, radar.radarMaxRangeGate,
-                terrainRange, targetRange, targetAlt, out notchMod);
-        }
-
-        public static float GetRadarNotchingModifier(ModuleRadar radar, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange, out float notchMod)
-        {
-            //terrainRange *= 0.001f; // m to km
-            targetRange *= 1000f;
-            return CalculateRadarNotchingModifier(position, vesselposition, vesselsrfvel,
-                radar.radarRangeGate, radar.radarVelocityGate, radar.radarMaxVelocityGate, radar.radarMaxRangeGate,
-                terrainRange, targetRange, targetAlt, out notchMod);
-        }
-
-        public static float GetRadarNotchingModifier(MissileBase missile, Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, float targetRange, float targetAlt, float terrainRange, out float notchMod)
-        {
-            return CalculateRadarNotchingModifier(position, vesselposition, vesselsrfvel,
-                missile.activeRadarRangeGate, missile.activeRadarVelocityGate, missile.activeRadarVelocityFilter, missile.activeRadarRangeFilter,
-                terrainRange, targetRange, targetAlt, out notchMod);
-        }
-        */
-
         private static float CalculateRadarNotchingModifier(Vector3 position, Vector3 vesselposition, Vector3 vesselsrfvel, FloatCurve radarRangeGate, FloatCurve radarVelocityGate,
             float radarMaxVelocityGate, float radarMaxRangeGate, float radarMinVelocityGate, float radarMinRangeGate,
             float terrainRange, float targetRange, float targetAlt, out float notchMod)
