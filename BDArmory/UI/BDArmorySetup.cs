@@ -4673,20 +4673,21 @@ namespace BDArmory.UI
         public static void TestUp()
         {
             Vessel vessel = FlightGlobals.ActiveVessel;
-            Debug.Log($"DEBUG Vector3.up: {Vector3.up}, vessel.up: {vessel.up}, vessel.transform.up: {vessel.transform.up}, vessel.upAxis: {vessel.upAxis}, GetUpDir: {VectorUtils.GetUpDirection(vessel.CoM)}");
+            Vector3 pos = vessel.CoM;
             var watch = new System.Diagnostics.Stopwatch();
             float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
             Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
             Vector3 up = default;
             var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.upAxis; } };
-            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
-            Vector3 pos = vessel.CoM;
+            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = VectorUtils.GetUpDirection(pos); } };
-            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.up; } };
-            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.transform.up; } };
-            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = -FlightGlobals.getGeeForceAtPosition(pos).normalized; } };
+            Debug.Log($"DEBUG -getGeeForceAtPosition.normalized took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
         }
 
         public static void TestInOnUnitSphere()
