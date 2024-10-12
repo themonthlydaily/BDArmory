@@ -2076,11 +2076,11 @@ namespace BDArmory.Control
                                                     vesselRadarData.UnlockAllTargets();
                                                 else if (PreviousMissile.TargetingMode == MissileBase.TargetingModes.Radar)
                                                 {
-                                                    if (PreviousMissile.ActiveRadar)
+                                                    if (PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active
                                                         vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel); //no longer need that lock for guidance, remove
                                                     else
                                                     {
-                                                        if (MaxradarLocks > 1) //guiding a SARH, but he have a spare lock...
+                                                        if (MaxradarLocks > 1) //guiding a SARH, but we have a spare lock...
                                                         {
                                                             vesselRadarData.UnlockAllTargets(); //clear everything...
                                                             vesselRadarData.TryLockTarget(PreviousMissile.targetVessel.Vessel); //and immediately relock the SARH target vessel as a work around for only having unlock everything, and unlockselected

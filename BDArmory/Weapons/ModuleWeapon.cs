@@ -5858,11 +5858,12 @@ namespace BDArmory.Weapons
                 case "penetrating":
                     eFuzeType = FuzeTypes.Penetrating;
                     break;
+                // standard
                 case "impact":
                     eFuzeType = FuzeTypes.Impact;
                     break;
                 case "none":
-                    eFuzeType = FuzeTypes.Impact;
+                    eFuzeType = FuzeTypes.Impact; //really should be none and leave the shell a standard inert slug...
                     break;
                 default:
                     eFuzeType = FuzeTypes.None;
