@@ -2493,27 +2493,32 @@ namespace BDArmory.Weapons
                                     {
                                         if (electroLaser)
                                         {
-                                            if (!VesselModuleRegistry.ignoredVesselTypes.Contains(p.vesselType))
+                                            if (!VesselModuleRegistry.ignoredVesselTypes.Contains(p.vessel.vesselType))
                                             {
-                                                p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                                var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                                if (emp == null)
+                                                {
+                                                    emp = (ModuleDrainEC)p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                                    //Debug.Log($"[BDArmory.ModuleWeapon]: EMP Module added to {p.vessel.GetName()}: {p.vessel.rootPart.partInfo.title}");
+                                                }
+                                                float EMPDamage = 0;
+                                                if (!pulseLaser)
+                                                {
+                                                    //EMPDamage = secondaryAmmoPerShot / 500;
+                                                    EMPDamage = laserDamage * TimeWarp.fixedDeltaTime; //have materials come into play? wooden part not going to conduct electricity as well as aluminium?
+                                                    emp.incomingDamage += EMPDamage;
+                                                }
+                                                else
+                                                {
+                                                    //EMPDamage = secondaryAmmoPerShot / 10;
+                                                    EMPDamage = laserDamage;
+                                                    emp.incomingDamage += EMPDamage;
+                                                }
+                                                emp.softEMP = true;
+                                                damage = EMPDamage;
+                                                if (BDArmorySettings.DEBUG_WEAPONS) 
+                                                    Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                             }
-                                            var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                                            float EMPDamage = 0;
-                                            if (!pulseLaser)
-                                            {
-                                                //EMPDamage = secondaryAmmoPerShot / 500;
-                                                EMPDamage = laserDamage * TimeWarp.fixedDeltaTime;
-                                                emp.incomingDamage += EMPDamage;
-                                            }
-                                            else
-                                            {
-                                                //EMPDamage = secondaryAmmoPerShot / 10;
-                                                EMPDamage = laserDamage;
-                                                emp.incomingDamage += EMPDamage;
-                                            }
-                                            emp.softEMP = true;
-                                            damage = EMPDamage;
-                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                         }
                                         else
                                         {
@@ -3197,7 +3202,7 @@ namespace BDArmory.Weapons
                     }
                     fireState[i].speed = fireAnimSpeed;
                     fireState[i].normalizedTime = Mathf.Repeat(fireState[i].normalizedTime, 1);
-                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
+                    //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
                 }
             }
         }
@@ -4882,6 +4887,7 @@ namespace BDArmory.Weapons
                 if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
+                if (spinDownAnimation) spinningDown = true;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
@@ -4936,7 +4942,8 @@ namespace BDArmory.Weapons
                     if (!oneShotSound) audioSource.Stop();
                     if (!string.IsNullOrEmpty(reloadAudioPath))
                     {
-                        audioSource.PlayOneShot(reloadAudioClip);
+                        audioSource2.Stop();
+                        audioSource2.PlayOneShot(reloadAudioClip);
                     }
                 }
             }
@@ -4971,7 +4978,8 @@ namespace BDArmory.Weapons
                 }
                 if (!string.IsNullOrEmpty(reloadCompletePath))
                 {
-                    audioSource.PlayOneShot(reloadCompleteAudioClip);
+                    audioSource2.Stop();
+                    audioSource2.PlayOneShot(reloadCompleteAudioClip);
                 }
             }
         }
@@ -5556,9 +5564,10 @@ namespace BDArmory.Weapons
             if (hasFireAnimation) yield return new WaitForSecondsFixed(Mathf.Min(timeGap, fireState[0].length / fireAnimSpeed)); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
-                fireState[i].normalizedTime = 0;
+                fireState[i].normalizedTime = 1;
                 fireState[i].speed = 0;
-                fireState[i].enabled = false;                
+                fireState[i].enabled = false;
+                //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: packing Fire Anim, i = " + i + "; fire anim " + fireState[i].name + "normalizedTime: " + fireState[i].normalizedTime);
             }
             if (hasChargeAnimation && postFireChargeAnim)
             {
@@ -5568,7 +5577,8 @@ namespace BDArmory.Weapons
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
-                audioSource.PlayOneShot(reloadAudioClip);
+                audioSource2.Stop();
+                audioSource2.PlayOneShot(reloadAudioClip);
             }
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
@@ -5592,6 +5602,7 @@ namespace BDArmory.Weapons
             }
             if (!string.IsNullOrEmpty(chargeSoundPath) && !discharge)
             {
+                audioSource.Stop();
                 audioSource.PlayOneShot(chargeSound);
             }
             if (hasChargeAnimation)
@@ -6478,7 +6489,7 @@ namespace BDArmory.Weapons
                 }
                 new Rect(guiWindowRect.xMin - (230 - 8), Screen.height - Input.mousePosition.y - 5, 220, 20);
             }
-            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, guiWindowRect.position);
+            if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, guiWindowRect.position);
             guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, StringUtils.Localize("#LOC_BDArmory_WeaponGroup"), Styles.styleEditorPanel);
         }
 

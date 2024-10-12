@@ -1920,7 +1920,7 @@ namespace BDArmory.Weapons.Missiles
                         {
                             GuidanceMode = homingModeTerminal;
                             terminalHomingActive = true;
-                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Terminal");
                         }
                     }
                     switch (GuidanceMode)
@@ -2020,12 +2020,17 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
+
+                        if (activeRadarRange < 0 && torpedo)
+                            heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), TargetSignatureData.noTarget, lockedSensorFOV / 2, heatThreshold, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias,
+                                (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
+                        else
+                            heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), TargetSignatureData.noTarget, lockedSensorFOV / 2, heatThreshold, frontAspectHeatModifier, uncagedLock, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DEBUG_MISSILES)
                             {
-                                Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Heat target acquired! Position: {heatTarget.position}, heatscore: {heatTarget.signalStrength}");
+                                Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: {(activeRadarRange < 0 && torpedo ? "Acoustic" : "Heat")} target acquired! Position: {heatTarget.position}, {(activeRadarRange < 0 && torpedo ? "Noise" : "Heat")}score: {heatTarget.signalStrength}");
                             }
                             TargetAcquired = true;
                             TargetPosition = heatTarget.position;
@@ -2040,7 +2045,7 @@ namespace BDArmory.Weapons.Missiles
                             terminalGuidanceActive = true;
 
                             // Adjust heat score based on distance missile will travel in the next update
-                            if (heatTarget.signalStrength > 0)
+                            if (!torpedo && heatTarget.signalStrength > 0)
                             {
                                 float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
                                 Vector3 currVel = vessel.Velocity();

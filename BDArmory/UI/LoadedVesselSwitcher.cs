@@ -305,7 +305,7 @@ namespace BDArmory.UI
                     windowTitle = windowTitle + " (" + BDACompetitionMode.gravityMultiplier.ToString("0.0") + "G)";
 
                 BDArmorySetup.SetGUIOpacity();
-                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSwitcher.position);
+                if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSwitcher.position);
                 previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
                 BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
                 ResizeWindow();
@@ -321,6 +321,7 @@ namespace BDArmory.UI
         {
             BDArmorySetup.showVesselSwitcherGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
+            if (!visible && BDTeamSelector.Instance) BDTeamSelector.Instance.SetVisible(false);
         }
 
         private void ResizeWindow()
@@ -666,7 +667,7 @@ namespace BDArmory.UI
             var resizeRect = new Rect(windowSize.x - 16, windowSize.y - 16, 16, 16);
             GUI.DrawTexture(resizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition)) resizingWindow = true;
-            if (resizingWindow && Event.current.type == EventType.Repaint) windowSize.x += Mouse.delta.x / BDArmorySettings.UI_SCALE;
+            if (resizingWindow && Event.current.type == EventType.Repaint) windowSize.x += Mouse.delta.x / BDArmorySettings._UI_SCALE;
             #endregion
         }
 
@@ -894,7 +895,7 @@ namespace BDArmory.UI
             {
                 if (Event.current.button == 1)
                 {
-                    BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+                    BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x + 2 * _buttonHeight + _margin, Screen.height - Input.mousePosition.y));
                 }
                 else if (Event.current.button == 2)
                 {

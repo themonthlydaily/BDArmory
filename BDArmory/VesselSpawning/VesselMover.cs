@@ -886,7 +886,7 @@ namespace BDArmory.VesselSpawning
             {
                 BDArmorySetup.SetGUIOpacity();
                 var guiMatrix = GUI.matrix; // Store and restore the GUI.matrix so we can apply a different scaling for the WM window.
-                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMover.position);
+                if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMover.position);
                 BDArmorySetup.WindowRectVesselMover = GUILayout.Window(
                     GUIUtility.GetControlID(FocusType.Passive),
                     BDArmorySetup.WindowRectVesselMover,
@@ -899,7 +899,7 @@ namespace BDArmory.VesselSpawning
                 previousVesselMoverWindowHeight = BDArmorySetup.WindowRectVesselMover.height;
                 if (showVesselSelection)
                 {
-                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMoverVesselSelection.position);
+                    if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselMoverVesselSelection.position);
                     BDArmorySetup.WindowRectVesselMoverVesselSelection = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
                         BDArmorySetup.WindowRectVesselMoverVesselSelection,
@@ -911,7 +911,7 @@ namespace BDArmory.VesselSpawning
                 }
                 else if (showCrewSelection)
                 {
-                    if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, crewSelectionWindowRect.position);
+                    if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, crewSelectionWindowRect.position);
                     crewSelectionWindowRect = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
                         crewSelectionWindowRect,
@@ -1247,7 +1247,7 @@ namespace BDArmory.VesselSpawning
                 resizingSelectionWindow = true;
             }
             if (resizingSelectionWindow && Event.current.type == EventType.Repaint)
-            { BDArmorySetup.WindowRectVesselMoverVesselSelection.size += Mouse.delta / BDArmorySettings.UI_SCALE; }
+            { BDArmorySetup.WindowRectVesselMoverVesselSelection.size += Mouse.delta / BDArmorySettings._UI_SCALE; }
             #endregion
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
@@ -1535,12 +1535,12 @@ namespace BDArmory.VesselSpawning
         static string currentFolder;
 
         string _currentFolder; // For checking if the current folder has changed between instances and thus the craftList needs refreshing.
-        public Dictionary<string, CraftProfileInfo> craftList = new();
-        public Dictionary<string, int> crewCounts = new();
-        public List<string> subfolders = new();
+        public Dictionary<string, CraftProfileInfo> craftList = [];
+        public Dictionary<string, int> crewCounts = [];
+        public List<string> subfolders = [];
         public Action<string> selectFileCallback = null;
         public Action cancelledCallback = null;
-        public static Dictionary<string, string> shipNames = new(); // craftURLs to ship names.
+        public static Dictionary<string, string> shipNames = []; // craftURLs to ship names.
         public static GUIStyle ButtonStyle = new(BDArmorySetup.ButtonStyle);
         public static GUIStyle SelectedButtonStyle = new(BDArmorySetup.SelectedButtonStyle);
         public static GUIStyle InfoStyle = new(BDArmorySetup.BDGuiSkin.label);
