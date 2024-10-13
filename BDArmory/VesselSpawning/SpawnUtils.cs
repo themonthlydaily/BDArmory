@@ -1117,14 +1117,14 @@ namespace BDArmory.VesselSpawning
         public void ApplyFJRT(Vessel vessel)
         {
             if (vessel == null || !vessel.loaded) return;
-            if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS)
+            if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
             {
                 int cockpitSeatCount = 0;
 
                 using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                     while (part.MoveNext())
                     {
-                        if (BDArmorySettings.FJRT_DISABLE_SAS)
+                        if (BDArmorySettings.PS_DISABLE_SAS)
                         {
                             if (part.Current.GetComponent<ModuleReactionWheel>() != null)
                             {
@@ -1142,17 +1142,17 @@ namespace BDArmory.VesselSpawning
                 var AI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
                 if (AI != null)
                 {
-                    AI.extendTargetDist = Mathf.Min(AI.extendTargetDist, BDArmorySettings.FJRT_EXTEND_DIST);
-                    AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, BDArmorySettings.FJRT_AVOID_THRESH);
-                    AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, BDArmorySettings.FJRT_AVOID_LA);
-                    AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, BDArmorySettings.FJRT_AVOID_STR);
-                    AI.idleSpeed = Mathf.Max(AI.idleSpeed, BDArmorySettings.FJRT_IDLE_SPEED);
+                    AI.extendTargetDist = Mathf.Min(AI.extendTargetDist, BDArmorySettings.PS_EXTEND_DIST);
+                    AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, BDArmorySettings.PS_AVOID_THRESH);
+                    AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, BDArmorySettings.PS_AVOID_LA);
+                    AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, BDArmorySettings.PS_AVOID_STR);
+                    AI.idleSpeed = Mathf.Max(AI.idleSpeed, BDArmorySettings.PS_IDLE_SPEED);
                 }
                 var WM = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (WM != null)
                 {
-                    WM.guardRange = cockpitSeatCount > 0 ? cockpitSeatCount == 1 ? BDArmorySettings.FJRT_MONOCOCKPIT_VIEWRANGE : BDArmorySettings.FJRT_DUALCOCKPIT_VIEWRANGE : 5000;
-                    WM.guardAngle = cockpitSeatCount > 1 ? 360 : BDArmorySettings.FJRT_COCKPIT_FOV;
+                    WM.guardRange = cockpitSeatCount > 0 ? cockpitSeatCount == 1 ? BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE : BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE : 5000;
+                    WM.guardAngle = cockpitSeatCount > 1 ? 360 : BDArmorySettings.PS_COCKPIT_FOV;
                 }
             }
         }

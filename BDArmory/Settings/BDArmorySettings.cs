@@ -469,18 +469,18 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static int APS_THRESHOLD = 60;                           // Threshold caliber that APS will register for intercepting hostile shells/rockets
         #endregion
-        #region FJRT Stuff
-        [BDAPersistentSettingsField] public static bool FJRT_CONVENIENCE_CHECKS = false;
-        [BDAPersistentSettingsField] public static float FJRT_EXTEND_TIMOUT = 20;
-        [BDAPersistentSettingsField] public static float FJRT_EXTEND_DIST = 7000;
-        [BDAPersistentSettingsField] public static float FJRT_MONOCOCKPIT_VIEWRANGE = 10000;
-        [BDAPersistentSettingsField] public static float FJRT_DUALCOCKPIT_VIEWRANGE = 15000;
-        [BDAPersistentSettingsField] public static float FJRT_COCKPIT_FOV = 300;
-        [BDAPersistentSettingsField] public static float FJRT_AVOID_THRESH = 20;
-        [BDAPersistentSettingsField] public static float FJRT_AVOID_LA = 1.5f;
-        [BDAPersistentSettingsField] public static float FJRT_AVOID_STR = 2;
-        [BDAPersistentSettingsField] public static float FJRT_IDLE_SPEED = 300;
-        [BDAPersistentSettingsField] public static bool  FJRT_DISABLE_SAS = true;
+        #region ProjectShowdown Stuff
+        [BDAPersistentSettingsField] public static bool PS_CONVENIENCE_CHECKS = false;
+        [BDAPersistentSettingsField] public static float PS_EXTEND_TIMOUT = 20;
+        [BDAPersistentSettingsField] public static float PS_EXTEND_DIST = 7000;
+        [BDAPersistentSettingsField] public static float PS_MONOCOCKPIT_VIEWRANGE = 10000;
+        [BDAPersistentSettingsField] public static float PS_DUALCOCKPIT_VIEWRANGE = 15000;
+        [BDAPersistentSettingsField] public static float PS_COCKPIT_FOV = 300;
+        [BDAPersistentSettingsField] public static float PS_AVOID_THRESH = 20;
+        [BDAPersistentSettingsField] public static float PS_AVOID_LA = 1.5f;
+        [BDAPersistentSettingsField] public static float PS_AVOID_STR = 2;
+        [BDAPersistentSettingsField] public static float PS_IDLE_SPEED = 300;
+        [BDAPersistentSettingsField] public static bool PS_DISABLE_SAS = true;
         #endregion
     }
 }

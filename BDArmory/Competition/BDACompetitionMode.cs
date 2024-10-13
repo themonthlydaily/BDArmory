@@ -541,7 +541,7 @@ namespace BDArmory.Competition
                 if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
                 if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
                 if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
-                if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS) SpawnUtils.ApplyFJRT(pilot.vessel);
+                if (BDArmorySettings.PS_CONVENIENCE_CHECKS) SpawnUtils.ApplyFJRT(pilot.vessel);
                 /*
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -1827,7 +1827,7 @@ namespace BDArmory.Competition
                                     if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
                                     if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
                                     if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
-                                    if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS) SpawnUtils.ApplyFJRT(pilot.vessel);
+                                    if (BDArmorySettings.PS_CONVENIENCE_CHECKS) SpawnUtils.ApplyFJRT(pilot.vessel);
                                     /*
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {

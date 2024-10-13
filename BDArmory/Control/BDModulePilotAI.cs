@@ -2961,10 +2961,10 @@ namespace BDArmory.Control
         {
             var extendVector = extendHorizontally ? (vessel.transform.position - tPosition).ProjectOnPlanePreNormalized(upDirection) : vessel.transform.position - tPosition;
             var extendDistanceSqr = extendVector.sqrMagnitude;
-            if (BDArmorySettings.FJRT_CONVENIENCE_CHECKS)
+            if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
             {
                 extensionCutoffFJRT += Time.fixedDeltaTime;
-                if (extensionCutoffFJRT > BDArmorySettings.FJRT_EXTEND_TIMOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
+                if (extensionCutoffFJRT > BDArmorySettings.PS_EXTEND_TIMOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
                 {
                     StopExtending($"extend time limit exceeded", true);                    
                     return;
