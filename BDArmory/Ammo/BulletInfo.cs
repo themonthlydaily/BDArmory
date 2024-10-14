@@ -316,8 +316,8 @@ namespace BDArmory.Bullets
                     "delay" => BulletFuzeTypes.Delay,
                     "penetrating" => BulletFuzeTypes.Penetrating,
                     "impact" => BulletFuzeTypes.Impact,
-                    "none" => BulletFuzeTypes.Impact,
-                    _ => BulletFuzeTypes.None
+                    "none" => beehive ? BulletFuzeTypes.Timed : BulletFuzeTypes.Impact,
+                    _ => beehive ? BulletFuzeTypes.Timed : BulletFuzeTypes.Impact
                 };
             }
             else

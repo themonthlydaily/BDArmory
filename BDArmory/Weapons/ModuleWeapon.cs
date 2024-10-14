@@ -351,7 +351,7 @@ namespace BDArmory.Weapons
                     if (weapon.Current.GetShortName() != GetShortName()) continue;
                     if (weapon.Current.AmmoID != AmmoID && weapon.Current.AmmoID != lastAmmoID)
                     {
-                        GetAmmoCount(out double ammoCurrent, out double ammoMax);
+                        GetAmmoCount(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
                         ammoLeft += $"; {ammoCurrent:0}";
                         lastAmmoID = weapon.Current.AmmoID;
                     }
@@ -2003,7 +2003,7 @@ namespace BDArmory.Weapons
                     }
                     //audioSource.Stop();
                 }
-                GetAmmoCount(out ammoCount, out ammoMaxCount);
+                GetAmmoCount(AmmoID, out ammoCount, out ammoMaxCount);
                 if (!BeltFed)
                 {
                     ReloadWeapon();
@@ -3111,16 +3111,13 @@ namespace BDArmory.Weapons
             return timeGap;
         }
 
-        void GetAmmoCount(out double ammoC, out double ammoM)
+        void GetAmmoCount(int resourceID, out double ammoC, out double ammoM)
         {
             if (externalAmmo)
-            {
-                if (BDArmorySettings.WEAPONS_RESPECT_CROSSFEED)
-                    part.GetConnectedResourceTotals(AmmoID, ResourceFlowMode.STACK_PRIORITY_SEARCH, out ammoC, out ammoM);
-                else
-                    part.GetConnectedResourceTotals(AmmoID, ResourceFlowMode.ALL_VESSEL, out ammoC, out ammoM);
-            }
-            else part.GetConnectedResourceTotals(AmmoID, ResourceFlowMode.NO_FLOW, out ammoC, out ammoM);
+                part.GetConnectedResourceTotals(resourceID,
+                    BDArmorySettings.WEAPONS_RESPECT_CROSSFEED ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.ALL_VESSEL,
+                    out ammoC, out ammoM);
+            else part.GetConnectedResourceTotals(resourceID, ResourceFlowMode.NO_FLOW, out ammoC, out ammoM);
         }
 
         bool CanFire(float AmmoPerShot)
@@ -3138,7 +3135,7 @@ namespace BDArmory.Weapons
                     vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
                     if (EcCurrent > secondaryAmmoPerShot * (electricResource ? 0.95f : 1))
                     {
-                        part.RequestResource(ECID, secondaryAmmoPerShot, electricResource ? ResourceFlowMode.ALL_VESSEL : ResourceFlowMode.STACK_PRIORITY_SEARCH);
+                        part.RequestResource(ECID, secondaryAmmoPerShot, (electricResource || !BDArmorySettings.WEAPONS_RESPECT_CROSSFEED) ? ResourceFlowMode.ALL_VESSEL : ResourceFlowMode.STACK_PRIORITY_SEARCH);
                         if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
                     }
                     else
@@ -3150,7 +3147,7 @@ namespace BDArmory.Weapons
                 }
             }
 
-            GetAmmoCount(out double ammoCurrent, out double ammoMax);
+            GetAmmoCount(AmmoID, out double ammoCurrent, out double ammoMax);
 
             ammoCount = ammoCurrent;
             if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
@@ -6099,6 +6096,17 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
+                            output.AppendLine($"- fuze type: {binfo.eFuzeType switch
+                                {
+                                    BulletFuzeTypes.None => "None",
+                                    BulletFuzeTypes.Impact => "Impact",
+                                    BulletFuzeTypes.Timed => "Timed",
+                                    BulletFuzeTypes.Proximity => "Proximity",
+                                    BulletFuzeTypes.Flak => "Flak",
+                                    BulletFuzeTypes.Delay => "Delayed",
+                                    BulletFuzeTypes.Penetrating => "Penetrating",
+                                    _ => "Unknown"
+                                }}");
                             if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");
