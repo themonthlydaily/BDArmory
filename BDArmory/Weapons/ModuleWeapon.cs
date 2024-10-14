@@ -351,9 +351,7 @@ namespace BDArmory.Weapons
                     if (weapon.Current.GetShortName() != GetShortName()) continue;
                     if (weapon.Current.AmmoID != AmmoID && weapon.Current.AmmoID != lastAmmoID)
                     {
-                        double ammoCurrent;
-                        double ammoMax;
-                        GetAmmoCount(out ammoCurrent, out ammoMax);
+                        GetAmmoCount(out double ammoCurrent, out double ammoMax);
                         ammoLeft += $"; {ammoCurrent:0}";
                         lastAmmoID = weapon.Current.AmmoID;
                     }
@@ -1662,6 +1660,8 @@ namespace BDArmory.Weapons
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.LogWarning("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
+                        ParseBulletDragType(); // Have to parse the bullet drag type if there's no bulletInfo for
+                        // compatibility with older mods where bulletDragTypeName was part of ModuleWeapon's specs.
                     }
                     else
                     {
@@ -2237,9 +2237,8 @@ namespace BDArmory.Weapons
 
                                 FireBullet(bulletInfo, bulletInfo.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
                                     (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
-                                    iTime, detonationRange, bulletTimeToCPA, eHEType, eFuzeType, bulletDragType,
-                                    false, isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal, instagib ? -1 : dmgMultiplier,
-                                    true, 0f, targetV, guidance, true);
+                                    iTime, detonationRange, bulletTimeToCPA, false, isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal,
+                                    instagib ? -1 : dmgMultiplier, true, 0f, targetV, guidance, true);
 
                                 //heat
                                 heat += heatPerShot;
@@ -5709,66 +5708,6 @@ namespace BDArmory.Weapons
             }
         }
 
-        void ParseBulletFuzeType(string type, float tntMass, bool beehive)
-        {
-            if (tntMass > 0f || beehive)
-            {
-                type = type.ToLower();
-                switch (type)
-                {
-                    //Anti-Air fuzes
-                    case "timed":
-                        eFuzeType = BulletFuzeTypes.Timed;
-                        break;
-                    case "proximity":
-                        eFuzeType = BulletFuzeTypes.Proximity;
-                        break;
-                    case "flak":
-                        eFuzeType = BulletFuzeTypes.Flak;
-                        break;
-                    //Anti-Armor fuzes
-                    case "delay":
-                        eFuzeType = BulletFuzeTypes.Delay;
-                        break;
-                    case "penetrating":
-                        eFuzeType = BulletFuzeTypes.Penetrating;
-                        break;
-                    case "impact":
-                        eFuzeType = BulletFuzeTypes.Impact;
-                        break;
-                    case "none":
-                        eFuzeType = BulletFuzeTypes.Impact;
-                        break;
-                    default:
-                        eFuzeType = BulletFuzeTypes.None;
-                        break;
-                }
-            }
-            else
-            {
-                eFuzeType = BulletFuzeTypes.None;
-            }
-        }
-        void ParseBulletHEType(string type)
-        {
-            type = type.ToLower();
-            switch (type)
-            {
-                case "standard":
-                    eHEType = PooledBulletTypes.Explosive;
-                    break;
-                //legacy support for older configs that are still explosive = true
-                case "true":
-                    eHEType = PooledBulletTypes.Explosive;
-                    break;
-                case "shaped":
-                    eHEType = PooledBulletTypes.Shaped;
-                    break;
-                default:
-                    eHEType = PooledBulletTypes.Slug;
-                    break;
-            }
-        }
         void ParseAPSType(string type)
         {
             type = type.ToLower();
@@ -5851,9 +5790,12 @@ namespace BDArmory.Weapons
                 projectileColorC = GUIUtils.ParseColor255(bulletInfo.projectileColor);
                 startColorC = GUIUtils.ParseColor255(bulletInfo.startColor);
                 fadeColor = bulletInfo.fadeColor;
-                ParseBulletDragType();
-                ParseBulletFuzeType(bulletInfo.fuzeType, bulletInfo.tntMass, bulletInfo.beehive);
-                ParseBulletHEType(bulletInfo.explosive);
+                //ParseBulletDragType();
+                bulletDragType = bulletInfo.bulletDragType;
+                //ParseBulletFuzeType(bulletInfo.fuzeType, bulletInfo.tntMass, bulletInfo.beehive);
+                eFuzeType = bulletInfo.eFuzeType;
+                //ParseBulletHEType(bulletInfo.explosive);
+                eHEType = bulletInfo.eHEType;
                 tntMass = bulletInfo.tntMass;
                 beehive = bulletInfo.beehive;
                 Impulse = bulletInfo.impulse;
@@ -5864,7 +5806,7 @@ namespace BDArmory.Weapons
                     tracerEndWidth = caliber / 750;
                     nonTracerWidth = caliber / 500;
                 }
-                SabotRound = PooledBullet.isSabot(bulletMass, caliber);
+                SabotRound = bulletInfo.sabot;
                 SelectedAmmoType = bulletInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 if (!useCustomBelt)
                 {
@@ -6138,8 +6080,7 @@ namespace BDArmory.Weapons
                             output.AppendLine("");
                             continue;
                         }
-                        ParseBulletFuzeType(binfo.fuzeType, binfo.tntMass, binfo.beehive);
-                        ParseBulletHEType(binfo.explosive);
+                        // HE and fuze types parsed here previously despite not needing to be parsed?
                         output.AppendLine("");
                         output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
@@ -6150,18 +6091,18 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
-                        bool sabotTemp = PooledBullet.isSabot(binfo.bulletMass, binfo.caliber);
+                        //bool sabotTemp = PooledBullet.isSabot(binfo.bulletMass, binfo.caliber);
 
-                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp):F2} mm");
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: binfo.sabot ? 0.9470311374f : 0.656060636f, muParam2: binfo.sabot ? 1.555757746f : 1.20190930f, muParam3: binfo.sabot ? 2.753715499f : 1.77791929f, sabot: binfo.sabot):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-                            if (binfo.fuzeType.ToLower() == "timed" || binfo.fuzeType.ToLower() == "proximity" || binfo.fuzeType.ToLower() == "flak")
+                            if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");
-                                output.AppendLine($"- auto timing: {(binfo.fuzeType.ToLower() != "proximity")}");
+                                output.AppendLine($"- auto timing: {(binfo.eFuzeType != BulletFuzeTypes.Proximity)}");
                                 output.AppendLine($"- max range: {maxTargetingRange} m");
                             }
                             else
@@ -6169,7 +6110,7 @@ namespace BDArmory.Weapons
                                 output.AppendLine($"Air detonation: False");
                             }
 
-                            if (binfo.explosive.ToLower() == "shaped")
+                            if (binfo.eHEType == PooledBulletTypes.Shaped)
                                 output.AppendLine($"Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod):F2} mm");
                         }
                         if (binfo.nuclear)

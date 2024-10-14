@@ -61,94 +61,16 @@ namespace BDArmory.Weapons
                 firedVelocities[s] = VectorUtils.GaussianDirectionDeviation(transform.forward, (maxDeviation / 2)) * _warheadType.bulletVelocity;
             }
 
-            BulletFuzeTypes sFuze;
 
             if (_warheadType.tntMass > 0 || _warheadType.beehive)
             {
                 detRange = detRange < 0 ? detonationRange : detRange;
                 detTime = detTime < 0 ? detonationRange / (currentSpeed + _warheadType.bulletVelocity) : detTime;
-                string fuzeTypeS = _warheadType.fuzeType.ToLower();
-                switch (fuzeTypeS)
-                {
-                    //Anti-Air fuzes
-                    case "timed":
-                        sFuze = BulletFuzeTypes.Timed;
-                        break;
-                    case "proximity":
-                        sFuze = BulletFuzeTypes.Proximity;
-                        break;
-                    case "flak":
-                        sFuze = BulletFuzeTypes.Flak;
-                        break;
-                    //Anti-Armor fuzes
-                    case "delay":
-                        sFuze = BulletFuzeTypes.Delay;
-                        break;
-                    case "penetrating":
-                        sFuze = BulletFuzeTypes.Penetrating;
-                        break;
-                    case "impact":
-                        sFuze = BulletFuzeTypes.Impact;
-                        break;
-                    case "none":
-                        sFuze = BulletFuzeTypes.None;
-                        break;
-                    default:
-                        sFuze = BulletFuzeTypes.Impact;
-                        break;
-                }
-            }
-            else
-            {
-                sFuze = PooledBullet.BulletFuzeTypes.None;
-            }
-
-            PooledBulletTypes eHEType;
-
-            if (_warheadType.tntMass > 0)
-            {
-                switch (_warheadType.explosive.ToLower())
-                {
-                    case "standard":
-                        eHEType = PooledBulletTypes.Explosive;
-                        break;
-                    //legacy support for older configs that are still explosive = true
-                    case "true":
-                        eHEType = PooledBulletTypes.Explosive;
-                        break;
-                    case "shaped":
-                        eHEType = PooledBulletTypes.Shaped;
-                        break;
-                    default:
-                        eHEType = PooledBulletTypes.Slug;
-                        break;
-                }
-            }
-            else
-            {
-                eHEType = PooledBulletTypes.Slug;
-            }
-
-            PooledBullet.BulletDragTypes eDragType;
-            switch (_warheadType.bulletDragTypeName)
-            {
-                case "None":
-                    eDragType = PooledBullet.BulletDragTypes.None;
-                    break;
-                case "AnalyticEstimate":
-                    eDragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
-                    break;
-                case "NumericalIntegration":
-                    eDragType = PooledBullet.BulletDragTypes.NumericalIntegration;
-                    break;
-                default:
-                    eDragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
-                    break;
             }
 
             FireBullet(_warheadType, _warheadType.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
                     _warheadType.projectileTTL + (detTime < 0.0f ? 0.0f : detTime),
-                    TimeWarp.fixedDeltaTime, detRange, detTime, eHEType, sFuze, eDragType,
+                    TimeWarp.fixedDeltaTime, detRange, detTime,
                     true, false, null, null, false, 1f, true, currentSpeed);
         }
 

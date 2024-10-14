@@ -1081,81 +1081,11 @@ namespace BDArmory.Bullets
             if (BulletInfo.bulletNames.Contains(projType))
             {
                 BulletInfo sBullet = BulletInfo.bullets[projType];
-                string fuze = sBullet.fuzeType.ToLower();
-
-                BulletFuzeTypes sFuze;
-                switch (fuze)
-                {
-                    case "timed":
-                        sFuze = BulletFuzeTypes.Timed;
-                        break;
-                    case "proximity":
-                        sFuze = BulletFuzeTypes.Proximity;
-                        break;
-                    case "flak":
-                        sFuze = BulletFuzeTypes.Flak;
-                        break;
-                    case "delay":
-                        sFuze = BulletFuzeTypes.Delay;
-                        break;
-                    case "penetrating":
-                        sFuze = BulletFuzeTypes.Penetrating;
-                        break;
-                    case "impact":
-                        sFuze = BulletFuzeTypes.Impact;
-                        break;
-                    case "none":
-                        sFuze = BulletFuzeTypes.None;
-                        break;
-                    default:
-                        sFuze = BulletFuzeTypes.Impact;
-                        break;
-                }
-                if (BDArmorySettings.DEBUG_WEAPONS)
-                    Debug.Log("[BDArmory.PooledBullet]: Beehive Detonation: parsing submunition fuze: " + fuze + ", index: " + sFuze);
+                
                 float relVelocity = (thrust / rocketMass) * Mathf.Clamp(Time.time - startTime, 0, thrustTime); //currVel is rocketVel + orbitalvel, if in orbit, which will dramatically increase dispersion cone angle, so using accel * time instad
                 float incrementVelocity = 1000 / (relVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit 
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
-
-                PooledBulletTypes eHEType = PooledBulletTypes.Slug;
-                if (sBullet.tntMass > 0)
-                {
-                    if (!sBullet.nuclear)
-                    {
-                        string HEtype = sBullet.explosive.ToLower();
-                        switch (HEtype)
-                        {
-                            case "standard":
-                                eHEType = PooledBulletTypes.Explosive;
-                                break;
-                            //legacy support for older configs that are still explosive = true
-                            case "true":
-                                eHEType = PooledBulletTypes.Explosive;
-                                break;
-                            case "shaped":
-                                eHEType = PooledBulletTypes.Shaped;
-                                break;
-                        }
-                    }
-                }
-
-                BulletDragTypes eDragType;
-                switch (sBullet.bulletDragTypeName)
-                {
-                    case "None":
-                        eDragType = BulletDragTypes.None;
-                        break;
-                    case "AnalyticEstimate":
-                        eDragType = BulletDragTypes.AnalyticEstimate;
-                        break;
-                    case "NumericalIntegration":
-                        eDragType = BulletDragTypes.NumericalIntegration;
-                        break;
-                    default:
-                        eDragType = BulletDragTypes.AnalyticEstimate;
-                        break;
-                }
 
                 SourceInfo sourceInfo = new SourceInfo(sourceVessel, team, sourceWeapon, currentPosition);
                 GraphicsInfo graphicsInfo = new GraphicsInfo("BDArmory/Textures/bullet", GUIUtils.ParseColor255(sBullet.projectileColor), GUIUtils.ParseColor255(sBullet.startColor),
@@ -1172,7 +1102,7 @@ namespace BDArmory.Bullets
                 float subTTL = Mathf.Max(sBullet.projectileTTL, detonationRange / sBullet.bulletVelocity * 1.1f);
 
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true, subTTL,
-                        TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude), eHEType, sFuze, eDragType,
+                        TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude),
                         true, isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, false, currentVelocity.magnitude);
             }
             else

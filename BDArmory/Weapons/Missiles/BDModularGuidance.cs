@@ -1274,10 +1274,10 @@ namespace BDArmory.Weapons.Missiles
         {
             var vesselTransform = vessel.transform.position;
 
-            Vector3 gravityVector = FlightGlobals.getGeeForceAtPosition(vesselTransform).normalized;
-            Vector3 rollVessel = -vessel.transform.right.normalized;
+            Vector3 upVector = VectorUtils.GetUpDirection(vesselTransform);
+            Vector3 rollVessel = vessel.transform.right;
 
-            var currentAngle = Vector3.SignedAngle(rollVessel, gravityVector, Vector3.Cross(rollVessel, gravityVector)) - 90f;
+            var currentAngle = Vector3.SignedAngle(rollVessel, upVector, Vector3.Cross(rollVessel, upVector)) - 90f;
 
             this.angularVelocity = currentAngle - this.lastRollAngle;
             //this.angularAcceleration = angularVelocity - this.lasAngularVelocity;
