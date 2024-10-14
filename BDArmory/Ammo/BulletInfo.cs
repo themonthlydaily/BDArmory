@@ -328,11 +328,7 @@ namespace BDArmory.Bullets
 
         private void PreCalcData()
         {
-            //A = ? x (D / 2)^2
-            float bulletDragArea = Mathf.PI * 0.25f * caliber * caliber;
-
-            //Bc = m/Cd * A
-            bulletBallisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
+            bulletBallisticCoefficient = PooledBullet.calcBulletBallisticCoefficient(caliber, bulletMass);
 
             sabot = (eHEType == PooledBulletTypes.Slug && PooledBullet.isSabot(bulletMass, caliber));
         }

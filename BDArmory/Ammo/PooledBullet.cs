@@ -1369,8 +1369,9 @@ namespace BDArmory.Bullets
                     //currentVelocity = hitPartVelocity + impactVelocity;
                 }
 
-                float bulletDragArea = Mathf.PI * (caliber * caliber / 4f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
-                ballisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
+
+                ballisticCoefficient = calcBulletBallisticCoefficient(caliber, bulletMass); // if bullet not killed by impact,
+                // possbily deformed from impact; grab new ballistic coeff for drag
 
                 //fully penetrated continue ballistic damage
                 hasPenetrated = true;
@@ -1578,6 +1579,12 @@ namespace BDArmory.Bullets
         public static bool isSabot(float bulletMass, float caliber)
         {
             return ((((bulletMass * 1000f) / ((caliber * caliber * Mathf.PI / 400f) * 19f) + 1f) * 10f) > caliber * 4f);
+        }
+
+        public static float calcBulletBallisticCoefficient(float caliber, float bulletMass)
+        {
+            float bulletDragArea = Mathf.PI * (caliber * caliber / 4f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
+            return bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
         }
 
         public static void FireBullet(BulletInfo bulletType, int projectileCount,
