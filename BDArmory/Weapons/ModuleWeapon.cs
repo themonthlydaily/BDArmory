@@ -3509,6 +3509,7 @@ namespace BDArmory.Weapons
                     return;
                 }
             }
+
             if (disabledStates.Contains(weaponState))
                 return;
 
@@ -5646,6 +5647,10 @@ namespace BDArmory.Weapons
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
         {
+            if (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag) //if we're in the middle of a burst and the weapon is deselected, finish burst
+            {
+                yield return new WaitWhileFixed(() => RoundsRemaining < RoundsPerMag);
+            }
             if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
             {
                 yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
@@ -6279,12 +6284,15 @@ namespace BDArmory.Weapons
                             output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
                         bool sabotTemp = (((((binfo.bulletMass * 1000) / ((binfo.caliber * binfo.caliber * Mathf.PI / 400f) * 19f) + 1f) * 10f) > binfo.caliber * 4f)) ? true : false;
-
-                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp):F2} mm");
+                        float tempPenDepth = ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp);
+                        output.AppendLine($"Estimated Penetration: {tempPenDepth:F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
+                            output.AppendLine($"Fuze: {binfo.fuzeType}");
+                            if (binfo.fuzeType.ToLower() == "penetrating")
+                                output.AppendLine($"- Min thickness to armo fuze: {tempPenDepth * 0.666f}");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
                             if (binfo.fuzeType.ToLower() == "timed" || binfo.fuzeType.ToLower() == "proximity" || binfo.fuzeType.ToLower() == "flak")
                             {

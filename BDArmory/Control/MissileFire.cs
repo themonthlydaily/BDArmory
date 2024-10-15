@@ -5502,9 +5502,9 @@ namespace BDArmory.Control
                                     MissileLauncher mlauncher = item.Current as MissileLauncher;
                                     if (mlauncher != null)
                                     {
-                                        if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
+                                        if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance                                 
                                         candidateDetDist = mlauncher.DetonationDistance;
-                                        candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
+                                        candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability. Rejigger to use kinematic missile perf. based on missile maxAoA/maxG/optimalAirspeed instead of arbitrary static value?
                                         candidatePriority = Mathf.RoundToInt(mlauncher.priority);
                                         bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
                                         bool heat = mlauncher.TargetingMode == MissileBase.TargetingModes.Heat;
@@ -6401,6 +6401,17 @@ namespace BDArmory.Control
 
             if (engageableWeapon == null) return true;
             if (!engageableWeapon.engageEnabled) return true;
+            switch (selectedWeapon.GetWeaponClass()) // if currently using a burst-firing weapon, and it's in the middle of a burst, wait until it's done before selecting another weapon.
+            {
+                case WeaponClasses.DefenseLaser:
+                case WeaponClasses.Gun:
+                case WeaponClasses.Rocket:
+                    {
+                        var Weap = (ModuleWeapon)selectedWeapon;
+                        if (Weap.BurstFire && Weap.RoundsRemaining > 0 && Weap.RoundsRemaining < Weap.RoundsPerMag) return false;
+                        break;
+                    }
+            }
             try
             {
                 //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
