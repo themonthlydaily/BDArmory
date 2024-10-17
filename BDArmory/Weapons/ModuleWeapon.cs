@@ -5014,12 +5014,20 @@ namespace BDArmory.Weapons
                 }
                 //moving radar aiming/turret slaving sections ahead of legacy, else they'll never proc outside of manual control or very short visual range settings
                 //if (weaponManager.vesselRadarData && weaponManager.vesselRadarData.locked) //would only apply if fixed gun, else VRD would slave the weapon and the above block applies
-                if (weaponManager.vesselRadarData && weaponManager._radarsEnabled && visualTargetVessel != null && (!visRange || targetCOM)) //if outside visual range, or within it, but only targeting com, and we have radar, use radar data
+                if (weaponManager.vesselRadarData && weaponManager._radarsEnabled && (!visRange || targetCOM)) //if outside visual range, or within it, but only targeting com, and we have radar, use radar data
                 {
                     if (!(weaponManager.slavingTurrets && turret)) //no turrets/radar/laser locks, those are handled later
                     {
-                        //TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData; //no support for radar tracking, only locks?
-                        TargetSignatureData targetData = weaponManager.vesselRadarData.detectedRadarTarget(visualTargetVessel, weaponManager);
+                        TargetSignatureData targetData;
+                        if (visualTargetVessel != null && aiControlled)
+                        {
+                            targetData = weaponManager.vesselRadarData.detectedRadarTarget(visualTargetVessel, weaponManager);
+                        }
+                        else
+                        {
+                            targetData = weaponManager.vesselRadarData.lockedTargetData.targetData; //no support for radar tracking, only locks?
+                        }
+
                         if (targetData.exists)
                         {
                             targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
