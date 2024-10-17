@@ -5027,6 +5027,7 @@ namespace BDArmory.Weapons
             {
                 isOverheated = false;
                 autofireShotCount = 0;
+                RoundsRemaining = 0;
                 //Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
             }
         }
