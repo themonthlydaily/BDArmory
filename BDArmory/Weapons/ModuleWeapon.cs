@@ -2515,7 +2515,7 @@ namespace BDArmory.Weapons
                                                 }
                                                 emp.softEMP = true;
                                                 damage = EMPDamage;
-                                                if (BDArmorySettings.DEBUG_WEAPONS) 
+                                                if (BDArmorySettings.DEBUG_WEAPONS)
                                                     Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {laserDamage}");
                                             }
                                         }
@@ -5776,6 +5776,11 @@ namespace BDArmory.Weapons
             else
             {
                 ammoList = BDAcTools.ParseNames(bulletType);
+                if ((int)AmmoTypeNum - 1 >= ammoList.Count)
+                {
+                    Debug.LogWarning($"[BDArmory.ModuleWeapon]: AmmoTypeNum {AmmoTypeNum} is not valid for {WeaponName}. Resetting to 1.");
+                    AmmoTypeNum = 1; // For weapons where the ammo types have changed such that the old AmmoTypeNum is no longer valid.
+                }
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
             }
             ParseAmmoStats();
@@ -6105,16 +6110,16 @@ namespace BDArmory.Weapons
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
                             output.AppendLine($"- fuze type: {binfo.eFuzeType switch
-                                {
-                                    BulletFuzeTypes.None => "None",
-                                    BulletFuzeTypes.Impact => "Impact",
-                                    BulletFuzeTypes.Timed => "Timed",
-                                    BulletFuzeTypes.Proximity => "Proximity",
-                                    BulletFuzeTypes.Flak => "Flak",
-                                    BulletFuzeTypes.Delay => "Delayed",
-                                    BulletFuzeTypes.Penetrating => "Penetrating",
-                                    _ => "Unknown"
-                                }}");
+                            {
+                                BulletFuzeTypes.None => "None",
+                                BulletFuzeTypes.Impact => "Impact",
+                                BulletFuzeTypes.Timed => "Timed",
+                                BulletFuzeTypes.Proximity => "Proximity",
+                                BulletFuzeTypes.Flak => "Flak",
+                                BulletFuzeTypes.Delay => "Delayed",
+                                BulletFuzeTypes.Penetrating => "Penetrating",
+                                _ => "Unknown"
+                            }}");
                             if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");
