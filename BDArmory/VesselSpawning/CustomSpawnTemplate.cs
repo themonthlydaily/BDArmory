@@ -619,7 +619,7 @@ namespace BDArmory.VesselSpawning
                 if (GUILayout.Button("VAB", CustomCraftBrowserDialog.ButtonStyle, GUILayout.Height(80))) craftBrowser.ChangeFolder(EditorFacility.VAB);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(CustomCraftBrowserDialog.displayFolder, CustomCraftBrowserDialog.LabelStyle, GUILayout.Height(50), GUILayout.ExpandWidth(true));
+                GUILayout.Label(craftBrowser.DisplayFolder, CustomCraftBrowserDialog.LabelStyle, GUILayout.Height(50), GUILayout.ExpandWidth(true));
                 if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Select"), CustomCraftBrowserDialog.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width / 3))) folderSelectionMode = false;
                 GUILayout.EndHorizontal();
                 using (var folder = craftBrowser.subfolders.GetEnumerator())
@@ -627,7 +627,7 @@ namespace BDArmory.VesselSpawning
                     {
                         if (GUILayout.Button($"{folder.Current}", CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(60)))
                         {
-                            craftBrowser.ChangeFolder(CustomCraftBrowserDialog.facility, folder.Current);
+                            craftBrowser.ChangeFolder(craftBrowser.Facility, folder.Current);
                             break; // The enumerator can't continue since subfolders has changed.
                         }
                     }

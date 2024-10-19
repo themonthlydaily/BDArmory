@@ -8,6 +8,9 @@
 	- Competition UI text in the upper left corner now properly scales when adjusting UI_SCALE.
 	- Added an option to follow the stock UI scaling instead of BDA's one.
 	- Add ability to set teams' Allies to the Team Selector GUI.
+	- Add craft thumbnails to the custom craft browser.
+	- Add a button (in the Settings->UI section) when in the SPH/VAB to generate missing craft thumbnails (which can be found in KSP/thumbs).
+		- Generating thumbnails involves loading each craft and capturing a thumbnail. This can take some time if many are missing.
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
