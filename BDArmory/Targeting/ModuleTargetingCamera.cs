@@ -755,7 +755,7 @@ namespace BDArmory.Targeting
             }
             if (Event.current.type == EventType.Repaint && SlewingMouseCam)
             {
-                if (Mouse.delta.x != 0 && Mouse.delta.y != 0)
+                if (Mouse.delta.x != 0 || Mouse.delta.y != 0)
                 {
                     SlewRoutine(Mouse.delta);
                 }
@@ -1160,11 +1160,11 @@ namespace BDArmory.Targeting
             lockedVessel = null;
             if (!BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X) direction.x = -direction.x; // Invert the x-axis by default (original defaults).
             if (BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y) direction.y = -direction.y;
-            float velocity = Mathf.Abs(direction.x) > Mathf.Abs(direction.y) ? Mathf.Abs(direction.x) : Mathf.Abs(direction.y);
             Vector3 rotationAxis = Matrix4x4.TRS(Vector3.zero, Quaternion.LookRotation(cameraParentTransform.forward, vessel.upAxis), Vector3.one)
                 .MultiplyVector(Quaternion.AngleAxis(90, Vector3.forward) * direction);
+            float velocity = Mathf.Max(Mathf.Abs(direction.x), Mathf.Abs(direction.y)) + 0.1f * direction.sqrMagnitude;
             float angle = velocity / (1 + currentFovIndex) * Time.deltaTime;
-            if (angle / (1f + currentFovIndex) < .05f / (1f + currentFovIndex)) angle = .05f / ((1f + currentFovIndex) / 2f);
+            if (angle / (1f + currentFovIndex) < .01f / (1f + currentFovIndex)) angle = .01f / ((1f + currentFovIndex) / 2f);
             Vector3 lookVector = Quaternion.AngleAxis(angle, rotationAxis) * cameraParentTransform.forward;
 
             PointCameraModel(lookVector);
