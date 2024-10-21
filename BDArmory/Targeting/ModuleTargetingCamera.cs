@@ -119,9 +119,6 @@ namespace BDArmory.Targeting
         private static float adjCamImageSize = 360;
         internal static bool ResizingWindow;
         internal static bool SlewingMouseCam;
-        internal static bool ZoomKeysSet;
-        internal static bool isZooming;
-        internal static bool wasZooming;
 
         internal static bool SlewingButtonCam;
         float finalSlewSpeed;
@@ -132,10 +129,6 @@ namespace BDArmory.Targeting
         private static float controlsStartY = 22;
         private static float windowWidth = adjCamImageSize + (3 * buttonHeight) + 16 + 2 * gap;
         private static float windowHeight = adjCamImageSize + 23;
-        private AxisBinding_Single ZoomKeyP;
-        private AxisBinding_Single ZoomKeyS;
-        private AxisBinding_Single NoZoomKeyP;
-        private AxisBinding_Single NoZoomKeyS;
 
         Texture2D riTex;
 
@@ -288,7 +281,7 @@ namespace BDArmory.Targeting
             {
                 if (!TargetingCamera.Instance)
                 {
-                    (new GameObject("TargetingCameraObject")).AddComponent<TargetingCamera>();
+                    new GameObject("TargetingCameraObject").AddComponent<TargetingCamera>();
                 }
             }
         }
@@ -296,10 +289,6 @@ namespace BDArmory.Targeting
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
-            ZoomKeyP = GameSettings.AXIS_MOUSEWHEEL.primary;
-            ZoomKeyS = GameSettings.AXIS_MOUSEWHEEL.secondary;
-            NoZoomKeyP = new AxisBinding_Single();
-            NoZoomKeyS = new AxisBinding_Single();
 
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -684,18 +673,6 @@ namespace BDArmory.Targeting
                 if (SlewingMouseCam) SlewingMouseCam = false;
             }
 
-            if (!wasZooming && isZooming)
-            {
-                wasZooming = true;
-                SetZoomKeys();
-            }
-
-            if (!isZooming && wasZooming)
-            {
-                wasZooming = false;
-                ResetZoomKeys();
-            }
-
             if (HighLogic.LoadedSceneIsFlight && !MapView.MapIsEnabled && BDArmorySetup.GAME_UI_ENABLED && !delayedEnabling)
             {
                 if (cameraEnabled && vessel.isActiveVessel && FlightGlobals.ready)
@@ -784,18 +761,9 @@ namespace BDArmory.Targeting
                 }
             }
 
-            if (Event.current.type == EventType.Repaint && imageRect.Contains(Event.current.mousePosition))
-            {
-                if (!wasZooming) isZooming = true;
-            }
-
             if (Event.current.type == EventType.ScrollWheel && imageRect.Contains(Event.current.mousePosition))
             {
                 ZoomRoutine(Input.mouseScrollDelta);
-            }
-            if (Event.current.type == EventType.Repaint && !imageRect.Contains(Event.current.mousePosition))
-            {
-                if (wasZooming) isZooming = false;
             }
 
             float indicatorSize = Mathf.Clamp(64 * (adjCamImageSize / camImageSize), 48, 128);
@@ -845,7 +813,6 @@ namespace BDArmory.Targeting
                     ResizeTargetWindow();
                 }
             }
-            //ResetZoomKeys();
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectTargetingCam);
         }
 
@@ -1238,20 +1205,6 @@ namespace BDArmory.Targeting
             {
                 StartCoroutine(PointToPositionRoutine(VectorUtils.GetWorldSurfacePostion(weaponManager.designatedGPSCoords, vessel.mainBody)));
             }
-        }
-
-        private void ResetZoomKeys()
-        {
-            ZoomKeysSet = false;
-            GameSettings.AXIS_MOUSEWHEEL.primary = ZoomKeyP;
-            GameSettings.AXIS_MOUSEWHEEL.secondary = ZoomKeyS;
-        }
-
-        private void SetZoomKeys()
-        {
-            ZoomKeysSet = true;
-            GameSettings.AXIS_MOUSEWHEEL.primary = NoZoomKeyP;
-            GameSettings.AXIS_MOUSEWHEEL.secondary = NoZoomKeyS;
         }
 
         private void SlewRoutine(Vector2 direction)
