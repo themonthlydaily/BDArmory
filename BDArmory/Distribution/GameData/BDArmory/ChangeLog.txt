@@ -46,6 +46,9 @@
 	- Behavior is configurable using the activeRadarVelocityGate and activeRadarRangeGate floatcurves for missiles and radarVelocityGate and radarRangeGate floatcurves for radars.
 	- Also includes water blocking radars, forcing engagements to consider the horizon.
 		- Surface vessels are permitted to see each other over the horizon to simplify naval engagements, this option, called "RADAR_ALLOW_SURFACE_WARFARE", can be turned off in the "GameData/BDArmory/PluginData/Settings.cfg" file.
+	- Fix the targeting window breaking a lot of scroll behaviours.
+	- Fix the targeting window's slewing along an axis and add a small quadratic component to allow faster slewing with faster mouse movement.
+	- Avoid firing missiles while slewing the targeting window if the mouse drifts outside the window.
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
