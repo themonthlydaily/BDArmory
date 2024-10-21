@@ -123,6 +123,7 @@ namespace BDArmory.Targeting
         internal static bool SlewingButtonCam;
         float finalSlewSpeed;
         Vector2 slewInput = Vector2.zero;
+        public static bool IsSlewing => SlewingMouseCam;
 
         private static float gap = 2;
         private static float buttonHeight = 18;
@@ -1504,6 +1505,7 @@ namespace BDArmory.Targeting
                 }
             }
             GameEvents.onVesselCreate.Remove(Disconnect);
+            SlewingMouseCam = false;
         }
 
         Vector2 TargetAzimuthElevationScreenPos(Rect screenRect, Vector3 targetPosition, float textureSize)
