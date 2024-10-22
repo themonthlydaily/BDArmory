@@ -3509,7 +3509,8 @@ namespace BDArmory.Weapons
                     return;
                 }
             }
-
+            if (shutdownRoutine != null) 
+                return;
             if (disabledStates.Contains(weaponState))
                 return;
 
@@ -5651,10 +5652,11 @@ namespace BDArmory.Weapons
             if (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag) //if we're in the middle of a burst and the weapon is deselected, finish burst
             {
                 yield return new WaitWhileFixed(() => RoundsRemaining < RoundsPerMag);
+                ReloadWeapon();
             }
-            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
-            {
-                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
+            if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
+            {                
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1); //why is this not registering when in Guardmode?
             }
             if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
             {
@@ -5673,8 +5675,8 @@ namespace BDArmory.Weapons
             }
             if (hasCharged)
             {
-                if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
+                if (hasChargeAnimation && postFireChargeAnim)
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
             }
             if (hasDeployAnim)
             {
