@@ -689,9 +689,7 @@ namespace BDArmory.UI
                         ++teamName;
                         line += 0.25f;
                     }
-                    --line;
                 }
-                ++line;
             }
             // Tournament options
             {
@@ -804,8 +802,8 @@ namespace BDArmory.UI
                             break;
                     }
                 }
-                ++line;
             }
+            ++line;
             if (BDArmorySettings.WAYPOINTS_MODE)
             {
                 if (!waypointsRunning)

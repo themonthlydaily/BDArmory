@@ -28,6 +28,9 @@
 		- Teams are considered as the per file / per folder option.
 		- The "Re-use Craft To Fill Teams" option applies for teams that lack sufficient craft to fill the spawn template.
 		- Both shuffled and ranked tournaments are supported.
+	- Add a hidden option to "smart assign" teams for custom spawn templates (when not running a tournament).
+		- Set "VESSEL_SPAWN_SMART_REASSIGN_TEAMS = True" in BDA's settings.cfg to enable it when "Reassign Teams" is enabled.
+		- The first vessel in the spawn template with a non-default team name (can be set in the SPH) that isn't already taken sets the name for the team. Other teams get their default letter.
 	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
 - Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
