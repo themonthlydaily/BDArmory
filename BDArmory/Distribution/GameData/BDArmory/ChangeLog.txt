@@ -19,7 +19,7 @@
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
 	- AI visual detection of incoming missiles within visual range no longer requires a RWR. RWR detection of incoming missiles still requires a RWR on the craft.
 	- Tweak AI detection and reaction to incoming GPS/INS missiles, they should detect and react to them a bit more consistantly now.
-	- The pilot AI now stays in "normal flight" mode when flying in formation for better stability.
+	- Improvements to formation flying behaviour. Planes in follow mode should now hold their positions better and be more stable.
 	- Add a 'min gain rate' option to the extending to avoid excessively long extending runs.
 - Competition:
 	- Fix craft equipped with repulsors breaking ground spawn.
