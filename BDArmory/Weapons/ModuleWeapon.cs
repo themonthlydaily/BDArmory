@@ -129,6 +129,8 @@ namespace BDArmory.Weapons
         private BDStagingAreaGauge gauge;
         private int AmmoID;
         private int ECID;
+        public int ResID_Ammo => AmmoID;
+        public int ResID_SecAmmo => ECID;
         //AI
         public bool aiControlled = false;
         public bool autoFire;

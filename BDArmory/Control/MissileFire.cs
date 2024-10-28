@@ -8642,7 +8642,8 @@ namespace BDArmory.Control
                 return true;
             }
             else
-            {                
+            {        
+                /*
                 using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
                     while (p.MoveNext())
                     {
@@ -8659,19 +8660,19 @@ namespace BDArmory.Control
                                 }
                             }
                     }
-                /*
-                vessel.GetConnectedResourceTotals(weapon.AmmoID, out double ammoCurrent, out double ammoMax);
+                */
+                vessel.GetConnectedResourceTotals(weapon.ResID_Ammo, out double ammoCurrent, out double ammoMax);
                 if (ammoCurrent >= weapon.requestResourceAmount)
                 {
                     if (weapon.secondaryAmmoPerShot > 0)
                     {
                         if (weapon.secondaryAmmoName == "ElectricCharge") return true;
-                        vessel.GetConnectedResourceTotals(weapon.ECID, out double secAmmoCurrent, out double secAmmoMax);
+                        vessel.GetConnectedResourceTotals(weapon.ResID_SecAmmo, out double secAmmoCurrent, out double secAmmoMax);
                         if (secAmmoCurrent < weapon.secondaryAmmoPerShot) return false;
                     }
                     return true;
                 }
-                */
+                
                 return false;
             }
         }

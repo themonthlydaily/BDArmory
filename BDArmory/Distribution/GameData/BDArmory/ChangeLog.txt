@@ -11,6 +11,7 @@
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
 	- AI can now do non-linear evasion vs long-range targets while aiming missiles.
 	- Add Extend Min Gain Rate slider to set extend abort condition if not gaining distance fast enough.
+	- AI now checks for available secondary resource as well as primary for weapons using 2 ammo types (e.g. railguns using bullets + EC) when doing weapon selection checks.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -36,7 +37,7 @@
 	- Add new 'postFireChargeAnim' field for weapons with charge animations to specify if the animation should play in reverse to deactivate the weapon after firing.
 	- Fix weapons with reload sounds using oneShotSound = false immediately stopping the SFX when switching to a different weapon.
 	- Fix weapons with spindown anims when they stop firing that have overheated under AI control not spinning down until they've cooled down.
-	- Laser weapons or other weapons using ElectricCharge can now fire if InfiniteElectricity is on, even if Inifite Ammo is not.
+	- Laser weapons or other weapons using ElectricCharge can now fire if InfiniteElectricity is on, even if Infinite Ammo is not.
 	- Adds fireAnimOverrideSpeed field to set custom fire animation play rate instead of basing it on rate of fire.
 	- Missiles:
 		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
