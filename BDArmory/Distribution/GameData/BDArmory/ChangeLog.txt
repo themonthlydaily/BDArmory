@@ -21,6 +21,7 @@
 	- Tweak AI detection and reaction to incoming GPS/INS missiles, they should detect and react to them a bit more consistantly now.
 	- Improvements to formation flying behaviour. Planes in follow mode should now hold their positions better and be more stable.
 	- Add a 'min gain rate' option to the extending to avoid excessively long extending runs.
+	- Include a TWR factor in the climb rate limit calculations.
 - Competition:
 	- Fix craft equipped with repulsors breaking ground spawn.
 	- Add support for using custom spawn templates with RNG style tournaments.

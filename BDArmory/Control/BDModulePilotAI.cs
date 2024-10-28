@@ -3961,7 +3961,7 @@ namespace BDArmory.Control
 
             Vector3 planarDirection = direction.ProjectOnPlanePreNormalized(upDirection);
 
-            float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.13f, 5, 90);
+            float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.15f * speedController.TWR, 5, 90);
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"climb limit angle: {angle}");
             return Vector3.RotateTowards(planarDirection, direction, angle * Mathf.Deg2Rad, 0);
