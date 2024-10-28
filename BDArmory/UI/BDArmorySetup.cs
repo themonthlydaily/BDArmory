@@ -1022,7 +1022,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), StringUtils.Localize("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version + "PS_1019", waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
@@ -3324,7 +3324,7 @@ namespace BDArmory.UI
                     }
                     if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
                     {
-                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SRightRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) //if we need super-secret stuff
+                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SRightRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) 
                         {
                             switch (CheatCodeGUI)
                             {
@@ -3336,9 +3336,9 @@ namespace BDArmory.UI
                                     }                            
                             }
                         }
-                        if (PSSettings) //rushjob hack. Look into implementing something akin to the RWPSettings/hooking into that, for a more modular approach
+                        if (PSSettings) //rushjob hack. Look into implementing something akin to the RWPSettings/hooking into that, for a more modular approach?
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.PS_EXTEND_TIMOUT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.PS_EXTEND_TIMOUT})", leftLabel);
                             BDArmorySettings.PS_EXTEND_TIMOUT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_TIMOUT, 0, 60));
 
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max Extend Dist")}:  ({BDArmorySettings.PS_EXTEND_DIST})", leftLabel);
@@ -3366,6 +3366,7 @@ namespace BDArmory.UI
                             BDArmorySettings.PS_IDLE_SPEED = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_IDLE_SPEED, 100, 500), 10);
                             BDArmorySettings.PS_DISABLE_SAS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.PS_DISABLE_SAS, StringUtils.Localize("Disable non-Cockpit SAS"));
                             line++;
+                            //min/max Altitude setters?
                         }
                     }
                 }
