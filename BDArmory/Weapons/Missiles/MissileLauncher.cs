@@ -15,7 +15,7 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
-using static BDArmory.Weapons.Missiles.MissileBase;
+
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -1808,10 +1808,9 @@ namespace BDArmory.Weapons.Missiles
 
                 if (guidanceActive)
                 {
+                    WarnTarget();
                     if (TimeIndex - dropTime > guidanceDelay)
-                    {
-                        WarnTarget();
-
+                    {    
                         //if (targetVessel && targetVessel.loaded)
                         //{
                         //   Vector3 targetCoMPos = targetVessel.CoM;
