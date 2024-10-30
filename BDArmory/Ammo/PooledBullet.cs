@@ -205,6 +205,9 @@ namespace BDArmory.Bullets
 
         private double distanceTraveled = 0;
         private double distanceLastHit = double.PositiveInfinity;
+        private bool hypervelocityImpact = false;
+        private float deltaMass = -1f;
+        private float relaxationTime = 0f;
         private double initialHitDistance = 0;
         private float kDist = 1;
         private float iTime = 0; // Consistent naming with ModuleWeapon: TimeWarp.fixedDeltaTime - timeToCPA of proxy detonation.
@@ -274,8 +277,10 @@ namespace BDArmory.Bullets
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
             distanceLastHit = double.PositiveInfinity; // Reset variables used in post-penetration calculations.
             initialHitDistance = 0;
+            deltaMass = -1f;
             kDist = 1;
             dragVelocityFactor = 1;
+            relaxationTime = 0.001f * 30f * (0.5f* caliber) / (sabot ? 3850f : 4500f);
 
             startsUnderwater = FlightGlobals.getAltitudeAtPos(currentPosition) < 0;
             underwater = startsUnderwater;
@@ -925,64 +930,76 @@ namespace BDArmory.Bullets
             // and once again, I must emphasize. This is for shaped charges, it's not for post-penetration
             // behavior of hypervelocity projectiles, but I'm going to hand-wave away the difference between
             // the plasma that flies out after a penetration and the armor-piercing jet of a shaped charge.
-            if (impactSpeed > 2500 || !double.IsPositiveInfinity(distanceLastHit))
+            if (!double.IsPositiveInfinity(distanceLastHit))
             {
-                // This only applies to anything that will actually survive an impact so EMP, impulse and any HE rounds that explode right away are out
-                if (!EMP || impulse != 0 || ((HERatio > 0) && (fuzeType != BulletFuzeTypes.Penetrating || fuzeType != BulletFuzeTypes.Delay)))
+                if (impactSpeed > 2500 || hypervelocityImpact)
                 {
-
-                    // This is just because if distanceSinceHit < (7f * caliber * 10f) penetration will be worse, this behavior is true of 
-                    // shaped charges due to the jet formation distance, however we're going to ignore it since it isn't true of a hypervelocity
-                    // projectile that's just smashed through some armor.
-                    //if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > (7f * caliber * 10f))
-
-                    // Changed from the previous 7 * caliber * 10 maximum to just > caliber since that no longer exists.
-                    if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > caliber)
+                    // This only applies to anything that will actually survive an impact so EMP, impulse and any HE rounds that explode right away are out
+                    if (!EMP || impulse != 0 || ((HERatio > 0) && (fuzeType != BulletFuzeTypes.Penetrating || fuzeType != BulletFuzeTypes.Delay)))
                     {
-                        // The formula is based on distance and the caliber of the shaped charge, now since in our case we are talking
-                        // about projectiles rather than shaped charges we'll take the projectile diameter and call that the jet size.
-                        // Shaped charge jets have a diameter generally around 5% of the shaped charge's caliber, however in our case
-                        // this means these projectiles wouldn't bleed off that hard with distance, thus we'll say they're 10% of the
-                        // shaped charge's caliber.
-                        // Calculating this term once since division is expensive
-                        //float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f - 7f * 10f *caliber) / (14f * 10f * caliber);
-                        // Modified this from the original formula, commented out above to remove the standoff distance required for jet formation.
-                        // Just makes more sense to me not to have it in there.
-                        float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
 
-                        kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
+                        // This is just because if distanceSinceHit < (7f * caliber * 10f) penetration will be worse, this behavior is true of 
+                        // shaped charges due to the jet formation distance, however we're going to ignore it since it isn't true of a hypervelocity
+                        // projectile that's just smashed through some armor.
+                        //if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > (7f * caliber * 10f))
 
-                        // If the projectile gets too small things go wonky with the formulas for penetration
-                        // they'll still work honestly, but I'd rather avoid those situations
-                        /*if ((kDist * length) < 1.2f * caliber)
+                        // Changed from the previous 7 * caliber * 10 maximum to just > caliber since that no longer exists.
+                        if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > caliber)
                         {
-                            float massFactor = (1.2f * caliber / length);
-                            bulletMass = bulletMass * massFactor;
-                            length = (length - 10) * massFactor + 10;
-                        }
-                        else
-                        {
+                            // The formula is based on distance and the caliber of the shaped charge, now since in our case we are talking
+                            // about projectiles rather than shaped charges we'll take the projectile diameter and call that the jet size.
+                            // Shaped charge jets have a diameter generally around 5% of the shaped charge's caliber, however in our case
+                            // this means these projectiles wouldn't bleed off that hard with distance, thus we'll say they're 10% of the
+                            // shaped charge's caliber.
+                            // Calculating this term once since division is expensive
+                            //float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f - 7f * 10f *caliber) / (14f * 10f * caliber);
+                            // Modified this from the original formula, commented out above to remove the standoff distance required for jet formation.
+                            // Just makes more sense to me not to have it in there.
+                            float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
+
+                            kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
+
+                            // If the projectile gets too small things go wonky with the formulas for penetration
+                            // they'll still work honestly, but I'd rather avoid those situations
+                            /*if ((kDist * length) < 1.2f * caliber)
+                            {
+                                float massFactor = (1.2f * caliber / length);
+                                bulletMass = bulletMass * massFactor;
+                                length = (length - 10) * massFactor + 10;
+                            }
+                            else
+                            {
+                                bulletMass = bulletMass * kDist;
+                                length = (length - 10) * kDist + 10;
+                            }*/
+
+                            // Deprecated above since the penetration formula was modified to
+                            // deal with such cases
                             bulletMass = bulletMass * kDist;
                             length = (length - 10) * kDist + 10;
-                        }*/
 
-                        // Deprecated above since the penetration formula was modified to
-                        // deal with such cases
-                        bulletMass = bulletMass * kDist;
-                        length = (length - 10) * kDist + 10;
-
-                        if (BDArmorySettings.DEBUG_WEAPONS)
-                        {
-                            Debug.Log("[BDArmory.PooledBullet] kDist: " + kDist + ". Distance Since Last Hit: " + (distanceTraveled + hit.distance - distanceLastHit) + " m.");
+                            if (BDArmorySettings.DEBUG_WEAPONS)
+                            {
+                                Debug.Log("[BDArmory.PooledBullet] kDist: " + kDist + ". Distance Since Last Hit: " + (distanceTraveled + hit.distance - distanceLastHit) + " m.");
+                            }
                         }
                     }
-
-                    if (double.IsPositiveInfinity(distanceLastHit))
-                    {
-                        // Add the distance since this hit so the next part that gets hit has the proper distance
-                        distanceLastHit = distanceTraveled + hit.distance;
-                    }
                 }
+                else if (deltaMass > 0f)
+                {
+                    float factor = (bulletMass - deltaMass * Mathf.Clamp01((float)(distanceTraveled + hit.distance - distanceLastHit) / (currentSpeed * dragVelocityFactor * relaxationTime))) / bulletMass;
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                        Debug.Log($"[BDArmory.PooledBullet] factor: {factor}. Distance Since Last Hit: {distanceTraveled + hit.distance - distanceLastHit} m. Unadjusted Mass: {bulletMass} kg. Adjusted Mass: {bulletMass * factor} kg. deltaMass: {deltaMass}. relaxationTime: {relaxationTime}s. currentSpeed: {currentSpeed * dragVelocityFactor}.");
+                    bulletMass *= factor;
+                    length = (length - 10) * factor + 10;
+                    deltaMass = -1f;
+                }
+            }
+
+            if (double.IsPositiveInfinity(distanceLastHit))
+            {
+                // Add the distance since this hit so the next part that gets hit has the proper distance
+                distanceLastHit = distanceTraveled + hit.distance;
             }
 
             float hitAngle = Vector3.Angle(impactVelocity, -hit.normal);
@@ -1056,6 +1073,13 @@ namespace BDArmory.Bullets
             float penetrationFactor = 0;
             int armorType = 1;
             //float length = 0; //Moved up for the new bullet wear over distance system
+
+            if (!double.IsPositiveInfinity(distanceLastHit))
+            {
+                // Add the thickness of the armor to the distanceLastHit
+                distanceLastHit += 0.001f * thickness;
+            }
+
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
@@ -1276,7 +1300,9 @@ namespace BDArmory.Bullets
                 // whipple shields but that behavior is fairly complex and I'm already in way over my head.
 
                 // Calculating this ratio once since we're going to need it a bunch
-                float adjustedPenRatio = (1 - BDAMath.Sqrt(thickness / penetration));
+                float penRatio = thickness / penetration;
+                float adjustedPenRatio = (1 - BDAMath.Sqrt(penRatio));
+                penRatio = 1 - penRatio;
                 float oldBulletMass = bulletMass;
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
@@ -1288,10 +1314,12 @@ namespace BDArmory.Bullets
                         // Then we set the mass ratio to the default for impacts under 2500 m/s
                         // we take off 5% by default to decrease penetration efficiency through
                         // multiple plates a little more
-                        float massRatio = 0.975f * adjustedPenRatio;
+                        const float spacedFactor = 0.975f;
+                        float massRatio = spacedFactor * penRatio;
 
                         if (impactSpeed > 2500f)
                         {
+                            hypervelocityImpact = true;
                             // If impact speed is really high then spaced armor wil work exceptionally
                             // well, with increasing results as the velocity of the projectile goes
                             // higher. This is mostly to make whipple shields viable and desireable
@@ -1314,26 +1342,24 @@ namespace BDArmory.Bullets
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
                         if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
-                            float ratio;
-
                             if (caliber < 10f || length < 10.05f)
                             {
-                                ratio = 1.1f * caliber / length;
+                                massRatio = 1.1f * caliber / length;
                             }
                             else
                             {
-                                ratio = (1.1f * caliber - 10f) / (length - 10f);
+                                massRatio = (1.1f * caliber - 10f) / (length - 10f);
                             }
 
-                            if (ratio > 1)
+                            if (massRatio > 1)
                             {
-                                Debug.LogError($"DEBUG Bullet Ratio: {ratio} is greater than 1! Length: {length} Caliber: {caliber}.");
-                                ratio = 1;
+                                Debug.LogError($"DEBUG Bullet Ratio: {massRatio} is greater than 1! Length: {length} Caliber: {caliber}.");
+                                massRatio = 1;
                             }
 
-                            bulletMass *= ratio;
+                            bulletMass *= massRatio;
 
-                            adjustedPenRatio /= ratio;
+                            adjustedPenRatio /= massRatio;
 
                             // In the case we are reaching that cap we decrease the velocity by
                             // the adjustedPenRatio minus the portion that went into erosion
@@ -1342,7 +1368,8 @@ namespace BDArmory.Bullets
                         }
                         else
                         {
-                            bulletMass = bulletMass * massRatio;
+                            deltaMass = bulletMass * (massRatio - spacedFactor * adjustedPenRatio);
+                            bulletMass *= massRatio;
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease
                             // the velocity by a max of 5%, proportional to the adjustedPenRatio
