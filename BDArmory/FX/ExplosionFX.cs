@@ -593,7 +593,8 @@ namespace BDArmory.FX
                         var Armor = partHit.FindModuleImplementing<HitpointTracker>();
                         if (Armor != null && partHit.Rigidbody != null)
                         {
-                            float armorCos = Mathf.Abs(Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal));
+                            Vector3 correctedDirection = hit.point + partHit.Rigidbody.velocity * TimeIndex - Position;
+                            float armorCos = Mathf.Abs(Vector3.Dot(correctedDirection.sqrMagnitude < 1E-10f ? partRay.direction : correctedDirection.normalized, -hit.normal));
                             partArmour = ProjectileUtils.CalculateThickness(part, armorCos);
 
                             if (warheadType == WarheadTypes.ShapedCharge)
