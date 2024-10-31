@@ -479,12 +479,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float extendAbortTime = 10f;
+        
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendMinGainRate", advancedTweakable = true, //Extend Min Gain Rate
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
         public float extendMinGainRate = 10f;
-
-        float extensionCutoffFJRT = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
@@ -544,7 +543,7 @@ namespace BDArmory.Control
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SliderResolution", advancedTweakable = true), // Slider Resolution
-            UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
+            UI_ChooseOption(options = ["Low", "Normal", "High", "Insane"], scene = UI_Scene.All)]
         public string sliderResolution = "Normal";
         string previousSliderResolution = "Normal";
 
@@ -1116,11 +1115,10 @@ namespace BDArmory.Control
         #endregion
 
         #region Wing Command
-        bool useRollHint;
+        bool useFollowHints = false;
+        float followHintDistance = 0;
+        float followSpeedI = 0, followSpeedD = 0;
         private Vector3d debugFollowPosition;
-
-        double commandSpeed;
-        Vector3d commandHeading;
         #endregion
 
         GameObject vobj;
@@ -2673,9 +2671,9 @@ namespace BDArmory.Control
                 rollTarget += angVelRollTarget;
             }
 
-            if (command == PilotCommands.Follow && useRollHint)
+            if (command == PilotCommands.Follow && useFollowHints)
             {
-                rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
+                rollTarget += 4 * Mathf.Clamp01(1 - 0.01f * followHintDistance) * rollUp * -commandLeader.vessel.ReferenceTransform.forward;
             }
 
             if (invertRollTarget) rollTarget = -rollTarget;
@@ -2775,11 +2773,11 @@ namespace BDArmory.Control
             float rollDamping = 0.1f * SteerDamping(Mathf.Abs(rollError), angleToTarget, 3) * -localAngVel.y;
 
             // For the integral, we track the vector of the pitch and yaw in the 2D plane of the vessel's forward pointing vector so that the pitch and yaw components translate between the axes when the vessel rolls.
-            directionIntegral = (directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.deltaTime).ProjectOnPlanePreNormalized(vesselTransform.up);
+            directionIntegral = (directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.fixedDeltaTime).ProjectOnPlanePreNormalized(vesselTransform.up);
             if (directionIntegral.sqrMagnitude > 1f) directionIntegral = directionIntegral.normalized;
             pitchIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, -vesselTransform.forward);
             yawIntegral = 0.33f * steerKiAdjust * Vector3.Dot(directionIntegral, vesselTransform.right);
-            rollIntegral = 0.1f * steerKiAdjust * Mathf.Clamp(rollIntegral + rollError * Time.deltaTime, -1f, 1f);
+            rollIntegral = 0.1f * steerKiAdjust * Mathf.Clamp(rollIntegral + rollError * Time.fixedDeltaTime, -1f, 1f);
 
             var steerPitch = pitchProportional + pitchIntegral - pitchDamping;
             var steerYaw = yawProportional + yawIntegral - yawDamping;
@@ -3973,7 +3971,7 @@ namespace BDArmory.Control
 
             Vector3 planarDirection = direction.ProjectOnPlanePreNormalized(upDirection);
 
-            float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.13f, 5, 90);
+            float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.15f * speedController.TWR, 5, 90);
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"climb limit angle: {angle}");
             return Vector3.RotateTowards(planarDirection, direction, angle * Mathf.Deg2Rad, 0);
@@ -4507,69 +4505,57 @@ namespace BDArmory.Control
             steerMode = SteerModes.NormalFlight;
             vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false);
 
-            commandSpeed = commandLeader.vessel.srfSpeed;
-            commandHeading = commandLeader.vessel.Velocity().normalized;
+            var commandVelocity = commandLeader.vessel.Velocity();
+            var (commandSpeed, commandDirection) = commandVelocity.MagNorm();
+            var currentVelocity = vessel.Velocity();
 
             //formation position
             Vector3d commandPosition = GetFormationPosition();
             debugFollowPosition = commandPosition;
 
             float distanceToPos = Vector3.Distance(vesselTransform.position, commandPosition);
-
-            float dotToPos = Vector3.Dot(vesselTransform.up, commandPosition - vesselTransform.position);
             Vector3 flyPos;
-            useRollHint = false;
+            float finalMaxSpeed;
+            useFollowHints = distanceToPos < 100;
+            var currentPosition = vesselTransform.position;
 
-            float ctrlModeThresh = 1000;
-
-            if (distanceToPos < ctrlModeThresh)
+            if (distanceToPos < 1000)
             {
-                flyPos = commandPosition + (ctrlModeThresh * commandHeading);
+                // Aim for 1km ahead of the command position, adjusted if we're currently ahead of it.
+                flyPos = commandPosition + (1000 + Mathf.Max(0, Vector3.Dot(currentPosition - commandPosition, commandDirection))) * commandDirection;
 
-                Vector3 vectorToFlyPos = flyPos - vessel.ReferenceTransform.position;
-                Vector3 projectedPosOffset = (commandPosition - vessel.ReferenceTransform.position).ProjectOnPlanePreNormalized(commandHeading);
-                float posOffsetMag = projectedPosOffset.magnitude;
-                float adjustAngle = (Mathf.Clamp(posOffsetMag * 0.27f, 0, 25));
-                Vector3 projVel = Vector3.Project(vessel.Velocity() - commandLeader.vessel.Velocity(), projectedPosOffset);
-                adjustAngle -= Mathf.Clamp(Mathf.Sign(Vector3.Dot(projVel, projectedPosOffset)) * projVel.magnitude * 0.12f, -10, 10);
+                Vector3 vectorToFlyPos = flyPos - currentPosition;
+                Vector3 projectedPosOffset = (commandPosition - currentPosition).ProjectOnPlanePreNormalized(commandDirection);
+                Vector3 projectedVel = Vector3.Project(currentVelocity - commandVelocity, projectedPosOffset);
+                float adjustAngle = Mathf.Clamp(projectedPosOffset.magnitude * 0.5f, 0, 25);
+                adjustAngle -= Mathf.Clamp(Vector3.Dot(projectedVel, projectedPosOffset.normalized), -10, 10);
+                vectorToFlyPos = Vector3.RotateTowards(vectorToFlyPos, projectedPosOffset, Mathf.Deg2Rad * adjustAngle, 0);
+                flyPos = currentPosition + vectorToFlyPos;
 
-                adjustAngle *= Mathf.Deg2Rad;
-
-                vectorToFlyPos = Vector3.RotateTowards(vectorToFlyPos, projectedPosOffset, adjustAngle, 0);
-
-                flyPos = vessel.ReferenceTransform.position + vectorToFlyPos;
-
-                if (distanceToPos < 400)
+                var currentDirection = currentVelocity.normalized;
+                float dotDistance = Vector3.Dot(commandPosition - currentPosition, currentDirection);
+                float followSpeedP = (float)commandSpeed + (0.5f + 0.01f * Mathf.Abs(dotDistance)) * (dotDistance > 0 ? dotDistance / 4 : dotDistance / 2); // Adjust for lag amount. Braking needs to be more agressive than accelerating.
+                float followSpeedError = 0.01f * Time.fixedDeltaTime * dotDistance;
+                if (followSpeedD != 0)
                 {
-                    steerMode = SteerModes.Aiming;
+                    followSpeedD -= dotDistance;
                 }
-                else
-                {
-                    steerMode = SteerModes.NormalFlight;
-                }
+                followSpeedI = Mathf.Clamp((1 - Mathf.Clamp01(Mathf.Abs(followSpeedError))) * followSpeedI + followSpeedError, -1, 1);
+                finalMaxSpeed = followSpeedP + 10 * followSpeedI - 20 * followSpeedD;
+                finalMaxSpeed = Mathf.Clamp(finalMaxSpeed, 0, maxSpeed); // Don't go over maxSpeed.
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Follow: adj: {adjustAngle:F1}°, ·d: {dotDistance:F0}m, spdP: {followSpeedP:F0}m/s, spdI: {10 * followSpeedI:F1}m/s, spdD: {20 * followSpeedD:F1}");
+                followSpeedD = dotDistance;
 
-                if (distanceToPos < 10)
-                {
-                    useRollHint = true;
-                }
+                followHintDistance = distanceToPos;
             }
             else
             {
-                steerMode = SteerModes.NormalFlight;
                 flyPos = commandPosition;
+                finalMaxSpeed = maxSpeed;
+                followSpeedD = 0;
             }
 
-            double finalMaxSpeed = commandSpeed;
-            if (dotToPos > 0)
-            {
-                finalMaxSpeed += (distanceToPos / 8);
-            }
-            else
-            {
-                finalMaxSpeed -= (distanceToPos / 2);
-            }
-
-            AdjustThrottle((float)finalMaxSpeed, true);
+            AdjustThrottle(finalMaxSpeed, true);
 
             FlyToPosition(s, flyPos);
         }

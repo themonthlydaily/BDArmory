@@ -109,7 +109,7 @@ namespace BDArmory.VesselSpawning
         #endregion
 
         #region Teams
-        public static Dictionary<string, string> originalTeams = new Dictionary<string, string>();
+        public static Dictionary<string, string> originalTeams = [];
         public static void SaveTeams()
         {
             originalTeams.Clear();

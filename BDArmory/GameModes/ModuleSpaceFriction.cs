@@ -5,7 +5,6 @@ using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using System.Collections.Generic;
-using System.Collections;
 
 namespace BDArmory.GameModes
 {
@@ -240,7 +239,7 @@ namespace BDArmory.GameModes
             }
             if (this.part.vessel.situation != Vessel.Situations.ORBITING || this.part.vessel.situation != Vessel.Situations.DOCKED || this.part.vessel.situation != Vessel.Situations.ESCAPING || this.part.vessel.situation != Vessel.Situations.PRELAUNCH)
             {
-                if (BDArmorySettings.SF_REPULSOR || (RepulsorOverride && repulsorActivated))
+                if ((BDArmorySettings.SF_REPULSOR || RepulsorOverride) && repulsorActivated)
                 {
                     if ((pilot != null || driver != null || flier != null || RepulsorOverride) && foundEngine != null)
                     {
