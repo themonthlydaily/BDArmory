@@ -835,6 +835,7 @@ namespace BDArmory.UI
                 TournamentScores.LoadWeights();
                 SanitiseSettings();
                 RWPSettings.Load();
+                CompSettings.Load();
                 BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
@@ -3184,7 +3185,8 @@ namespace BDArmory.UI
                         }
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
-                    BDArmorySettings.PS_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.PS_CONVENIENCE_CHECKS, StringUtils.Localize("Project:Showdown"));
+                    if (CompSettings.CompOverridesEnabled)
+                        BDArmorySettings.PS_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.PS_CONVENIENCE_CHECKS, StringUtils.Localize("Project:Showdown"));
 
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {
@@ -3322,6 +3324,7 @@ namespace BDArmory.UI
                             //might be more elegant to simply have this use Mutator framework and load the HoS craft with a select mutator(s) instead... Something to look into later, maybe, but ideally this shouldn't need to be used in the first place.
                         }
                     }
+                    /*
                     if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
                     {
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SRightRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) 
@@ -3338,8 +3341,8 @@ namespace BDArmory.UI
                         }
                         if (PSSettings) //rushjob hack. Look into implementing something akin to the RWPSettings/hooking into that, for a more modular approach?
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.PS_EXTEND_TIMOUT})", leftLabel);
-                            BDArmorySettings.PS_EXTEND_TIMOUT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_TIMOUT, 0, 60));
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.PS_EXTEND_TIMEOUT})", leftLabel);
+                            BDArmorySettings.PS_EXTEND_TIMEOUT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_TIMEOUT, 0, 60));
 
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max Extend Dist")}:  ({BDArmorySettings.PS_EXTEND_DIST})", leftLabel);
                             BDArmorySettings.PS_EXTEND_DIST = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_DIST, 0, 30000), 100);
@@ -3369,6 +3372,7 @@ namespace BDArmory.UI
                             //min/max Altitude setters?
                         }
                     }
+                    */
                 }
 
                 if (BDArmorySettings.BATTLEDAMAGE != (BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, StringUtils.Localize("#LOC_BDArmory_Settings_BattleDamage"))))

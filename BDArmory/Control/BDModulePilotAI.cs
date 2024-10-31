@@ -2574,7 +2574,7 @@ namespace BDArmory.Control
             //test
             Vector3 currTargetDir = targetDirection;
             if (evasionNonlinearity > 0 && (IsExtending || IsEvading || // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
-                ((steerMode == SteerModes.NormalFlight || steerMode == SteerModes.Aiming && weaponManager.CurrentMissile != null) && weaponManager && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming a gun.
+                weaponManager && ((steerMode == SteerModes.NormalFlight || steerMode == SteerModes.Aiming && weaponManager.CurrentMissile != null) && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming a gun.
                     BDATargetManager.TargetList(weaponManager.Team).Where(target =>
                         !target.isMissile &&
                         weaponManager.CanSeeTarget(target, true, true)
@@ -2964,7 +2964,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
             {
                 extensionCutoffFJRT += Time.fixedDeltaTime;
-                if (extensionCutoffFJRT > BDArmorySettings.PS_EXTEND_TIMOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
+                if (BDArmorySettings.PS_EXTEND_TIMEOUT > 0 && extensionCutoffFJRT > BDArmorySettings.PS_EXTEND_TIMEOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
                 {
                     StopExtending($"extend time limit exceeded", true);                    
                     return;
@@ -2972,15 +2972,15 @@ namespace BDArmory.Control
             }
             if (extendDistanceSqr < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
-                    var currentExtendDistance = extendVector.magnitude;
-                    if (currentExtendDistance > lastExtendDistance + extendMinGainRate * Time.fixedDeltaTime) // Gaining distance fast enough.
+                var currentExtendDistance = extendVector.magnitude;
+                if (currentExtendDistance > lastExtendDistance + extendMinGainRate * Time.fixedDeltaTime) // Gaining distance fast enough.
+                {
+                    if (extendAbortTimer > 0) // Reduce the timer to 0.
                     {
-                        if (extendAbortTimer > 0) // Reduce the timer to 0.
-                        {
-                            extendAbortTimer -= 0.5f * TimeWarp.fixedDeltaTime; // Reduce at half the rate of increase, so oscillating pairs of craft eventually time out and abort.
-                            if (extendAbortTimer < 0) extendAbortTimer = 0;
-                        }
+                        extendAbortTimer -= 0.5f * TimeWarp.fixedDeltaTime; // Reduce at half the rate of increase, so oscillating pairs of craft eventually time out and abort.
+                        if (extendAbortTimer < 0) extendAbortTimer = 0;
                     }
+                }
                 else // Not gaining distance fast enough.
                 {
                     extendAbortTimer += TimeWarp.fixedDeltaTime;

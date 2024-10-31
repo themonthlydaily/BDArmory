@@ -1142,17 +1142,17 @@ namespace BDArmory.VesselSpawning
                 var AI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
                 if (AI != null)
                 {
-                    AI.extendTargetDist = Mathf.Min(AI.extendTargetDist, BDArmorySettings.PS_EXTEND_DIST);
-                    AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, BDArmorySettings.PS_AVOID_THRESH);
-                    AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, BDArmorySettings.PS_AVOID_LA);
-                    AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, BDArmorySettings.PS_AVOID_STR);
-                    AI.idleSpeed = Mathf.Max(AI.idleSpeed, BDArmorySettings.PS_IDLE_SPEED);
+                    if (BDArmorySettings.PS_EXTEND_DIST > 0) AI.extendTargetDist = Mathf.Min(AI.extendTargetDist, BDArmorySettings.PS_EXTEND_DIST);
+                    if (BDArmorySettings.PS_AVOID_THRESH > 0) AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, BDArmorySettings.PS_AVOID_THRESH);
+                    if (BDArmorySettings.PS_AVOID_LA > 0) AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, BDArmorySettings.PS_AVOID_LA);
+                    if (BDArmorySettings.PS_AVOID_STR > 0) AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, BDArmorySettings.PS_AVOID_STR);
+                    if (BDArmorySettings.PS_IDLE_SPEED > 0) AI.idleSpeed = Mathf.Max(AI.idleSpeed, BDArmorySettings.PS_IDLE_SPEED);
                 }
                 var WM = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (WM != null)
                 {
-                    WM.guardRange = cockpitSeatCount > 0 ? cockpitSeatCount == 1 ? BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE : BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE : 5000;
-                    WM.guardAngle = cockpitSeatCount > 1 ? 360 : BDArmorySettings.PS_COCKPIT_FOV;
+                    WM.guardRange = cockpitSeatCount > 0 ? cockpitSeatCount == 1 ? BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE > 0 ? BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE : WM.guardRange : BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE > 0 ? BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE : WM.guardRange : 5000;
+                    WM.guardAngle = cockpitSeatCount > 1 ? 360 : BDArmorySettings.PS_COCKPIT_FOV > 0 ? BDArmorySettings.PS_COCKPIT_FOV : 360;
                 }
             }
         }
