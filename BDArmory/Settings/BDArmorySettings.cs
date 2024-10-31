@@ -480,7 +480,7 @@ namespace BDArmory.Settings
         #endregion
         #region ProjectShowdown Stuff
         [BDAPersistentSettingsField] public static bool PS_CONVENIENCE_CHECKS = false;
-        [BDAPersistentSettingsField] public static float PS_EXTEND_TIMOUT = 20;
+        [BDAPersistentSettingsField] public static float PS_EXTEND_TIMEOUT = 20;
         [BDAPersistentSettingsField] public static float PS_EXTEND_DIST = 7000;
         [BDAPersistentSettingsField] public static float PS_MONOCOCKPIT_VIEWRANGE = 10000;
         [BDAPersistentSettingsField] public static float PS_DUALCOCKPIT_VIEWRANGE = 15000;
