@@ -842,7 +842,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 ModuleTargetingCamera foundCam = null;
                 bool parentOnly = (GuidanceMode == GuidanceModes.BeamRiding);
-                foundCam = BDATargetManager.GetLaserTarget(this, parentOnly);
+                foundCam = BDATargetManager.GetLaserTarget(this, parentOnly, Team);
                 if (foundCam != null && foundCam.cameraEnabled && foundCam.groundStabilized && BDATargetManager.CanSeePosition(foundCam.groundTargetPosition, vessel.transform.position, MissileReferenceTransform.position))
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Laser guided missileBase actively found laser point. Enabling guidance.");

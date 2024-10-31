@@ -12,6 +12,7 @@
 	- AI can now do non-linear evasion vs long-range targets while aiming missiles.
 	- Add Extend Min Gain Rate slider to set extend abort condition if not gaining distance fast enough.
 	- AI now checks for available secondary resource as well as primary for weapons using 2 ammo types (e.g. railguns using bullets + EC) when doing weapon selection checks.
+	- AI can now use an ally laserdot for targeting laser-guided ordinance if it lacks a targetcam of its own.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -45,6 +46,7 @@
 		- Fix INS guidance ordinance not configured with a datalink immediately triggering the lost lock condition and self-destructing.
 		- Passive Sonar torpedoes now home in on loudest part, not COM.
 		- Fix Terminal Guidance Passive Sonar torpedoes not entering terminal guidance.
+		- Fix laser guided ordinance locking on to enemy laser dots.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.

@@ -2483,7 +2483,7 @@ namespace BDArmory.Control
                             {
                                 yield return new WaitForSecondsFixed(2f);
                             }
-
+                            float targetpaintAccuracyThreshold = Mathf.Max(100, 0.013f * (float)targetVessel.srfSpeed * (float)targetVessel.srfSpeed);
                             if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
                             {
                                 using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
@@ -2503,14 +2503,21 @@ namespace BDArmory.Control
                             }
                             else //no cam, laser missiles now expensive unguided ordinance
                             {
-                                dumbfiring = true; //so let them be used as unguided ordinance
-                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Laser target! Available cams: {targetingPods.Count}; switching to unguided firing");
-                                break;
+                                if (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > targetpaintAccuracyThreshold) //ally target acquisition
+                                {
+                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No targetCam, using allied {foundCam.vessel.vesselName}'s Laser target!");                                    
+                                }
+                                else //allied laser dot isn't present
+                                {
+                                    dumbfiring = true; //so let them be used as unguided ordinance
+                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Laser target! Available cams: {targetingPods.Count}; switching to unguided firing");
+                                    break;
+                                }                                
                             }
                             //search for a laser point that corresponds with target vessel
                             float attemptStartTime = Time.time;
                             float attemptDuration = targetScanInterval * 0.75f;
-                            while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > 100)))
+                            while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > targetpaintAccuracyThreshold)))
                             {
                                 yield return wait;
                             }
@@ -2546,7 +2553,7 @@ namespace BDArmory.Control
                             }
                             yield return wait;
                             //Debug.Log($"[GMR_Debug] waiting... laspoint: {laserPointDetected}; foundCam: {foundCam != null}; targetVessel: {targetVessel != null}");
-                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude < Mathf.Max(100, 0.013f * (float)targetVessel.srfSpeed * (float)targetVessel.srfSpeed))
+                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude < targetpaintAccuracyThreshold)
                             {
                                 FireCurrentMissile(ml, true);
                                 //StartCoroutine(MissileAwayRoutine(ml));
@@ -7063,11 +7070,11 @@ namespace BDArmory.Control
             if (launcher != null)
             {
                 foundCam = BDATargetManager.GetLaserTarget(launcher,
-                    launcher.GuidanceMode == MissileBase.GuidanceModes.BeamRiding);
+                    launcher.GuidanceMode == MissileBase.GuidanceModes.BeamRiding, Team);
             }
             else
             {
-                foundCam = BDATargetManager.GetLaserTarget((BDModularGuidance)ml, false);
+                foundCam = BDATargetManager.GetLaserTarget((BDModularGuidance)ml, false, Team);
             }
 
             if (foundCam)
