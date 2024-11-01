@@ -57,7 +57,7 @@ namespace BDArmory.UI
 
         [BDAWindowSettingsField] public static Rect WindowRectWayPointSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
-        [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
+        [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 660, 800);
 
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
@@ -924,7 +924,7 @@ namespace BDArmory.UI
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
             SetGUIOpacity();
-            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, WindowRectToolbar.position);
+            if (BDArmorySettings._UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings._UI_SCALE * Vector2.one, WindowRectToolbar.position);
             WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
             SetGUIOpacity(false);
             GUIUtils.UseMouseEventInRect(WindowRectToolbar);
@@ -2386,12 +2386,17 @@ namespace BDArmory.UI
             if (BDArmorySettings.GRAPHICS_UI_SETTINGS_TOGGLE)
             {
                 line += 0.2f;
-                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScale")}: {BDArmorySettings.UI_SCALE:0.00}x", leftLabel); // UI Scale
-                var previousUIScale = BDArmorySettings.UI_SCALE;
-                if (BDArmorySettings.UI_SCALE != (BDArmorySettings.UI_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.UI_SCALE, 0.5f, 2f), 0.05f)))
+                GUI.Label(SQuarterRect(++line, 0), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScale")}: {BDArmorySettings._UI_SCALE:0.00}x", leftLabel); // UI Scale
+                BDArmorySettings.UI_SCALE_FOLLOWS_STOCK = GUI.Toggle(SQuarterRect(line, 1), BDArmorySettings.UI_SCALE_FOLLOWS_STOCK, $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScaleFollowsStock")}");
+                if (!BDArmorySettings.UI_SCALE_FOLLOWS_STOCK)
                 {
-                    BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
-                    scalingUI = true;
+                    var previousUIScale = BDArmorySettings.UI_SCALE;
+                    if (BDArmorySettings.UI_SCALE != (BDArmorySettings.UI_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.UI_SCALE, 0.5f, 2f), 0.05f)))
+                    {
+                        BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
+                        scalingUI = true;
+                        BDACompetitionMode.Instance.UpdateGUIElements();
+                    }
                 }
 
                 BDArmorySettings.DRAW_AIMERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DRAW_AIMERS, StringUtils.Localize("#LOC_BDArmory_Settings_DrawAimers"));//"Draw Aimers"
@@ -2499,6 +2504,12 @@ namespace BDArmory.UI
                     { // Numeric Input config
                         BDArmorySettings.NUMERIC_INPUT_SELF_UPDATE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.NUMERIC_INPUT_SELF_UPDATE, $"{StringUtils.Localize("#LOC_BDArmory_Settings_NumericInputSelfUpdate")}: {BDArmorySettings.NUMERIC_INPUT_DELAY:0.0}s"); // Numeric Input Self Update
                         BDArmorySettings.NUMERIC_INPUT_DELAY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.NUMERIC_INPUT_DELAY, 0.1f, 2f), 0.1f);
+                    }
+
+                    if (HighLogic.LoadedSceneIsEditor) // Craft-browser thumbnails
+                    {
+                        if (GUI.Button(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_CraftBrowser_GenerateMissingThumbnails"))) CraftBrowserMissingThumbnailGenerator.Instance.GenerateMissingThumbnails(EditorDriver.editorFacility);
+                        CraftBrowserMissingThumbnailGenerator.recurse = GUI.Toggle(SRightRect(line), CraftBrowserMissingThumbnailGenerator.recurse, StringUtils.Localize("#LOC_BDArmory_CraftBrowser_GenerateMissingThumbnailsRecurse"));
                     }
 
                     if (GUI.Button(SLineRect(++line, 1, true), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Disable " : "Enable ") + StringUtils.Localize("#LOC_BDArmory_Settings_DebugSettingsToggle")))//Enable/Disable Debugging.
@@ -3057,6 +3068,17 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
                         BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
+                    }
+                    BDArmorySettings.IGNORE_TERRAIN_CHECK = GUI.Toggle(SLeftRect(++line), BDArmorySettings.IGNORE_TERRAIN_CHECK, StringUtils.Localize("#LOC_BDArmory_Settings_IGNORE_TERRAIN_CHECK")); // Ignore Terrain Check
+                    BDArmorySettings.CHECK_WATER_TERRAIN = GUI.Toggle(SLeftRect(++line), BDArmorySettings.CHECK_WATER_TERRAIN, StringUtils.Localize("#LOC_BDArmory_Settings_CHECK_WATER_TERRAIN")); // Check Water
+                    BDArmorySettings.RADAR_NOTCHING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RADAR_NOTCHING, StringUtils.Localize("#LOC_BDArmory_Settings_RADAR_NOTCHING")); // Radar Notching Toggle
+                    if (BDArmorySettings.RADAR_NOTCHING)
+                    {
+                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_Notching_Factor")}:  ({BDArmorySettings.RADAR_NOTCHING_FACTOR})", leftLabel); // Notch Effectiveness Multiplier
+                        BDArmorySettings.RADAR_NOTCHING_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RADAR_NOTCHING_FACTOR, 0f, 1f), 0.05f);
+
+                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_Notching_SCR_Factor")}:  ({BDArmorySettings.RADAR_NOTCHING_SCR_FACTOR})", leftLabel); // Notch SCR Multiplier, should be set to 0.01 as default though it's adjustable
+                        BDArmorySettings.RADAR_NOTCHING_SCR_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RADAR_NOTCHING_SCR_FACTOR, 0f, 0.5f), 0.005f);
                     }
                 }
 
@@ -4668,20 +4690,21 @@ namespace BDArmory.UI
         public static void TestUp()
         {
             Vessel vessel = FlightGlobals.ActiveVessel;
-            Debug.Log($"DEBUG Vector3.up: {Vector3.up}, vessel.up: {vessel.up}, vessel.transform.up: {vessel.transform.up}, vessel.upAxis: {vessel.upAxis}, GetUpDir: {VectorUtils.GetUpDirection(vessel.CoM)}");
+            Vector3 pos = vessel.CoM;
             var watch = new System.Diagnostics.Stopwatch();
             float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
             Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
             Vector3 up = default;
             var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.upAxis; } };
-            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
-            Vector3 pos = vessel.CoM;
+            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = VectorUtils.GetUpDirection(pos); } };
-            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.up; } };
-            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.transform.up; } };
-            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = -FlightGlobals.getGeeForceAtPosition(pos).normalized; } };
+            Debug.Log($"DEBUG -getGeeForceAtPosition.normalized took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)up}");
         }
 
         public static void TestInOnUnitSphere()

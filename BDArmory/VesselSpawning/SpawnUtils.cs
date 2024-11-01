@@ -109,7 +109,7 @@ namespace BDArmory.VesselSpawning
         #endregion
 
         #region Teams
-        public static Dictionary<string, string> originalTeams = new Dictionary<string, string>();
+        public static Dictionary<string, string> originalTeams = [];
         public static void SaveTeams()
         {
             originalTeams.Clear();
@@ -165,6 +165,10 @@ namespace BDArmory.VesselSpawning
                 }
             }
             FireSpitter.ActivateFSEngines(vessel, activate);
+            foreach (var repulsor in VesselModuleRegistry.GetModules<ModuleSpaceFriction>(vessel))
+            {
+                repulsor.ToggleRepulsor();
+            }
         }
 
         public static bool IsModularMissilePart(Part part)
@@ -256,6 +260,10 @@ namespace BDArmory.VesselSpawning
                     ++count;
                 };
                 if (count > 0) message += (count > 1 ? " are" : " is") + " not attached to its root part";
+            }
+            if (!(vessel.rootPart.IsKerbalSeat() || vessel.rootPart.protoModuleCrew.Any(crew => crew != null)))
+            {
+                message += $"{(message.Length > 0 ? " and its" : "'s")} cockpit isn't the root part";
             }
 
             if (!string.IsNullOrEmpty(message))
