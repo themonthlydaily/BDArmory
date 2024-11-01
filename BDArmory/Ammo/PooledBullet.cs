@@ -950,8 +950,11 @@ namespace BDArmory.Bullets
                 }
                 ExplosiveDetonation(hitPart, bulletHit.hit, bulletRay);
                 ResourceUtils.StealResources(hitPart, sourceVessel, stealResources);
-                KillBullet(); // Kerbals are too thick-headed for penetration...
-                return true;
+                if (BDArmorySettings.KERBAL_ERA)
+                {
+                    KillBullet(); // Kerbals are too thick-headed for penetration...
+                }
+                return BDArmorySettings.KERBAL_ERA;
             }
 
             if (hitPart != null && hitPart.vessel == sourceVessel) return false;  //avoid autohit;
