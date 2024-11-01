@@ -210,6 +210,29 @@ namespace BDArmory.VesselSpawning
                         SpawnUtils.originalTeams[vesselName] = Path.GetFileNameWithoutExtension(spawnedVesselURLs[vesselName]);
                 }
             }
+            if (BDArmorySettings.VESSEL_SPAWN_SMART_REASSIGN_TEAMS && spawnConfig.assignTeams && spawnConfig.numberOfTeams == 11)
+            {
+                HashSet<string> teamNames = [];
+                SpawnUtils.originalTeams.Clear();
+                foreach (var team in teamVesselNames)
+                {
+                    foreach (var vesselName in team)
+                    {
+                        if (!spawnedVessels.ContainsKey(vesselName)) continue;
+                        var wm = VesselModuleRegistry.GetMissileFire(spawnedVessels[vesselName]);
+                        if (wm == null) continue;
+                        if (wm.Team.Name.Length < 2) continue; // If it's a one-letter name, ignore it.
+                        if (teamNames.Contains(wm.Team.Name)) continue; // The team name already exists, ignore it.
+                        teamNames.Add(wm.Team.Name); // Found a valid non-default team name that isn't already taken.
+                        foreach (var otherVesselName in team) // Set all the craft in this team to this team name.
+                            SpawnUtils.originalTeams[otherVesselName] = wm.Team.Name;
+                        break; // Go to the next team.
+                    }
+                }
+                // Do a MassTeamSwitch without using original teams to give everyone A, B, ...
+                LoadedVesselSwitcher.Instance.MassTeamSwitch(true, false, null, teamVesselNames);
+                useOriginalTeamNames = true; // Next call of MassTeamSwitch with originalTeams=true to override the defaults with the custom team names.
+            }
             LoadedVesselSwitcher.Instance.MassTeamSwitch(true, useOriginalTeamNames, null, teamVesselNames); // Assign A, B, ...
             #endregion
 
@@ -431,6 +454,7 @@ namespace BDArmory.VesselSpawning
             // Set the locally settable config values.
             customSpawnConfig.altitude = Mathf.Max(BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 2f);
             customSpawnConfig.killEverythingFirst = true;
+            customSpawnConfig.numberOfTeams = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS;
 
             this.startCompetitionAfterSpawning = startCompetitionAfterSpawning;
             return true;

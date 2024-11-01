@@ -19,8 +19,9 @@
 	- AI can now make use of non-DynamicRadar radars for missile targeting when being actively targeted by incoming anti-radiation ordinance.
 	- AI visual detection of incoming missiles within visual range no longer requires a RWR. RWR detection of incoming missiles still requires a RWR on the craft.
 	- Tweak AI detection and reaction to incoming GPS/INS missiles, they should detect and react to them a bit more consistantly now.
-	- The pilot AI now stays in "normal flight" mode when flying in formation for better stability.
+	- Improvements to formation flying behaviour. Planes in follow mode should now hold their positions better and be more stable.
 	- Add a 'min gain rate' option to the extending to avoid excessively long extending runs.
+	- Include a TWR factor in the climb rate limit calculations.
 - Competition:
 	- Fix craft equipped with repulsors breaking ground spawn.
 	- Add support for using custom spawn templates with RNG style tournaments.
@@ -28,6 +29,9 @@
 		- Teams are considered as the per file / per folder option.
 		- The "Re-use Craft To Fill Teams" option applies for teams that lack sufficient craft to fill the spawn template.
 		- Both shuffled and ranked tournaments are supported.
+	- Add a hidden option to "smart assign" teams for custom spawn templates (when not running a tournament).
+		- Set "VESSEL_SPAWN_SMART_REASSIGN_TEAMS = True" in BDA's settings.cfg to enable it when "Reassign Teams" is enabled.
+		- The first vessel in the spawn template with a non-default team name (can be set in the SPH) that isn't already taken sets the name for the team. Other teams get their default letter.
 	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
 - Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
@@ -46,6 +50,9 @@
 	- Behavior is configurable using the activeRadarVelocityGate and activeRadarRangeGate floatcurves for missiles and radarVelocityGate and radarRangeGate floatcurves for radars.
 	- Also includes water blocking radars, forcing engagements to consider the horizon.
 		- Surface vessels are permitted to see each other over the horizon to simplify naval engagements, this option, called "RADAR_ALLOW_SURFACE_WARFARE", can be turned off in the "GameData/BDArmory/PluginData/Settings.cfg" file.
+	- Fix the targeting window breaking a lot of scroll behaviours.
+	- Fix the targeting window's slewing along an axis and add a small quadratic component to allow faster slewing with faster mouse movement.
+	- Avoid firing missiles while slewing the targeting window if the mouse drifts outside the window.
 - Weapons:
 	- Adjust bullet tracers to lead up to their current position instead of from their previous position.
 	- Reduce bullet tracer visual glitching due to krakensbane adjustments.
