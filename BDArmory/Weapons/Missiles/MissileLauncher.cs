@@ -2749,7 +2749,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
                 {
-                    TargetPosition += Vector3.Cross(TargetPosition - vessel.CoM, TargetVelocity).normalized * (blastRadius > 0f ? Mathf.Min(blastRadius / 3f, DetonationDistance / 3f) : 5f);
+                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius > 0f ? Mathf.Min(blastRadius / 3f, DetonationDistance / 3f) : 5f);
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
 
