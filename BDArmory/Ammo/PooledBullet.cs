@@ -1303,6 +1303,7 @@ namespace BDArmory.Bullets
                 float penRatio = thickness / penetration;
                 float adjustedPenRatio = (1 - BDAMath.Sqrt(penRatio));
                 penRatio = 1 - penRatio;
+                const float spacedFactor = 0.975f;
                 float oldBulletMass = bulletMass;
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
@@ -1314,8 +1315,7 @@ namespace BDArmory.Bullets
                         // Then we set the mass ratio to the default for impacts under 2500 m/s
                         // we take off 5% by default to decrease penetration efficiency through
                         // multiple plates a little more
-                        const float spacedFactor = 0.975f;
-                        float massRatio = spacedFactor * penRatio;
+                        float massRatio = penRatio;
 
                         if (impactSpeed > 2500f)
                         {
