@@ -279,6 +279,7 @@ namespace BDArmory.Bullets
             }
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
             distanceLastHit = double.PositiveInfinity; // Reset variables used in post-penetration calculations.
+            hypervelocityImpact = false;
             initialHitDistance = 0;
             deltaMass = -1f;
             kDist = 1;
@@ -774,7 +775,7 @@ namespace BDArmory.Bullets
                     {
                         hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
                         if (hitPart == null) continue;
-                        if (hitPart.vessel == vessel) allHits.Add(new BulletHit(hit.Current));
+                        if (hitPart.vessel == vessel) allHits.Add(new BulletHit { hit = hit.Current });
                         hitFound = true;
                     }
                 using (var hit = reverseHits.Take(reverseHitCount).AsEnumerable().GetEnumerator())
@@ -782,7 +783,7 @@ namespace BDArmory.Bullets
                     {
                         hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
                         if (hitPart == null) continue;
-                        if (hitPart.vessel == vessel) allHits.Add(new BulletHit(hit.Current, false));
+                        if (hitPart.vessel == vessel) allHits.Add(new BulletHit { hit = hit.Current, isReverseHit = true });
                         hitFound = true;
                     }
                 if (hitFound) rayLength[vessel] = dist;
@@ -801,10 +802,7 @@ namespace BDArmory.Bullets
                 hits = Physics.RaycastAll(bulletRay, dist, layerMask);
                 hitCount = hits.Length;
             }
-            for (int i = 0; i < hitCount; ++i)
-            {
-                allHits.Add(new BulletHit(hits[i]));
-            }
+            allHits.AddRange(hits.Take(hitCount).Select(hit => new BulletHit { hit = hit }));
             //allHits.AddRange(hits.Take(hitCount));
             /*
             var reverseRay = new Ray(bulletRay.origin + dist * bulletRay.direction, -bulletRay.direction);
@@ -926,7 +924,7 @@ namespace BDArmory.Bullets
             {
                 if (ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
                 if (hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
-                if (bulletHit.isReverseHit && (hitPart == CurrentPart && ProjectileUtils.IsArmorPart(CurrentPart))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
+                if (bulletHit.isReverseHit && ProjectileUtils.IsArmorPart(hitPart)) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
             }
             
 
@@ -1041,10 +1039,8 @@ namespace BDArmory.Bullets
                     deltaMass = -1f;
                 }
             }
-
-            if (double.IsPositiveInfinity(distanceLastHit))
+            else
             {
-                // Add the distance since this hit so the next part that gets hit has the proper distance
                 distanceLastHit = distanceTraveled + bulletHit.hit.distance;
             }
 
@@ -2211,25 +2207,7 @@ namespace BDArmory.Bullets
     public class BulletHit
     {
         public RaycastHit hit { get; set; }
-        public bool isReverseHit;
-
-        public BulletHit()
-        {
-            hit = new RaycastHit();
-            isReverseHit = false;
-        }
-
-        public BulletHit(RaycastHit hitIn)
-        {
-            hit = hitIn;
-            isReverseHit = false;
-        }
-
-        public BulletHit(RaycastHit hitIn, bool isReverseHitIn)
-        {
-            hit = hitIn;
-            isReverseHit = isReverseHitIn;
-        }
+        public bool isReverseHit { get; set; } = false;
     }
 
     /// <summary>
