@@ -1103,7 +1103,7 @@ namespace BDArmory.Bullets
 
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true, subTTL,
                         TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude),
-                        true, isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, false, currentVelocity.magnitude);
+                        true, isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, bulletDmgMult, false, currentVelocity.magnitude);
             }
             else
             {
