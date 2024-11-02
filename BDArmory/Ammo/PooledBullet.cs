@@ -1342,9 +1342,8 @@ namespace BDArmory.Bullets
                 // whipple shields but that behavior is fairly complex and I'm already in way over my head.
 
                 // Calculating this ratio once since we're going to need it a bunch
-                float penRatio = thickness / penetration;
-                float adjustedPenRatio = (1 - BDAMath.Sqrt(penRatio));
-                penRatio = 1 - penRatio;
+                float penRatio = 1 - thickness / penetration;
+                float velocityRatio = penRatio;
                 const float spacedFactor = 0.975f;
                 float oldBulletMass = bulletMass;
                 // If impact is at high speed
@@ -1378,10 +1377,10 @@ namespace BDArmory.Bullets
                             // stuff I've accepted is going to be purely gameified. If anybody has
                             // an expertise in hypervelocity impact mechanics they're welcome to
                             // change all this stuff I'm doing for hypervelocity stuff.
-                            massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * adjustedPenRatio;
+                            massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * penRatio;
                         }
 
-                        // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
+                        // We cap the minimum L/D to be 1.1 to avoid that edge case in the pen formula
                         if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
                             if (caliber < 10f || length < 10.05f)
@@ -1401,41 +1400,32 @@ namespace BDArmory.Bullets
 
                             bulletMass *= massRatio;
 
-                            adjustedPenRatio /= massRatio;
-
                             // In the case we are reaching that cap we decrease the velocity by
-                            // the adjustedPenRatio minus the portion that went into erosion
-                            //impactVelocity = impactVelocity * adjustedPenRatio;
-                            //currentVelocity = hitPartVelocity + impactVelocity;
+                            // the penRatio minus the portion that went into erosion
+                            velocityRatio /= massRatio;
                         }
                         else
                         {
+                            float adjustedPenRatio = 1f - BDAMath.Sqrt(1f-penRatio);
                             deltaMass = bulletMass * (massRatio - spacedFactor * adjustedPenRatio);
                             bulletMass *= massRatio;
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease
-                            // the velocity by a max of 5%, proportional to the adjustedPenRatio
-                            //impactVelocity = impactVelocity * (0.95f + 0.05f * adjustedPenRatio);
-                            adjustedPenRatio *= 0.05f;
-                            adjustedPenRatio += 0.95f;
-                            //impactVelocity = impactVelocity * adjustedPenRatio;
-                            //currentVelocity = hitPartVelocity + impactVelocity;
+                            // the velocity by a max of 5%, proportional to 1 - (thickness/penetration)^2
+                            velocityRatio = 1f - penRatio; // thickness/penetration
+                            velocityRatio = 0.05f*(1f - velocityRatio * velocityRatio) + 0.95f; // 1 - (thickness/penetration)^2
                         }
                         ExplosionFx.CreateExplosion(currentPosition, oldBulletMass - bulletMass, "BDArmory/Models/explosion/30mmExplosion", explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, currentVelocity, 70, false, bulletMass, -1, dmgMult, ExplosionFx.WarheadTypes.Standard, null, 1f, -1, currentVelocity); //explosion simming ablated material flashing into plasma, HE amount = bullet mass lost on hit
                     }
                     else
                     {
                         // If the projectile has already been eroded away we just decrease the
-                        // velocity by the adjustedPenRatio
-                        //impactVelocity = impactVelocity * adjustedPenRatio;
-                        //currentVelocity = hitPartVelocity + impactVelocity;
+                        // velocity by the penRatio
                     }
                 }
                 else
                 {
-                    // Low velocity impacts behave the same as before
-                    //impactVelocity = impactVelocity * adjustedPenRatio;
-                    //currentVelocity = hitPartVelocity + impactVelocity;
+                    // Low velocity impacts similarly have velocity decreased by penRatio
                 }
 
 
@@ -1457,11 +1447,11 @@ namespace BDArmory.Bullets
                 else
                 {
                     float cockpitPen = (float)(16f * impactVelocity.magnitude * BDAMath.Sqrt(bulletMass / 1000) / BDAMath.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
-                    ProjectileUtils.ApplyDamage(hitPart, bulletHit.hit, dmgMult, penetrationFactor, caliber, bulletMass, (impactVelocity * (armorType == 1 ? 1 : adjustedPenRatio)).magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                    ProjectileUtils.ApplyDamage(hitPart, bulletHit.hit, dmgMult, penetrationFactor, caliber, bulletMass, (impactVelocity * (armorType == 1 ? 1 : velocityRatio)).magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                     //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
 
-                impactVelocity = impactVelocity * adjustedPenRatio; //moving this here so unarmored parts take proper damage from the full impact speed and energy delivery of the round, vs everything else properly recieving reduced damage from a round that has to punch through armor first
+                impactVelocity = impactVelocity * velocityRatio; //moving this here so unarmored parts take proper damage from the full impact speed and energy delivery of the round, vs everything else properly recieving reduced damage from a round that has to punch through armor first
                 currentVelocity = hitPartVelocity + impactVelocity;
 
                 currentSpeed = currentVelocity.magnitude;
