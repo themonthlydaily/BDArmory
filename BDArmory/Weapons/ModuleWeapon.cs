@@ -384,6 +384,10 @@ namespace BDArmory.Weapons
         Vector3 debugAccAdj;
         Vector3 debugGravAdj;
 
+        SourceInfo sourceInfo;
+        GraphicsInfo graphicsInfo;
+        NukeInfo nukeInfo;
+
         #endregion Declarations
 
         #region KSPFields
@@ -1485,6 +1489,12 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
+
+                sourceInfo = new SourceInfo(vessel, weaponManager.team, part, Vector3.zero);
+                graphicsInfo = new GraphicsInfo(bulletTexturePath, projectileColorC, startColorC,
+                                    tracerStartWidth, tracerEndWidth, tracerLength, tracerLuminance, tracerDeltaFactor,
+                                    smokeTexturePath, explModelPath, explSoundPath);
+                nukeInfo = new NukeInfo();
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -2179,21 +2189,23 @@ namespace BDArmory.Weapons
                                     effectsShot = true;
                                 }
 
-                                SourceInfo sourceInfo = new SourceInfo(vessel, weaponManager.Team.Name, part, fireTransform.position);
-                                GraphicsInfo graphicsInfo;
+                                sourceInfo.position = fireTransform.position;
+                                graphicsInfo.projectileColor = projectileColorC;
+                                graphicsInfo.startColor = startColorC;
                                 tracerIntervalCounter++;
                                 if (tracerIntervalCounter > tracerInterval)
                                 {
                                     tracerIntervalCounter = 0;
-                                    graphicsInfo = new GraphicsInfo(bulletTexturePath, projectileColorC, startColorC,
-                                    tracerStartWidth, tracerEndWidth, tracerLength, tracerLuminance, tracerDeltaFactor,
-                                    smokeTexturePath, explModelPath, explSoundPath);
+                                    graphicsInfo.tracerStartWidth = tracerStartWidth;
+                                    graphicsInfo.tracerEndWidth = tracerEndWidth;
+                                    graphicsInfo.tracerLength = tracerLength;
+                                    graphicsInfo.tracerLuminance = tracerLuminance;
                                 }
                                 else
                                 {
-                                    graphicsInfo = new GraphicsInfo(bulletTexturePath, projectileColorC, startColorC,
-                                        nonTracerWidth, nonTracerWidth, tracerLength, bulletLuminance, tracerDeltaFactor,
-                                        smokeTexturePath, explModelPath, explSoundPath);
+                                    graphicsInfo.tracerStartWidth = nonTracerWidth;
+                                    graphicsInfo.tracerEndWidth = nonTracerWidth;
+                                    graphicsInfo.tracerLuminance = bulletLuminance;
 
                                     if (!string.IsNullOrEmpty(smokeTexturePath))
                                     {
@@ -2203,11 +2215,9 @@ namespace BDArmory.Weapons
                                         graphicsInfo.tracerLuminance = -1;
                                         graphicsInfo.projectileColor.a *= 0.5f;
                                     }
-
                                     graphicsInfo.startColor.a *= 0.5f;
                                     graphicsInfo.projectileColor.a *= 0.5f;
                                 }
-                                NukeInfo nukeInfo = new NukeInfo(); // Will inherit parent part's models on enable
                                 Vector3[] firedVelocities = new Vector3[bulletInfo.projectileCount];
 
                                 for (int s = 0; s < ProjectileCount; s++)

@@ -1566,7 +1566,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        public struct SourceInfo
+        public class SourceInfo
         {
             public Vessel vessel;
             public string team;
@@ -1582,7 +1582,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        public struct NukeInfo
+        public class NukeInfo
         {
             public string flashModelPath;
             public string shockModelPath;
@@ -1613,7 +1613,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        public struct GraphicsInfo
+        public class GraphicsInfo
         {
             public string bulletTexturePath;
             public Color projectileColor;
