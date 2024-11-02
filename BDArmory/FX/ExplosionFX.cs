@@ -268,7 +268,7 @@ namespace BDArmory.FX
                                 if (hitPart.vessel.vesselName == SourceVesselName) continue;  //avoid autohit;
                                 if (hitPart.mass > 0 && !explosionEventsPartsAdded.Contains(hitPart))
                                 {
-                                    var damaged = ProcessPartEvent(hitPart, SChit.distance, SourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded, true);
+                                    var damaged = ProcessPartEvent(hitPart, SChit.distance, SourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded, true, Direction, true);
                                     // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
                                     if (damaged && BDACompetitionMode.Instance)
                                     {
@@ -464,11 +464,11 @@ namespace BDArmory.FX
             }
         }
 
-        private bool ProcessPartEvent(Part part, float hitDist, string sourceVesselName, List<BlastHitEvent> eventList, List<Part> partsAdded, bool angleOverride = false)
+        private bool ProcessPartEvent(Part part, float hitDist, string sourceVesselName, List<BlastHitEvent> eventList, List<Part> partsAdded, bool angleOverride = false, Vector3 direction = default, bool directionOverride = false)
         {
             RaycastHit hit;
             float distance;
-            if (IsInLineOfSight(part, ExplosivePart, hitDist, out hit, out distance))
+            if (IsInLineOfSight(part, ExplosivePart, hitDist, out hit, out distance, direction, directionOverride))
             {
                 //if (IsAngleAllowed(Direction, hit))
                 //{
@@ -529,11 +529,20 @@ namespace BDArmory.FX
         /// <param name="distance">The distance of the hit</param>
         /// <param name="intermediateParts">Update the LoSIntermediateParts list</param>
         /// <returns></returns>
-        private bool IsInLineOfSight(Part part, Part explosivePart, float startDist, out RaycastHit hit, out float distance, bool intermediateParts = true)
+        private bool IsInLineOfSight(Part part, Part explosivePart, float startDist, out RaycastHit hit, out float distance, Vector3 direction = default, bool directionOverride = false, bool intermediateParts = true)
         {
-            var partPosition = part.transform.position; //transition over to part.Collider.ClosestPoint(Position);? Test later
-            Ray partRay = new Ray(Position, partPosition - Position);
+            Ray partRay;
             float range = blastRange > SCRange ? blastRange : SCRange;
+            if (directionOverride)
+            {
+                partRay = new Ray(Position, direction);
+            }
+            else
+            {
+                var partPosition = part.transform.position; //transition over to part.Collider.ClosestPoint(Position);? Test later
+                partRay = new Ray(Position, partPosition - Position);
+            }
+            
 
             var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, range, explosionLayerMask);
             if (hitCount == lineOfSightHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
@@ -1181,6 +1190,11 @@ namespace BDArmory.FX
             else
             {
                 rotation = Quaternion.LookRotation(direction);
+                if (warheadType == WarheadTypes.ShapedCharge)
+                {
+                    direction = direction.normalized;
+                    position = position - direction * 0.05f;
+                } 
             }
 
             GameObject newExplosion = explosionFXPools[explModelPath].GetPooledObject();
