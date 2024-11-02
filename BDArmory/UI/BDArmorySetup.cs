@@ -2361,7 +2361,6 @@ namespace BDArmory.UI
         }
 
         (float, float)[] asteroidFieldAltitude;
-        bool PSSettings = false;
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.
@@ -3207,7 +3206,7 @@ namespace BDArmory.UI
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
                     if (CompSettings.CompOverridesEnabled)
-                        BDArmorySettings.PS_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.PS_CONVENIENCE_CHECKS, StringUtils.Localize("Project:Showdown"));
+                        BDArmorySettings.COMP_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.COMP_CONVENIENCE_CHECKS, StringUtils.Localize("Use AI/WM Overrides"));
 
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {

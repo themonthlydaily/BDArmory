@@ -15,30 +15,35 @@ namespace BDArmory.Settings
 
 		static readonly string CompSettingsPath = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/Comp_settings.cfg"));
 		static public bool CompOverridesEnabled = false;
-		static readonly Dictionary<string, object> ComPOverrides = new()
+		public static readonly Dictionary<string, float> CompOverrides = new()
 		{
 				// FIXME there's probably a few more things that could get set here for AI/WM override if needed in specific rounds.
 				//AI Min/max Alt?
-				{"PS_EXTEND_TIMEOUT", -1},
-				{"PS_EXTEND_DIST", -1},
-				{"PS_MONOCOCKPIT_VIEWRANGE", -1},
-				{"PS_DUALCOCKPIT_VIEWRANGE", -1},
-				{"PS_COCKPIT_FOV", -1},
-				{"PS_AVOID_THRESH", -1},
-				{"PS_AVOID_LA", -1},
-				{"PS_AVOID_STR", -1 },
-				{"PS_IDLE_SPEED", -1},
-				{"PS_DISABLE_SAS", false},
+                //AI postStallAoA?
+                //AI allowRamming?
+                //WM gunRange?
+                //WM multiMissileTgtNum
+				{"extensionCutoffTime", -1},
+				{"extendDistanceAirToAir", -1},
+				{"MONOCOCKPIT_VIEWRANGE", -1},
+				{"DUALCOCKPIT_VIEWRANGE", -1},
+				{"guardAngle", -1},
+				{"collisionAvoidanceThreshold", -1},
+				{"vesselCollisionAvoidanceLookAheadPeriod", -1},
+				{"vesselCollisionAvoidanceStrength", -1 },
+				{"idleSpeed", -1},
+				{"DISABLE_SAS", 0}, //0/1 for F/T
 		};
 
         /// <summary>
-        /// Load RWP settings from file.
+        /// Load P:S AI/Wm override settings from file.
         /// </summary>
         public static void Load()
         {
             if (!File.Exists(CompSettingsPath))
             {
-                Debug.LogError($"[BDArmory.CompSettings]: Override settings not present, skipping.");
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.CompSettings]: Override settings not present, skipping.");
+                CompOverridesEnabled = false;
                 return;
             }
             ConfigNode fileNode = ConfigNode.Load(CompSettingsPath);
@@ -48,27 +53,15 @@ namespace BDArmory.Settings
 
             foreach (ConfigNode.Value fieldNode in settings.values)
             {
-                var field = typeof(BDArmorySettings).GetField(fieldNode.name, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                if (field == null)
-                {
-                    Debug.LogError($"[BDArmory.CompSettings]: Unknown field {fieldNode.name} when loading AI/WM override settings.");
-                    continue;
-                }
-                var fieldValue = BDAPersistentSettingsField.ParseValue(field.FieldType, fieldNode.value);
-                ComPOverrides[fieldNode.name] = fieldValue; // Add or set the override.
+                var fieldValue = float.Parse(fieldNode.value);
+                CompOverrides[fieldNode.name] = fieldValue; // Add or set the override.
             }
-            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.CompSettings]: Setting Comp AI/WM overrides");
-            foreach (var setting in ComPOverrides.Keys)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
-                var field = typeof(BDArmorySettings).GetField(setting, BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                try
+                Debug.Log($"[BDArmory.CompSettings]: Comp AI/WM overrides loaded");
+                foreach (KeyValuePair<string, float> entry in CompOverrides)
                 {
-                    field.SetValue(null, Convert.ChangeType(ComPOverrides[setting], field.FieldType)); // Convert the type to the correct type (e.g., double vs float) so unboxing works correctly.
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.CompSettings]: setting value {ComPOverrides[setting]} to {setting}");
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[BDArmory.CompSettings]: Failed to set value {ComPOverrides[setting]} for {setting}: {e.Message}");
+                    Debug.Log($"[BDArmory.CompSettings]: {entry.Key}, value {entry.Value} added");
                 }
             }
         }

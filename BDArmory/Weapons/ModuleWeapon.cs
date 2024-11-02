@@ -2226,7 +2226,7 @@ namespace BDArmory.Weapons
                                 Vessel targetV = null;
                                 float guidance = 0f;
 
-                                if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
+                                if (visualTargetVessel != null && (targetAcquisitionType == TargetAcquisitionType.Radar || targetAcquisitionType == TargetAcquisitionType.Slaved))
                                 {
                                     targetV = visualTargetVessel;
                                     guidance = bulletInfo.guidanceDPS;

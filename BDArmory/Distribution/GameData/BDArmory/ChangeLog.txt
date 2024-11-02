@@ -76,6 +76,7 @@
 		- Passive Sonar torpedoes now home in on loudest part, not COM. Respects targetCoM override in the .cfg.
 		- Fix Terminal Guidance Passive Sonar torpedoes not entering terminal guidance.
 		- Fix laser guided ordinance locking on to enemy laser dots.
+		- Missile in-flight anims (flightAnimationName) now starts playing when boost motor ignites isntead of post Boost phase.
 	- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
 	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "WEAPONS_RESPECT_CROSSFEED", this may be set to false to restore previous behavior where guns did not respect crossfeed rules.
 - RWP:
@@ -84,17 +85,17 @@
 	- Add craft spawn warning message if craft doesn't have AI/WM on root part, and root isn't a cockpit.
 - P:S:
 	- Add max Extend time limit clamp to override extend behavior that goes on for longer than time limit.
-	- Add support for automated AI/WM settigns for competition rules complance. To utilze, create a 'Comp_settings.cfg' with a 'AIWMChecks' node, containing one or more of the following settings: 
-		-	PS_EXTEND_TIMEOUT = n
-		-	PS_EXTEND_DIST = n
-		-	PS_MONOCOCKPIT_VIEWRANGE = n
-		-	PS_DUALCOCKPIT_VIEWRANGE = n
-		-	PS_COCKPIT_FOV = n
-		-	PS_AVOID_THRESH = n
-		-	PS_AVOID_LA = n
-		-	PS_AVOID_STR = n
-		-	PS_IDLE_SPEED = n
-		-	PS_DISABLE_SAS = T/F	
+	- Add support for automated AI/WM settings for competition rules complance. To utilze, create a 'Comp_settings.cfg' with a 'AIWMChecks' node, containing one or more of the following settings: 
+		-	extensionCutoffTime = n
+		-	extendDistanceAirToAir = n
+		-	MONOCOCKPIT_VIEWRANGE = n
+		-	DUALCOCKPIT_VIEWRANGE = n
+		-	guardAngle = n
+		-	collisionAvoidanceThreshold = n
+		-	vesselCollisionAvoidanceLookAheadPeriod = n
+		-	vesselCollisionAvoidanceStrength = n
+		-	idleSpeed = n
+		-	DISABLE_SAS = T/F	
 	if the file is not present, or it is, but the Project:Showdown toggle in Game Modes is off, overrides will not be used. Overrides will apply on competition start or vessel spawn.
 
 v1.7.1.0

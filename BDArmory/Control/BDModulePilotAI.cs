@@ -485,7 +485,8 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
         public float extendMinGainRate = 10f;
 
-        float extensionCutoffFJRT = 0;
+        float extensionCutoffTimer = 0; //For FJRT/P:S extension termination to prevent overly long extensions from poorly tuned extension settings
+        public float extensionCutoffTime = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
@@ -545,7 +546,7 @@ namespace BDArmory.Control
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SliderResolution", advancedTweakable = true), // Slider Resolution
-            UI_ChooseOption(options = ["Low", "Normal", "High", "Insane"], scene = UI_Scene.All)]
+             UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
         public string sliderResolution = "Normal";
         string previousSliderResolution = "Normal";
 
@@ -1000,7 +1001,7 @@ namespace BDArmory.Control
             extendRequestMinDistance = 0;
             extendAbortTimer = cooldown ? -5f : 0f;
             lastExtendDistance = 0;
-            extensionCutoffFJRT = 0;
+            extensionCutoffTimer = 0;
             extendForMissile = null;
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
@@ -2961,10 +2962,10 @@ namespace BDArmory.Control
         {
             var extendVector = extendHorizontally ? (vessel.transform.position - tPosition).ProjectOnPlanePreNormalized(upDirection) : vessel.transform.position - tPosition;
             var extendDistanceSqr = extendVector.sqrMagnitude;
-            if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
+            if (BDArmorySettings.COMP_CONVENIENCE_CHECKS)
             {
-                extensionCutoffFJRT += Time.fixedDeltaTime;
-                if (BDArmorySettings.PS_EXTEND_TIMEOUT > 0 && extensionCutoffFJRT > BDArmorySettings.PS_EXTEND_TIMEOUT) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
+                extensionCutoffTimer += Time.fixedDeltaTime;
+                if (extensionCutoffTime > 0 && extensionCutoffTimer > extensionCutoffTime) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
                 {
                     StopExtending($"extend time limit exceeded", true);                    
                     return;
