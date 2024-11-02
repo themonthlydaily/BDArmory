@@ -638,7 +638,7 @@ namespace BDArmory.Weapons.Missiles
             launchTransforms = new Transform[missileNum];
             for (int i = 0; i < missileNum; i++)
             {
-                string launcherName = launchTransform.GetChild(i).name; //these should all be named "missile_n"
+                string launcherName = launchTransform.GetChild(i).name;
                 int launcherIndex = int.Parse(launcherName.Substring(7)) - 1; //by coincidence, this is the same offset as rocket pods, which means the existing rocketlaunchers could potentially be converted over to homing munitions...
                 launchTransforms[launcherIndex] = launchTransform.GetChild(i);
             }
