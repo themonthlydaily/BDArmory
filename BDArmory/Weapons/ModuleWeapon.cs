@@ -6086,7 +6086,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
-                        float tempPenDepth = ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: sabotTemp ? 0.9470311374f : 0.656060636f, muParam2: sabotTemp ? 1.555757746f : 1.20190930f, muParam3: sabotTemp ? 2.753715499f : 1.77791929f, sabot: sabotTemp);
+                        float tempPenDepth = ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: binfo.sabot ? 0.9470311374f : 0.656060636f, muParam2: binfo.sabot ? 1.555757746f : 1.20190930f, muParam3: binfo.sabot ? 2.753715499f : 1.77791929f, sabot: binfo.sabot);
                         output.AppendLine($"Estimated Penetration: {tempPenDepth:F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
