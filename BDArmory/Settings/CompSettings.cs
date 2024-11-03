@@ -53,8 +53,8 @@ namespace BDArmory.Settings
 
             foreach (ConfigNode.Value fieldNode in settings.values)
             {
-                var fieldValue = float.Parse(fieldNode.value);
-                CompOverrides[fieldNode.name] = fieldValue; // Add or set the override.
+                if (float.TryParse(fieldNode.value, out float fieldValue))
+                    CompOverrides[fieldNode.name] = fieldValue; // Add or set the override.
             }
             if (BDArmorySettings.DEBUG_OTHER)
             {

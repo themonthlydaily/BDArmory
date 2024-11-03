@@ -215,8 +215,8 @@ namespace BDArmory.VesselSpawning
         public static void ApplyRWP(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyRWP(vessel); // Applying RWP can't be undone
         #endregion
         #region FJRT Stuff
-        public static void ApplyFJRTonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyFJRTonNewVessels(enable);
-        public static void ApplyFJRT(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyFJRT(vessel); // Applying RWP can't be undone
+        public static void ApplyCompCheckonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplCompCheckonNewVessels(enable);
+        public static void ApplyCompSettingsChecks(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyCompSettingsChecks(vessel); // Applying RWP can't be undone
 
         #endregion
 
@@ -1100,21 +1100,21 @@ namespace BDArmory.VesselSpawning
         }
         #endregion
 
-        #region FJRT
-        public void ApplyFJRTonNewVessels(bool enable)
+        #region Competition AI/WM Settings Compliance
+        public void ApplCompCheckonNewVessels(bool enable)
         {
             if (enable)
             {
-                GameEvents.onVesselLoaded.Add(ApplyFJRTEventHandler);
+                GameEvents.onVesselLoaded.Add(ApplyCompCheckEventHandler);
             }
             else
             {
-                GameEvents.onVesselLoaded.Remove(ApplyFJRTEventHandler);
+                GameEvents.onVesselLoaded.Remove(ApplyCompCheckEventHandler);
             }
         }
-        void ApplyFJRTEventHandler(Vessel vessel) => ApplyFJRT(vessel);
+        void ApplyCompCheckEventHandler(Vessel vessel) => ApplyCompSettingsChecks(vessel);
 
-        public void ApplyFJRT(Vessel vessel)
+        public void ApplyCompSettingsChecks(Vessel vessel)
         {
             if (vessel == null || !vessel.loaded) return;
             if (BDArmorySettings.COMP_CONVENIENCE_CHECKS)
@@ -1124,18 +1124,14 @@ namespace BDArmory.VesselSpawning
                 using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                     while (part.MoveNext())
                     {
-                        if (CompSettings.CompOverrides.ContainsKey("DISABLE_SAS"))
+                        if (CompSettings.CompOverrides.TryGetValue("DISABLE_SAS", out float dSAS) && dSAS > 0)
                         {
-                            CompSettings.CompOverrides.TryGetValue("DISABLE_SAS", out float v);
-                            if (v == 1)
+                            if (part.Current.GetComponent<ModuleReactionWheel>() != null)
                             {
-                                if (part.Current.GetComponent<ModuleReactionWheel>() != null)
-                                {
-                                    ModuleReactionWheel SAS;
-                                    SAS = part.Current.GetComponent<ModuleReactionWheel>();
-                                    if (part.Current.CrewCapacity == 0)
-                                        SAS.authorityLimiter = 0;
-                                }
+                                ModuleReactionWheel SAS;
+                                SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                if (part.Current.CrewCapacity == 0)
+                                    SAS.authorityLimiter = 0;
                             }
                         }
                         if (part.Current.GetComponent<ModuleCommand>() != null)
@@ -1146,54 +1142,33 @@ namespace BDArmory.VesselSpawning
                 var AI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
                 if (AI != null)
                 {                    
-                    if (CompSettings.CompOverrides.ContainsKey("extendDistanceAirToAir"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("extendDistanceAirToAir", out float v);
-                        if (v >= 0) AI.extendDistanceAirToAir = Mathf.Min(AI.extendDistanceAirToAir, v);
-                    }
-                    if (CompSettings.CompOverrides.ContainsKey("collisionAvoidanceThreshold"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("collisionAvoidanceThreshold", out float v);
-                        if (v >= 0) AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, v);
-                    }
-                    if (CompSettings.CompOverrides.ContainsKey("vesselCollisionAvoidanceLookAheadPeriod"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("vesselCollisionAvoidanceLookAheadPeriod", out float v);
-                        if (v >= 0) AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, v);
-                    }
-                    if (CompSettings.CompOverrides.ContainsKey("vesselCollisionAvoidanceStrength"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("vesselCollisionAvoidanceStrength", out float v);
-                        if (v >= 0) AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, v);
-                    }
-                    if (CompSettings.CompOverrides.ContainsKey("idleSpeed"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("idleSpeed", out float v);
-                        if (v >= 0) AI.idleSpeed = Mathf.Max(AI.idleSpeed, v);
-                    }
-                    if (CompSettings.CompOverrides.ContainsKey("extensionCutoffTime"))
-                    {
-                        CompSettings.CompOverrides.TryGetValue("extensionCutoffTime", out float v);
-                        if (v >= 0) AI.extensionCutoffTime = Mathf.Max(AI.extensionCutoffTime, v);
-                    }
+                    if (CompSettings.CompOverrides.TryGetValue("extendDistanceAirToAir", out float dATA) && dATA > 0)
+                        AI.extendDistanceAirToAir = Mathf.Min(AI.extendDistanceAirToAir, dATA);
+                    if (CompSettings.CompOverrides.TryGetValue("collisionAvoidanceThreshold", out float cAT) && cAT >= 0)
+                        AI.collisionAvoidanceThreshold = Mathf.Max(AI.collisionAvoidanceThreshold, cAT);
+                    if (CompSettings.CompOverrides.TryGetValue("vesselCollisionAvoidanceLookAheadPeriod", out float vCAL) && vCAL >= 0)
+                        AI.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Max(AI.vesselCollisionAvoidanceLookAheadPeriod, vCAL);
+                    if (CompSettings.CompOverrides.TryGetValue("vesselCollisionAvoidanceStrength", out float vCAS) && vCAS >= 0)
+                        AI.vesselCollisionAvoidanceStrength = Mathf.Max(AI.vesselCollisionAvoidanceStrength, vCAS);
+                    if (CompSettings.CompOverrides.TryGetValue("idleSpeed", out float iS) && iS > 0)
+                        AI.idleSpeed = Mathf.Max(AI.idleSpeed, iS);
+                    if (CompSettings.CompOverrides.TryGetValue("extensionCutoffTime", out float eCT) && eCT > 0)
+                        AI.extensionCutoffTime = Mathf.Max(AI.extensionCutoffTime, eCT);
                 }
                 var WM = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (WM != null)
                 {
-                    if (CompSettings.CompOverrides.ContainsKey("MONOCOCKPIT_VIEWRANGE"))
+                    if (cockpitSeatCount == 1)
                     {
-                        CompSettings.CompOverrides.TryGetValue("MONOCOCKPIT_VIEWRANGE", out float v);
-                        if (v >= 0 && cockpitSeatCount == 1) WM.guardRange = Mathf.Min(WM.guardRange, v);
-                        if (CompSettings.CompOverrides.ContainsKey("guardAngle"))
-                        {
-                            CompSettings.CompOverrides.TryGetValue("guardAngle", out float ga);
-                            if (ga >= 0) WM.guardAngle = Mathf.Min(WM.guardAngle, ga);
-                        }
+                        if (CompSettings.CompOverrides.TryGetValue("MONOCOCKPIT_VIEWRANGE", out float gR1) && gR1 > 0)
+                            WM.guardRange = Mathf.Min(WM.guardRange, gR1);
+                        if (CompSettings.CompOverrides.TryGetValue("guardAngle", out float gA) && gA > 0)
+                            WM.guardAngle = Mathf.Min(WM.guardAngle, gA);
                     }
-                    if (CompSettings.CompOverrides.ContainsKey("DUALCOCKPIT_VIEWRANGE"))
+                    else //this would cause dual-seat visual range to also apply to dronecore controlled craft, but those should be caught by overall building rules...
                     {
-                        CompSettings.CompOverrides.TryGetValue("DUALCOCKPIT_VIEWRANGE", out float v);
-                        if (v >= 0 && cockpitSeatCount > 1) WM.guardRange = Mathf.Min(WM.guardRange, v);
+                        if (CompSettings.CompOverrides.TryGetValue("DUALCOCKPIT_VIEWRANGE", out float gR2) && gR2 > 0)
+                                WM.guardRange = Mathf.Min(WM.guardRange, gR2);
                     }
                 }
             }
