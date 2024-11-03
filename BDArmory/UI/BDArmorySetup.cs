@@ -2506,8 +2506,9 @@ namespace BDArmory.UI
                         BDArmorySettings.NUMERIC_INPUT_DELAY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.NUMERIC_INPUT_DELAY, 0.1f, 2f), 0.1f);
                     }
 
-                    { // Craft-browser thumbnails
-                        if (HighLogic.LoadedSceneIsEditor && GUI.Button(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_CraftBrowser_GenerateMissingThumbnails"))) CraftBrowserMissingThumbnailGenerator.Instance.GenerateMissingThumbnails(EditorDriver.editorFacility);
+                    if (HighLogic.LoadedSceneIsEditor) // Craft-browser thumbnails
+                    {
+                        if (GUI.Button(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_CraftBrowser_GenerateMissingThumbnails"))) CraftBrowserMissingThumbnailGenerator.Instance.GenerateMissingThumbnails(EditorDriver.editorFacility);
                         CraftBrowserMissingThumbnailGenerator.recurse = GUI.Toggle(SRightRect(line), CraftBrowserMissingThumbnailGenerator.recurse, StringUtils.Localize("#LOC_BDArmory_CraftBrowser_GenerateMissingThumbnailsRecurse"));
                     }
 

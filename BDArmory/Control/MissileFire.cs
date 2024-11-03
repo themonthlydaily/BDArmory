@@ -1431,7 +1431,7 @@ namespace BDArmory.Control
             if (vessel.isActiveVessel && !guardMode) // Manual firing.
             {
                 bool missileTriggerHeld = false;
-                if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
+                if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && !ModuleTargetingCamera.IsSlewing)
                 {
                     triggerTimer += Time.fixedDeltaTime;
                     missileTriggerHeld = true;

@@ -1651,7 +1651,7 @@ namespace BDArmory.Bullets
             Vector3[] firedVelocity, bool drop, float TTL, float timestep, float detRange, float detTime,
             bool isSubP = false, bool isAPSP = false,
             PooledRocket targetRocket = null, PooledBullet targetShell = null,
-            bool steal = false, float damageMult = 1f,
+            bool steal = false, float damageMult = 1f, float bulletDmgMult = 1f,
             bool addSourcePartVel = true, float additionalVel = 0f,
             Vessel tgtVessel = null, float guidance = 0f, bool registerShot = false)
         {
@@ -1675,7 +1675,7 @@ namespace BDArmory.Bullets
                 pBullet.bulletMass = bulletType.bulletMass;
                 pBullet.incendiary = bulletType.incendiary;
                 pBullet.apBulletMod = bulletType.apBulletMod;
-                pBullet.bulletDmgMult = damageMult;
+                pBullet.bulletDmgMult = bulletDmgMult;
 
                 pBullet.ballisticCoefficient = bulletType.bulletBallisticCoefficient;
 
@@ -1842,7 +1842,7 @@ namespace BDArmory.Bullets
 
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
                         firedVelocities, bulletDrop, subTTL, iTime, subDetonationRange, subDetonationTime,
-                        true, isAPSprojectile, tgtRocket, tgtShell, stealResources, dmgMult,
+                        true, isAPSprojectile, tgtRocket, tgtShell, stealResources, dmgMult, bulletDmgMult,
                         false, GetDragAdjustedVelocity().magnitude);
             }
         }
