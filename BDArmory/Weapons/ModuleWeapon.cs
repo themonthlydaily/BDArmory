@@ -2218,10 +2218,6 @@ namespace BDArmory.Weapons
                                     graphicsInfo.startColor.a *= 0.5f;
                                     graphicsInfo.projectileColor.a *= 0.5f;
                                 }
-                                Vector3[] firedVelocities = new Vector3[bulletInfo.projectileCount];
-
-                                for (int s = 0; s < ProjectileCount; s++)
-                                    firedVelocities[s] = VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
 
                                 Vessel targetV = null;
                                 float guidance = 0f;
@@ -2245,10 +2241,11 @@ namespace BDArmory.Weapons
                                     timeFired += reloadVariability;
                                 }
 
-                                FireBullet(bulletInfo, bulletInfo.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
-                                    (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
-                                    iTime, detonationRange, bulletTimeToCPA, false, isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal,
-                                    instagib ? -1 : dmgMultiplier, bulletDmgMult, true, 0f, targetV, guidance, true);
+                                FireBullet(bulletInfo, bulletInfo.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
+                                    bulletDrop, (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
+                                    iTime, detonationRange, bulletTimeToCPA,
+                                    isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal, instagib ? -1 : dmgMultiplier, bulletDmgMult,
+                                    true, 0f, transform.forward, false, maxDeviation, targetV, guidance, true);
 
                                 //heat
                                 heat += heatPerShot;

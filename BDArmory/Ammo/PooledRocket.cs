@@ -1093,17 +1093,13 @@ namespace BDArmory.Bullets
                     sBullet.tntMass > 0.5f ? explModelPath : "BDArmory/Models/explosion/30mmExplosion", explSoundPath);
                 NukeInfo nukeInfo = sBullet.nuclear ? new NukeInfo(flashModelPath, shockModelPath, blastModelPath,
                     plumeModelPath, debrisModelPath, blastSoundPath) : new NukeInfo();
-                Vector3[] firedVelocities = new Vector3[count * sBullet.projectileCount];
-                for (int s = 0; s < count * sBullet.projectileCount; s++)
-                {
-                    firedVelocities[s] = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
-                }
 
                 float subTTL = Mathf.Max(sBullet.projectileTTL, detonationRange / sBullet.bulletVelocity * 1.1f);
 
-                FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true, subTTL,
-                        TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude),
-                        true, isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, bulletDmgMult, false, currentVelocity.magnitude);
+                FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
+                        true, subTTL, TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude),
+                        isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, bulletDmgMult,
+                        false, currentVelocity.magnitude, currentVelocity, true);
             }
             else
             {
