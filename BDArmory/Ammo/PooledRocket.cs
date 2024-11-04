@@ -707,13 +707,13 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-                                if (caliber >= RA.sensitivity) //big enough round to trigger RA
+                                if (caliber >= RA.sensitivity && hit.collider.transform.name.Substring(0, 8) == "section") //big enough round to trigger RA and hit an ERA section
                                 {
                                     thickness *= thicknessModifier;
                                     if (tntMass <= 0) //non-explosive impact
                                     {
-                                        RA.UpdateSectionScales(); //detonate RA section
-                                                                  //explosive impacts handled in ExplosionFX
+                                        RA.UpdateSectionScales(int.Parse(hit.collider.transform.name.Substring(8)) - 1); //detonate RA section
+                                                                                                                         //explosive impacts handled in ExplosionFX
                                     }
                                 }
                             }

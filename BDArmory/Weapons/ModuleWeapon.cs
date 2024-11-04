@@ -1369,6 +1369,7 @@ namespace BDArmory.Weapons
                                 ammoList = new List<string> { "def" };
                             }
                             customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                            customAmmoBeltIndexes = new int[customAmmoBelt.Count];
                             int currIndex = -1;
                             for (int i = 0; i < customAmmoBelt.Count; ++i)
                             {
@@ -2258,7 +2259,7 @@ namespace BDArmory.Weapons
                                     bulletDrop, (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
                                     iTime, detonationRange, bulletTimeToCPA,
                                     isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal, instagib ? -1 : dmgMultiplier, bulletDmgMult,
-                                    true, 0f, transform.forward, false, maxDeviation, targetV, guidance, true);
+                                    true, 0f, fireTransform.forward, false, maxDeviation, targetV, guidance, true);
 
                                 //heat
                                 heat += heatPerShot;
@@ -5777,7 +5778,7 @@ namespace BDArmory.Weapons
             if (useCustomBelt && customAmmoBelt.Count > 0)
             {
                 currentType = customAmmoBelt[AmmoIntervalCounter].ToString();
-                currentTypeIndex = AmmoIntervalCounter;
+                currentTypeIndex = customAmmoBeltIndexes[AmmoIntervalCounter];
             }
             else
             {

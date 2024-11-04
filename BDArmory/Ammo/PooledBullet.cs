@@ -1226,27 +1226,31 @@ namespace BDArmory.Bullets
                         }
                         else
                         {
-                            if (sabot)
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Hit Transform: {bulletHit.hit.collider.transform.name}");
+                            if (bulletHit.hit.collider.transform.name.Substring(0,8) == "section")
                             {
-                                if (hitAngle < 80) //ERA isn't going to do much against near-perpendicular hits
+                                if (sabot)
                                 {
-                                    caliber = BDAMath.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
-                                    bulletMass /= 2; //sunder sabot
-                                                     //RA isn't going to stop sabot, but underlying part's armor will (probably)
-                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
-                                    RA.UpdateSectionScales();
-                                }
-                            }
-                            else //standard rounds
-                            {
-                                if (caliber >= RA.sensitivity) //big enough round to trigger RA
-                                {
-                                    thickness *= thicknessModifier;
-                                    if (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating || fuzeType == BulletFuzeTypes.None) //non-explosive impact
+                                    if (hitAngle < 80) //ERA isn't going to do much against near-perpendicular hits
                                     {
-                                        RA.UpdateSectionScales(); //detonate RA section
-                                                                  //explosive impacts handled in ExplosionFX
-                                                                  //if explosive and contact fuze, kill bullet?
+                                        caliber = BDAMath.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
+                                        bulletMass /= 2; //sunder sabot
+                                                         //RA isn't going to stop sabot, but underlying part's armor will (probably)
+                                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
+                                        RA.UpdateSectionScales(int.Parse(bulletHit.hit.collider.transform.name.Substring(8)) - 1);
+                                    }
+                                }
+                                else //standard rounds
+                                {
+                                    if (caliber >= RA.sensitivity) //big enough round to trigger RA
+                                    {
+                                        thickness *= thicknessModifier;
+                                        if (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating || fuzeType == BulletFuzeTypes.None) //non-explosive impact
+                                        {
+                                            RA.UpdateSectionScales(int.Parse(bulletHit.hit.collider.transform.name.Substring(8)) - 1); //detonate RA section
+                                                                                                                                       //explosive impacts handled in ExplosionFX
+                                                                                                                                       //if explosive and contact fuze, kill bullet?
+                                        }
                                     }
                                 }
                             }

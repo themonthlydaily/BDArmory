@@ -58,7 +58,7 @@ namespace BDArmory.Armor
                 int sectionIndex = int.Parse(sectionName.Substring(8)) - 1;
                 sections[sectionIndex] = segmentsTransform.GetChild(i);
             }
-            sections.Shuffle(); //randomize order sections get removed
+            //sections.Shuffle(); //randomize order sections get removed
             sectionsRemaining = sectionsCount;
             var HP = part.FindModuleImplementing<HitpointTracker>();
             if (HP != null)
@@ -69,7 +69,7 @@ namespace BDArmory.Armor
             }
         }
 
-        public void UpdateSectionScales()
+        public void UpdateSectionScales(int sectionDestroyed = -1)
         {
             direction = -sections[sectionsRemaining-1].up; 
 
@@ -89,11 +89,14 @@ namespace BDArmory.Armor
                 }
                 if (HP.Hitpoints < 0) part.Destroy();
             }
-            for (int i = 0; i < sectionsCount; i++)
+            if (sectionDestroyed < 0)
+                sectionDestroyed = (int)Mathf.Floor(UnityEngine.Random.value * sectionsRemaining);
+            sections[sectionDestroyed].localScale = Vector3.zero;
+            /*for (int i = 0; i < sectionsCount; i++)
             {
                 if (i < sectionsRemaining) sections[i].localScale = Vector3.one;
                 else sections[i].localScale = Vector3.zero;
-            }
+            }*/
         }
     }
 }
