@@ -46,11 +46,10 @@ namespace BDArmory.Weapons
         private void FireProjectile(float detRange = -1, float detTime = -1)
         {
             SourceInfo sourceInfo = new SourceInfo(vessel, Team.Name, part, transform.position);
-            GraphicsInfo graphicsInfo = new GraphicsInfo(bulletTexturePath, GUIUtils.ParseColor255(_warheadType.projectileColor), GUIUtils.ParseColor255(_warheadType.startColor),
+            GraphicsInfo graphicsInfo = new GraphicsInfo(bulletTexturePath, _warheadType.projectileColorC, _warheadType.startColorC,
                 _warheadType.caliber / 300, _warheadType.caliber / 750, 0, 1.75f, 2.65f, smokeTexturePath, explModelPath, explSoundPath);
             NukeInfo nukeInfo = new NukeInfo(); // Will inherit parent part's models on enable
             float currentSpeed = (float)vessel.Velocity().magnitude;
-
 
             if (_warheadType.tntMass > 0 || _warheadType.beehive)
             {

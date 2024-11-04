@@ -1088,7 +1088,7 @@ namespace BDArmory.Bullets
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
 
                 SourceInfo sourceInfo = new SourceInfo(sourceVessel, team, sourceWeapon, currentPosition);
-                GraphicsInfo graphicsInfo = new GraphicsInfo("BDArmory/Textures/bullet", GUIUtils.ParseColor255(sBullet.projectileColor), GUIUtils.ParseColor255(sBullet.startColor),
+                GraphicsInfo graphicsInfo = new GraphicsInfo("BDArmory/Textures/bullet", sBullet.projectileColorC, sBullet.startColorC,
                     sBullet.caliber / 300, sBullet.caliber / 750, 0, 1.75f, 2.65f, "",
                     sBullet.tntMass > 0.5f ? explModelPath : "BDArmory/Models/explosion/30mmExplosion", explSoundPath);
                 NukeInfo nukeInfo = sBullet.nuclear ? new NukeInfo(flashModelPath, shockModelPath, blastModelPath,

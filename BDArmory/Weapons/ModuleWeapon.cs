@@ -5789,8 +5789,8 @@ namespace BDArmory.Weapons
                 bulletMass = bulletInfo.bulletMass;
                 ProjectileCount = bulletInfo.projectileCount;
                 bulletDragTypeName = bulletInfo.bulletDragTypeName;
-                projectileColorC = GUIUtils.ParseColor255(bulletInfo.projectileColor);
-                startColorC = GUIUtils.ParseColor255(bulletInfo.startColor);
+                projectileColorC = bulletInfo.projectileColorC;
+                startColorC = bulletInfo.startColorC;
                 fadeColor = bulletInfo.fadeColor;
                 //ParseBulletDragType();
                 bulletDragType = bulletInfo.bulletDragType;
