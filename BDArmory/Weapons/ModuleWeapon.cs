@@ -2259,7 +2259,7 @@ namespace BDArmory.Weapons
                                     bulletDrop, (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
                                     iTime, detonationRange, bulletTimeToCPA,
                                     isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal, instagib ? -1 : dmgMultiplier, bulletDmgMult,
-                                    true, 0f, fireTransform.forward, false, maxDeviation, targetV, guidance, true);
+                                    true, 0f, 0f, fireTransform.forward, false, maxDeviation, targetV, guidance, true);
 
                                 //heat
                                 heat += heatPerShot;

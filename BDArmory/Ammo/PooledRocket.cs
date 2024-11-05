@@ -1083,9 +1083,6 @@ namespace BDArmory.Bullets
                 BulletInfo sBullet = BulletInfo.bullets[projType];
                 
                 float relVelocity = (thrust / rocketMass) * Mathf.Clamp(Time.time - startTime, 0, thrustTime); //currVel is rocketVel + orbitalvel, if in orbit, which will dramatically increase dispersion cone angle, so using accel * time instad
-                float incrementVelocity = 1000 / (relVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit 
-                float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-                float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
 
                 SourceInfo sourceInfo = new SourceInfo(sourceVessel, team, sourceWeapon, currentPosition);
                 GraphicsInfo graphicsInfo = new GraphicsInfo("BDArmory/Textures/bullet", sBullet.projectileColorC, sBullet.startColorC,
@@ -1096,10 +1093,12 @@ namespace BDArmory.Bullets
 
                 float subTTL = Mathf.Max(sBullet.projectileTTL, detonationRange / sBullet.bulletVelocity * 1.1f);
 
+                float currSpeed = currentVelocity.magnitude;
+
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
-                        true, subTTL, TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currentVelocity.magnitude),
+                        true, subTTL, TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currSpeed),
                         isAPSprojectile, tgtRocket, tgtShell, thief, dmgMult, bulletDmgMult,
-                        false, currentVelocity.magnitude, currentVelocity, true);
+                        false, currSpeed, relVelocity, currentVelocity, true);
             }
             else
             {

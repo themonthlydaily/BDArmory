@@ -1655,7 +1655,7 @@ namespace BDArmory.Bullets
             bool drop, float TTL, float timestep, float detRange, float detTime,
             bool isAPSP = false, PooledRocket targetRocket = null, PooledBullet targetShell = null,
             bool steal = false, float damageMult = 1f, float bulletDmgMult = 1f,
-            bool addSourcePartVel = true, float additionalVel = 0f,
+            bool addSourcePartVel = true, float additionalVel = 0f, float additionalPhysicsVel = 0f,
             Vector3 subPVelorDir = default, bool isSubP = false,
             float maxDeviation = -1f,
             Vessel tgtVessel = null, float guidance = 0f,
@@ -1691,9 +1691,9 @@ namespace BDArmory.Bullets
 
                 if (isSubP && maxDeviation < 0)
                 {
-                    float incrementVelocity = 1000 / pBullet.bulletVelocity; //using 1km/s as a reference Unit
+                    float incrementVelocity = 1000 / (additionalPhysicsVel + pBullet.bulletVelocity); //using 1km/s as a reference Unit
                     float dispersionAngle = bulletType.subProjectileDispersion > 0 ? bulletType.subProjectileDispersion : BDAMath.Sqrt(projectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-                    float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
+                    float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s dispersion to angle, accounting for vel of round
                     pBullet.currentVelocity = subPVelorDir + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
                 }
                 else
@@ -1701,8 +1701,11 @@ namespace BDArmory.Bullets
                     pBullet.currentVelocity = VectorUtils.GaussianDirectionDeviation(subPVelorDir, (maxDeviation / 2)) * bulletType.bulletVelocity;
                 }
 
+                Vector3 firedVelocity = default;
+
                 if (addSourcePartVel)
                 {
+                    firedVelocity = pBullet.currentVelocity;
                     pBullet.currentVelocity += BDKrakensbane.FrameVelocityV3f + sourceInfo.weapon.rb.velocity; // use the real vessel velocity, w/o offloading
                 }
 
@@ -1801,7 +1804,7 @@ namespace BDArmory.Bullets
                     if (!pBullet.hasRicocheted) // Movement is handled internally for ricochets.
                     {
                         Vector3 gravity = drop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.currentPosition) : Vector3.zero;
-                        pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, pBullet.currentVelocity, gravity, timestep);
+                        pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, firedVelocity, gravity, timestep);
                         pBullet.currentVelocity += timestep * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
                         pBullet.DistanceTraveled += timestep * pBullet.currentVelocity.magnitude; // Adjust the distance traveled to account for iTime.
                     }

@@ -4,11 +4,8 @@ using UnityEngine;
 
 using BDArmory.Extensions;
 using BDArmory.Settings;
-using BDArmory.Utils;
 using BDArmory.Bullets;
 using static BDArmory.Bullets.PooledBullet;
-using static BDArmory.Weapons.ModuleWeapon;
-using static KSP.UI.Screens.Settings.SettingsSetup;
 
 namespace BDArmory.Weapons
 {
