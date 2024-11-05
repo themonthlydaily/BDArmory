@@ -1862,7 +1862,7 @@ namespace BDArmory.Bullets
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
                         bulletDrop, subTTL, iTime, subDetonationRange, subDetonationTime,
                         isAPSprojectile, tgtRocket, tgtShell, stealResources, dmgMult, bulletDmgMult,
-                        false, GetDragAdjustedVelocity().magnitude, currentVelocity, true);
+                        false, GetDragAdjustedVelocity().magnitude, bulletVelocity, currentVelocity, true);
             }
         }
         /// <summary>
