@@ -1669,6 +1669,8 @@ namespace BDArmory.Bullets
                 ModuleWeapon.bulletPool = ObjectPool.CreateObjectPool(templateBullet, 100, true, true);
             }
 
+            Vector3 firedVelocity = default;
+
             for (int i = 0; i < projectileCount; i++)
             {
                 GameObject firedBullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1700,8 +1702,6 @@ namespace BDArmory.Bullets
                 {
                     pBullet.currentVelocity = VectorUtils.GaussianDirectionDeviation(subPVelorDir, (maxDeviation / 2)) * bulletType.bulletVelocity;
                 }
-
-                Vector3 firedVelocity = default;
 
                 if (addSourcePartVel)
                 {
