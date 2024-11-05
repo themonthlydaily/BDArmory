@@ -215,8 +215,8 @@ namespace BDArmory.VesselSpawning
         public static void ApplyRWP(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyRWP(vessel); // Applying RWP can't be undone
         #endregion
         #region FJRT Stuff
-        public static void ApplyCompCheckonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplCompCheckonNewVessels(enable);
-        public static void ApplyCompSettingsChecks(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyCompSettingsChecks(vessel); // Applying RWP can't be undone
+        public static void ApplyCompCheckonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyCompCheckOnNewVessels(enable);
+        public static void ApplyCompSettingsChecks(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyCompSettingsChecks(vessel); // Applying these can't be undone
 
         #endregion
 
@@ -1101,7 +1101,7 @@ namespace BDArmory.VesselSpawning
         #endregion
 
         #region Competition AI/WM Settings Compliance
-        public void ApplCompCheckonNewVessels(bool enable)
+        public void ApplyCompCheckOnNewVessels(bool enable)
         {
             if (enable)
             {

@@ -11,6 +11,7 @@
 	- Add craft thumbnails to the custom craft browser.
 	- Add a button (in the Settings->UI section) when in the SPH/VAB to generate missing craft thumbnails (which can be found in KSP/thumbs).
 		- Generating thumbnails involves loading each craft and capturing a thumbnail. This can take some time if many are missing.
+	- Add "VAB Organizer" MM patch for BDA parts — from user Spartwo.
 - AI:
 	- Fix AI not going into Ramming mode when guns possess ammo, but not enough to meet resourceRequestAmount of mounted weapons.
 	- Orbital AI now automatically disables gimbal on reverse thrust and RCS engines (gimbal directions for these are incorrect).
