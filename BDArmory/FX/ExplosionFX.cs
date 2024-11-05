@@ -1041,7 +1041,7 @@ namespace BDArmory.FX
                                         {
                                             WarheadTypes.ShapedCharge => 5000f,
                                             WarheadTypes.Kinetic => ImpactSpeed,
-                                            _ => ExplosionVelocity
+                                            _ => ExplosionVelocity //technically this should be the sum vector of the explosion vel (perpendicular to missile vel), and missile vel since the rods are physical projectiles that would be inheriting their parent's vel
                                         },
                                         ExplosionSource);
                                 }
@@ -1050,7 +1050,7 @@ namespace BDArmory.FX
                                 {
                                     if (blastInfo.Damage > 0)
                                     {
-                                        damage += part.AddExplosiveDamage(shapedEffect ? blastInfo.Damage : 0.5f * (blastInfo.Damage + damageWithoutIntermediateParts), Caliber, ExplosionSource, dmgMult);
+                                        damage += part.AddExplosiveDamage(shapedEffect ? 0.5f * (blastInfo.Damage + damageWithoutIntermediateParts) : blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
                                     }
 
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");

@@ -46,7 +46,6 @@ namespace BDArmory.Radar
         [KSPField(isPersistant = true)] public bool omniDetection = true;
 
         [KSPField] public float fieldOfView = 360; //for if making separate RWR and WM for mod competitions, etc.
-
         // This field was added to separate RWR active status from the display of the RWR.  the RWR should be running all the time...
         public bool displayRWR = false;
         internal static bool resizingWindow = false;

@@ -117,7 +117,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "massMod", typeof(float)),
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
-                        (float)ParseField(node, "guidanceDPS", typeof(float)),
+                        (float)ParseField(node, "guidanceDPS", typeof(float)),                        
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         Math.Max((int)ParseField(node, "projectileCount", typeof(int)), 1),
                         -1,

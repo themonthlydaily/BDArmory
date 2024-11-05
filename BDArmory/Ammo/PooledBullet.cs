@@ -2212,7 +2212,7 @@ namespace BDArmory.Bullets
             return tntMass > 0 ? tntMass : blastPower;
         }
     }
-
+    
     public class BulletHit
     {
         public RaycastHit hit { get; set; }

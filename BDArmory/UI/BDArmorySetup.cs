@@ -835,6 +835,7 @@ namespace BDArmory.UI
                 TournamentScores.LoadWeights();
                 SanitiseSettings();
                 RWPSettings.Load();
+                CompSettings.Load();
                 BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
@@ -3204,6 +3205,9 @@ namespace BDArmory.UI
                         }
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
+                    if (CompSettings.CompOverridesEnabled)
+                        BDArmorySettings.COMP_CONVENIENCE_CHECKS = GUI.Toggle(SRightRect(line), BDArmorySettings.COMP_CONVENIENCE_CHECKS, StringUtils.Localize("Use AI/WM Overrides"));
+
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
@@ -3340,6 +3344,55 @@ namespace BDArmory.UI
                             //might be more elegant to simply have this use Mutator framework and load the HoS craft with a select mutator(s) instead... Something to look into later, maybe, but ideally this shouldn't need to be used in the first place.
                         }
                     }
+                    /*
+                    if (BDArmorySettings.PS_CONVENIENCE_CHECKS)
+                    {
+                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SRightRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) 
+                        {
+                            switch (CheatCodeGUI)
+                            {
+                                case "PSSettings": //until we figure out where to put this
+                                    {
+                                        PSSettings = !PSSettings;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }                            
+                            }
+                        }
+                        if (PSSettings) //rushjob hack. Look into implementing something akin to the RWPSettings/hooking into that, for a more modular approach?
+                        {
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Extend Time Out")}:  ({BDArmorySettings.PS_EXTEND_TIMEOUT})", leftLabel);
+                            BDArmorySettings.PS_EXTEND_TIMEOUT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_TIMEOUT, 0, 60));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max Extend Dist")}:  ({BDArmorySettings.PS_EXTEND_DIST})", leftLabel);
+                            BDArmorySettings.PS_EXTEND_DIST = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_EXTEND_DIST, 0, 30000), 100);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max View Range (1 seat)")}:  ({BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE})", leftLabel);
+                            BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_MONOCOCKPIT_VIEWRANGE, 0, 30000), 250);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Max View Range (2 seat)")}:  ({BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE})", leftLabel);
+                            BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_DUALCOCKPIT_VIEWRANGE, 0, 30000), 250);
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Cockpit FOV (1 seat)")}:  ({BDArmorySettings.PS_COCKPIT_FOV})", leftLabel);
+                            BDArmorySettings.PS_COCKPIT_FOV = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_COCKPIT_FOV, 1, 360));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid Threshold Min")}:  ({BDArmorySettings.PS_AVOID_THRESH})", leftLabel);
+                            BDArmorySettings.PS_AVOID_THRESH = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_AVOID_THRESH, 1, 30));
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid LookAhead Min")}:  ({BDArmorySettings.PS_AVOID_LA})", leftLabel);
+                            BDArmorySettings.PS_AVOID_LA = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_AVOID_LA, 0, 3) * 10f) / 10f;
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Avoid Strength Min")}:  ({BDArmorySettings.PS_AVOID_STR})", leftLabel);
+                            BDArmorySettings.PS_AVOID_STR = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_AVOID_STR, 0, 4) * 10f) / 10f;
+
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("Idle Speed Min")}:  ({BDArmorySettings.PS_IDLE_SPEED})", leftLabel);
+                            BDArmorySettings.PS_IDLE_SPEED = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.PS_IDLE_SPEED, 100, 500), 10);
+                            BDArmorySettings.PS_DISABLE_SAS = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.PS_DISABLE_SAS, StringUtils.Localize("Disable non-Cockpit SAS"));
+                            line++;
+                            //min/max Altitude setters?
+                        }
+                    }
+                    */
                 }
 
                 if (BDArmorySettings.BATTLEDAMAGE != (BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, StringUtils.Localize("#LOC_BDArmory_Settings_BattleDamage"))))

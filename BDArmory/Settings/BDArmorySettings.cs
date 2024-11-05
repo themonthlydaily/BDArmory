@@ -480,5 +480,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static int APS_THRESHOLD = 60;                           // Threshold caliber that APS will register for intercepting hostile shells/rockets
         #endregion
+        #region ProjectShowdown Stuff
+        [BDAPersistentSettingsField] public static bool COMP_CONVENIENCE_CHECKS = false;
+        #endregion
     }
 }

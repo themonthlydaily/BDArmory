@@ -35,7 +35,7 @@ namespace BDArmory.UI
         private string newTeamName = string.Empty;
 
         public void Open(MissileFire weaponManager, Vector2 position)
-        {
+        {            
             targetWeaponManager = weaponManager;
             newTeamName = string.Empty;
             windowLocation = position;
