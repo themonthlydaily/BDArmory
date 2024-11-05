@@ -2248,7 +2248,7 @@ namespace BDArmory.Weapons
                                 FireBullet(bulletInfo, bulletInfo.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
                                     (isAPS && delayTime > -1) ? delayTime - Time.time : Mathf.Max(maxTargetingRange, defaultDetonationRange) / bulletVelocity * 1.1f,
                                     iTime, detonationRange, bulletTimeToCPA, false, isAPS, isAPS ? tgtRocket : null, isAPS ? tgtShell : null, resourceSteal,
-                                    instagib ? -1 : dmgMultiplier, true, 0f, targetV, guidance, true);
+                                    instagib ? -1 : dmgMultiplier, bulletDmgMult, true, 0f, targetV, guidance, true);
 
                                 //heat
                                 heat += heatPerShot;

@@ -71,7 +71,7 @@ namespace BDArmory.Weapons
             FireBullet(_warheadType, _warheadType.projectileCount, sourceInfo, graphicsInfo, nukeInfo, firedVelocities, true,
                     _warheadType.projectileTTL + (detTime < 0.0f ? 0.0f : detTime),
                     TimeWarp.fixedDeltaTime, detRange, detTime,
-                    true, false, null, null, false, 1f, true, currentSpeed);
+                    true, false, null, null, false, 1f, 1f, true, currentSpeed);
         }
 
         protected override void WarheadSpecificSetup()
