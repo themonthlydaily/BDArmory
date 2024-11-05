@@ -712,8 +712,11 @@ namespace BDArmory.Bullets
                                     thickness *= thicknessModifier;
                                     if (tntMass <= 0) //non-explosive impact
                                     {
-                                        RA.UpdateSectionScales(int.Parse(hit.collider.transform.name.Substring(8)) - 1); //detonate RA section
-                                                                                                                         //explosive impacts handled in ExplosionFX
+                                        if (int.TryParse(hit.collider.transform.name.Substring(8), out int result))
+                                            RA.UpdateSectionScales(result - 1); //detonate RA section
+                                                                                //explosive impacts handled in ExplosionFX
+                                        else
+                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {hit.collider.transform.name}. Please ensure that these are named \"section[number]\" and that your \"sections\" transform does not have colliders.");
                                     }
                                 }
                             }
