@@ -707,7 +707,7 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-                                if (caliber >= RA.sensitivity && hit.collider.transform.name.Substring(0, 8) == "section") //big enough round to trigger RA and hit an ERA section
+                                if (caliber >= RA.sensitivity && hit.collider.transform.name.Substring(0, 8) == "section_") //big enough round to trigger RA and hit an ERA section
                                 {
                                     thickness *= thicknessModifier;
                                     if (tntMass <= 0) //non-explosive impact
@@ -716,7 +716,7 @@ namespace BDArmory.Bullets
                                             RA.UpdateSectionScales(result - 1); //detonate RA section
                                                                                 //explosive impacts handled in ExplosionFX
                                         else
-                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {hit.collider.transform.name}. Please ensure that these are named \"section[number]\" and that your \"sections\" transform does not have colliders.");
+                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
                                     }
                                 }
                             }

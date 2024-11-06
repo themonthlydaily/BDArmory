@@ -1227,7 +1227,7 @@ namespace BDArmory.Bullets
                         else
                         {
                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Hit Transform: {bulletHit.hit.collider.transform.name}");
-                            if (bulletHit.hit.collider.transform.name.Substring(0,8) == "section")
+                            if (bulletHit.hit.collider.transform.name.Substring(0,8) == "section_")
                             {
                                 if (sabot)
                                 {
@@ -1240,7 +1240,7 @@ namespace BDArmory.Bullets
                                         if (int.TryParse(bulletHit.hit.collider.transform.name.Substring(8), out int result))
                                             RA.UpdateSectionScales(result - 1);
                                         else
-                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section[number]\" and that your \"sections\" transform does not have colliders.");
+                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
                                     }
                                 }
                                 else //standard rounds
@@ -1255,7 +1255,7 @@ namespace BDArmory.Bullets
                                                                                     //explosive impacts handled in ExplosionFX
                                                                                     //if explosive and contact fuze, kill bullet?
                                             else
-                                                Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section[number]\" and that your \"sections\" transform does not have colliders.");
+                                                Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
                                         }
                                     }
                                 }
@@ -1354,7 +1354,7 @@ namespace BDArmory.Bullets
                 // Calculating this ratio once since we're going to need it a bunch
                 float penRatio = 1 - thickness / penetration;
                 float velocityRatio = penRatio;
-                const float spacedFactor = 0.975f;
+                //const float spacedFactor = 1f;
                 float oldBulletMass = bulletMass;
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
@@ -1417,7 +1417,7 @@ namespace BDArmory.Bullets
                         else
                         {
                             float adjustedPenRatio = 1f - BDAMath.Sqrt(1f-penRatio);
-                            deltaMass = bulletMass * (massRatio - spacedFactor * adjustedPenRatio);
+                            deltaMass = bulletMass * (massRatio - adjustedPenRatio); //spacedFactor * adjustedPenRatio);
                             bulletMass *= massRatio;
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease

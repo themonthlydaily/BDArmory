@@ -16,6 +16,7 @@ namespace BDArmory.Armor
         public string armorName = "Reactive Armor";
 
         Transform[] sections;
+        bool[] sectionsAlive;
 
         [KSPField]
         public bool NXRA = false; //non-explosive reactive armor?
@@ -52,11 +53,13 @@ namespace BDArmory.Armor
             Transform segmentsTransform = part.FindModelTransform(sectionTransformName);
             sectionsCount = segmentsTransform.childCount;
             sections = new Transform[sectionsCount];
+            sectionsAlive = new bool[sectionsCount];
             for (int i = 0; i < sectionsCount; i++)
             {
                 string sectionName = segmentsTransform.GetChild(i).name;
                 int sectionIndex = int.Parse(sectionName.Substring(8)) - 1;
                 sections[sectionIndex] = segmentsTransform.GetChild(i);
+                sectionsAlive[sectionIndex] = true;
             }
             //sections.Shuffle(); //randomize order sections get removed
             sectionsRemaining = sectionsCount;
@@ -90,8 +93,14 @@ namespace BDArmory.Armor
                 if (HP.Hitpoints < 0) part.Destroy();
             }
             if (sectionDestroyed < 0)
-                sectionDestroyed = (int)Mathf.Floor(UnityEngine.Random.value * sectionsRemaining);
+                do
+                {
+                    sectionDestroyed = (int)Mathf.Floor(UnityEngine.Random.value * sectionsRemaining);
+                }
+                while (sectionsAlive[sectionDestroyed]);
+                
             sections[sectionDestroyed].localScale = Vector3.zero;
+            sectionsAlive[sectionDestroyed] = false;
             /*for (int i = 0; i < sectionsCount; i++)
             {
                 if (i < sectionsRemaining) sections[i].localScale = Vector3.one;
