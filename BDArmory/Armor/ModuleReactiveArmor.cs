@@ -16,7 +16,7 @@ namespace BDArmory.Armor
         public string armorName = "Reactive Armor";
 
         Transform[] sections;
-        bool[] sectionsAlive;
+        int[] sectionIndexes;
 
         [KSPField]
         public bool NXRA = false; //non-explosive reactive armor?
@@ -53,14 +53,15 @@ namespace BDArmory.Armor
             Transform segmentsTransform = part.FindModelTransform(sectionTransformName);
             sectionsCount = segmentsTransform.childCount;
             sections = new Transform[sectionsCount];
-            sectionsAlive = new bool[sectionsCount];
+            sectionIndexes = new int[sectionsCount];
             for (int i = 0; i < sectionsCount; i++)
             {
                 string sectionName = segmentsTransform.GetChild(i).name;
                 int sectionIndex = int.Parse(sectionName.Substring(8)) - 1;
                 sections[sectionIndex] = segmentsTransform.GetChild(i);
-                sectionsAlive[sectionIndex] = true;
+                sectionIndexes[sectionIndex] = i;
             }
+            sectionIndexes.Shuffle();
             //sections.Shuffle(); //randomize order sections get removed
             sectionsRemaining = sectionsCount;
             var HP = part.FindModuleImplementing<HitpointTracker>();
@@ -74,12 +75,33 @@ namespace BDArmory.Armor
 
         public void UpdateSectionScales(int sectionDestroyed = -1)
         {
-            direction = -sections[sectionsRemaining-1].up; 
+            int destroyedIndex = -1;
+            if (sectionDestroyed < 0)
+                for (int i = 0; i < sectionsCount; ++i)
+                {
+                    sectionDestroyed = sectionIndexes[i];
+                    if (sectionDestroyed > 0)
+                    {
+                        destroyedIndex = i;
+                        break;
+                    }
+                }
+            else
+                for (int i = 0; i < sectionsCount; ++i)
+                {
+                    if (sectionDestroyed == sectionIndexes[i])
+                    {
+                        destroyedIndex = i;
+                        break;
+                    }
+                }
 
-            ExplosionFx.CreateExplosion(sections[sectionsRemaining - 1].transform.position, 1, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
-            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ReactiveArmor]: Removing section, " + sectionsRemaining + " sections left");
+            direction = -sections[sectionDestroyed].up;
+
+            ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, 1, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ReactiveArmor]: Removing section: {sectionDestroyed}, " + sectionsRemaining + " sections left");
             sectionsRemaining--;
-            if (sectionsRemaining < 1)
+            if (sectionsRemaining < 1 || destroyedIndex < 0)
             {
                 part.Destroy();
             }
@@ -92,15 +114,9 @@ namespace BDArmory.Armor
                 }
                 if (HP.Hitpoints < 0) part.Destroy();
             }
-            if (sectionDestroyed < 0)
-                do
-                {
-                    sectionDestroyed = (int)Mathf.Floor(UnityEngine.Random.value * sectionsRemaining);
-                }
-                while (!sectionsAlive[sectionDestroyed]);
                 
             sections[sectionDestroyed].localScale = Vector3.zero;
-            sectionsAlive[sectionDestroyed] = false;
+            sectionIndexes[destroyedIndex] = -1;
             /*for (int i = 0; i < sectionsCount; i++)
             {
                 if (i < sectionsRemaining) sections[i].localScale = Vector3.one;
