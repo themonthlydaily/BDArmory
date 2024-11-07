@@ -2366,7 +2366,6 @@ namespace BDArmory.Radar
                                     {
                                         continue; //blocked by terrain
                                     }
-
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
                                     {

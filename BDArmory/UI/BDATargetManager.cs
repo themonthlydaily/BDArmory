@@ -192,12 +192,12 @@ namespace BDArmory.UI
         /// Gets the laser target painter with the least angle off boresight. Set the missileBase as the reference missilePosition.
         /// </summary>
         /// <returns>The laser target painter.</returns>
-        public static ModuleTargetingCamera GetLaserTarget(MissileBase ml, bool parentOnly)
+        public static ModuleTargetingCamera GetLaserTarget(MissileBase ml, bool parentOnly, BDTeam team)
         {
-            return GetModuleTargeting(parentOnly, ml.GetForwardTransform(), ml.MissileReferenceTransform.position, ml.maxOffBoresight, ml.vessel, ml.SourceVessel);
+            return GetModuleTargeting(parentOnly, ml.GetForwardTransform(), ml.MissileReferenceTransform.position, ml.maxOffBoresight, ml.vessel, ml.SourceVessel, team);
         }
 
-        private static ModuleTargetingCamera GetModuleTargeting(bool parentOnly, Vector3 missilePosition, Vector3 position, float maxOffBoresight, Vessel vessel, Vessel sourceVessel)
+        private static ModuleTargetingCamera GetModuleTargeting(bool parentOnly, Vector3 missilePosition, Vector3 position, float maxOffBoresight, Vessel vessel, Vessel sourceVessel, BDTeam team)
         {
             ModuleTargetingCamera finalCam = null;
             float smallestAngle = 360;
@@ -205,6 +205,7 @@ namespace BDArmory.UI
             while (cam.MoveNext())
             {
                 if (cam.Current == null) continue;
+                if (cam.Current.weaponManager.Team != team) continue;
                 if (parentOnly && !(cam.Current.vessel == vessel || cam.Current.vessel == sourceVessel)) continue;
                 if (!cam.Current.cameraEnabled || !cam.Current.groundStabilized || !cam.Current.surfaceDetected ||
                     cam.Current.gimbalLimitReached) continue;
@@ -583,9 +584,9 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score, targetCoM ? null : IRSig.Item2);
                         }
                     }
-                    // Debug.Log($"[BDArmory.BDATargetManager.GetHeatTarget] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
+                    //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDATargetManager] heatscore of {vessel.GetName()} at angle {angle}° is {score}");
                 }
-                // else Debug.Log($"[BDArmory.BDATargetManager.GetHeatTarget] ignoring {vessel.GetName()} at angle {angle}°, which is beyond scanRadius {scanRadius}°");
+                // else Debug.Log($"[BDArmory.BDATargetManager] ignoring {vessel.GetName()} at angle {angle}°, which is beyond scanRadius {scanRadius}°");
             }
             // see if there are flares decoying us:
             bool flareSuccess = false;

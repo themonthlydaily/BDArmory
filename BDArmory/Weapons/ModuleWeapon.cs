@@ -132,6 +132,8 @@ namespace BDArmory.Weapons
         private BDStagingAreaGauge gauge;
         private int AmmoID;
         private int ECID;
+        public int ResID_Ammo => AmmoID;
+        public int ResID_SecAmmo => ECID;
         //AI
         public bool aiControlled = false;
         public bool autoFire;
@@ -450,6 +452,9 @@ namespace BDArmory.Weapons
         [KSPField]
         public string fireAnimName = "fireAnim";
 
+        [KSPField]
+        public float fireAnimOverrideSpeed = -1;
+
         AnimationState[] fireState = new AnimationState[0];
         //private List<AnimationState> fireState;
 
@@ -576,6 +581,8 @@ namespace BDArmory.Weapons
         [KSPField]
         public float requestResourceAmount = 1; //amount of resource/ammo to deplete per shot
 
+        private bool electricResource = false;
+
         [KSPField]
         public string secondaryAmmoName = "ElectricCharge"; //resource usage
 
@@ -585,7 +592,7 @@ namespace BDArmory.Weapons
         [KSPField]
         public float secondaryAmmoPerShot = 0; //EC to use per shot for weapons like railguns
 
-        private bool electricResource = false;
+        private bool secECResource = false;
 
         [KSPField]
         public float shellScale = 0.66f; //scale of shell to eject
@@ -1444,14 +1451,17 @@ namespace BDArmory.Weapons
 
                 var AmmoDef = PartResourceLibrary.Instance.GetDefinition(ammoName);
                 if (AmmoDef != null)
+                {
                     AmmoID = AmmoDef.id;
+                    electricResource = PartResourceLibrary.Instance.GetDefinition(AmmoID).density == 0;
+                }
                 else
                     Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {ammoName} not found!");
                 var SecAmmoDef = PartResourceLibrary.Instance.GetDefinition(secondaryAmmoName);
                 if (SecAmmoDef != null)
                 {
                     ECID = SecAmmoDef.id;
-                    electricResource = PartResourceLibrary.Instance.GetDefinition(ECID).density == 0;
+                    secECResource = PartResourceLibrary.Instance.GetDefinition(ECID).density == 0;
                 }
                 else
                     Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {secondaryAmmoName} not found!");
@@ -1955,7 +1965,7 @@ namespace BDArmory.Weapons
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
-                    gauge.UpdateAmmoMeter((float)((ammoCount > requestResourceAmount ? ammoCount : 0) / ammoMaxCount));
+                    gauge.UpdateAmmoMeter((float)((ammoCount >= requestResourceAmount ? ammoCount : 0) / ammoMaxCount));
 
                     if (showReloadMeter)
                     {
@@ -2216,7 +2226,7 @@ namespace BDArmory.Weapons
                                 Vessel targetV = null;
                                 float guidance = 0f;
 
-                                if (visualTargetVessel != null && targetAcquisitionType == TargetAcquisitionType.Slaved)
+                                if (visualTargetVessel != null && (targetAcquisitionType == TargetAcquisitionType.Radar || targetAcquisitionType == TargetAcquisitionType.Slaved))
                                 {
                                     targetV = visualTargetVessel;
                                     guidance = bulletInfo.guidanceDPS;
@@ -3130,12 +3140,12 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.INFINITE_AMMO) return true;
             if (secondaryAmmoPerShot != 0)
             {
-                if (!(electricResource && CheatOptions.InfiniteElectricity)) //else skip to main ammo as EC is accounted for
+                if (!(secECResource && CheatOptions.InfiniteElectricity)) //else skip to main ammo as EC is accounted for
                 {
                     vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
-                    if (EcCurrent > secondaryAmmoPerShot * (electricResource ? 0.95f : 1))
+                    if (EcCurrent > secondaryAmmoPerShot * (secECResource ? 0.95f : 1))
                     {
-                        part.RequestResource(ECID, secondaryAmmoPerShot, (electricResource || !BDArmorySettings.WEAPONS_RESPECT_CROSSFEED) ? ResourceFlowMode.ALL_VESSEL : ResourceFlowMode.STACK_PRIORITY_SEARCH);
+                        part.RequestResource(ECID, secondaryAmmoPerShot, (secECResource || !BDArmorySettings.WEAPONS_RESPECT_CROSSFEED) ? ResourceFlowMode.ALL_VESSEL : ResourceFlowMode.STACK_PRIORITY_SEARCH);
                         if (requestResourceAmount == 0) return true; //weapon only uses secondaryAmmoName for some reason?
                     }
                     else
@@ -3146,16 +3156,18 @@ namespace BDArmory.Weapons
                     //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
                 }
             }
-
-            GetAmmoCount(AmmoID, out double ammoCurrent, out double ammoMax);
-
-            ammoCount = ammoCurrent;
-            if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
-            // TODO?? Change code to some sort of list of ammoboxes to only draw from box with current highest resouce amount to do proper integer reductions?
+            if ((electricResource && CheatOptions.InfiniteElectricity)) return true;
+            else
             {
-                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, externalAmmo ? (BDArmorySettings.WEAPONS_RESPECT_CROSSFEED ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.ALL_VESSEL) : ResourceFlowMode.NO_FLOW) > 0) //for guns with internal ammo supplies and no external, only draw from the weapon part
+                GetAmmoCount(AmmoID, out double ammoCurrent, out double ammoMax);
+                ammoCount = ammoCurrent;
+                if (ammoCount >= AmmoPerShot * 0.995f) //catch floating point errors from fractional ammo spread across multiple boxes
+                                                       // TODO?? Change code to some sort of list of ammoboxes to only draw from box with current highest resouce amount to do proper integer reductions?
                 {
-                    return true;
+                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, (electricResource || !BDArmorySettings.WEAPONS_RESPECT_CROSSFEED) ? ResourceFlowMode.ALL_VESSEL : externalAmmo ? (BDArmorySettings.WEAPONS_RESPECT_CROSSFEED ? ResourceFlowMode.STACK_PRIORITY_SEARCH : ResourceFlowMode.ALL_VESSEL) : ResourceFlowMode.NO_FLOW) > 0) //for guns with internal ammo supplies and no external, only draw from the weapon part
+                    {
+                        return true;
+                    }
                 }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
@@ -3190,7 +3202,7 @@ namespace BDArmory.Weapons
                     {
                         lowFramerateFix = (0.02f / Time.deltaTime);
                     }
-                    fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
+                    fireAnimSpeed = fireAnimOverrideSpeed > 0 ? fireAnimOverrideSpeed : Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
                     fireState[i].enabled = true;
                     if (unclampedSpeed == fireAnimSpeed || fireState[i].normalizedTime > 1)
                     {
@@ -3376,6 +3388,8 @@ namespace BDArmory.Weapons
                     return;
                 }
             }
+            if (shutdownRoutine != null) 
+                return;
             if (disabledStates.Contains(weaponState))
                 return;
 
@@ -4672,7 +4686,8 @@ namespace BDArmory.Weapons
                     if (ChargeTime > 0 && timeSinceFired > chargeHoldLength && !isReloading)
                     {
                         hasCharged = false;
-                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
+                        if (electricResource) RoundsRemaining = 0; //reset rounds fired if prematurely running out of EC
+                        if (hasChargeAnimation && hasChargeHoldAnimation || postFireChargeAnim) chargeRoutine = StartCoroutine(ChargeRoutine(true));
                     }
                 }
             }
@@ -4892,6 +4907,7 @@ namespace BDArmory.Weapons
             {
                 isOverheated = false;
                 autofireShotCount = 0;
+                RoundsRemaining = 0;
                 //Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
             }
         }
@@ -5505,9 +5521,14 @@ namespace BDArmory.Weapons
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
         {
-            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            if (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag) //if we're in the middle of a burst and the weapon is deselected, finish burst
             {
-                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
+                yield return new WaitWhileFixed(() => RoundsRemaining < RoundsPerMag);
+                ReloadWeapon();
+            }
+            if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
+            {                
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1); //why is this not registering when in Guardmode?
             }
             if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
             {
@@ -5526,8 +5547,8 @@ namespace BDArmory.Weapons
             }
             if (hasCharged)
             {
-                if (hasChargeAnimation)
-                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(postFireChargeAnim));
+                if (hasChargeAnimation && postFireChargeAnim)
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
             }
             if (hasDeployAnim)
             {
@@ -6092,7 +6113,6 @@ namespace BDArmory.Weapons
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
-                            output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
                             output.AppendLine($"- fuze type: {binfo.eFuzeType switch
                             {
                                 BulletFuzeTypes.None => "None",
@@ -6104,8 +6124,10 @@ namespace BDArmory.Weapons
                                 BulletFuzeTypes.Penetrating => "Penetrating",
                                 _ => "Unknown"
                             }}");
-							if (binfo.eFuzeType == BulletFuzeTypes.Penetrating)
-                                output.AppendLine($"- Min thickness to arm fuze: {tempPenDepth * 0.666f}");
+                            if (binfo.eFuzeType == BulletFuzeTypes.Penetrating)
+                                output.AppendLine($"- Min thickness to arm fuze: {tempPenDepth * 0.666f:F2}");
+                            output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
+                            
                             if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");

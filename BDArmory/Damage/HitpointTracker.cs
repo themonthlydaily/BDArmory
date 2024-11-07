@@ -1009,14 +1009,17 @@ namespace BDArmory.Damage
                                     hitpoints = aeroVolume * 1200;
                                     if (HighLogic.LoadedSceneIsFlight)
                                     {
-                                        var lift = part.FindModuleImplementing<ModuleLiftingSurface>();
-                                        if (lift != null) lift.deflectionLiftCoeff = 0;
-                                        DragCube DragCube = DragCubeSystem.Instance.RenderProceduralDragCube(part);
-                                        part.DragCubes.ClearCubes();
-                                        part.DragCubes.Cubes.Add(DragCube);
-                                        part.DragCubes.ResetCubeWeights();
-                                        part.DragCubes.ForceUpdate(true, true, false);
-                                        part.DragCubes.SetDragWeights();
+                                        if (FerramAerospace.CheckForFAR())
+                                        {
+                                            var lift = part.FindModuleImplementing<ModuleLiftingSurface>();
+                                            if (lift != null) lift.deflectionLiftCoeff = 0;
+                                            DragCube DragCube = DragCubeSystem.Instance.RenderProceduralDragCube(part);
+                                            part.DragCubes.ClearCubes();
+                                            part.DragCubes.Cubes.Add(DragCube);
+                                            part.DragCubes.ResetCubeWeights();
+                                            part.DragCubes.ForceUpdate(true, true, false);
+                                            part.DragCubes.SetDragWeights();
+                                        }
                                     }
                                 }
                                 if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60) hitpoints = Mathf.Min(500, hitpoints);

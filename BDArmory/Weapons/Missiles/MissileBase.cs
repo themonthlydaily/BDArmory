@@ -468,7 +468,7 @@ namespace BDArmory.Weapons.Missiles
         public VesselRadarData vrd;
         public TargetSignatureData radarTarget;
         private TargetSignatureData[] scannedTargets;
-        public MissileFire TargetMf = null;
+        //public MissileFire TargetMf = null; //not actually used by anything
         private LineRenderer LR;
 
         //INS stuff
@@ -767,7 +767,7 @@ namespace BDArmory.Weapons.Missiles
                     lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
                 DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, predictedHeatTarget.exists ? Color.magenta : heatTarget.exists ? Color.yellow : Color.blue);
-                //Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}");
+                //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[MissileBase] offboresightAngle {offBoresightAngle > maxOffBoresight}; lockFailtimer: {lockFailTimer}; heatTarget? {heatTarget.exists}; predictedheattaret? {predictedHeatTarget.exists}; heatTarget vessel {(heatTarget.exists && heatTarget.vessel != null ? heatTarget.vessel.name : "null")}");
                 // Update heat target
                 if (activeRadarRange < 0)
                     heatTarget = BDATargetManager.GetAcousticTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, targetCoM, lockedSensorFOVBias, lockedSensorVelocityBias,
@@ -867,7 +867,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 ModuleTargetingCamera foundCam = null;
                 bool parentOnly = (GuidanceMode == GuidanceModes.BeamRiding);
-                foundCam = BDATargetManager.GetLaserTarget(this, parentOnly);
+                foundCam = BDATargetManager.GetLaserTarget(this, parentOnly, Team);
                 if (foundCam != null && foundCam.cameraEnabled && foundCam.groundStabilized && BDATargetManager.CanSeePosition(foundCam.groundTargetPosition, vessel.transform.position, MissileReferenceTransform.position))
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Laser guided missileBase actively found laser point. Enabling guidance.");

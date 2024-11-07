@@ -479,11 +479,14 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float extendAbortTime = 10f;
-
+        
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendMinGainRate", advancedTweakable = true, //Extend Min Gain Rate
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
         public float extendMinGainRate = 10f;
+
+        float extensionCutoffTimer = 0; //For FJRT/P:S extension termination to prevent overly long extensions from poorly tuned extension settings
+        public float extensionCutoffTime = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_AI_EvadeExtend", groupStartCollapsed = true),
@@ -543,7 +546,7 @@ namespace BDArmory.Control
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AI_SliderResolution", advancedTweakable = true), // Slider Resolution
-            UI_ChooseOption(options = ["Low", "Normal", "High", "Insane"], scene = UI_Scene.All)]
+             UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
         public string sliderResolution = "Normal";
         string previousSliderResolution = "Normal";
 
@@ -998,6 +1001,7 @@ namespace BDArmory.Control
             extendRequestMinDistance = 0;
             extendAbortTimer = cooldown ? -5f : 0f;
             lastExtendDistance = 0;
+            extensionCutoffTimer = 0;
             extendForMissile = null;
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
@@ -2272,7 +2276,7 @@ namespace BDArmory.Control
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (angleToTarget < 20f)
                         {
-                            steerMode = SteerModes.Aiming;
+                            steerMode = SteerModes.Aiming; 
                         }
                     }
                     else //bombing
@@ -2571,7 +2575,7 @@ namespace BDArmory.Control
             //test
             Vector3 currTargetDir = targetDirection;
             if (evasionNonlinearity > 0 && (IsExtending || IsEvading || // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
-                (steerMode == SteerModes.NormalFlight && weaponManager && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming.
+                weaponManager && ((steerMode == SteerModes.NormalFlight || steerMode == SteerModes.Aiming && weaponManager.CurrentMissile != null) && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming a gun.
                     BDATargetManager.TargetList(weaponManager.Team).Where(target =>
                         !target.isMissile &&
                         weaponManager.CanSeeTarget(target, true, true)
@@ -2958,6 +2962,15 @@ namespace BDArmory.Control
         {
             var extendVector = extendHorizontally ? (vessel.transform.position - tPosition).ProjectOnPlanePreNormalized(upDirection) : vessel.transform.position - tPosition;
             var extendDistanceSqr = extendVector.sqrMagnitude;
+            if (BDArmorySettings.COMP_CONVENIENCE_CHECKS && extensionCutoffTime > 0)
+            {
+                extensionCutoffTimer += Time.fixedDeltaTime;
+                if (extensionCutoffTimer > extensionCutoffTime) //there are reasons a hard cutoff for extension is a bad idea, and will probably break any sort of bombing routine, but, well, the customer is always right...
+                {
+                    StopExtending($"extend time limit exceeded", true);                    
+                    return;
+                }
+            }
             if (extendDistanceSqr < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
                 var currentExtendDistance = extendVector.magnitude;

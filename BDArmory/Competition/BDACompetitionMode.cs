@@ -265,7 +265,6 @@ namespace BDArmory.Competition
                 dateRect = new Rect(rectOffset, Mathf.CeilToInt(38 * GameSettings.UI_SCALE), rectOffset, 20);
                 versionRect = new Rect(rectOffset * 2, Mathf.CeilToInt(46 * GameSettings.UI_SCALE), rectOffset, 20);
                 statusRect = new Rect(30, Mathf.CeilToInt(60 * GameSettings.UI_SCALE) + rectOffset / 5, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
-
                 statusStyle.fontSize = Mathf.Max(22, Mathf.CeilToInt(22 * BDArmorySettings.UI_SCALE));
                 dateStyle.fontSize = Mathf.Max(14, Mathf.CeilToInt(14 * BDArmorySettings.UI_SCALE));
             }
@@ -539,6 +538,7 @@ namespace BDArmory.Competition
                 if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
                 if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
                 if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
+                if (BDArmorySettings.COMP_CONVENIENCE_CHECKS) SpawnUtils.ApplyCompSettingsChecks(pilot.vessel);
                 /*
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -1824,6 +1824,7 @@ namespace BDArmory.Competition
                                     if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
                                     if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
                                     if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
+                                    if (BDArmorySettings.COMP_CONVENIENCE_CHECKS) SpawnUtils.ApplyCompSettingsChecks(pilot.vessel);
                                     /*
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {

@@ -17,6 +17,7 @@ using BDArmory.Utils;
 using BDArmory.WeaponMounts;
 using BDArmory.Bullets;
 
+
 namespace BDArmory.Weapons.Missiles
 {
     public class MissileLauncher : MissileBase, IPartMassModifier
@@ -1745,8 +1746,6 @@ namespace BDArmory.Weapons.Missiles
                     HasMissed = true;
                     guidanceActive = false;
 
-                    TargetMf = null;
-
                     MissileLauncher launcher = this as MissileLauncher;
                     if (launcher != null)
                     {
@@ -1862,106 +1861,109 @@ namespace BDArmory.Weapons.Missiles
 
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"controlAuthority: {controlAuthority}");
 
-                if (guidanceActive && TimeIndex - dropTime > guidanceDelay)
+                if (guidanceActive)
                 {
                     WarnTarget();
+                    if (TimeIndex - dropTime > guidanceDelay)
+                    {    
+                        //if (targetVessel && targetVessel.loaded)
+                        //{
+                        //   Vector3 targetCoMPos = targetVessel.CoM;
+                        //    TargetPosition = targetCoMPos + targetVessel.Velocity() * Time.fixedDeltaTime;
+                        //}
 
-                    //if (targetVessel && targetVessel.loaded)
-                    //{
-                    //   Vector3 targetCoMPos = targetVessel.CoM;
-                    //    TargetPosition = targetCoMPos + targetVessel.Velocity() * Time.fixedDeltaTime;
-                    //}
-
-                    // Increase turn rate gradually after launch, unless vacuum steerable in space
-                    float turnRateDPS = maxTurnRateDPS;
-                    if (!((vacuumSteerable && vessel.InVacuum()) || boostTime == 0f))
-                        turnRateDPS = Mathf.Clamp(((TimeIndex - dropTime) / boostTime) * maxTurnRateDPS * 25f, 0, maxTurnRateDPS);
-                    if (!hasRCS)
-                    {
-                        turnRateDPS *= controlAuthority;
-                    }
-
-                    //decrease turn rate after thrust cuts out
-                    if (TimeIndex > dropTime + boostTime + cruiseDelay + cruiseTime)
-                    {
-                        var clampedTurnRate = Mathf.Clamp(maxTurnRateDPS - ((TimeIndex - dropTime - boostTime - cruiseDelay - cruiseTime) * 0.45f),
-                            1, maxTurnRateDPS);
-                        turnRateDPS = clampedTurnRate;
-
-                        if (!vacuumSteerable)
+                        // Increase turn rate gradually after launch, unless vacuum steerable in space
+                        float turnRateDPS = maxTurnRateDPS;
+                        if (!((vacuumSteerable && vessel.InVacuum()) || boostTime == 0f))
+                            turnRateDPS = Mathf.Clamp(((TimeIndex - dropTime) / boostTime) * maxTurnRateDPS * 25f, 0, maxTurnRateDPS);
+                        if (!hasRCS)
                         {
-                            turnRateDPS *= atmosMultiplier;
+                            turnRateDPS *= controlAuthority;
+                        }
+
+                        //decrease turn rate after thrust cuts out
+                        if (TimeIndex > dropTime + boostTime + cruiseDelay + cruiseTime)
+                        {
+                            var clampedTurnRate = Mathf.Clamp(maxTurnRateDPS - ((TimeIndex - dropTime - boostTime - cruiseDelay - cruiseTime) * 0.45f),
+                                1, maxTurnRateDPS);
+                            turnRateDPS = clampedTurnRate;
+
+                            if (!vacuumSteerable)
+                            {
+                                turnRateDPS *= atmosMultiplier;
+                            }
+
+                            if (hasRCS)
+                            {
+                                turnRateDPS = 0;
+                            }
                         }
 
                         if (hasRCS)
                         {
-                            turnRateDPS = 0;
+                            if (turnRateDPS > 0)
+                            {
+                                DoRCS();
+                            }
+                            else
+                            {
+                                KillRCS();
+                            }
                         }
-                    }
+                        debugTurnRate = turnRateDPS;
 
-                    if (hasRCS)
-                    {
-                        if (turnRateDPS > 0)
-                        {
-                            DoRCS();
-                        }
-                        else
-                        {
-                            KillRCS();
-                        }
-                    }
-                    debugTurnRate = turnRateDPS;
+                        finalMaxTorque = Mathf.Clamp((TimeIndex - dropTime) * torqueRampUp, 0, maxTorque); //ramp up torque
 
-                    finalMaxTorque = Mathf.Clamp((TimeIndex - dropTime) * torqueRampUp, 0, maxTorque); //ramp up torque
-
-                    if (terminalHoming && !terminalHomingActive)
-                    {
-                        if (Vector3.SqrMagnitude(TargetPosition - vessel.transform.position) < terminalHomingRange * terminalHomingRange)
+                        if (terminalHoming && !terminalHomingActive)
                         {
-                            GuidanceMode = homingModeTerminal;
-                            terminalHomingActive = true;
-                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Terminal");
+                            if (Vector3.SqrMagnitude(TargetPosition - vessel.transform.position) < terminalHomingRange * terminalHomingRange)
+                            {
+                                GuidanceMode = homingModeTerminal;
+                                terminalHomingActive = true;
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Terminal");
+                            }
+                        }
+                        switch (GuidanceMode)
+                        {
+                            case GuidanceModes.AAMLead:
+                            case GuidanceModes.APN:
+                            case GuidanceModes.PN:
+                            case GuidanceModes.AAMLoft:
+                            case GuidanceModes.AAMPure:
+                            case GuidanceModes.Kappa:
+                                //GuidanceModes.AAMHybrid:
+                                AAMGuidance();
+                                break;
+                            case GuidanceModes.AGM:
+                                AGMGuidance();
+                                break;
+                            case GuidanceModes.AGMBallistic:
+                                AGMBallisticGuidance();
+                                break;
+                            case GuidanceModes.BeamRiding:
+                                BeamRideGuidance();
+                                break;
+                            case GuidanceModes.Orbital: //nee GuidanceModes.RCS
+                                OrbitalGuidance(turnRateDPS);
+                                break;
+                            case GuidanceModes.Cruise:
+                                CruiseGuidance();
+                                break;
+                            case GuidanceModes.SLW:
+                                SLWGuidance();
+                                break;
+                            case GuidanceModes.None:
+                                DoAero(TargetPosition);
+                                CheckMiss();
+                                break;
                         }
                     }
-                    switch (GuidanceMode)
-                    {
-                        case GuidanceModes.AAMLead:
-                        case GuidanceModes.APN:
-                        case GuidanceModes.PN:
-                        case GuidanceModes.AAMLoft:
-                        case GuidanceModes.AAMPure:
-                        case GuidanceModes.Kappa:
-                            //GuidanceModes.AAMHybrid:
-                            AAMGuidance();
-                            break;
-                        case GuidanceModes.AGM:
-                            AGMGuidance();
-                            break;
-                        case GuidanceModes.AGMBallistic:
-                            AGMBallisticGuidance();
-                            break;
-                        case GuidanceModes.BeamRiding:
-                            BeamRideGuidance();
-                            break;
-                        case GuidanceModes.Orbital: //nee GuidanceModes.RCS
-                            OrbitalGuidance(turnRateDPS);
-                            break;
-                        case GuidanceModes.Cruise:
-                            CruiseGuidance();
-                            break;
-                        case GuidanceModes.SLW:
-                            SLWGuidance();
-                            break;
-                        case GuidanceModes.None:
-                            DoAero(TargetPosition);
-                            CheckMiss();
-                            break;
-                    }
+                    else
+                        DoAero(TargetPosition);
                 }
                 else
                 {
                     CheckMiss();
-                    TargetMf = null;
                     if (aero)
                     {
                         aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, dragArea, .25f, aeroTorque, maxTorque, maxAoA, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);
@@ -2202,9 +2204,9 @@ namespace BDArmory.Weapons.Missiles
 
             if (deployStates != null) StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSecondsFixed(dropTime);
+			if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return StartCoroutine(BoostRoutine());
 
-            if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
             if (cruiseRangeTrigger > 0)
                 yield return new WaitUntilFixed(checkCruiseRangeTrigger);
