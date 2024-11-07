@@ -1201,7 +1201,6 @@ namespace BDArmory.VesselSpawning
                         {
                             if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
                         }
-                        var hasThumbnail = craftBrowser.craftThumbnails.ContainsKey(vesselURL);
                         GUILayout.BeginHorizontal(); // Vessel buttons
                         if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? CustomCraftBrowserDialog.SelectedButtonStyle : CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(64), GUILayout.MaxWidth(BDArmorySetup.WindowRectVesselMoverVesselSelection.width - 230)))
                         {
@@ -1215,7 +1214,7 @@ namespace BDArmory.VesselSpawning
                             selectionTimer = Time.realtimeSinceStartup;
                         }
                         GUILayout.Label(VesselInfoEntry(vesselURL, vesselInfo, true), CustomCraftBrowserDialog.InfoStyle, GUILayout.Width(166));
-                        GUILayout.Label(hasThumbnail ? craftBrowser.craftThumbnails[vesselURL] : null, CustomCraftBrowserDialog.InfoStyle, GUILayout.Height(64), GUILayout.Width(64));
+                        GUILayout.Label(craftBrowser.craftThumbnails.GetValueOrDefault(vesselURL), CustomCraftBrowserDialog.InfoStyle, GUILayout.Height(64), GUILayout.Width(64));
                         GUILayout.EndHorizontal();
                     }
             }
