@@ -1237,11 +1237,11 @@ namespace BDArmory.Bullets
                                         bulletMass /= 2; //sunder sabot
                                                          //RA isn't going to stop sabot, but underlying part's armor will (probably)
                                         if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
-                                        if (int.TryParse(bulletHit.hit.collider.transform.name.Substring(8), out int result))
-                                            RA.UpdateSectionScales(result - 1);
-                                        else
-                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
                                     }
+                                    if (int.TryParse(bulletHit.hit.collider.transform.name.Substring(8), out int result))
+                                        RA.UpdateSectionScales(result - 1);
+                                    else
+                                        Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
                                 }
                                 else //standard rounds
                                 {
