@@ -97,7 +97,7 @@ namespace BDArmory.Armor
                 {
                     sectionDestroyed = (int)Mathf.Floor(UnityEngine.Random.value * sectionsRemaining);
                 }
-                while (sectionsAlive[sectionDestroyed]);
+                while (!sectionsAlive[sectionDestroyed]);
                 
             sections[sectionDestroyed].localScale = Vector3.zero;
             sectionsAlive[sectionDestroyed] = false;
