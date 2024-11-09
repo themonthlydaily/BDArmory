@@ -30,8 +30,33 @@ namespace BDArmory.Armor
         [KSPField]
         public float armorModifier = 1.25f; //armor thickness modifier
 
+        [KSPField]
+        public float ERAflyerPlateHalfDimension = 0.25f; //half of the average length of the flyer plate
+
+        [KSPField]
+        public float ERAgurneyConstant = 2700f; //gurney specific energy of the ERA, equal to sqrt(2E) (in m/s)
+
+        [KSPField]
+        public float ERArelativeEffectiveness = 1.72f; //tnt RE of the ERA explosive
+
+        [KSPField]
+        public float ERAexplosiveMass = 5f; //ERA explosive mass (in kg)
+
+        [KSPField]
+        public float ERAexplosiveDensity = 1650f; //ERA explosive mass (in kg/m^3)
+
+        [KSPField]
+        public bool ERAbackingPlate = true; //backing plate ?
+
+        [KSPField]
+        public float ERAspacing = 0.25f; //spacing between back plate and armor
+
+        [KSPField]
+        public float ERAdetonationDelay = 50f; //detonation delay (in microseconds)
+
         public int sectionsRemaining = 1;
         private int sectionsCount = 1;
+        public float ERAexplosiveThickness { get; private set; } = -1f;
 
         Vector3 direction = default(Vector3);
 
@@ -71,9 +96,14 @@ namespace BDArmory.Armor
                 HP.Hitpoints = (sectionsCount * SectionHP); 
                 HP.SetupPrefab(); //and update hitpoint slider
             }
+
+            if (ERAbackingPlate)
+            {
+                ERAexplosiveThickness = ERAexplosiveMass / (ERAflyerPlateHalfDimension * ERAflyerPlateHalfDimension * ERAexplosiveDensity);
+            }
         }
 
-        public void UpdateSectionScales(int sectionDestroyed = -1)
+        public void UpdateSectionScales(int sectionDestroyed = -1, bool directionInput = false, Vector3 directionIn = default)
         {
             int destroyedIndex = -1;
             if (sectionDestroyed < 0)
@@ -96,9 +126,12 @@ namespace BDArmory.Armor
                     }
                 }
 
-            direction = -sections[sectionDestroyed].up;
+            if (directionInput)
+                direction = directionIn;
+            else
+                direction = -sections[sectionDestroyed].up;
 
-            ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, 1, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
+            ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, ERAexplosiveMass * ERArelativeEffectiveness, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ReactiveArmor]: Removing section: {sectionDestroyed}, " + sectionsRemaining + " sections left");
             sectionsRemaining--;
             if (sectionsRemaining < 1 || destroyedIndex < 0)
