@@ -99,7 +99,7 @@ namespace BDArmory.Armor
 
             if (ERAbackingPlate)
             {
-                ERAexplosiveThickness = ERAexplosiveMass / (ERAflyerPlateHalfDimension * ERAflyerPlateHalfDimension * ERAexplosiveDensity);
+                ERAexplosiveThickness = 1000f * (ERAexplosiveMass / (ERAflyerPlateHalfDimension * ERAflyerPlateHalfDimension * ERAexplosiveDensity));
             }
         }
 
@@ -127,9 +127,9 @@ namespace BDArmory.Armor
                 }
 
             if (directionInput)
-                direction = directionIn;
+                direction = -directionIn;
             else
-                direction = -sections[sectionDestroyed].up;
+                direction = -sections[sectionDestroyed].forward;
 
             ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, ERAexplosiveMass * ERArelativeEffectiveness, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ReactiveArmor]: Removing section: {sectionDestroyed}, " + sectionsRemaining + " sections left");

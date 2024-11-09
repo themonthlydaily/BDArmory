@@ -1122,6 +1122,8 @@ namespace BDArmory.Bullets
                 distanceLastHit += 0.001f * thickness;
             }
 
+            bool ERAhit = false;
+
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
@@ -1226,11 +1228,13 @@ namespace BDArmory.Bullets
                         }
                         else
                         {
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Hit Transform: {bulletHit.hit.collider.transform.name}");
+                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: Hit Transform: {bulletHit.hit.collider.transform.name}");
                             if (bulletHit.hit.collider.transform.name.Substring(0,8) == "section_")
                             {
-                                Vector3 ERAnormal = bulletHit.hit.collider.transform.up;
+                                Vector3 ERAnormal = bulletHit.hit.collider.transform.forward;
+                                    
                                 float normalDot = Vector3.Dot(ERAnormal, bulletHit.hit.normal);
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: Normal Dot: {normalDot}, ERAnormal: {ERAnormal}, hit.normal: {bulletHit.hit.normal}.");
                                 if (Mathf.Abs(normalDot) > 0.943969f) // ERA and hit normal have to be within 20° of each other
                                 {
                                     if (sabot)
@@ -1249,64 +1253,90 @@ namespace BDArmory.Bullets
                                             float temp = 1f + 2f * mRatio;
                                             flyerVelocity = RA.ERAgurneyConstant / BDAMath.Sqrt((1f + temp * temp * temp) / (6f * (1f + mRatio)) + mRatio); // Gurney Equation for open faced sandwich
                                         }
-                                        float ERAdelay = RA.ERAdetonationDelay;
+                                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: Flyer Velocity: {flyerVelocity} m/s.");
+                                        float ERAdelay = 0.001f * RA.ERAdetonationDelay;
 
                                         float sinAngle = Mathf.Sin(hitAngle * Mathf.Deg2Rad);
                                         float tanAngle = sinAngle / anglemultiplier;
 
-                                        float tFinal1, tFinal2;
+                                        float tInit, tFinal, tFinal1, tFinal2;
 
                                         float ERAthickness = 0f;
 
                                         float apparentThickness = 1000f * anglemultiplier / (2f * caliber);
 
+                                        float additionalT = 0.5f;
+
                                         if (RA.ERAbackingPlate || normalDot > 0)
                                         {
+                                            tInit = 0f;
+                                            if (ERAdelay < 0)
+                                            {
+                                                tInit = -impactSpeed * anglemultiplier * ERAdelay / (anglemultiplier * impactSpeed + flyerVelocity);
+                                            }
                                             // Time for the flyer plate lower end to reach the projectile path
-                                            tFinal1 = flyerPlateL / (tanAngle * flyerVelocity);
+                                            tFinal1 = 1000f * flyerPlateL / (tanAngle * flyerVelocity);
                                             // Time for flyer plate to reach the tail of the projectile
-                                            tFinal2 = 0.001f * (length - (ERAdelay * impactSpeed + thickness)) / (impactSpeed + flyerVelocity / anglemultiplier);
+                                            tFinal2 = (length - impactSpeed * ERAdelay) / (impactSpeed + flyerVelocity / anglemultiplier);
+
+                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: FRONT PLATE. tFinal1: {tFinal1}, tFinal2: {tFinal2}, ERAdelay: {ERAdelay}.");
 
                                             // If we're hitting the back of the plate
                                             if (normalDot < 0)
                                                 // Then clamp the max time to when the flyer plate stops
-                                                tFinal1 = Mathf.Min(tFinal1, RA.ERAspacing / flyerVelocity);
+                                                tFinal1 = Mathf.Min(tFinal1, 1000f * RA.ERAspacing / flyerVelocity);
+
+                                            if (tFinal1 < tFinal2)
+                                                tFinal = tFinal1;
+                                            else
+                                            {
+                                                tFinal = tFinal2;
+                                                additionalT = 1f;
+                                            }
 
                                             // If ERAdelay is < -tFinal1, I.E. if ERA is detonated early enough, flyer plate completely misses the projectile
                                             // this is here for counter-ERA projectiles
-                                            if (1000f * ERAdelay < -tFinal1)
+                                            if (ERAdelay > -tFinal1)
                                             {
                                                 // If tFinal2 < 0, I.E. if projectile clears the plate before the ERA detonates then no impact on the projectile aside from thickness
                                                 if (tFinal2 > 0)
+                                                {
                                                     // If the plate is so inclined it's apparent height is < 2 * caliber we linearly decrease the thickness
-                                                    ERAthickness = flyerThickness * tanAngle * 1000f * Mathf.Min(tFinal1, tFinal2) / caliber * Mathf.Clamp01(apparentThickness * flyerPlateL);
+                                                    ERAthickness = flyerThickness * (tanAngle * (tFinal - tInit) * flyerVelocity / caliber + additionalT) * Mathf.Clamp01(apparentThickness * flyerPlateL);
+                                                    ERAhit = true;
+                                                }
                                                 else
                                                     ERAthickness = thickness;
                                             }
+                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: tInit: {tInit}, tFinal: {tFinal}, ERAdelay: {ERAdelay}, ERAthickness {ERAthickness}.");
                                         }
 
                                         if (RA.ERAbackingPlate || normalDot < 0)
                                         {
                                             float plateSpacing = flyerThickness + RA.ERAexplosiveThickness;
-                                            float flyerPlateL2 = flyerPlateL - plateSpacing * tanAngle;
+                                            float flyerPlateL2 = flyerPlateL - 0.001f * plateSpacing * tanAngle;
 
                                             // Time for flyer plate upper end to reach the projectile path
-                                            tFinal1 = flyerPlateL2 / (tanAngle * flyerVelocity);
+                                            tFinal1 = 1000f * flyerPlateL2 / (tanAngle * flyerVelocity);
                                             // Time for flyer plate to reach the tail of the projectile
-                                            tFinal2 = (anglemultiplier * 0.001f * (impactSpeed * ERAdelay - length) - plateSpacing) / (flyerVelocity - anglemultiplier * impactSpeed);
+                                            tFinal2 = (anglemultiplier * (impactSpeed * ERAdelay - length) - plateSpacing) / (flyerVelocity - anglemultiplier * impactSpeed);
 
                                             // Time of intersection of the projectile tip and the flyer plate
-                                            float tIntermediateContact = (plateSpacing - anglemultiplier * impactSpeed * 0.001f * ERAdelay) / (anglemultiplier * impactSpeed - flyerVelocity);
+                                            float tIntermediateContact = (plateSpacing - impactSpeed * anglemultiplier * ERAdelay) / (anglemultiplier * impactSpeed - flyerVelocity);
                                             // Delay must be greater than this for projectile to reach the end of the plate
-                                            float tMaxDelTip = flyerPlateL / (sinAngle * impactSpeed) - tFinal1;
+                                            float tMaxDelTip = 1000f * flyerPlateL / (sinAngle * impactSpeed) - tFinal1;
 
-                                            float tInit = 0f, tFinal = 0f;
+                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: BACK PLATE. tFinal1: {tFinal1}, tFinal2: {tFinal2}, tIntermediateContact: {tIntermediateContact}, tMaxDelTip: {tMaxDelTip}, ERAdelay: {ERAdelay}.");
 
-                                            if (1000f * ERAdelay < plateSpacing / (anglemultiplier * impactSpeed))
+                                            tInit = 0f;
+                                            tFinal = 0f;
+                                            additionalT = 0.5f;
+
+                                            if (ERAdelay < plateSpacing / (anglemultiplier * impactSpeed))
                                             {
                                                 // Projectile starts in-front of the plate
                                                 // And if the ERAdelay > tMaxDelTip
-                                                if (1000f * ERAdelay > tMaxDelTip)
+                                                if (ERAdelay > tMaxDelTip)
                                                 {
                                                     // Then the projectile can catch up to the plate
                                                     // Projectile first contacts at tIntermediateContact
@@ -1314,15 +1344,21 @@ namespace BDArmory.Bullets
 
                                                     // And the plate can be completely fed into the projectile
                                                     // limited by the projectile length
-                                                    tFinal = Mathf.Min(tFinal1, tFinal2);
+                                                    if (tFinal1 < tFinal2)
+                                                        tFinal = tFinal1;
+                                                    else
+                                                    {
+                                                        tFinal = tFinal2;
+                                                        additionalT = 1.0f;
+                                                    }
                                                 }
                                                 // If ERAdelay < tMaxDelTip then the plate misses the projectile
                                             }
-                                            else if (1000f * ERAdelay < (plateSpacing / anglemultiplier + 0.001f * length) / impactSpeed)
+                                            else if (ERAdelay < (plateSpacing / anglemultiplier + length) / impactSpeed)
                                             {
                                                 // Projectile starts touching the plate but not past the plate
                                                 // And if ERAdelay > tMaxDelTip
-                                                if (1000f * ERAdelay > tMaxDelTip)
+                                                if (ERAdelay > tMaxDelTip)
                                                 {
                                                     // Then the plate does not completely feed into the projectile
                                                     tFinal = tIntermediateContact;
@@ -1331,19 +1367,31 @@ namespace BDArmory.Bullets
                                                 {
                                                     // The plate can completely feed into the projectile, limited
                                                     // by the projectile length
-                                                    tFinal = Mathf.Min(tFinal1, tFinal2);
+                                                    if (tFinal1 < tFinal2)
+                                                        tFinal = tFinal1;
+                                                    else
+                                                    {
+                                                        tFinal = tFinal2;
+                                                        additionalT = 1.0f;
+                                                    }
                                                 }
                                             }
                                             else
                                             {
                                                 // Projectile starts past the plate
-                                                // And if ERAdelay < tMaxDelTip + 0.001f*length/impactSpeed
-                                                if (1000f * ERAdelay < tMaxDelTip + 0.001f * length / impactSpeed)
+                                                // And if ERAdelay < tMaxDelTip + length/impactSpeed
+                                                if (ERAdelay < tMaxDelTip + length / impactSpeed)
                                                 {
                                                     // Then the plate catches up with the projectile
                                                     tInit = tFinal2;
                                                     // And interaction is limited by projectile length
-                                                    tFinal = Mathf.Min(tFinal1, tIntermediateContact);
+                                                    if (tFinal1 < tIntermediateContact)
+                                                        tFinal = tFinal1;
+                                                    else
+                                                    {
+                                                        tFinal = tIntermediateContact;
+                                                        additionalT = 1.0f;
+                                                    }
                                                 }
                                                 // Otherwise, the plate cannot catch up to the projectile
                                             }
@@ -1351,7 +1399,7 @@ namespace BDArmory.Bullets
                                             // If hit on plate limited by space
                                             if (normalDot > 0)
                                             {
-                                                float tFlyerImpact = RA.ERAspacing / flyerVelocity;
+                                                float tFlyerImpact = 1000f * RA.ERAspacing / flyerVelocity;
                                                 if (tInit > tFlyerImpact)
                                                 {
                                                     // If the plate impacts before the projectile hits then the plate provides
@@ -1368,8 +1416,14 @@ namespace BDArmory.Bullets
                                                 }
                                             }
 
+                                            if (tFinal > 0)
+                                                ERAhit = true;
+                                            else
+                                                additionalT = 0f;
+
                                             // If the plate is so inclined it's apparent height is < 2 * caliber we linearly decrease the thickness
-                                            ERAthickness += flyerThickness * tanAngle * 1000f * (tFinal - tInit) / caliber * Mathf.Clamp01(apparentThickness * flyerPlateL);
+                                            ERAthickness += flyerThickness * (tanAngle * (tFinal - tInit) * flyerVelocity / caliber + additionalT) * Mathf.Clamp01(apparentThickness * flyerPlateL2);
+                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: tInit: {tInit}, tFinal: {tFinal}, ERAdelay: {ERAdelay}, ERAthickness: {ERAthickness}.");
                                         }
 
                                         if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.PooledBullet]: thickness was {thickness} mm, is now {ERAthickness} mm.");
@@ -1383,18 +1437,16 @@ namespace BDArmory.Bullets
                                             thickness *= thicknessModifier;
                                         }
                                     }
-
-                                    if (sabot || fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating || fuzeType == BulletFuzeTypes.None) //non-explosive impact
-                                    {
-                                        if (int.TryParse(bulletHit.hit.collider.transform.name.Substring(8), out int result))
-                                            RA.UpdateSectionScales(result - 1, true, ERAnormal); //detonate RA section
-                                                                                //explosive impacts handled in ExplosionFX
-                                                                                //if explosive and contact fuze, kill bullet?
-                                        else
-                                            Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
-                                    }
                                 }
-                                
+                                if (sabot || fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating || fuzeType == BulletFuzeTypes.None) //non-explosive impact
+                                {
+                                    if (int.TryParse(bulletHit.hit.collider.transform.name.Substring(8), out int result))
+                                        RA.UpdateSectionScales(result - 1, true, ERAnormal); //detonate RA section
+                                                                                             //explosive impacts handled in ExplosionFX
+                                                                                             //if explosive and contact fuze, kill bullet?
+                                    else
+                                        Debug.LogWarning($"[BDArmory.PooledBullet]: Hit on ERA: {hitPart.name} has hit an improperly named section: {bulletHit.hit.collider.transform.name}. Please ensure that these are named \"section_[number]\" and that your \"sections\" transform does not have colliders.");
+                                }
                             }
                         }
                     }
@@ -1550,7 +1602,7 @@ namespace BDArmory.Bullets
                             // the penRatio minus the portion that went into erosion
                             velocityRatio /= massRatio;
                         }
-                        else
+                        else if (!ERAhit)
                         {
                             float adjustedPenRatio = 1f - BDAMath.Sqrt(1f-penRatio);
                             deltaMass = bulletMass * (massRatio - adjustedPenRatio); //spacedFactor * adjustedPenRatio);
