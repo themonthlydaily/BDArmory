@@ -1602,10 +1602,11 @@ namespace BDArmory.Bullets
                             // the penRatio minus the portion that went into erosion
                             velocityRatio /= massRatio;
                         }
-                        else if (!ERAhit)
+                        else
                         {
                             float adjustedPenRatio = 1f - BDAMath.Sqrt(1f-penRatio);
-                            deltaMass = bulletMass * (massRatio - adjustedPenRatio); //spacedFactor * adjustedPenRatio);
+                            if (!ERAhit)
+                                deltaMass = bulletMass * (massRatio - adjustedPenRatio); //spacedFactor * adjustedPenRatio);
                             bulletMass *= massRatio;
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease
