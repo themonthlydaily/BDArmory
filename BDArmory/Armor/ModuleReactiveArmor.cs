@@ -110,7 +110,7 @@ namespace BDArmory.Armor
                 for (int i = 0; i < sectionsCount; ++i)
                 {
                     sectionDestroyed = sectionIndexes[i];
-                    if (sectionDestroyed > 0)
+                    if (sectionDestroyed >= 0)
                     {
                         destroyedIndex = i;
                         break;
