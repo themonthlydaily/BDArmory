@@ -80,6 +80,15 @@
 		- Missile in-flight anims (flightAnimationName) now starts playing when boost motor ignites isntead of post Boost phase.
 	- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
 	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "WEAPONS_RESPECT_CROSSFEED", this may be set to false to restore previous behavior where guns did not respect crossfeed rules.
+	- Improved performance of bullet firing code.
+- Armor:
+	- Improved long-dart armor penetration mechanics, should have improved performance against consecutive plates in-contact with each other. Improved residual velocity formula.
+	- Implemented "realistic" model for explosive reactive armor against kinetic projectiles, now using a interaction length-based model, supports symmetrical and open-faced sandwich configurations.
+		- Hits on the sides of explosive reactive armor now no longer provide additional armor protection. (For Modders: Ensure that the section.forward transform is normal to the strike-face of the ERA.)
+		- Now the specific explosive reactive armor section hit by bullets will explode instead of a random section.
+	- Implemented angle correction for explosive reactive armor hits, now penetration increases with increasing hit angle. Resistance described by armorModifier * 300 mm at 68 degrees.
+	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "KERBAL_ERA", if set to false EVA Kerbals no longer provide infinite armor as they previously did.
+	- HEAT warheads now become unfocused as they penetrate through layers of armor, thicker layers will unfocus HEAT jets more than thinner layers.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.

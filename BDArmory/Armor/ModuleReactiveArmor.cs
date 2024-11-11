@@ -131,7 +131,7 @@ namespace BDArmory.Armor
             else
                 direction = -sections[sectionDestroyed].forward;
 
-            ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, ERAexplosiveMass * ERArelativeEffectiveness, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
+            ExplosionFx.CreateExplosion(sections[sectionDestroyed].transform.position, ERAexplosiveMass * ERArelativeEffectiveness * (ERAbackingPlate ? 1.5f: 1f), ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, armorName, direction, 30, true);
             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ReactiveArmor]: Removing section: {sectionDestroyed}, " + sectionsRemaining + " sections left");
             sectionsRemaining--;
             if (sectionsRemaining < 1 || destroyedIndex < 0)
