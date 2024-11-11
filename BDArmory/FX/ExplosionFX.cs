@@ -623,20 +623,25 @@ namespace BDArmory.FX
                             partArmour *= factor;
 
                             factor *= 1.05f;
-                        }
-                        var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
-                        if (RA != null)
-                        {
-                            if (RA.NXRA)
+
+                            var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
+                            if (RA != null)
                             {
-                                partArmour *= RA.armorModifier;
-                            }
-                            else
-                            {
-                                if (((ExplosionSource == ExplosionSourceType.Bullet || ExplosionSource == ExplosionSourceType.Rocket) && (Caliber > RA.sensitivity && partHit == projectileHitPart)) ||   //bullet/rocket hit
-                                    ((ExplosionSource == ExplosionSourceType.Missile || ExplosionSource == ExplosionSourceType.BattleDamage) && (distance < Power / 2))) //or close range detonation likely to trigger ERA
+                                if (RA.NXRA)
                                 {
-                                    partArmour = 300 * RA.armorModifier;
+                                    partArmour *= RA.armorModifier;
+                                }
+                                else
+                                {
+                                    if (((ExplosionSource == ExplosionSourceType.Bullet || ExplosionSource == ExplosionSourceType.Rocket) && (Caliber > RA.sensitivity && partHit == projectileHitPart)) ||   //bullet/rocket hit
+                                        ((ExplosionSource == ExplosionSourceType.Missile || ExplosionSource == ExplosionSourceType.BattleDamage) && (distance < Power / 2))) //or close range detonation likely to trigger ERA
+                                    {
+                                        partArmour = 300 * RA.armorModifier * Mathf.Clamp(0.405f * Mathf.Tan(Mathf.Acos(armorCos)), 0f, 2f);
+                                        // Complex models for ERA interactions with HEAT would be far too excessive given the amount of times
+                                        // this code is being used so a simple tan based model inspired by "Stopping Power of Explosive Reactive Armours
+                                        // Against Different Shaped Charge Diameters or at Different Angles" and "Momentum Theory of Explosive Reactive Armours"
+                                        // by Manfred Held was used.
+                                    }
                                 }
                             }
                         }
