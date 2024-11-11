@@ -43,7 +43,7 @@ namespace BDArmory.Armor
         public float ERAexplosiveMass = 5f; //ERA explosive mass (in kg)
 
         [KSPField]
-        public float ERAexplosiveDensity = 1650f; //ERA explosive mass (in kg/m^3)
+        public float ERAexplosiveDensity = 1650f; //ERA explosive density (in kg/m^3)
 
         [KSPField]
         public bool ERAbackingPlate = true; //backing plate ?
