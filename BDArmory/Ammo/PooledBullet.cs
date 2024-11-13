@@ -2008,8 +2008,6 @@ namespace BDArmory.Bullets
                         pBullet.currentVelocity += timestep * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
                         pBullet.DistanceTraveled += timestep * pBullet.currentVelocity.magnitude; // Adjust the distance traveled to account for iTime.
                     }
-                    // The following line appears to no longer be needed
-                    //if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * sourceInfo.weapon.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                     pBullet.timeAlive = timestep;
                     pBullet.SetTracerPosition();
                     pBullet.currentPosition += TimeWarp.fixedDeltaTime * (sourceInfo.weapon.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.

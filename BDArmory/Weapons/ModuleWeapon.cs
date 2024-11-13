@@ -3757,8 +3757,6 @@ namespace BDArmory.Weapons
                                 firingDirection = smoothedRelativeFinalTarget.At(Time.fixedDeltaTime).normalized; // Estimate of the current firing direction for this frame based on the previous frames.
                                 bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
                                 bulletInitialPosition = AIUtils.PredictPosition(firePosition, baseBulletVelocity * firingDirection, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
-                                // The following line appears to no longer be needed
-                                //if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                 bulletInitialVelocityDelta = iTime * bulletAcceleration;
 
                                 // Check whether we should use the analytic solution or the numeric one. These initial values don't affect the numeric solution.
@@ -3793,7 +3791,6 @@ namespace BDArmory.Weapons
                                         lastFiringDirection = firingDirection;
                                         bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection + bulletInitialVelocityDelta;
                                         bulletInitialPosition = firePosition + iTime * baseBulletVelocity * firingDirection;
-                                        if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Drag is ignored.
                                         relativePosition = targetPosition - bulletInitialPosition;
                                         relativeVelocity = targetVelocity - bulletEffectiveVelocity;
@@ -3947,7 +3944,6 @@ namespace BDArmory.Weapons
                     var firePosition = AIUtils.PredictPosition(fireTransform.position, part.rb.velocity, vessel.acceleration_immediate, Time.fixedDeltaTime); // Position of the end of the barrel at the start of the next frame.
                     var bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
                     var simCurrPos = AIUtils.PredictPosition(firePosition, baseBulletVelocity * fireTransform.forward, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
-                    if (!BDKrakensbane.IsActive) simCurrPos += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
 
                     if (Physics.Raycast(new Ray(firePosition, simCurrPos - firePosition), out RaycastHit hit, (simCurrPos - firePosition).magnitude, layerMask1)) // Check between the barrel and the point the bullet appears.
                     {
@@ -6131,7 +6127,6 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
-
                         float tempPenDepth = ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, muParam1: binfo.sabot ? 0.9470311374f : 0.656060636f, muParam2: binfo.sabot ? 1.555757746f : 1.20190930f, muParam3: binfo.sabot ? 2.753715499f : 1.77791929f, sabot: binfo.sabot);
                         output.AppendLine($"Estimated Penetration: {tempPenDepth:F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
@@ -6152,7 +6147,7 @@ namespace BDArmory.Weapons
                             if (binfo.eFuzeType == BulletFuzeTypes.Penetrating)
                                 output.AppendLine($"- Min thickness to arm fuze: {tempPenDepth * 0.666f:F2}");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-
+                            
                             if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");

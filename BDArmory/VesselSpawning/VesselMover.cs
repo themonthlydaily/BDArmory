@@ -1201,7 +1201,6 @@ namespace BDArmory.VesselSpawning
                         {
                             if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
                         }
-                        var hasThumbnail = craftBrowser.craftThumbnails.ContainsKey(vesselURL);
                         GUILayout.BeginHorizontal(); // Vessel buttons
                         if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? CustomCraftBrowserDialog.SelectedButtonStyle : CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(64), GUILayout.MaxWidth(BDArmorySetup.WindowRectVesselMoverVesselSelection.width - 230)))
                         {
@@ -1215,7 +1214,7 @@ namespace BDArmory.VesselSpawning
                             selectionTimer = Time.realtimeSinceStartup;
                         }
                         GUILayout.Label(VesselInfoEntry(vesselURL, vesselInfo, true), CustomCraftBrowserDialog.InfoStyle, GUILayout.Width(166));
-                        GUILayout.Label(hasThumbnail ? craftBrowser.craftThumbnails[vesselURL] : null, CustomCraftBrowserDialog.InfoStyle, GUILayout.Height(64), GUILayout.Width(64));
+                        GUILayout.Label(craftBrowser.craftThumbnails.GetValueOrDefault(vesselURL), CustomCraftBrowserDialog.InfoStyle, GUILayout.Height(64), GUILayout.Width(64));
                         GUILayout.EndHorizontal();
                     }
             }
@@ -1556,7 +1555,7 @@ namespace BDArmory.VesselSpawning
         public static GUIStyle LabelStyle = new(BDArmorySetup.BDGuiSkin.label);
         public void UpdateList()
         {
-            CheckCurrent();
+            if (CheckCurrent()) return; // If CheckCurrent changes the folder, then UpdateList gets called internally.
             if (string.IsNullOrEmpty(currentFolder) || !Directory.Exists(currentFolder)) ChangeFolder(facility); // Default to the current base folder if something is wrong.
             craftList = Directory.GetFiles(currentFolder, "*.craft").ToDictionary(craft => craft, craft => new CraftProfileInfo());
             if (craftList.ContainsKey(Path.Combine(currentFolder, "Auto-Saved Ship.craft"))) craftList.Remove(Path.Combine(currentFolder, "Auto-Saved Ship.craft")); // Ignore the Auto-Saved Ship.
@@ -1623,7 +1622,7 @@ namespace BDArmory.VesselSpawning
             }
             else
             {
-                var newFolder = Path.GetFullPath(Path.Combine(currentFolder, subfolder));
+                var newFolder = Path.GetFullPath(Path.Combine(currentFolder, subfolder.TrimStart(['/'])));
                 if (Directory.Exists(newFolder)) currentFolder = newFolder;
                 else currentFolder = baseFolder;
             }
@@ -1632,9 +1631,14 @@ namespace BDArmory.VesselSpawning
             UpdateList();
         }
 
-        public void CheckCurrent()
+        public bool CheckCurrent()
         {
-            if (_currentFolder != currentFolder) ChangeFolder(facility, currentFolder.Substring(baseFolder.Length), true); // Another instance changed the current folder, so switch to match it.
+            if (_currentFolder != currentFolder)
+            {
+                ChangeFolder(facility, currentFolder.Substring(baseFolder.Length), false); // Another instance changed the current folder, so switch to match it.
+                return true;
+            }
+            return false;
         }
     }
 
