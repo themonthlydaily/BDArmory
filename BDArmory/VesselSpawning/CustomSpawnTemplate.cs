@@ -575,13 +575,15 @@ namespace BDArmory.VesselSpawning
         internal static int _vesselGUICheckIndex = -1;
         bool showVesselSelection = false;
         bool bringVesselSelectionToFront = false;
-        Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
+        Rect vesselSelectionWindowRect = new(0, 0, 600, 800);
         Vector2 vesselSelectionScrollPos = default;
         string selectionFilter = "";
         bool focusFilterField = false;
         bool folderSelectionMode = false; // Show SPH/VAB and folders instead of craft files.
 
         CustomCraftBrowserDialog craftBrowser;
+        GUIStyle ButtonStyle = new(CustomCraftBrowserDialog.ButtonStyle);
+        GUIStyle InfoStyle = new(CustomCraftBrowserDialog.InfoStyle);
         public static string ShipName(string craft) => (!string.IsNullOrEmpty(craft) && CustomCraftBrowserDialog.shipNames.TryGetValue(craft, out string shipName)) ? shipName : "";
 
         /// <summary>
@@ -603,6 +605,8 @@ namespace BDArmory.VesselSpawning
             {
                 craftBrowser = new CustomCraftBrowserDialog();
                 craftBrowser.UpdateList();
+                ButtonStyle.fontSize = 18;
+                InfoStyle.fontSize = 12;
             }
             vesselSelectionWindowRect.position = position + BDArmorySettings._UI_SCALE * new Vector2(-vesselSelectionWindowRect.width - 120, -vesselSelectionWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
             showVesselSelection = true;
@@ -635,7 +639,7 @@ namespace BDArmory.VesselSpawning
                 GUI.FocusControl("CSTFilterField");
                 focusFilterField = false;
             }
-            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
+            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.MaxWidth(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             if (folderSelectionMode)
             {
                 GUILayout.BeginHorizontal();
@@ -669,7 +673,7 @@ namespace BDArmory.VesselSpawning
                             if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
                         }
                         GUILayout.BeginHorizontal(); // Vessel buttons
-                        if (GUILayout.Button($"{vesselInfo.shipName}", CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                        if (GUILayout.Button($"{vesselInfo.shipName}", ButtonStyle, GUILayout.MaxHeight(48), GUILayout.Width(vesselSelectionWindowRect.width - 240)))
                         {
                             currentVesselSpawnConfig.craftURL = vesselURL;
                             foreach (var vesselSpawnConfig in currentTeamSpawnConfigs) // Set the other empty slots for the team to the same vessel.
@@ -681,16 +685,15 @@ namespace BDArmory.VesselSpawning
                             }
                             HideVesselSelection();
                         }
-                        GUILayout.Label(VesselMover.Instance.VesselInfoEntry(vesselURL, vesselInfo, false), CustomCraftBrowserDialog.InfoStyle);
+                        GUILayout.Label(VesselMover.Instance.VesselInfoEntry(vesselURL, vesselInfo, false), InfoStyle, GUILayout.Width(142));
+                        GUILayout.Label(craftBrowser.craftThumbnails.GetValueOrDefault(vesselURL), InfoStyle, GUILayout.Height(48), GUILayout.Width(48));
                         GUILayout.EndHorizontal();
                     }
             }
             GUILayout.EndScrollView();
-            GUILayout.Space(5);
             GUILayout.BeginHorizontal(); // A line for various options
             BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_REPLACE_TEAM = GUILayout.Toggle(BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_REPLACE_TEAM, StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_ReplaceTeam"));
             GUILayout.EndHorizontal();
-            GUILayout.Space(10);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Clear"), BDArmorySetup.BDGuiSkin.button))
             {

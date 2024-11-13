@@ -2,6 +2,7 @@
 - General:
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
 	- Add the ability to add custom sub-categories to the BDA part categorizer.
+	- Add some new missile plume prefabs for jets/sustainer stages.
 - UI:
 	- Improve prevention of click-through of various windows in the editor.
 	- Open sections of the AI GUI now remain open when switching between flight and editor.
@@ -37,7 +38,7 @@
 		- Set "VESSEL_SPAWN_SMART_REASSIGN_TEAMS = True" in BDA's settings.cfg to enable it when "Reassign Teams" is enabled.
 		- The first vessel in the spawn template with a non-default team name (can be set in the SPH) that isn't already taken sets the name for the team. Other teams get their default letter.
 	- Updated plot_summary.py to adjust how the graph and legend fit in the window.
--Countermeasures:
+- Countermeasures:
 	- Fix NRE from countermeasure droppers missing a ejectTransform in the .cfg.
 	- Fix Acousic Decoy launcher launch direction.
 	- Acoustic Decoys will no longer defy gravity and fly if launched out of water.
@@ -106,7 +107,7 @@
 		-	vesselCollisionAvoidanceStrength = n
 		-	idleSpeed = n
 		-	DISABLE_SAS = T/F	
-	if the file is not present, or it is, but the Project:Showdown toggle in Game Modes is off, overrides will not be used. Overrides will apply on competition start or vessel spawn.
+		If the file is not present, or it is, but the Project:Showdown toggle in Game Modes is off, overrides will not be used. Overrides will apply on competition start or vessel spawn.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES
