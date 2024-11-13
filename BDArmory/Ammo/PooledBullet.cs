@@ -1986,7 +1986,7 @@ namespace BDArmory.Bullets
                 if (!addSourcePartVel)
                 {
                     pBullet.SetTracerPosition();
-                    if (!pBullet.CheckBulletCollisions(timestep)) continue; // Bullet immediately hit something and died.
+                    if (pBullet.CheckBulletCollisions(timestep)) continue; // Bullet immediately hit something and died.
                     if (!pBullet.hasRicocheted) pBullet.MoveBullet(timestep); // Move the bullet the remaining part of the frame.
                     pBullet.currentPosition += (TimeWarp.fixedDeltaTime - timestep) * BDKrakensbane.FrameVelocityV3f; // Re-adjust for Krakensbane.
                     pBullet.timeAlive = timestep;
@@ -2003,7 +2003,6 @@ namespace BDArmory.Bullets
                         pBullet.currentVelocity += timestep * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
                         pBullet.DistanceTraveled += timestep * pBullet.currentVelocity.magnitude; // Adjust the distance traveled to account for iTime.
                     }
-                    if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * sourceInfo.weapon.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                     pBullet.timeAlive = timestep;
                     pBullet.SetTracerPosition();
                     pBullet.currentPosition += TimeWarp.fixedDeltaTime * (sourceInfo.weapon.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
