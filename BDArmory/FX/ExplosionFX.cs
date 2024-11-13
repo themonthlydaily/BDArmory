@@ -881,7 +881,7 @@ namespace BDArmory.FX
 
                     var damageWithoutIntermediateParts = blastInfo.Damage;
                     var dmgModifier = PartExtensions.ExplosiveDamageModifier(ExplosionSource, dmgMult); // Scale the HP and Armour by the appropriate modifier for how the damage will be applied.
-                    blastInfo.Damage = dmgModifier > 0f ? Mathf.Max(0f, blastInfo.Damage - (0.5f * cumulativeHPOfIntermediateParts + 10f * BDArmorySettings.EXP_PEN_RESIST_MULT * cumulativeArmorOfIntermediateParts) / dmgModifier) : 0f;
+                    blastInfo.Damage = dmgModifier > 0f ? Mathf.Max(0f, blastInfo.Damage - (0.2f * cumulativeHPOfIntermediateParts) / dmgModifier - 10f * BDArmorySettings.EXP_PEN_RESIST_MULT * cumulativeArmorOfIntermediateParts) : 0f;
 
                     if (CASEClamp > 0)
                     {
