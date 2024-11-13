@@ -1865,6 +1865,14 @@ namespace BDArmory.Bullets
             }
 
             Vector3 firedVelocity = default;
+            float dispersionVelocityforAngle = 0f;
+
+            if (isSubP && maxDeviation < 0)
+            {
+                float incrementVelocity = 1000 / (additionalPhysicsVel + bulletType.bulletVelocity); //using 1km/s as a reference Unit
+                float dispersionAngle = bulletType.subProjectileDispersion > 0 ? bulletType.subProjectileDispersion : BDAMath.Sqrt(projectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
+                dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s dispersion to angle, accounting for vel of round
+            }
 
             for (int i = 0; i < projectileCount; i++)
             {
@@ -1882,15 +1890,12 @@ namespace BDArmory.Bullets
 
                 pBullet.ballisticCoefficient = bulletType.bulletBallisticCoefficient;
 
-                pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = timestep;
+                pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = isSubP ? 0f : timestep;
                 // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
                 pBullet.timeToLiveUntil = Time.time + TTL;
 
                 if (isSubP && maxDeviation < 0)
                 {
-                    float incrementVelocity = 1000 / (additionalPhysicsVel + pBullet.bulletVelocity); //using 1km/s as a reference Unit
-                    float dispersionAngle = bulletType.subProjectileDispersion > 0 ? bulletType.subProjectileDispersion : BDAMath.Sqrt(projectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-                    float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s dispersion to angle, accounting for vel of round
                     pBullet.currentVelocity = subPVelorDir + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
                 }
                 else
@@ -1986,7 +1991,7 @@ namespace BDArmory.Bullets
                 if (!addSourcePartVel)
                 {
                     pBullet.SetTracerPosition();
-                    if (!pBullet.CheckBulletCollisions(timestep)) continue; // Bullet immediately hit something and died.
+                    if (pBullet.CheckBulletCollisions(timestep)) continue; // Bullet immediately hit something and died.
                     if (!pBullet.hasRicocheted) pBullet.MoveBullet(timestep); // Move the bullet the remaining part of the frame.
                     pBullet.currentPosition += (TimeWarp.fixedDeltaTime - timestep) * BDKrakensbane.FrameVelocityV3f; // Re-adjust for Krakensbane.
                     pBullet.timeAlive = timestep;
@@ -2003,7 +2008,8 @@ namespace BDArmory.Bullets
                         pBullet.currentVelocity += timestep * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
                         pBullet.DistanceTraveled += timestep * pBullet.currentVelocity.magnitude; // Adjust the distance traveled to account for iTime.
                     }
-                    if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * sourceInfo.weapon.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                    // The following line appears to no longer be needed
+                    //if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * sourceInfo.weapon.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                     pBullet.timeAlive = timestep;
                     pBullet.SetTracerPosition();
                     pBullet.currentPosition += TimeWarp.fixedDeltaTime * (sourceInfo.weapon.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
