@@ -2044,18 +2044,20 @@ namespace BDArmory.Bullets
                 NukeInfo nukeInfo = sBullet.nuclear ? new NukeInfo(flashModelPath, shockModelPath, blastModelPath,
                     plumeModelPath, debrisModelPath, blastSoundPath) : new NukeInfo();
 
-                float subTTL = Mathf.Max(sBullet.projectileTTL, 1.1f * detonationRange / (0.5f * sBullet.bulletVelocity + bulletVelocity));
+                float dragAdjSpeed = GetDragAdjustedVelocity().magnitude;
+                float subProjectileSpeed = dragAdjSpeed + sBullet.bulletVelocity;
+                float subTTL = Mathf.Max(sBullet.projectileTTL, 1.1f * detonationRange / subProjectileSpeed);
                 float subDetonationTime = sBullet.eFuzeType switch
                         {
-                            BulletFuzeTypes.Timed => detonationRange / sBullet.bulletVelocity, //because beehive TimedFuze for the parent shell is timeToDetonation - detonationRange / bulletVelocity
-                            BulletFuzeTypes.Flak => detonationRange / sBullet.bulletVelocity + Time.fixedDeltaTime, // Detonate at expected impact time for flak (plus 1 frame to allow proximity detection).
+                            BulletFuzeTypes.Timed => detonationRange / subProjectileSpeed, //because beehive TimedFuze for the parent shell is timeToDetonation - detonationRange / bulletVelocity
+                            BulletFuzeTypes.Flak => detonationRange / subProjectileSpeed + Time.fixedDeltaTime, // Detonate at expected impact time for flak (plus 1 frame to allow proximity detection).
                             _ => subTTL // Otherwise detonate at the TTL.
                         };
 
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
                         bulletDrop, subTTL, iTime, subDetonationRange, subDetonationTime,
                         isAPSprojectile, tgtRocket, tgtShell, stealResources, dmgMult, bulletDmgMult,
-                        false, GetDragAdjustedVelocity().magnitude, bulletVelocity, currentVelocity, true);
+                        false, dragAdjSpeed, bulletVelocity, currentVelocity, true);
             }
         }
         /// <summary>

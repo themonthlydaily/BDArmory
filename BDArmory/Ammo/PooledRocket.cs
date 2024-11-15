@@ -1096,7 +1096,7 @@ namespace BDArmory.Bullets
 
                 float currSpeed = currentVelocity.magnitude;
 
-                float subTTL = Mathf.Max(sBullet.projectileTTL, 1.1f * detonationRange / (sBullet.bulletVelocity + relVelocity));
+                float subTTL = Mathf.Max(sBullet.projectileTTL, 1.1f * detonationRange / (sBullet.bulletVelocity + currSpeed));
 
                 FireBullet(sBullet, count * sBullet.projectileCount, sourceInfo, graphicsInfo, nukeInfo,
                         true, subTTL, TimeWarp.fixedDeltaTime, detonationRange, detonationRange / Mathf.Max(1, currSpeed),
