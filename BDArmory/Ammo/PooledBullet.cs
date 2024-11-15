@@ -2044,7 +2044,7 @@ namespace BDArmory.Bullets
                 NukeInfo nukeInfo = sBullet.nuclear ? new NukeInfo(flashModelPath, shockModelPath, blastModelPath,
                     plumeModelPath, debrisModelPath, blastSoundPath) : new NukeInfo();
 
-                float subTTL = Mathf.Max(sBullet.projectileTTL, detonationRange / sBullet.bulletVelocity * 1.1f);
+                float subTTL = Mathf.Max(sBullet.projectileTTL, 1.1f * detonationRange / (0.5f * sBullet.bulletVelocity + bulletVelocity));
                 float subDetonationTime = sBullet.eFuzeType switch
                         {
                             BulletFuzeTypes.Timed => detonationRange / sBullet.bulletVelocity, //because beehive TimedFuze for the parent shell is timeToDetonation - detonationRange / bulletVelocity
