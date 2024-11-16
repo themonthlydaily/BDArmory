@@ -49,7 +49,7 @@ namespace BDArmory.Armor
         public bool ERAbackingPlate = true; //backing plate ?
 
         [KSPField]
-        public float ERAspacing = 0.25f; //spacing between back plate and armor
+        public float ERAspacing = 0.1f; //spacing between back plate and armor
 
         [KSPField]
         public float ERAdetonationDelay = 50f; //detonation delay (in microseconds)
