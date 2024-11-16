@@ -5074,24 +5074,28 @@ namespace BDArmory.Weapons
                 //else, we have turrets slaved to a targetpainter, use that
                 if (weaponManager.slavingTurrets && turret)
                 {
-                    slaved = true;
-                    targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
-                    targetPosition = weaponManager.slavedPosition;
-                    //currently overriding multi-turret multi-targeting if enabled as all turrets slaved to WM's guardTarget/current active radarLock
-                    targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
-                    if (weaponManager.slavedTarget.vessel != null)
+                    bool isVessel = weaponManager.slavedTarget.vessel != null;
+                    if (!(isVessel && visRange && bulletInfo.guidanceDPS <= 0 || RadarUtils.GetVesselChaffFactor(weaponManager.slavedTarget.vessel) < 1f))
                     {
-                        targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
-                        targetIsLandedOrSplashed = weaponManager.slavedTarget.vessel.LandedOrSplashed;
+                        slaved = true;
+                        targetRadius = isVessel ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
+                        targetPosition = weaponManager.slavedPosition;
+                        //currently overriding multi-turret multi-targeting if enabled as all turrets slaved to WM's guardTarget/current active radarLock
+                        targetVelocity = isVessel ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
+                        if (isVessel)
+                        {
+                            targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
+                            targetIsLandedOrSplashed = weaponManager.slavedTarget.vessel.LandedOrSplashed;
+                        }
+                        else
+                        {
+                            targetAcceleration = weaponManager.slavedAcceleration;
+                            targetIsLandedOrSplashed = false;
+                        }
+                        targetAcquired = true;
+                        targetAcquisitionType = TargetAcquisitionType.Slaved;
+                        return;
                     }
-                    else
-                    {
-                        targetAcceleration = weaponManager.slavedAcceleration;
-                        targetIsLandedOrSplashed = false;
-                    }
-                    targetAcquired = true;
-                    targetAcquisitionType = TargetAcquisitionType.Slaved;
-                    return;
                 }
 
                 // within visual range and no radar aiming/need precision visual targeting of specific subsystems
