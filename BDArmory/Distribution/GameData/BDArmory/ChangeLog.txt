@@ -87,7 +87,7 @@
 	- Armor should now be more consistent in terms of HE resistance. Adjusting the "Armor Explosion Resistance Multiplier" should now more directly affect the amount of armor penetration explosions do.
 	- Improved long-dart armor penetration mechanics, should have improved performance against consecutive plates in-contact with each other. Improved residual velocity formula.
 	- Implemented "realistic" model for explosive reactive armor against kinetic projectiles, now using a interaction length-based model, supports symmetrical and open-faced sandwich configurations.
-		- Hits on the sides of explosive reactive armor now no longer provide additional armor protection. (For Modders: Ensure that the section.forward transform is normal to the strike-face of the ERA.)
+		- Hits on the sides of explosive reactive armor now no longer provide additional armor protection. (For Modders: Ensure that the section.forward transform is normal to the strike-face of the ERA. Turning on Debug Lines will show you the forward transforms in blue, the green and red lines represent .right and .up respectively.)
 		- Now the specific explosive reactive armor section hit by bullets will explode instead of a random section.
 	- Implemented angle correction for explosive reactive armor hits, now penetration increases with increasing hit angle. Resistance described by armorModifier * 300 mm at 68 degrees.
 	- HEAT warheads now become unfocused as they penetrate through layers of armor, thicker layers will unfocus HEAT jets more than thinner layers.

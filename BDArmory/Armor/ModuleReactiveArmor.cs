@@ -4,6 +4,8 @@ using BDArmory.Damage;
 using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.Settings;
+using BDArmory.Utils;
+using System;
 
 namespace BDArmory.Armor
 {
@@ -71,6 +73,32 @@ namespace BDArmory.Armor
             if (HighLogic.LoadedSceneIsFlight)
             {
                 SourceVessel = part.vessel.GetName();
+            }
+        }
+
+        void OnGUI()
+        {
+            if (BDArmorySettings.DEBUG_LINES)
+            {
+                try
+                {
+                    for (int i = 0; i < sectionsCount; ++i)
+                    {
+                        if (sectionIndexes[i] >= 0)
+                        {
+                            GUIUtils.DrawLineBetweenWorldPositions(sections[sectionIndexes[i]].position,
+                                sections[sectionIndexes[i]].position + sections[sectionIndexes[i]].forward, 1, Color.blue);
+                            GUIUtils.DrawLineBetweenWorldPositions(sections[sectionIndexes[i]].position,
+                                sections[sectionIndexes[i]].position + sections[sectionIndexes[i]].up, 1, Color.red);
+                            GUIUtils.DrawLineBetweenWorldPositions(sections[sectionIndexes[i]].position,
+                                sections[sectionIndexes[i]].position + sections[sectionIndexes[i]].right, 1, Color.green);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[BDArmory.MissileLauncher]: Exception thrown in OnGUI: " + e.Message + "\n" + e.StackTrace);
+                }
             }
         }
         void MakeArmorSectionArray()
