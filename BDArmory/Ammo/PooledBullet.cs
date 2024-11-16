@@ -1357,8 +1357,8 @@ namespace BDArmory.Bullets
                                             else if (ERAdelay < (plateSpacing / anglemultiplier + length) / impactSpeed)
                                             {
                                                 // Projectile starts touching the plate but not past the plate
-                                                // And if ERAdelay > tMaxDelTip
-                                                if (ERAdelay > tMaxDelTip)
+                                                // And if ERAdelay < tMaxDelTip
+                                                if (ERAdelay < tMaxDelTip)
                                                 {
                                                     // Then the plate does not completely feed into the projectile
                                                     tFinal = tIntermediateContact;
