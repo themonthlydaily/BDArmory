@@ -56,6 +56,12 @@ namespace BDArmory.Armor
         [KSPField]
         public float ERAdetonationDelay = 50f; //detonation delay (in microseconds)
 
+        [KSPField]
+        public float ERAplateThickness = 16f; //plate thickness (in mm)
+
+        [KSPField]
+        public string ERAplateMaterial = "Mild Steel"; //plate material
+
         public int sectionsRemaining = 1;
         private int sectionsCount = 1;
         public float ERAexplosiveThickness { get; private set; } = -1f;
@@ -123,6 +129,16 @@ namespace BDArmory.Armor
                 HP.maxHitPoints = (sectionsCount * SectionHP); //set HP based on number of sections
                 HP.Hitpoints = (sectionsCount * SectionHP); 
                 HP.SetupPrefab(); //and update hitpoint slider
+
+                HP.Armor = ERAplateThickness;
+                HP.ArmorThickness = ERAplateThickness;
+                HP.ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == ERAplateMaterial) + 1;
+                if (HP.ArmorTypeNum == 0)
+                {
+                    HP.ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None");
+                    Debug.LogWarning($"[BDArmory.ReactiveArmor] WARNING: Part {part.name} has invalid armor type: {ERAplateMaterial}. Defaulted to Aluminum. Please fix ASAP!");
+                }
+                HP.ArmorSetup(null, null);
             }
 
             if (ERAbackingPlate)
