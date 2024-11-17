@@ -1032,6 +1032,7 @@ namespace BDArmory.Bullets
                 else if (deltaMass > 0f)
                 {
                     float factor = (bulletMass - deltaMass * Mathf.Clamp01((float)(distanceTraveled + bulletHit.hit.distance - distanceLastHit) / (currentSpeed * dragVelocityFactor * relaxationTime))) / bulletMass;
+                    factor = Mathf.Max(factor, (1.1f * caliber - 10f) / (length - 10f));
                     if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.Log($"[BDArmory.PooledBullet] factor: {factor}. Distance Since Last Hit: {distanceTraveled + bulletHit.hit.distance - distanceLastHit} m. Unadjusted Mass: {bulletMass} kg. Adjusted Mass: {bulletMass * factor} kg. deltaMass: {deltaMass}. relaxationTime: {relaxationTime}s. currentSpeed: {currentSpeed * dragVelocityFactor}.");
                     bulletMass *= factor;
