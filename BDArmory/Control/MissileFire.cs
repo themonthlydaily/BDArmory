@@ -4128,7 +4128,7 @@ namespace BDArmory.Control
                     {
                         if (mt.Current.ContainsMissileOfType(cm) && (!mt.Current.activeMissileOnly || cm.missileTurret == mt.Current))
                         {
-                            mt.Current.EnableTurret(CurrentMissile);
+                            mt.Current.EnableTurret(CurrentMissile, true);
                         }
                     }
                     else
@@ -4139,7 +4139,7 @@ namespace BDArmory.Control
                 }
             if (weaponIndex > 0 && cm && cm.multiLauncher && cm.multiLauncher.turret)
             {
-                cm.multiLauncher.turret.EnableTurret(CurrentMissile);
+                cm.multiLauncher.turret.EnableTurret(CurrentMissile, true);
             }
         }
         void SetDeployableRails()
@@ -8008,7 +8008,7 @@ namespace BDArmory.Control
                     {
                         if (ml.multiLauncher.missileSpawner.ammoCount == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
                         if (!ml.multiLauncher.turret.turretEnabled)
-                            ml.multiLauncher.turret.EnableTurret(missile.Current);
+                            ml.multiLauncher.turret.EnableTurret(missile.Current, false);
                         missileCount += Mathf.CeilToInt(ml.multiLauncher.missileSpawner.ammoCount / ml.multiLauncher.salvoSize);
                     }
                     else missileCount++;
@@ -8242,7 +8242,7 @@ namespace BDArmory.Control
                                 if (!MslTurrets.Contains(mT))
                                 {
                                     turreted = true;
-                                    mT.EnableTurret(currMissile);
+                                    mT.EnableTurret(currMissile, false);
                                     MslTurrets.Add(mT); //don't try to assign two different targets to a turret, so treat remaining missiles on the turret as boresight launch
                                     mT.slavedTargetPosition = PDMslTgts[MissileID].Vessel.CoM;
                                     mT.slaved = true;

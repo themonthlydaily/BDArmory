@@ -49,6 +49,7 @@ namespace BDArmory.WeaponMounts
         Dictionary<string, Vector3> comOffsets;
 
         public bool slaved;
+        public bool manuallyControlled = false;
 
         public Vector3 slavedTargetPosition;
 
@@ -119,7 +120,7 @@ namespace BDArmory.WeaponMounts
             deployAnimState.speed = 0;
         }
 
-        public void EnableTurret(MissileBase currMissile)
+        public void EnableTurret(MissileBase currMissile, bool manualControl)
         {
             if (!HighLogic.LoadedSceneIsFlight)
             {
@@ -134,6 +135,7 @@ namespace BDArmory.WeaponMounts
 
             turretEnabled = true;
             hasReturned = false;
+            manuallyControlled = manuallyControlled ? true : manualControl;
 
             if (hasAttachedRadar)
             {
@@ -161,6 +163,7 @@ namespace BDArmory.WeaponMounts
         {
             turretEnabled = false;
             activeMissile = null;
+            manuallyControlled = false;
 
             if (autoReturn)
             {
@@ -339,7 +342,7 @@ namespace BDArmory.WeaponMounts
                     return;
                 }
 
-                if (mouseControllable && vessel.isActiveVessel)
+                if (mouseControllable && vessel.isActiveVessel && manuallyControlled)
                 {
                     MouseAim();
                 }
