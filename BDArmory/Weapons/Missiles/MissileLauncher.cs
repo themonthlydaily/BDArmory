@@ -1997,6 +1997,8 @@ namespace BDArmory.Weapons.Missiles
         {
             Vector3 tempTargetPos = TargetPosition;
 
+            bool scanOverride = false;
+
             if (TargetingMode == TargetingModes.Inertial)
             {
                 float deltaT = TimeIndex - TimeOfLastINS;
@@ -2007,12 +2009,15 @@ namespace BDArmory.Weapons.Missiles
 
                     tempTargetPos = new Vector3((1f - deltaT) * tempTargetPos.x + deltaT * TargetPosition.x, (1f - deltaT) * tempTargetPos.y + deltaT * TargetPosition.y, (1f - deltaT) * tempTargetPos.z + deltaT * TargetPosition.z);
                 }
+
+                if (!TargetAcquired && targetVessel == null)
+                    scanOverride = true; // Allow inertial missiles to go active when dumbfired
             }
 
             // check if guidance mode should be changed for terminal phase
             float distanceSqr = (tempTargetPos - vessel.CoM).sqrMagnitude;
 
-            if (terminalGuidanceShouldActivate && !terminalGuidanceActive && (TargetingModeTerminal != TargetingModes.None) && (distanceSqr < terminalGuidanceDistance * terminalGuidanceDistance))
+            if (terminalGuidanceShouldActivate && !terminalGuidanceActive && (TargetingModeTerminal != TargetingModes.None) && (scanOverride || (distanceSqr < terminalGuidanceDistance * terminalGuidanceDistance)))
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: missile {GetPartName()} updating targeting mode: {terminalGuidanceType}");
 
