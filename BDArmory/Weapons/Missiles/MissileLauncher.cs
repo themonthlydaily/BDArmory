@@ -2095,7 +2095,7 @@ namespace BDArmory.Weapons.Missiles
 
                         for (int i = 0; i < scannedTargets.Length; i++)
                         {
-                            if (scannedTargets[i].exists)
+                            if (scannedTargets[i].exists && scannedTargets[i].Team != Team)
                             {
                                 currDist = (scannedTargets[i].predictedPosition - tempTargetPos).sqrMagnitude;
 
