@@ -3963,6 +3963,7 @@ namespace BDArmory.Weapons.Missiles
             double mass = part.mass;
             massFlowRate = (cruiseTime == 0) ? 0 : cruiseFuelMass / cruiseTime;
             if (boosterFuelMass > 0) mass -= boosterFuelMass;
+            if (decoupleBoosters && boosterMass > 0) mass -= boosterMass;
             specificImpulse = (massFlowRate == 0) ? 0 : cruiseThrust / (massFlowRate * 9.81);
             deltaV += (specificImpulse * 9.81 * Math.Log(mass / (mass - cruiseFuelMass)));
 
