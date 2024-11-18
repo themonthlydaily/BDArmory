@@ -7289,12 +7289,13 @@ namespace BDArmory.Control
                                 Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
                                 //designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody);
+                                ml.TargetAcquired = true;
                             }
                             else
                             {
+                                dumbfire = true;
                                 if (ml.GetWeaponClass() == WeaponClasses.Bomb)
                                 {
-                                    dumbfire = true;
                                     validTarget = true;
                                     ml.TargetAcquired = false;
                                     break;
@@ -7303,12 +7304,14 @@ namespace BDArmory.Control
                                 {
                                     //designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
                                     designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
+                                    ml.TargetAcquired = false;
                                 }
-
                             }
                             ml.targetGPSCoords = designatedINSCoords;
-                            ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody);
-                            ml.TargetAcquired = true;
+                            if (targetVessel != null)
+                                ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody);
+                            else
+                                ml.TargetINSCoords = designatedINSCoords;
                         }
                         designatedINSCoords = Vector3d.zero;
                         break;
