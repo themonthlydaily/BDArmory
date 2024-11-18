@@ -1466,15 +1466,17 @@ namespace BDArmory.Radar
 
             if (isNotSonar)
             {
+                bool surfaceTarget = (targetVessel.Landed || targetVessel.Splashed);
                 // If radar, then check against water
-                if (BDArmorySettings.RADAR_NOTCHING && (!isMissile || !(BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && (targetVessel.Landed || targetVessel.Splashed) && (radarVessel.Landed || radarVessel.Splashed))) && radarMinRangeGate != float.MaxValue && radarMinVelocityGate != float.MaxValue)
+                if (BDArmorySettings.RADAR_NOTCHING && (!isMissile && !(BDArmorySettings.RADAR_ALLOW_SURFACE_WARFARE && surfaceTarget && (radarVessel.Landed || radarVessel.Splashed))) && radarMinRangeGate != float.MaxValue && radarMinVelocityGate != float.MaxValue)
                 {
                     distance = BDAMath.Sqrt(distance);
                     if (TerrainCheck(position, targetPosition, FlightGlobals.currentMainBody, (!isMissile ? 1000f * distance : distance) + radarMaxRangeGate, out terrainR, out terrainAngle, true))
                         return false;
-                    notchMultiplier = CalculateRadarNotchingModifier(position, targetVessel.CoM, targetVessel.srf_velocity,
-                        radarRangeGate, radarVelocityGate, radarMaxVelocityGate, radarMaxRangeGate, radarMinVelocityGate, radarMinRangeGate,
-                        terrainR, !isMissile ? 1000f * distance : distance, (float)targetVessel.radarAltitude, out notchMod);
+                    if (!surfaceTarget)
+                        notchMultiplier = CalculateRadarNotchingModifier(position, targetVessel.CoM, targetVessel.srf_velocity,
+                            radarRangeGate, radarVelocityGate, radarMaxVelocityGate, radarMaxRangeGate, radarMinVelocityGate, radarMinRangeGate,
+                            terrainR, !isMissile ? 1000f * distance : distance, (float)targetVessel.radarAltitude, out notchMod);
                 }
                 else
                 {
@@ -1820,7 +1822,7 @@ namespace BDArmory.Radar
                     if (loadedvessels.Current == null || loadedvessels.Current.packed || !loadedvessels.Current.loaded) continue;
                     if (loadedvessels.Current == myWpnManager.vessel) continue;
 
-                    targetPosition = loadedvessels.Current.transform.position;
+                    targetPosition = loadedvessels.Current.CoM;
 
                     // ignore too close ones
                     if ((targetPosition - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
@@ -2382,7 +2384,7 @@ namespace BDArmory.Radar
                                                 results.threatVessel = weapon.Current.vessel;
                                                 results.threatWeaponManager = weapon.Current.weaponManager;
                                                 results.missDistance = missDistance;
-                                                results.missDeviation = (weapon.Current.fireTransforms[0].position - myWpnManager.vessel.transform.position).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad; // y = x*tan(θ), expansion of tan(θ) is θ + O(θ^3).
+                                                results.missDeviation = (weapon.Current.fireTransforms[0].position - myWpnManager.vessel.CoM).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad; // y = x*tan(θ), expansion of tan(θ) is θ + O(θ^3).
                                             }
                                         }
                                     }
@@ -2467,7 +2469,7 @@ namespace BDArmory.Radar
         {
             Transform fireTransform = threatWeapon.fireTransforms[0];
             // If we're out of range, then it's not a threat.
-            if (threatWeapon.maxEffectiveDistance * threatWeapon.maxEffectiveDistance < (fireTransform.position - self.transform.position).sqrMagnitude) return float.MaxValue;
+            if (threatWeapon.maxEffectiveDistance * threatWeapon.maxEffectiveDistance < (fireTransform.position - self.CoM).sqrMagnitude) return float.MaxValue;
             // If we have a firing solution, use that, otherwise use relative vessel positions
             Vector3 aimDirection = fireTransform.forward;
             float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - fireTransform.position).normalized);
