@@ -569,10 +569,12 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
             missileLauncher.liftArea = MLConfig.liftArea;
+            missileLauncher.dragArea = MLConfig.dragArea;
             missileLauncher.useSimpleDrag = MLConfig.useSimpleDrag;
             missileLauncher.simpleCoD = MLConfig.simpleCoD;
             missileLauncher.maxTorque = MLConfig.maxTorque;
             missileLauncher.simpleStableTorque = MLConfig.simpleStableTorque;
+            missileLauncher.deployedDrag = MLConfig.deployedDrag;
 
             if (configurableSettings)
             {
@@ -822,6 +824,13 @@ namespace BDArmory.Weapons.Missiles
                 ml.engageSLW = missileLauncher.engageSLW;
                 ml.gLimit = missileLauncher.gLimit;
                 ml.gMargin = missileLauncher.gMargin;
+                ml.liftArea = missileLauncher.liftArea;
+                ml.dragArea = missileLauncher.dragArea;
+                ml.useSimpleDrag = missileLauncher.useSimpleDrag;
+                ml.simpleCoD = missileLauncher.simpleCoD;
+                ml.maxTorque = missileLauncher.maxTorque;
+                ml.simpleStableTorque = missileLauncher.simpleStableTorque;
+                ml.deployedDrag = missileLauncher.deployedDrag;
 
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGMBallistic)
                 {

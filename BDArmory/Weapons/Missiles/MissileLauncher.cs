@@ -1342,6 +1342,13 @@ namespace BDArmory.Weapons.Missiles
             ml.engageSLW = engageSLW;
             ml.gLimit = gLimit;
             ml.gMargin = gMargin;
+            ml.liftArea = liftArea;
+            ml.dragArea = dragArea;
+            ml.useSimpleDrag = useSimpleDrag;
+            ml.simpleCoD = simpleCoD;
+            ml.maxTorque = maxTorque;
+            ml.simpleStableTorque = simpleStableTorque;
+            ml.deployedDrag = deployedDrag;
 
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
