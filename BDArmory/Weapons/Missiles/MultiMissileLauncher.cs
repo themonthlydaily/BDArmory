@@ -1,6 +1,7 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Extensions;
+using BDArmory.Guidances;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
@@ -942,7 +943,7 @@ namespace BDArmory.Weapons.Missiles
                 //if (isClusterMissile) ml.multiLauncher.overrideReferenceTransform = true;
                 if (wpm != null)
                 {
-                    if (ml.TargetingMode == TargetingModes.Heat || ml.TargetingMode == TargetingModes.Radar || ml.TargetingMode == TargetingModes.Gps)
+                    if (ml.TargetingMode == TargetingModes.Heat || ml.TargetingMode == TargetingModes.Radar || ml.TargetingMode == TargetingModes.Gps || ml.TargetingMode == TargetingModes.Inertial)
                     {
                         //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
                         if (targetsAssigned.Count > 0 && salvoSize > 1)
@@ -997,6 +998,10 @@ namespace BDArmory.Weapons.Missiles
                                     {
                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
                                     }
+                                    if (ml.TargetingMode == TargetingModes.Radar)
+                                    {
+                                        AssignInertialTarget(ml, targetsAssigned[TargetID].Vessel);
+                                    }
                                     ml.targetVessel = targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
                                     firedTargets.Add(targetsAssigned[TargetID]);
@@ -1027,6 +1032,10 @@ namespace BDArmory.Weapons.Missiles
                                             if (ml.TargetingMode == TargetingModes.Gps)
                                             {
                                                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[t].Vessel.CoM, vessel.mainBody);
+                                            }
+                                            if (ml.TargetingMode == TargetingModes.Radar)
+                                            {
+                                                AssignInertialTarget(ml, targetsAssigned[t].Vessel);
                                             }
                                             ml.targetVessel = targetsAssigned[t];
                                             ml.TargetAcquired = true;
@@ -1063,6 +1072,10 @@ namespace BDArmory.Weapons.Missiles
                                                     if (ml.TargetingMode == TargetingModes.Gps)
                                                     {
                                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(item.Current.Vessel.CoM, vessel.mainBody);
+                                                    }
+                                                    if (ml.TargetingMode == TargetingModes.Radar)
+                                                    {
+                                                        AssignInertialTarget(ml, item.Current.Vessel);
                                                     }
                                                     ml.targetVessel = item.Current;
                                                     ml.TargetAcquired = true;
@@ -1178,6 +1191,36 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
                 missileSalvo = null;
+            }
+        }
+
+        void AssignInertialTarget(MissileLauncher ml, Vessel targetV)
+        {
+            if (wpm.vesselRadarData)
+            {
+                TargetSignatureData tgtData = TargetSignatureData.noTarget;
+                if (wpm._radarsEnabled)
+                {
+                    tgtData = wpm.vesselRadarData.detectedRadarTarget(targetV, wpm);
+                    ml.vrd = wpm.vesselRadarData;
+                }
+                if (!tgtData.exists && wpm._irstsEnabled)
+                {
+                    tgtData = wpm.vesselRadarData.activeIRTarget(targetV, wpm);
+                    if (!tgtData.exists)
+                        tgtData = wpm.vesselRadarData.activeIRTarget(null, wpm);
+                }
+                
+                if (tgtData.exists)
+                {
+                    ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, tgtData.position, tgtData.velocity), targetV.mainBody);
+                    ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(tgtData.position, vessel.mainBody);
+                }
+                else
+                {
+                    ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
+                    ml.TargetINSCoords = ml.targetGPSCoords;
+                }
             }
         }
 
