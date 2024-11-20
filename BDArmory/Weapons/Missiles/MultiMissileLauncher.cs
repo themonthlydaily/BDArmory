@@ -570,7 +570,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
             missileLauncher.liftArea = MLConfig.liftArea;
-            missileLauncher.dragArea = MLConfig.dragArea;
+            missileLauncher.dragArea = MLConfig.dragArea < 0 ? MLConfig.liftArea : MLConfig.dragArea;
             missileLauncher.useSimpleDrag = MLConfig.useSimpleDrag;
             missileLauncher.simpleCoD = MLConfig.simpleCoD;
             missileLauncher.maxTorque = MLConfig.maxTorque;
