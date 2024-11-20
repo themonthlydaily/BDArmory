@@ -79,10 +79,15 @@
 		- Fix Terminal Guidance Passive Sonar torpedoes not entering terminal guidance.
 		- Fix laser guided ordinance locking on to enemy laser dots.
 		- Missile in-flight anims (flightAnimationName) now starts playing when boost motor ignites isntead of post Boost phase.
-	- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
+		- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
+		- Fixed missing parameters for multi-missile launchers, missiles should now correctly be assigned values that were previously missing.
+		- Point-defense missile turrets will no longer follow mouse aim unless manually selected.
+		- Fixed booster mass missing from missile dV calculation.
+		- Fixed terminal radar guidance missiles lacking IFF.
+		- Inertial guidance missiles with terminal guidance that were dumfired will now activate their terminal guidance.
 	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "WEAPONS_RESPECT_CROSSFEED", this may be set to false to restore previous behavior where guns did not respect crossfeed rules.
 	- Improved performance of bullet firing code.
-	- Fixed issue where submunitions would persist for far longer than necessary.
+	- Fixed issue where slaved turrets would fire at a stale radar contact.
 - Armor:
 	- Armor should now be more consistent in terms of HE resistance. Adjusting the "Armor Explosion Resistance Multiplier" should now more directly affect the amount of armor penetration explosions do.
 	- Improved long-dart armor penetration mechanics, should have improved performance against consecutive plates in-contact with each other. Improved residual velocity formula.
@@ -94,6 +99,7 @@
 	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "HEAT_CONE_HALF_ANGLE", allowing the damage cone angle for HEAT warheads to be adjusted.
 		- Setting this value to -1 makes the HEAT damage area into a line instead of a cone.
 	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "KERBAL_ERA", if set to false EVA Kerbals no longer provide infinite armor as they previously did.
+	- Adjustable armor now scales breakingForce and breakingTorque based on values in the part.cfg file.
 - RWP:
 	- For S6R10, GM kill craft that lack propulsion and are significantly beyond the asteroid field radius.
 	- Adjust attraction of asteroids beyond 90% of the field radius to not clump together at the centre so that they don't kill the sole surviving craft.
