@@ -27,6 +27,7 @@ namespace BDArmory.Bullets
         public float impulse { get; private set; }
         public string fuzeType { get; private set; }
         public float guidanceDPS { get; private set; }
+        public float guidanceRange { get; private set; }
         public int projectileCount { get; private set; }
         public float subProjectileDispersion { get; private set; }
         public float projectileTTL { get; private set; }
@@ -53,8 +54,8 @@ namespace BDArmory.Bullets
         private static readonly List<(string, string)> oldSubmunitionConfigs = [];
 
         public BulletInfo(string name, string DisplayName, float caliber, float bulletVelocity, float bulletMass,
-                          string explosive, bool incendiary, float tntMass, bool EMP, bool nuclear, bool beehive, string subMunitionType, float massMod, float impulse, string fuzeType, float guidanceDPS, float apBulletDmg,
-                          int projectileCount, float subProjectileDispersion, float projectileTTL, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
+                          string explosive, bool incendiary, float tntMass, bool EMP, bool nuclear, bool beehive, string subMunitionType, float massMod, float impulse, string fuzeType, float guidanceDPS, float guidanceRange,
+                          float apBulletDmg, int projectileCount, float subProjectileDispersion, float projectileTTL, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
         {
             this.name = name;
             this.DisplayName = DisplayName;
@@ -72,6 +73,7 @@ namespace BDArmory.Bullets
             this.impulse = impulse;
             this.fuzeType = fuzeType;
             this.guidanceDPS = guidanceDPS;
+            this.guidanceRange = guidanceRange;
             this.apBulletMod = apBulletDmg;
             this.projectileCount = projectileCount;
             this.subProjectileDispersion = subProjectileDispersion;
@@ -117,7 +119,8 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "massMod", typeof(float)),
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
-                        (float)ParseField(node, "guidanceDPS", typeof(float)),                        
+                        (float)ParseField(node, "guidanceDPS", typeof(float)),
+                        (float)ParseField(node, "guidanceRange", typeof(float)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         Math.Max((int)ParseField(node, "projectileCount", typeof(int)), 1),
                         -1,
@@ -168,6 +171,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "guidanceDPS", typeof(float)),
+                        (float)ParseField(node, "guidanceRange", typeof(float)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         (int)ParseField(node, "projectileCount", typeof(int)),
                         (float)ParseField(node, "subProjectileDispersion", typeof(float)),

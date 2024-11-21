@@ -161,6 +161,7 @@ namespace BDArmory.Bullets
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
         public float guidanceDPS = 0;
+        public float guidanceRange = -1f;
         public bool sabot = false;
         private float HERatio = 0.06f;
         public float ballisticCoefficient;
@@ -581,9 +582,11 @@ namespace BDArmory.Bullets
             // Initial half-timestep velocity change (leapfrog integrator)
             LeapfrogVelocityHalfStep(0.5f * period);
 
-            if (targetVessel != null && atmosphereDensity > 0.05f)
+            if (targetVessel != null && atmosphereDensity > 0.05f && guidanceDPS > 0)
             {
-                if (penTicker == 0 && Vector3.Dot(targetVessel.CoM - currentPosition, currentVelocity) > 0) //don't circle around if it misses, or after it hits something
+                Vector3 targetVec = targetVessel.CoM - currentPosition;
+
+                if (penTicker == 0 && Vector3.Dot(targetVec, currentVelocity) > 0 && (guidanceRange < 0 || targetVec.sqrMagnitude < guidanceRange * guidanceRange)) //don't circle around if it misses, or after it hits something
                 {
                     Vector3 leadTargetOffset = targetVessel.CoM + Vector3.Distance(targetVessel.CoM, currentPosition) / bulletVelocity * targetVessel.Velocity();
                     //if (Vector3.Angle(currentVelocity, leadTargetOffset) > 1) currentVelocity *= 2f * ballisticCoefficient / (TimeWarp.fixedDeltaTime * currentVelocity.magnitude * atmosphereDensity + 2f * ballisticCoefficient); needs bulletdrop gravity accel factored in as well
@@ -1982,6 +1985,7 @@ namespace BDArmory.Bullets
                 pBullet.dmgMult = damageMult;
                 pBullet.targetVessel = tgtVessel;
                 pBullet.guidanceDPS = guidance;
+                pBullet.guidanceRange = bulletType.guidanceRange;
                 pBullet.isSubProjectile = isSubP;
                 pBullet.isAPSprojectile = isAPSP;
                 pBullet.gameObject.SetActive(true);

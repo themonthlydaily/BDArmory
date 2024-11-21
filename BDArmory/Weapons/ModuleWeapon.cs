@@ -6151,7 +6151,7 @@ namespace BDArmory.Weapons
                             if (binfo.eFuzeType == BulletFuzeTypes.Penetrating)
                                 output.AppendLine($"- Min thickness to arm fuze: {tempPenDepth * 0.666f:F2}");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-                            
+
                             if (binfo.eFuzeType == BulletFuzeTypes.Timed || binfo.eFuzeType == BulletFuzeTypes.Proximity || binfo.eFuzeType == BulletFuzeTypes.Flak)
                             {
                                 output.AppendLine($"Air detonation: True");
@@ -6202,6 +6202,15 @@ namespace BDArmory.Weapons
                             if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
                             BulletInfo sinfo = BulletInfo.bullets[projType];
                             output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                        }
+                        if (binfo.guidanceDPS > 0)
+                        {
+                            output.AppendLine($"Guidance:");
+                            output.AppendLine($"- Guidance Rate: {Math.Round(binfo.guidanceDPS, 3)} deg/s");
+                            if (binfo.guidanceRange > 0)
+                                output.AppendLine($"- Guidance Range: {Math.Round(binfo.guidanceRange)} m");
+                            else
+                                output.AppendLine($"- Guidance Range: Unlimited");
                         }
                     }
                 }
