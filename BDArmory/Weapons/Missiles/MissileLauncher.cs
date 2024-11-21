@@ -2016,10 +2016,10 @@ namespace BDArmory.Weapons.Missiles
 
                     tempTargetPos = new Vector3((1f - deltaT) * tempTargetPos.x + deltaT * TargetPosition.x, (1f - deltaT) * tempTargetPos.y + deltaT * TargetPosition.y, (1f - deltaT) * tempTargetPos.z + deltaT * TargetPosition.z);
                 }
-
-                if (!TargetAcquired && targetVessel == null)
-                    scanOverride = true; // Allow inertial missiles to go active when dumbfired
             }
+
+            if (!TargetAcquired && targetVessel == null)
+                scanOverride = true; // Allow missiles to go to their terminal guidance when dumbfired
 
             // check if guidance mode should be changed for terminal phase
             float distanceSqr = (tempTargetPos - vessel.CoM).sqrMagnitude;
@@ -2829,6 +2829,13 @@ namespace BDArmory.Weapons.Missiles
 
                     case GuidanceModes.Kappa:
                         {
+                            if (TimeToImpact == float.PositiveInfinity)
+                            {
+                                // If the missile is not in a vaccuum, is above LoftMinAltitude and has an angle to target below the climb angle (or 90 - climb angle if climb angle > 45) (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle) and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax or further than LoftRangeOverride, then loft.
+                                if (!vessel.InVacuum() && (LoftRangeOverride > 0)) loftState = LoftStates.Boost;
+                                else loftState = LoftStates.Midcourse;
+                            }
+
                             aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, LoftRangeFac, LoftVertVelComp, FlightGlobals.getAltitudeAtPos(TargetPosition), terminalHomingRange, LoftAngle, LoftTermAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, ref loftState);
                             TimeToImpact = timeToImpact;
                             break;

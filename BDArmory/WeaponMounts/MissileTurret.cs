@@ -135,7 +135,7 @@ namespace BDArmory.WeaponMounts
 
             turretEnabled = true;
             hasReturned = false;
-            manuallyControlled = manuallyControlled ? true : manualControl;
+            manuallyControlled = manuallyControlled |= manualControl;
 
             if (hasAttachedRadar)
             {
