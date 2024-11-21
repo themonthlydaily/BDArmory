@@ -2897,7 +2897,15 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            Vector3 agmTarget = MissileGuidance.GetAirToGroundTarget(TargetPosition, TargetVelocity, vessel, agmDescentRatio);
+            Vector3 targetPosTemp = TargetPosition;
+
+            if (FlightGlobals.currentMainBody.ocean && targetVessel != null)
+            {
+                if (targetVessel.Vessel.radarAltitude < 0)
+                    targetPosTemp = targetPosTemp - targetVessel.Vessel.up * targetVessel.Vessel.radarAltitude;
+            }
+
+            Vector3 agmTarget = MissileGuidance.GetAirToGroundTarget(targetPosTemp, TargetVelocity, vessel, agmDescentRatio);
             DoAero(agmTarget);
         }
 
