@@ -11,7 +11,6 @@ using BDArmory.WeaponMounts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using UnityEngine;
 using static BDArmory.Weapons.Missiles.MissileBase;
@@ -179,6 +178,8 @@ namespace BDArmory.Weapons.Missiles
             missileSpawner.isMultiLauncher = isMultiLauncher;
             if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
             {
+                if (missileLauncher.SourceVessel == null)
+                    missileLauncher.SourceVessel = part.vessel;
                 missileLauncher.reloadableRail = missileSpawner;
                 missileLauncher.hasAmmo = true;
                 missileLauncher.multiLauncher = this;
