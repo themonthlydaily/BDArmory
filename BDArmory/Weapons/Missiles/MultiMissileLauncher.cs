@@ -998,7 +998,7 @@ namespace BDArmory.Weapons.Missiles
                                     {
                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
                                     }
-                                    if (ml.TargetingMode == TargetingModes.Radar)
+                                    if (ml.TargetingMode == TargetingModes.Inertial)
                                     {
                                         AssignInertialTarget(ml, targetsAssigned[TargetID].Vessel);
                                     }
@@ -1033,7 +1033,7 @@ namespace BDArmory.Weapons.Missiles
                                             {
                                                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[t].Vessel.CoM, vessel.mainBody);
                                             }
-                                            if (ml.TargetingMode == TargetingModes.Radar)
+                                            if (ml.TargetingMode == TargetingModes.Inertial)
                                             {
                                                 AssignInertialTarget(ml, targetsAssigned[t].Vessel);
                                             }
@@ -1073,7 +1073,7 @@ namespace BDArmory.Weapons.Missiles
                                                     {
                                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(item.Current.Vessel.CoM, vessel.mainBody);
                                                     }
-                                                    if (ml.TargetingMode == TargetingModes.Radar)
+                                                    if (ml.TargetingMode == TargetingModes.Inertial)
                                                     {
                                                         AssignInertialTarget(ml, item.Current.Vessel);
                                                     }
