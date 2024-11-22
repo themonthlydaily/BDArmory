@@ -1235,12 +1235,13 @@ namespace BDArmory.Weapons.Missiles
             if (HasFired || launched) return;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Missile launch initiated! {vessel.vesselName}");
 
-            var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel != null ? SourceVessel : vessel, true);
-            if (wpm != null) Team = wpm.Team;
             if (SourceVessel == null)
             {
                 SourceVessel = vessel;
             }
+            var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
+            if (wpm != null) Team = wpm.Team;
+            
             if (multiLauncher)
             {
                 if (multiLauncher.isMultiLauncher)
@@ -2107,7 +2108,7 @@ namespace BDArmory.Weapons.Missiles
 
                         for (int i = 0; i < scannedTargets.Length; i++)
                         {
-                            if (scannedTargets[i].exists && scannedTargets[i].Team != Team)
+                            if (scannedTargets[i].exists && !Team.IsFriendly(scannedTargets[i].Team))
                             {
                                 currDist = (scannedTargets[i].predictedPosition - tempTargetPos).sqrMagnitude;
 

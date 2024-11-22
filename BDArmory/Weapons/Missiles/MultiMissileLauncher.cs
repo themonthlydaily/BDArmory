@@ -976,7 +976,7 @@ namespace BDArmory.Weapons.Missiles
                                 missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
                                 //Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
                             }
-                            if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null)
+                            if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null && !Team.IsFriendly(targetsAssigned[TargetID].Team))
                             {
                                 if ((Vector3.Angle(targetsAssigned[TargetID].position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
                                     && ((ml.engageAir && targetsAssigned[TargetID].isFlying) ||
@@ -1012,6 +1012,7 @@ namespace BDArmory.Weapons.Missiles
                                     for (int t = TargetID; t < targetsAssigned.Count - 1; t++)
                                     {
                                         if (targetsAssigned[t] == null) continue;
+                                        if (Team.IsFriendly(targetsAssigned[t].Team)) continue;
                                         if ((ml.engageAir && !targetsAssigned[t].isFlying) ||
                                             (ml.engageGround && !targetsAssigned[t].isLandedOrSurfaceSplashed) ||
                                             (ml.engageSLW && !targetsAssigned[t].isUnderwater) ||
@@ -1053,6 +1054,7 @@ namespace BDArmory.Weapons.Missiles
                                             {
                                                 if (item.Current == null) continue;
                                                 if (item.Current.Vessel == null) continue;
+                                                if (Team.IsFriendly(item.Current.Team)) continue;
                                                 if ((ml.engageAir && !item.Current.isFlying) ||
                                                     (ml.engageGround && !item.Current.isLandedOrSurfaceSplashed) ||
                                                     (ml.engageSLW && !item.Current.isUnderwater) ||
