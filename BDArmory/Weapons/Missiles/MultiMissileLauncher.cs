@@ -491,23 +491,21 @@ namespace BDArmory.Weapons.Missiles
             {
                 var MODEL = cfgdir.config.GetNode("MODEL");
                 url = MODEL.GetValue("model") ?? "";
-                dummyScale = Vector3.one;
+                float invRescaleFactor = 1f / part.rescaleFactor;
+                dummyScale = new Vector3 (invRescaleFactor, invRescaleFactor, invRescaleFactor);
                 if (MODEL.HasValue("scale"))
                 {
                     string[] strings = MODEL.GetValue("scale").Split(","[0]);
-                    dummyScale.x = float.Parse(strings[0]);
-                    dummyScale.y = float.Parse(strings[1]);
-                    dummyScale.z = float.Parse(strings[2]);
+                    dummyScale.x *= float.Parse(strings[0]);
+                    dummyScale.y *= float.Parse(strings[1]);
+                    dummyScale.z *= float.Parse(strings[2]);
                 }
-                else
+                if (cfgdir.config.HasValue("rescaleFactor"))
                 {
-                    if (cfgdir.config.HasValue("rescaleFactor"))
-                    {
-                        float scale = float.Parse(cfgdir.config.GetValue("rescaleFactor"));
-                        dummyScale.x = scale;
-                        dummyScale.y = scale;
-                        dummyScale.z = scale;
-                    }
+                    float scale = float.Parse(cfgdir.config.GetValue("rescaleFactor"));
+                    dummyScale.x *= scale;
+                    dummyScale.y *= scale;
+                    dummyScale.z *= scale;
                 }
                 //Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url} and scale {dummyScale}");
                 return url;
