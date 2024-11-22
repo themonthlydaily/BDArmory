@@ -11,6 +11,7 @@ using BDArmory.WeaponMounts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using UnityEngine;
 using static BDArmory.Weapons.Missiles.MissileBase;
@@ -1196,9 +1197,9 @@ namespace BDArmory.Weapons.Missiles
 
         void AssignInertialTarget(MissileLauncher ml, Vessel targetV)
         {
+            TargetSignatureData tgtData = TargetSignatureData.noTarget;
             if (wpm.vesselRadarData)
             {
-                TargetSignatureData tgtData = TargetSignatureData.noTarget;
                 if (wpm._radarsEnabled)
                 {
                     tgtData = wpm.vesselRadarData.detectedRadarTarget(targetV, wpm);
@@ -1210,17 +1211,16 @@ namespace BDArmory.Weapons.Missiles
                     if (!tgtData.exists)
                         tgtData = wpm.vesselRadarData.activeIRTarget(null, wpm);
                 }
-                
-                if (tgtData.exists)
-                {
-                    ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, tgtData.position, tgtData.velocity), targetV.mainBody);
-                    ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(tgtData.position, vessel.mainBody);
-                }
-                else
-                {
-                    ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
-                    ml.TargetINSCoords = ml.targetGPSCoords;
-                }
+            }
+            if (tgtData.exists)
+            {
+                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, tgtData.position, tgtData.velocity), targetV.mainBody);
+                ml.TargetINSCoords = VectorUtils.WorldPositionToGeoCoords(tgtData.position, vessel.mainBody);
+            }
+            else
+            {
+                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody);
+                ml.TargetINSCoords = ml.targetGPSCoords;
             }
         }
 
