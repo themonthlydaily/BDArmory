@@ -2725,9 +2725,15 @@ namespace BDArmory.Weapons.Missiles
                 this._guidance = new CruiseGuidance(this);
             }
 
-            Vector3 cruiseTarget = Vector3.zero;
+            Vector3 cruiseTarget = TargetPosition;
 
-            cruiseTarget = this._guidance.GetDirection(this, TargetPosition, TargetVelocity);
+            if (FlightGlobals.currentMainBody.ocean && targetVessel != null)
+            {
+                if (targetVessel.Vessel.radarAltitude < 0)
+                    cruiseTarget = cruiseTarget - targetVessel.Vessel.up * targetVessel.Vessel.radarAltitude;
+            }
+
+            cruiseTarget = this._guidance.GetDirection(this, cruiseTarget, TargetVelocity);
 
             Vector3 upDirection = VectorUtils.GetUpDirection(transform.position);
 
