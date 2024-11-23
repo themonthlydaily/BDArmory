@@ -955,7 +955,7 @@ namespace BDArmory.Weapons.Missiles
                                     if (wpm.missilesAway.ContainsKey(targetsAssigned[t]))
                                     {
                                         //Debug.Log($"[MML Targeting Debug] target {t} {targetsAssigned[t].Vessel.GetName()} already has {wpm.missilesAway[targetsAssigned[t]]}/{wpm.maxMissilesOnTarget} fired on it...");
-                                        if (wpm.missilesAway[targetsAssigned[t]] < wpm.maxMissilesOnTarget)
+                                        if (wpm.missilesAway[targetsAssigned[t]][0] < wpm.maxMissilesOnTarget)
                                         {
                                             TargetID = t; //so go through and advance the target list start point based on who's already been fully engaged
                                                           //Debug.Log($"[MML Targeting Debug] advancing targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");

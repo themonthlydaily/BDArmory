@@ -47,7 +47,7 @@ namespace BDArmory.Control
 
         float startTime;
         public int firedMissiles;
-        public Dictionary<TargetInfo, int> missilesAway;
+        public Dictionary<TargetInfo, int[]> missilesAway;
 
         public float totalHP;
         public float currentHP;
@@ -1276,7 +1276,7 @@ namespace BDArmory.Control
 
                 StartCoroutine(StartupListUpdater());
                 firedMissiles = 0;
-                missilesAway = new Dictionary<TargetInfo, int>();
+                missilesAway = new Dictionary<TargetInfo, int[]>();
                 rippleGunCount = new Dictionary<string, int>();
 
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
@@ -1535,20 +1535,24 @@ namespace BDArmory.Control
                     //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
                     if ((missileBase.HasFired || missileBase.launched) && !missileBase.HasMissed && !missileBase.HasExploded || missileBase.GetWeaponClass() == WeaponClasses.Bomb) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
+                        bool activeSARH = (missileBase.TargetingMode == MissileBase.TargetingModes.Radar && !missileBase.ActiveRadar) || (missileBase.TargetingMode == MissileBase.TargetingModes.Gps && missileBase.gpsUpdates >= 0);
                         if (!missilesAway.ContainsKey(missileBase.targetVessel))
                         {
-                            missilesAway.Add(missileBase.targetVessel, 1);
+                            missilesAway.Add(missileBase.targetVessel, [1, activeSARH ? 1 : 0]);
                         }
                         else
                         {
-                            missilesAway[missileBase.targetVessel]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targeting
+                            int[] tempArr = missilesAway[missileBase.targetVessel];
+                            tempArr[0]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targetin
+                            if (activeSARH)
+                                tempArr[1]++;
                         }
                     }
                 }
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
-                missilesAway.TryGetValue(currentTarget, out int missiles);
-                firedMissiles = missiles;
+                missilesAway.TryGetValue(currentTarget, out int[] missiles);
+                firedMissiles = missiles[0];
             }
             else
             {
@@ -2052,6 +2056,7 @@ namespace BDArmory.Control
                                     {
                                         List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
                                         bool existingLock = false;
+                                        bool locksMaxed = MaxradarLocks <= possibleTargets.Count;
                                         for (int i = 0; i < possibleTargets.Count; i++)
                                         {
                                             if (possibleTargets[i].vessel == targetVessel)
@@ -2059,6 +2064,13 @@ namespace BDArmory.Control
                                                 existingLock = true;
                                                 break;
                                             }
+
+                                            if (locksMaxed)
+                                                if (missilesAway[possibleTargets[i].targetInfo][1] == 0)
+                                                {
+                                                    vesselRadarData.UnlockSelectedTarget(possibleTargets[i].vessel);
+                                                    locksMaxed = false;
+                                                }
                                         }
                                         if (existingLock)
                                         {
@@ -2070,7 +2082,7 @@ namespace BDArmory.Control
                                             // if a low lock capacity radar , and it already has a lock on another target, TLT will return false, because the radar already at lock cap
                                             // end result: radar lock stuck on wrong target; need unlock, then lock if lock num = max locks
                                             //if availableLocks, tryLocktarget, else, unlock target -> try locktarget
-                                            if (MaxradarLocks <= vesselRadarData.GetLockedTargets().Count) //not currently checking if available radar locks are viable, e.g. a rear-facing radar w/ lock capability
+                                            /*if (MaxradarLocks <= possibleTargets.Count) //not currently checking if available radar locks are viable, e.g. a rear-facing radar w/ lock capability
                                             {
                                                 if (PreviousMissile == null || (PreviousMissile.TargetingMode != MissileBase.TargetingModes.Radar && PreviousMissile.TargetingMode != MissileBase.TargetingModes.Inertial && PreviousMissile.TargetingMode != MissileBase.TargetingModes.Gps))
                                                     vesselRadarData.UnlockAllTargets();
@@ -2095,6 +2107,15 @@ namespace BDArmory.Control
                                                     }
                                                 }
                                                 vesselRadarData.TryLockTarget(targetVessel);
+                                            }*/
+                                            if (!locksMaxed)
+                                                vesselRadarData.TryLockTarget(targetVessel);
+                                            else
+                                            {
+                                                if (!CurrentMissile.radarLOAL) //LOAL missiles at least can be dumbfired...
+                                                    if (BDArmorySettings.DEBUG_MISSILES)
+                                                        Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} cannot fire radar missile, all locks in use! Aborting loaunch!");
+                                                break; //we need single lock for our previous SARH against the previous target, break; current radar missile will have to wait.
                                             }
                                         }
                                     }
@@ -4504,7 +4525,7 @@ namespace BDArmory.Control
                     {
                         if (missilesAway.ContainsKey(target.Current))
                         {
-                            if (missilesAway[target.Current] >= maxMissilesOnTarget)
+                            if (missilesAway[target.Current][0] >= maxMissilesOnTarget)
                             {
                                 targetsAssigned.Add(target.Current);
                                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: Adding {target.Current.Vessel.GetName()} to exclusion list; length: {targetsAssigned.Count}");
@@ -8254,8 +8275,8 @@ namespace BDArmory.Control
                             }
                             if (missilesAway.ContainsKey(PDMslTgts[MissileID]))
                             {
-                                missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
-                                interceptorsAway = missiles;
+                                missilesAway.TryGetValue(PDMslTgts[MissileID], out int[] missiles);
+                                interceptorsAway = missiles[0];
                                 //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
                             }
                             if (interceptorsAway < maxMissilesOnTarget)
@@ -8279,8 +8300,8 @@ namespace BDArmory.Control
                                         interceptorsAway = 0;
                                         if (missilesAway.ContainsKey(item.Current))
                                         {
-                                            missilesAway.TryGetValue(item.Current, out int missiles);
-                                            interceptorsAway = missiles;
+                                            missilesAway.TryGetValue(item.Current, out int[] missiles);
+                                            interceptorsAway = missiles[0];
                                             //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
                                         }
                                         if (item.Current.Vessel.Splashed && !torpedo) viableTarget = false;
