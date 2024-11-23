@@ -2613,7 +2613,7 @@ namespace BDArmory.Control
                                         INSTarget = vesselRadarData.activeIRTarget(null, this); //how about IRST?
                                 }
 
-                                float attemptStartTime = Time.time;
+                                /*float attemptStartTime = Time.time;
                                 float attemptLockTime = Time.time;
                                 while (ml && vesselRadarData && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2f)
                                 {
@@ -2627,7 +2627,7 @@ namespace BDArmory.Control
                                         vesselRadarData.TryLockTarget(targetVessel);
                                     }
                                     yield return new WaitForSecondsFixed(tryLockTime);
-                                }
+                                }*/
                                 if (vessel && INSTarget.exists && INSTarget.vessel == targetVessel)
                                 {
                                     designatedINSCoords = VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), targetVessel.mainBody);
@@ -2642,7 +2642,7 @@ namespace BDArmory.Control
                                 if (mlauncher)
                                 {
                                     float angle = 999;
-                                    float turretStartTime = attemptStartTime;
+                                    float turretStartTime = Time.time;
                                     if (mlauncher.missileTurret)
                                     {
                                         while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && targetVessel && angle > mlauncher.missileTurret.fireFOV)
