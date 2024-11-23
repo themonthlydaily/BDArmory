@@ -1810,7 +1810,7 @@ namespace BDArmory.Control
                     debugString.Length = 0;
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                 {
-                    debugString.AppendLine($"Missiles away: {firedMissiles}; targeted vessels: {engagedTargets}");
+                    debugString.AppendLine($"Missiles away: {firedMissiles}; Current Target: {currentTarget}; targeted vessels: {engagedTargets}");
 
                     if (missileIsIncoming)
                     {

@@ -1994,6 +1994,8 @@ namespace BDArmory.Weapons.Missiles
                 if (guidanceActive) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
                 else debugString.AppendLine("Guidance inactive");
 
+                debugString.AppendLine("Source vessel=" + SourceVessel);
+
                 if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
                 var distance = (TargetPosition - transform.position).magnitude;
                 debugString.AppendLine($"Target distance: {(distance > 1000 ? $" {distance / 1000:F1} km" : $" {distance:F0} m")}, closing speed: {Vector3.Dot(vessel.Velocity() - TargetVelocity, GetForwardTransform()):F1} m/s");
