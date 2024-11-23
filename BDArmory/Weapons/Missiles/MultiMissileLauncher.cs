@@ -1209,8 +1209,6 @@ namespace BDArmory.Weapons.Missiles
                 if (!tgtData.exists && wpm._irstsEnabled)
                 {
                     tgtData = wpm.vesselRadarData.activeIRTarget(targetV, wpm);
-                    if (!tgtData.exists)
-                        tgtData = wpm.vesselRadarData.activeIRTarget(null, wpm);
                 }
             }
             if (tgtData.exists)

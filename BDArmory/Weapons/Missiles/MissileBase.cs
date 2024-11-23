@@ -1009,7 +1009,7 @@ namespace BDArmory.Weapons.Missiles
                                 if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - radarTarget.predictedPosition).sqrMagnitude < sqrThresh)
                                 {
                                     //re-check engagement envelope, only lock appropriate targets
-                                    if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
+                                    if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo) && !Team.IsFriendly(scannedTargets[i].Team))
                                     {
                                         radarTarget = scannedTargets[i];
                                         TargetAcquired = true;
