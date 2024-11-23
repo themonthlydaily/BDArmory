@@ -2062,7 +2062,8 @@ namespace BDArmory.Control
                                             if (possibleTargets[i].vessel == targetVessel)
                                             {
                                                 existingLock = true;
-                                                break;
+                                                if (!locksMaxed) break;
+                                                else continue;
                                             }
 
                                             if (locksMaxed)
@@ -2070,6 +2071,7 @@ namespace BDArmory.Control
                                                 {
                                                     vesselRadarData.UnlockSelectedTarget(possibleTargets[i].vessel);
                                                     locksMaxed = false;
+                                                    if (existingLock) break;
                                                 }
                                         }
                                         if (existingLock)
