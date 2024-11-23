@@ -2089,7 +2089,8 @@ namespace BDArmory.Weapons.Missiles
                     case TargetingModes.Radar:
 
                         // pretend we have an active radar seeker for ground targets:
-                        TargetSignatureData[] scannedTargets = new TargetSignatureData[5];
+                        //TargetSignatureData[] scannedTargets = new TargetSignatureData[5];
+                        if (scannedTargets == null) scannedTargets = new TargetSignatureData[BDATargetManager.LoadedVessels.Count];
                         TargetSignatureData.ResetTSDArray(ref scannedTargets);
                         Ray ray = new Ray(transform.position, GetForwardTransform());
 
@@ -3603,6 +3604,16 @@ namespace BDArmory.Weapons.Missiles
                     terminalHoming = true;
                     Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, homingType is AAMLoft but an unsupported terminalHomingType: {terminalHomingType} was used without setting terminalHoming = true. ");
                 }
+            }
+
+            if (terminalGuidanceShouldActivate)
+            {
+                if (TargetingMode == TargetingModeTerminal)
+                {
+                    terminalGuidanceShouldActivate = false;
+                    TargetingModeTerminal = TargetingModes.None;
+                }
+                    
             }
 
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: parsing guidance and homing complete on {part.name}");

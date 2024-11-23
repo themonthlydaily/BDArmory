@@ -467,7 +467,7 @@ namespace BDArmory.Weapons.Missiles
         //radar stuff
         public VesselRadarData vrd;
         public TargetSignatureData radarTarget;
-        private TargetSignatureData[] scannedTargets;
+        protected TargetSignatureData[] scannedTargets;
         //public MissileFire TargetMf = null; //not actually used by anything
         private LineRenderer LR;
 
