@@ -178,8 +178,6 @@ namespace BDArmory.Weapons.Missiles
             missileSpawner.isMultiLauncher = isMultiLauncher;
             if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
             {
-                if (missileLauncher.SourceVessel == null)
-                    missileLauncher.SourceVessel = part.vessel;
                 missileLauncher.reloadableRail = missileSpawner;
                 missileLauncher.hasAmmo = true;
                 missileLauncher.multiLauncher = this;
@@ -704,7 +702,7 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 var ml = pSym.Current.FindModuleImplementing<MissileBase>();
                                 if (ml == null) continue;
-                                if (wpm != null) wpm.SendTargetDataToMissile(ml, false);
+                                if (wpm != null) wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
                                 MissileLauncher launcher = ml as MissileLauncher;
                                 if (launcher != null)
                                 {
@@ -974,8 +972,9 @@ namespace BDArmory.Weapons.Missiles
                             if (TargetID > Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum))
                             {
                                 TargetID = 0; //if more missiles than targets, loop target list
-                                missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
-                                //Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
+                                if (salvoSize > 1)
+                                    missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
+                                    //Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
                             }
                             if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null && !Team.IsFriendly(targetsAssigned[TargetID].Team))
                             {
@@ -1096,7 +1095,7 @@ namespace BDArmory.Weapons.Missiles
                                     targetsAssigned.AddRange(firedTargets); //we've found targets up to our target allowance; cull list down to just those for distributing remaining missiles of the salvo between, if any.
                                 }
                             }
-                            else wpm.SendTargetDataToMissile(ml, false);
+                            else wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
                         }
                         else
                         {
@@ -1112,18 +1111,20 @@ namespace BDArmory.Weapons.Missiles
                                     ml.TargetAcquired = true;
                                 }
                             }
-                            else wpm.SendTargetDataToMissile(ml, false);
+                            else wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
                         }
                     }
                     else
                     {
-                        wpm.SendTargetDataToMissile(ml, false);
+                        wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
                     }
                     ml.GpsUpdateMax = wpm.GpsUpdateMax;
                 }
                 if (missileRegistry)
                 {
                     BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
+                    if (BDArmorySettings.DEBUG_MISSILES)
+                        Debug.Log($"[BDArmory.MultiMissileLauncher]: Missile {ml.shortName} with target {ml.targetVessel} added to FiredMissiles.");
                 }
                 ml.launched = true;
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust

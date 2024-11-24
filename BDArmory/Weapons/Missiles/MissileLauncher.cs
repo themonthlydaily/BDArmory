@@ -347,18 +347,18 @@ namespace BDArmory.Weapons.Missiles
         [KSPAction("Fire Missile")]
         public void AGFire(KSPActionParam param)
         {
-            if (BDArmorySetup.Instance.ActiveWeaponManager != null && BDArmorySetup.Instance.ActiveWeaponManager.vessel == vessel) BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this);
+            if (BDArmorySetup.Instance.ActiveWeaponManager != null && BDArmorySetup.Instance.ActiveWeaponManager.vessel == vessel) BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this, null);
             if (missileTurret)
             {
-                missileTurret.FireMissile(this);
+                missileTurret.FireMissile(this, null);
             }
             else if (rotaryRail)
             {
-                rotaryRail.FireMissile(this);
+                rotaryRail.FireMissile(this, null);
             }
             else if (deployableRail)
             {
-                deployableRail.FireMissile(this);
+                deployableRail.FireMissile(this, null);
             }
             else
             {
@@ -370,18 +370,18 @@ namespace BDArmory.Weapons.Missiles
         [KSPEvent(guiActive = true, guiName = "#LOC_BDArmory_FireMissile", active = true)]//Fire Missile
         public void GuiFire()
         {
-            if (BDArmorySetup.Instance.ActiveWeaponManager != null && BDArmorySetup.Instance.ActiveWeaponManager.vessel == vessel) BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this);
+            if (BDArmorySetup.Instance.ActiveWeaponManager != null && BDArmorySetup.Instance.ActiveWeaponManager.vessel == vessel) BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this, null);
             if (missileTurret)
             {
-                missileTurret.FireMissile(this);
+                missileTurret.FireMissile(this, null);
             }
             else if (rotaryRail)
             {
-                rotaryRail.FireMissile(this);
+                rotaryRail.FireMissile(this, null);
             }
             else if (deployableRail)
             {
-                deployableRail.FireMissile(this);
+                deployableRail.FireMissile(this, null);
             }
             else
             {
@@ -1458,7 +1458,7 @@ namespace BDArmory.Weapons.Missiles
             if (wpm != null)
             {
                 ml.Team = wpm.Team;
-                wpm.SendTargetDataToMissile(ml);
+                wpm.SendTargetDataToMissile(ml, targetVessel.Vessel);
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
             }
@@ -2968,7 +2968,7 @@ namespace BDArmory.Weapons.Missiles
             if (currgLimit > 0)
             {
                 currAoALimit = MissileGuidance.getGLimit(this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, currgLimit, gMargin);
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: maxAoA: {maxAoA}, currAoALimit: {currAoALimit}, currgLimit: {currgLimit}");
+                //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: maxAoA: {maxAoA}, currAoALimit: {currAoALimit}, currgLimit: {currgLimit}");
             }
 
             aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, currAoALimit, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);

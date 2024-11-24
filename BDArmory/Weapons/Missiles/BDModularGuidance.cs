@@ -1419,7 +1419,8 @@ namespace BDArmory.Weapons.Missiles
             if (BDArmorySetup.Instance.ActiveWeaponManager != null &&
                 BDArmorySetup.Instance.ActiveWeaponManager.vessel == vessel)
             {
-                BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this);
+                if (targetVessel == null)
+                    BDArmorySetup.Instance.ActiveWeaponManager.SendTargetDataToMissile(this, null);
             }
 
             if (!HasFired)

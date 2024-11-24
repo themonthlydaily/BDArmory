@@ -528,7 +528,7 @@ namespace BDArmory.WeaponMounts
             }
         }
 
-        public void FireMissile(int index)
+        public void FireMissile(int index, Vessel targetVessel)
         {
             if (index < missileCount && missileChildren != null && missileChildren[index] != null)
             {
@@ -536,7 +536,7 @@ namespace BDArmory.WeaponMounts
 
                 if (weaponManager)
                 {
-                    wm.SendTargetDataToMissile(missileChildren[index]);
+                    wm.SendTargetDataToMissile(missileChildren[index], targetVessel);
                     wm.PreviousMissile = missileChildren[index];
                 }
                 missileChildren[index].FireMissile();
@@ -552,13 +552,13 @@ namespace BDArmory.WeaponMounts
             }
         }
 
-        public void FireMissile(MissileLauncher ml)
+        public void FireMissile(MissileLauncher ml, Vessel targetVessel)
         {
             int index = IndexOfMissile(ml);
             if (index >= 0)
             {
                 Debug.Log("[BDArmory.MissileTurret] : Firing missile index: " + index);
-                FireMissile(index);
+                FireMissile(index, targetVessel);
             }
             else
             {
