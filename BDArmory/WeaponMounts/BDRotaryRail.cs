@@ -615,7 +615,7 @@ namespace BDArmory.WeaponMounts
             missileChildren[index].rotaryRail = this;
         }
 
-        public void FireMissile(int missileIndex, Vessel targetVessel)
+        public void FireMissile(int missileIndex, Vessel targetVessel, MissileFire.TargetData targetData = null)
         {
             int nextRailIndex = 0;
 
@@ -637,7 +637,7 @@ namespace BDArmory.WeaponMounts
 
                 if (weaponManager)
                 {
-                    wm.SendTargetDataToMissile(missileChildren[missileIndex], targetVessel);
+                    wm.SendTargetDataToMissile(missileChildren[missileIndex], targetVessel, true, targetData, true);
                     wm.PreviousMissile = missileChildren[missileIndex];
                 }
 
@@ -674,7 +674,7 @@ namespace BDArmory.WeaponMounts
             RotateToIndex(index, instant);
         }
 
-        public void FireMissile(MissileLauncher ml, Vessel targetVessel)
+        public void FireMissile(MissileLauncher ml, Vessel targetVessel, MissileFire.TargetData targetData = null)
         {
             if (!readyToFire || ml != readyMissile)
             {
@@ -685,7 +685,7 @@ namespace BDArmory.WeaponMounts
             if (index >= 0)
             {
                 //Debug.Log("[BDArmory.BDRotaryRail]: Firing missile index: " + index);
-                FireMissile(index, targetVessel);
+                FireMissile(index, targetVessel, targetData);
             }
             else
             {

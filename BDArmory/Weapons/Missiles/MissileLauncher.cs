@@ -1341,15 +1341,6 @@ namespace BDArmory.Weapons.Missiles
             ml.engageGround = engageGround;
             ml.engageMissile = engageMissile;
             ml.engageSLW = engageSLW;
-            ml.gLimit = gLimit;
-            ml.gMargin = gMargin;
-            ml.liftArea = liftArea;
-            ml.dragArea = dragArea;
-            ml.useSimpleDrag = useSimpleDrag;
-            ml.simpleCoD = simpleCoD;
-            ml.maxTorque = maxTorque;
-            ml.simpleStableTorque = simpleStableTorque;
-            ml.deployedDrag = deployedDrag;
 
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
@@ -1458,7 +1449,7 @@ namespace BDArmory.Weapons.Missiles
             if (wpm != null)
             {
                 ml.Team = wpm.Team;
-                wpm.SendTargetDataToMissile(ml, targetVessel.Vessel);
+                wpm.SendTargetDataToMissile(ml, targetVessel.Vessel, true, new MissileFire.TargetData(targetGPSCoords, TimeOfLastINS, INStimetogo), true);
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
             }
@@ -2009,7 +2000,7 @@ namespace BDArmory.Weapons.Missiles
 
             bool scanOverride = false;
 
-            if (TargetingMode == TargetingModes.Inertial)
+            if (TargetingMode == TargetingModes.Inertial && TimeOfLastINS > 0)
             {
                 float deltaT = TimeIndex - TimeOfLastINS;
                 tempTargetPos = VectorUtils.GetWorldSurfacePostion(TargetINSCoords, vessel.mainBody);
