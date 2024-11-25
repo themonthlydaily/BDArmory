@@ -694,6 +694,7 @@ namespace BDArmory.Weapons.Missiles
                 missileSalvo = StartCoroutine(salvoFire(killWhenDone));
                 if (useSymCounterpart && !killWhenDone)
                 {
+                    MissileFire.TargetData targetData = new MissileFire.TargetData(missileLauncher.targetGPSCoords, missileLauncher.TimeOfLastINS, missileLauncher.INStimetogo);
                     using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
                         while (pSym.MoveNext())
                         {
@@ -702,7 +703,7 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 var ml = pSym.Current.FindModuleImplementing<MissileBase>();
                                 if (ml == null) continue;
-                                if (wpm != null) wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false, new MissileFire.TargetData(missileLauncher.targetGPSCoords, missileLauncher.TimeOfLastINS, missileLauncher.INStimetogo), true);
+                                if (wpm != null) wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false, targetData, true);
                                 MissileLauncher launcher = ml as MissileLauncher;
                                 if (launcher != null)
                                 {
@@ -1093,7 +1094,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
-                            if (tubesFired > 1) missileRegistry = false;
+                            //if (tubesFired > 1) missileRegistry = false;
                             Vector3 targetGEOPos = Vector3.zero;
                             Vector3 targetINScoords = Vector3.zero;
                             float TimeOfLastINS = -1f;
@@ -1214,8 +1215,12 @@ namespace BDArmory.Weapons.Missiles
                 if (missileRegistry)
                 {
                     BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
+                    if (wpm)
+                    {
+                        wpm.UpdateMissilesAway(ml.targetVessel, ml);
+                    }
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.MultiMissileLauncher]: Missile {ml.shortName} with target {ml.targetVessel} added to FiredMissiles.");
+                        Debug.Log($"[BDArmory.MultiMissileLauncher]: Missile {ml.shortName} with target {ml.targetVessel.Vessel.GetName()} added to FiredMissiles.");
                 }
                 ml.launched = true;
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust

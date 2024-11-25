@@ -1426,16 +1426,20 @@ namespace BDArmory.Weapons.Missiles
             if (!HasFired)
             {
                 GameEvents.onPartDie.Add(PartDie);
-                BDATargetManager.FiredMissiles.Add(this);
-
-                var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
-                if (wpm != null) Team = wpm.Team;
-
                 SourceVessel = vessel;
                 SetTargeting();
                 Jettison();
                 AddTargetInfoToVessel();
                 IncreaseTolerance();
+
+                BDATargetManager.FiredMissiles.Add(this);
+
+                var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
+                if (wpm != null)
+                {
+                    Team = wpm.Team;
+                    wpm.UpdateMissilesAway(targetVessel, this);
+                }
 
                 initialMissileRollPlane = -vessel.transform.up;
                 initialMissileForward = vessel.transform.forward;

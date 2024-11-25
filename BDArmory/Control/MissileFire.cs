@@ -1517,6 +1517,38 @@ namespace BDArmory.Control
             CalculateMissilesAway();
         }
 
+        public void UpdateMissilesAway(TargetInfo target, MissileBase missile)
+        {
+            if (!guardMode) return;
+            if (target)
+            {
+                bool activeSARH = (missile.TargetingMode == MissileBase.TargetingModes.Radar || missile.TargetingMode == MissileBase.TargetingModes.Gps);
+                int away = 0;
+                if (!missilesAway.ContainsKey(target))
+                {
+                    missilesAway.Add(target, [1, activeSARH ? 1 : 0]);
+                    away = 1;
+                    engagedTargets++;
+                }
+                else
+                {
+                    int[] tempArr = missilesAway[target];
+                    away = ++tempArr[0];
+                    if (activeSARH)
+                        tempArr[1]++;
+                }
+
+                if (currentTarget != null && currentTarget == target) //change to previous target?
+                {
+                    firedMissiles = away;
+                }
+                if (BDArmorySettings.DEBUG_MISSILES)
+                    Debug.Log($"[BDArmory.MissileFire] Updating missilesAway for {((target != null && target.Vessel != null) ? target.Vessel.GetName() : "null")}, away: {away}, activeSARH: {activeSARH}.");
+            }
+            else
+                CalculateMissilesAway(); // Immediately update missiles away.
+        }
+
         private void CalculateMissilesAway() //FIXME - add check for identically named vessels
         {
             missilesAway.Clear();
@@ -1552,7 +1584,7 @@ namespace BDArmory.Control
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
                 missilesAway.TryGetValue(currentTarget, out int[] missiles);
-                firedMissiles = missiles[0];
+                firedMissiles = missiles[0] + launching[0];
             }
             else
             {
@@ -3478,7 +3510,7 @@ namespace BDArmory.Control
                 missile.FireMissile();
                 PreviousMissile = missile;
             }
-            CalculateMissilesAway(); // Immediately update missiles away.
+
             //PreviousMissile = CurrentMissile;
             UpdateList();
             if (DisengageAfterFiring)
@@ -8375,16 +8407,16 @@ namespace BDArmory.Control
                             {
                                 missilesAway.TryGetValue(PDMslTgts[MissileID], out int[] missiles);
                                 interceptorsAway = missiles[0];
-                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
+                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles already fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
                             }
                             if (interceptorsAway < maxMissilesOnTarget)
                             {
-                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}]viable: {viableTarget}; turreted: {turreted}; inRange: {(turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))}");
+                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}]viable: {viableTarget}; turreted: {turreted}; inRange: {(turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))}");
                                 if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
                                 {
                                     //missileTarget = PDMslTgts[MissileID].Vessel;
                                     firedMissile = true;
-                                    //Debug.Log($"[BDArmory.MissileFire] firing interceptor missile at {PDMslTgts[MissileID].Vessel.name}");
+                                    Debug.Log($"[BDArmory.MissileFire] firing interceptor missile at {PDMslTgts[MissileID].Vessel.name}");
                                     StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
                                     break;
                                 }
@@ -8401,7 +8433,7 @@ namespace BDArmory.Control
                                         {
                                             missilesAway.TryGetValue(item.Current, out int[] missiles);
                                             interceptorsAway = missiles[0];
-                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
+                                            Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles already fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
                                         }
                                         if (item.Current.Vessel.Splashed && !torpedo) viableTarget = false;
                                         if (interceptorsAway < maxMissilesOnTarget)
@@ -8410,7 +8442,7 @@ namespace BDArmory.Control
                                             {
                                                 //missileTarget = item.Current.Vessel;
                                                 firedMissile = true;
-                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
+                                                Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {item.Current.Vessel.GetName()}");
                                                 StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
                                                 break;
                                             }

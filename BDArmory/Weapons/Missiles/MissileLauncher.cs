@@ -1277,6 +1277,7 @@ namespace BDArmory.Weapons.Missiles
                         {
                             wpm.heatTarget = TargetSignatureData.noTarget;
                             GpsUpdateMax = wpm.GpsUpdateMax;
+                            wpm.UpdateMissilesAway(targetVessel, this);
                         }
                         launched = true;
                     }
@@ -1301,6 +1302,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         wpm.heatTarget = TargetSignatureData.noTarget;
                         GpsUpdateMax = wpm.GpsUpdateMax;
+                        wpm.UpdateMissilesAway(targetVessel, this);
                     }
                     launched = true;
                 }
@@ -1328,7 +1330,6 @@ namespace BDArmory.Weapons.Missiles
 
             ml.launched = true;
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
-            BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
             ml.GuidanceMode = GuidanceMode;
             //wpm.SendTargetDataToMissile(ml);
@@ -1446,12 +1447,15 @@ namespace BDArmory.Weapons.Missiles
                 ml.maxAltitude = maxAltitude;
             ml.terminalGuidanceShouldActivate = terminalGuidanceShouldActivate;
             ml.guidanceActive = true;
+
+            BDATargetManager.FiredMissiles.Add(ml);
             if (wpm != null)
             {
                 ml.Team = wpm.Team;
                 wpm.SendTargetDataToMissile(ml, targetVessel.Vessel, true, new MissileFire.TargetData(targetGPSCoords, TimeOfLastINS, INStimetogo), true);
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
+                wpm.UpdateMissilesAway(targetVessel, ml);
             }
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
@@ -1985,7 +1989,9 @@ namespace BDArmory.Weapons.Missiles
                 if (guidanceActive) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
                 else debugString.AppendLine("Guidance inactive");
 
-                debugString.AppendLine("Source vessel=" + SourceVessel);
+                debugString.AppendLine("Source vessel=" + (SourceVessel != null ? SourceVessel.GetName() : "null"));
+
+                debugString.AppendLine("Target vessel=" + ((targetVessel != null && targetVessel.Vessel != null) ? targetVessel.Vessel.GetName() : "null"));
 
                 if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
                 var distance = (TargetPosition - transform.position).magnitude;
