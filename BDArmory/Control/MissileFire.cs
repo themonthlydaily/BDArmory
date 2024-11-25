@@ -1584,7 +1584,7 @@ namespace BDArmory.Control
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
                 missilesAway.TryGetValue(currentTarget, out int[] missiles);
-                firedMissiles = missiles[0] + launching[0];
+                firedMissiles = missiles[0];
             }
             else
             {
