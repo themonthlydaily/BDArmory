@@ -7303,9 +7303,12 @@ namespace BDArmory.Control
                             }
                         }
 
-                        if (!validTarget && targetData != null)
+                        if (!validTarget)
                         {
-                            ml.targetGPSCoords = targetData.targetGEOPos;
+                            if (targetData != null)
+                                ml.targetGPSCoords = targetData.targetGEOPos;
+                            else if (designatedGPSCoords != Vector3d.zero)
+                                ml.targetGPSCoords = designatedGPSCoords;
                             ml.TargetAcquired = true;
                             if (laserPointDetected)
                                 ml.lockedCamera = foundCam;
