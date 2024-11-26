@@ -27,6 +27,8 @@
 	- AI can now use an ally laserdot for targeting laser-guided ordinance if it lacks a targetcam of its own.
 	- AI now uses a TWR factor in the climb rate limit calculations.
 	- Improvements to formation flying behaviour. Planes in follow mode should now hold their positions better and be more stable.
+	- Fix point-defense missile system, AI should now engage with the appropriate amount of missiles.
+	- AI will no longer drop locks when these are supporting semi-active radar homing missiles.
 - Competition:
 	- Fix craft equipped with repulsors breaking ground spawn.
 	- Add support for using custom spawn templates with RNG style tournaments.
@@ -80,7 +82,6 @@
 		- Fix laser guided ordinance locking on to enemy laser dots.
 		- Missile in-flight anims (flightAnimationName) now starts playing when boost motor ignites isntead of post Boost phase.
 		- Added "custom" warhead module, functions like a normal warhead, except it launches a bullet instead of exploding, integrated with missiles.
-		- Fixed missing parameters for multi-missile launchers, missiles should now correctly be assigned values that were previously missing.
 		- Point-defense missile turrets will no longer follow mouse aim unless manually selected.
 		- Fixed booster mass missing from missile dV calculation.
 		- Fixed terminal radar guidance missiles lacking IFF.
