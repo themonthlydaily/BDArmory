@@ -721,6 +721,7 @@ namespace BDArmory.Weapons.Missiles
             float timeGap = (60 / rippleRPM) * TimeWarp.CurrentRate;
             int TargetID = 0;
             bool missileRegistry = true;
+            bool removeFromQueue = true;
             List<TargetInfo> firedTargets = [];
             //missileSpawner.MissileName = subMunitionName;
 
@@ -1204,6 +1205,7 @@ namespace BDArmory.Weapons.Missiles
                             }
                             ml.targetVessel = missileLauncher.targetVessel;
                             ml.TargetAcquired = true;
+                            //Debug.Log("[BDArmory.MultiMissileLauncher] Data transfer complete.");
                         }
                     }
                     else
@@ -1217,6 +1219,11 @@ namespace BDArmory.Weapons.Missiles
                     BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
                     if (wpm)
                     {
+                        if (removeFromQueue)
+                        {
+                            wpm.UpdateQueuedLaunches(ml.targetVessel, ml, false);
+                            removeFromQueue = false;
+                        }
                         wpm.UpdateMissilesAway(ml.targetVessel, ml);
                     }
                     if (BDArmorySettings.DEBUG_MISSILES)

@@ -1249,7 +1249,12 @@ namespace BDArmory.Weapons.Missiles
                     //multiLauncher.rippleRPM = wpm.rippleRPM;               
                     //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
                     multiLauncher.Team = Team;
-                    if (reloadableRail && reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
+                    if (reloadableRail && reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
+                    {
+                        if (wpm)
+                            wpm.UpdateQueuedLaunches(targetVessel, this, true);
+                        multiLauncher.fireMissile();
+                    }
                     launched = true;
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
                 }
@@ -1257,7 +1262,12 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (reloadableRail && (reloadableRail.maxAmmo > 1 && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE))) //clustermissile with reload module
                     {
-                        if (reloadableMissile == null) reloadableMissile = StartCoroutine(FireReloadableMissile());
+                        if (reloadableMissile == null)
+                        {
+                            if (wpm)
+                                wpm.UpdateQueuedLaunches(targetVessel, this, true);
+                            reloadableMissile = StartCoroutine(FireReloadableMissile());
+                        }
                         launched = true;
                     }
                     else //standard non-reloadable missile
@@ -1287,7 +1297,12 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (reloadableRail && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE))
                 {
-                    if (reloadableMissile == null) reloadableMissile = StartCoroutine(FireReloadableMissile());
+                    if (reloadableMissile == null)
+                    {
+                        if (wpm)
+                            wpm.UpdateQueuedLaunches(targetVessel, this, true);
+                        reloadableMissile = StartCoroutine(FireReloadableMissile());
+                    }
                     launched = true;
                 }
                 else
@@ -1455,6 +1470,7 @@ namespace BDArmory.Weapons.Missiles
                 wpm.SendTargetDataToMissile(ml, targetVessel.Vessel, true, new MissileFire.TargetData(targetGPSCoords, TimeOfLastINS, INStimetogo), true);
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
+                wpm.UpdateQueuedLaunches(targetVessel, ml, false);
                 wpm.UpdateMissilesAway(targetVessel, ml);
             }
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
