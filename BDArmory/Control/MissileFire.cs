@@ -3542,7 +3542,7 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    SendTargetDataToMissile(ml, targetVessel, true, targetData, false);
+                    SendTargetDataToMissile(ml, targetVessel, true, targetData, targetVessel == null);
                     ml.FireMissile();
                     PreviousMissile = ml;
                 }
