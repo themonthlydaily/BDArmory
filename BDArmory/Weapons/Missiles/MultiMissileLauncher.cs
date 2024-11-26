@@ -703,7 +703,7 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 var ml = pSym.Current.FindModuleImplementing<MissileBase>();
                                 if (ml == null) continue;
-                                if (wpm != null) wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false, targetData, true);
+                                if (wpm != null) wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel != null ? missileLauncher.targetVessel.Vessel : null, false, targetData, true);
                                 MissileLauncher launcher = ml as MissileLauncher;
                                 if (launcher != null)
                                 {
@@ -1091,7 +1091,7 @@ namespace BDArmory.Weapons.Missiles
                                     targetsAssigned.AddRange(firedTargets); //we've found targets up to our target allowance; cull list down to just those for distributing remaining missiles of the salvo between, if any.
                                 }
                             }
-                            else wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
+                            else wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel != null ? missileLauncher.targetVessel.Vessel : null, false);
                         }
                         else
                         {
@@ -1141,7 +1141,7 @@ namespace BDArmory.Weapons.Missiles
                                 case TargetingModes.Gps:
                                     if (missileLauncher.lockedCamera != null)
                                         targetGEOPos = VectorUtils.WorldPositionToGeoCoords(missileLauncher.lockedCamera.groundTargetPosition, FlightGlobals.currentMainBody);
-                                    else if (wpm.vesselRadarData && missileLauncher.targetVessel)
+                                    else if (wpm.vesselRadarData && missileLauncher.targetVessel != null)
                                     {
                                         if (wpm.vesselRadarData.locked)
                                         {
@@ -1172,7 +1172,7 @@ namespace BDArmory.Weapons.Missiles
                                     ml.targetGPSCoords = targetGEOPos;
                                     break;
                                 case TargetingModes.Inertial:
-                                    if (wpm.vesselRadarData && missileLauncher.targetVessel)
+                                    if (wpm.vesselRadarData && missileLauncher.targetVessel != null)
                                     {
                                         TargetSignatureData INSTarget = TargetSignatureData.noTarget;
                                         if (ml.GetWeaponClass() == WeaponClasses.SLW)
@@ -1210,7 +1210,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
-                        wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel.Vessel, false);
+                        wpm.SendTargetDataToMissile(ml, missileLauncher.targetVessel != null ? missileLauncher.targetVessel.Vessel : null, false);
                     }
                     ml.GpsUpdateMax = wpm.GpsUpdateMax;
                 }
@@ -1227,7 +1227,7 @@ namespace BDArmory.Weapons.Missiles
                         wpm.UpdateMissilesAway(ml.targetVessel, ml);
                     }
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.MultiMissileLauncher]: Missile {ml.shortName} with target {ml.targetVessel.Vessel.GetName()} added to FiredMissiles.");
+                        Debug.Log($"[BDArmory.MultiMissileLauncher]: Missile {ml.shortName} with target {(ml.targetVessel != null ? ml.targetVessel.Vessel.GetName() : "null vessel")} added to FiredMissiles.");
                 }
                 ml.launched = true;
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust

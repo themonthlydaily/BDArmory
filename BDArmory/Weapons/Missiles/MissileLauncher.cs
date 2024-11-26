@@ -1467,7 +1467,7 @@ namespace BDArmory.Weapons.Missiles
             if (wpm != null)
             {
                 ml.Team = wpm.Team;
-                wpm.SendTargetDataToMissile(ml, targetVessel.Vessel, true, new MissileFire.TargetData(targetGPSCoords, TimeOfLastINS, INStimetogo), true);
+                wpm.SendTargetDataToMissile(ml, targetVessel != null ? targetVessel.Vessel : null, true, new MissileFire.TargetData(targetGPSCoords, TimeOfLastINS, INStimetogo), true);
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
                 wpm.UpdateQueuedLaunches(targetVessel, ml, false);
