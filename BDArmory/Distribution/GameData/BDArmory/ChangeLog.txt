@@ -73,6 +73,10 @@
 	- Laser weapons or other weapons using ElectricCharge can now fire if InfiniteElectricity is on, even if Infinite Ammo is not.
 	- Adds fireAnimOverrideSpeed field to set custom fire animation play rate instead of basing it on rate of fire.
 	- Fix electrolaser NRE when firing on a target vessel.
+	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "WEAPONS_RESPECT_CROSSFEED", this may be set to false to restore previous behavior where guns did not respect crossfeed rules.
+	- Improved performance of bullet firing code.
+	- Fixed issue where slaved turrets would fire at a stale radar contact.
+	- Added "guidanceRange" parameter for guided bullets, determines the range to the target at which the bullet will begin to maneuver, set to -1 for guidance immediately from the muzzle.
 	- Missiles:
 		- Add 'cruiseRangeTrigger' field to Missiles. Missiles using this will delay firing Cruise motor until within set distance to target.
 		- Tweak acoustic propagation loss rate for passive acoustic torpedoes, should have a bit further effective detection range now.
@@ -86,9 +90,6 @@
 		- Fixed booster mass missing from missile dV calculation.
 		- Fixed terminal radar guidance missiles lacking IFF.
 		- Inertial guidance missiles with terminal guidance that were dumfired will now activate their terminal guidance.
-	- Added setting in the "GameData/BDArmory/PluginData/Settings.cfg" file called "WEAPONS_RESPECT_CROSSFEED", this may be set to false to restore previous behavior where guns did not respect crossfeed rules.
-	- Improved performance of bullet firing code.
-	- Fixed issue where slaved turrets would fire at a stale radar contact.
 - Armor:
 	- Armor should now be more consistent in terms of HE resistance. Adjusting the "Armor Explosion Resistance Multiplier" should now more directly affect the amount of armor penetration explosions do.
 	- Improved long-dart armor penetration mechanics, should have improved performance against consecutive plates in-contact with each other. Improved residual velocity formula.
