@@ -1141,7 +1141,7 @@ namespace BDArmory.Weapons.Missiles
                                 case TargetingModes.Gps:
                                     if (missileLauncher.lockedCamera != null)
                                         targetGEOPos = VectorUtils.WorldPositionToGeoCoords(missileLauncher.lockedCamera.groundTargetPosition, FlightGlobals.currentMainBody);
-                                    else if (wpm.vesselRadarData)
+                                    else if (wpm.vesselRadarData && missileLauncher.targetVessel)
                                     {
                                         if (wpm.vesselRadarData.locked)
                                         {
@@ -1172,7 +1172,7 @@ namespace BDArmory.Weapons.Missiles
                                     ml.targetGPSCoords = targetGEOPos;
                                     break;
                                 case TargetingModes.Inertial:
-                                    if (wpm.vesselRadarData)
+                                    if (wpm.vesselRadarData && missileLauncher.targetVessel)
                                     {
                                         TargetSignatureData INSTarget = TargetSignatureData.noTarget;
                                         if (ml.GetWeaponClass() == WeaponClasses.SLW)
