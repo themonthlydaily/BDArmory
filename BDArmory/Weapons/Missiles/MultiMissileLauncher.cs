@@ -560,7 +560,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.loftState = LoftStates.Boost;
             missileLauncher.TimeToImpact = float.PositiveInfinity;
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
-            missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
+            missileLauncher.terminalHomingType = MLConfig.terminalHomingType;
             missileLauncher.pronavGain = MLConfig.pronavGain;
             missileLauncher.kappaAngle = MLConfig.kappaAngle;
             missileLauncher.gLimit = MLConfig.gLimit;
@@ -851,7 +851,6 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                     //ml.LoftAltComp = missileLauncher.LoftAltComp;
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
-                    ml.homingModeTerminal = missileLauncher.homingModeTerminal;
                     ml.pronavGain = missileLauncher.pronavGain;
                     ml.loftState = LoftStates.Boost;
                     ml.TimeToImpact = float.PositiveInfinity;
@@ -926,7 +925,6 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
-                    ml.homingModeTerminal = missileLauncher.homingModeTerminal;
                     ml.terminalHomingActive = false;
                 }
 
