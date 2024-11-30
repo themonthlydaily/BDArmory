@@ -1,4 +1,5 @@
-﻿﻿IMPROVEMENTS / FIXES
+﻿﻿v1.8.0.0
+IMPROVEMENTS / FIXES
 - General:
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
 	- Add the ability to add custom sub-categories to the BDA part categorizer.
@@ -108,7 +109,7 @@
 	- Add craft spawn warning message if craft doesn't have AI/WM on root part or if the root part isn't a cockpit.
 - P:S:
 	- Add max extend time limit clamp to override extend behavior that goes on for longer than time limit.
-	- Add support for automated AI/WM settings for competition rules complance. To utilze, create a 'Comp_settings.cfg' with an 'AIWMChecks' node, containing one or more of the following settings: 
+	- Add support for automated AI/WM settings for competition rules compliance. To utilze, create a 'Comp_settings.cfg' with an 'AIWMChecks' node, containing one or more of the following settings: 
 		-	extensionCutoffTime = n
 		-	extendDistanceAirToAir = n
 		-	MONOCOCKPIT_VIEWRANGE = n
@@ -119,7 +120,7 @@
 		-	vesselCollisionAvoidanceStrength = n
 		-	idleSpeed = n
 		-	DISABLE_SAS = T/F	
-		If the file is not present, or it is, but the Project:Showdown toggle in Game Modes is off, overrides will not be used. Overrides will apply on competition start or vessel spawn.
+		If the file is not present, or it is, but the Use AI/WM Overrides toggle in Game Modes is off, overrides will not be used. Overrides will apply on competition start or vessel spawn.
 
 v1.7.1.0
 IMPROVEMENTS / FIXES
