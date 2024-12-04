@@ -6027,6 +6027,11 @@ namespace BDArmory.Weapons
         public override string GetInfo()
         {
             ammoList = BDAcTools.ParseNames(bulletType);
+            if (BulletInfo.bullets == null || RocketInfo.rockets == null)
+            {
+                Debug.LogError($"[BDArmory.ModuleWeapon]: BDArmory hasn't loaded properly.\n  This is typically a symptom of having installed BDArmory (or other mods) incorrectly.\n  Check the 'AssemblyLoader' section at the start of the KSP.log for duplicate, missing or misplaced mod dlls or other errors/exceptions.");
+                // Let the exception happen and break loading KSP so users can fix their install.
+            }
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
             output.AppendLine($"Weapon Type: {weaponType}");
