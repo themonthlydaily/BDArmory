@@ -7343,14 +7343,14 @@ namespace BDArmory.Control
                     }
                 case MissileBase.TargetingModes.Gps:
                     {
-                        if (getTarget)
+                        if (getTarget && targetVessel)
                         {
-                            if ((designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > 100)
+                            if ((designatedGPSInfo.worldPos - targetVessel.CoM).sqrMagnitude > 100)
                             {
                                 ml.targetGPSCoords = designatedGPSCoords;
                                 validTarget = true;
                             }
-                            else if (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > Mathf.Max(400, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))
+                            else if (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > Mathf.Max(400, 0.013f * (float)targetVessel.srfSpeed * (float)targetVessel.srfSpeed))
                             {
                                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(foundCam.groundTargetPosition, vessel.mainBody);
                                 validTarget = true;
