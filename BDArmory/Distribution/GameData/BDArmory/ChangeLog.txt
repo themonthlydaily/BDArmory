@@ -1,4 +1,10 @@
-﻿﻿v1.8.0.0
+﻿﻿v1.8.0.1
+IMPROVEMENTS / FIXES
+- Weapons:
+	- Missiles:
+		- Fix not being able to manually fire GPS-guided bombs/missiles without an AI-assigned target.
+
+v1.8.0.0
 IMPROVEMENTS / FIXES
 - General:
 	- Adjust fuel leak FX to work better in space and low atmospheric density.
